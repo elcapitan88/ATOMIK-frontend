@@ -29,7 +29,7 @@ export class WebSocketManager {
 
   async checkActiveAccounts() {
     try {
-      const response = await axiosInstance.get('/api/tradovate/fetch-accounts/');
+      const response = await axiosInstance.get('/api/v1/brokers/accounts');
       const activeAccounts = response.data.filter(account => 
         account.active && account.status === 'active' && !account.is_token_expired
       );

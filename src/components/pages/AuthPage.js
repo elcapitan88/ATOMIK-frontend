@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Box,
   Button,
@@ -9,9 +9,13 @@ import {
   Heading,
   Text,
   useToast,
+  FormErrorMessage,
 } from '@chakra-ui/react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import { useAuth } from '@/contexts/AuthContext';
+import authService from '@/services/auth/authService';
+import axiosInstance from '@/services/axiosConfig';
+import { debounce } from 'lodash';
 
 const glassEffect = {
   background: "rgba(255, 255, 255, 0.1)",
@@ -26,64 +30,129 @@ const AuthPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [username, setUsername] = useState('');
+  const [errors, setErrors] = useState({});
+  const [isLoading, setIsLoading] = useState(false);
+  const [isCheckingUsername, setIsCheckingUsername] = useState(false);
+  
+  const { login } = useAuth();
   const navigate = useNavigate();
   const toast = useToast();
 
-  const isFormValid = useCallback(() => {
-    if (isLogin) {
-      return email.trim() !== '' && password.trim() !== '';
-    } else {
-      return username.trim() !== '' && email.trim() !== '' && password.trim() !== '';
+  // Debounced username check
+  const checkUsername = useCallback(
+    debounce(async (username) => {
+      if (!username || username.length < 3) return;
+      
+      setIsCheckingUsername(true);
+      try {
+        const response = await axiosInstance.get(`/api/v1/auth/check-username/${username}`);
+        if (response.data.exists) {
+          setErrors(prev => ({
+            ...prev,
+            username: "This username is already taken"
+          }));
+        } else {
+          setErrors(prev => {
+            const newErrors = { ...prev };
+            delete newErrors.username;
+            return newErrors;
+          });
+        }
+      } catch (error) {
+        console.error('Error checking username:', error);
+      } finally {
+        setIsCheckingUsername(false);
+      }
+    }, 500),
+    [setErrors, setIsCheckingUsername]
+  );
+
+  // Effect to check username availability
+  useEffect(() => {
+    if (!isLogin && username && username.length >= 3) {
+      checkUsername(username);
     }
-  }, [isLogin, email, password, username]);
+    return () => checkUsername.cancel();
+  }, [username, isLogin, checkUsername]);
+
+  const validateForm = () => {
+    const newErrors = {};
+    if (!email) newErrors.email = 'Email is required';
+    if (!password) newErrors.password = 'Password is required';
+    if (!isLogin && !username) newErrors.username = 'Username is required';
+    return newErrors;
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    const formErrors = validateForm();
+    
+    if (Object.keys(formErrors).length > 0) {
+      setErrors(formErrors);
+      return;
+    }
+
+    setIsLoading(true);
+    setErrors({});
+
     try {
-      console.log('Form submitted:', { email, password, username });  // Debug log
-
-      const endpoint = isLogin ? '/api/auth/login/' : '/api/auth/register/';
-      const payload = isLogin ? { email, password } : { username, email, password };
-
-      const response = await axios.post(
-        `http://localhost:8000${endpoint}`, 
-        payload,
-        {
-          withCredentials: true,
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
+      if (isLogin) {
+        await authService.login(email, password);
+        login();
+        toast({
+          title: "Login Successful",
+          status: "success",
+          duration: 3000,
+          isClosable: true,
+        });
+        navigate('/dashboard');
+      } else {
+        try {
+          await authService.register(username, email, password);
+          toast({
+            title: "Registration Successful",
+            description: "Please login with your credentials",
+            status: "success",
+            duration: 3000,
+            isClosable: true,
+          });
+          setIsLogin(true);
+        } catch (error) {
+          if (error.response?.data?.detail) {
+            if (error.response.data.detail.includes("username is already taken")) {
+              setErrors(prev => ({ ...prev, username: "This username is already taken" }));
+            } else if (error.response.data.detail.includes("email already exists")) {
+              setErrors(prev => ({ ...prev, email: "This email is already registered" }));
+            } else {
+              toast({
+                title: "Registration Failed",
+                description: error.response.data.detail,
+                status: "error",
+                duration: 5000,
+                isClosable: true,
+              });
+            }
+          } else {
+            toast({
+              title: "Registration Failed",
+              description: "An unexpected error occurred",
+              status: "error",
+              duration: 5000,
+              isClosable: true,
+            });
           }
         }
-      );
-
-      console.log('Response:', response.data);  // Debug log
-        
-      // Store access token
-      localStorage.setItem('access_token', response.data.tokens.access);
-        
-      toast({
-        title: isLogin ? "Login Successful" : "Registration Successful",
-        status: "success",
-        duration: 3000,
-        isClosable: true,
-      });
-
-      // Add a small delay before navigation
-      setTimeout(() => {
-        navigate('/dashboard');
-      }, 100);
-
+      }
     } catch (error) {
-      console.error('Auth error:', error.response || error);  // Debug log
-      
       toast({
-        title: "Authentication Error",
-        description: error.response?.data?.message || error.message || "An error occurred",
+        title: "Error",
+        description: error.message,
         status: "error",
-        duration: 3000,
+        duration: 5000,
         isClosable: true,
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -102,21 +171,32 @@ const AuthPage = () => {
           <form onSubmit={handleSubmit}>
             <VStack spacing={4}>
               {!isLogin && (
-                <FormControl>
+                <FormControl isInvalid={!!errors.username}>
                   <FormLabel color="white">Username</FormLabel>
                   <Input
                     type="text"
                     value={username}
-                    onChange={(e) => setUsername(e.target.value)}
+                    onChange={(e) => {
+                      setUsername(e.target.value);
+                      if (errors.username) {
+                        setErrors(prev => {
+                          const newErrors = { ...prev };
+                          delete newErrors.username;
+                          return newErrors;
+                        });
+                      }
+                    }}
                     bg="whiteAlpha.200"
                     color="white"
                     borderColor="whiteAlpha.400"
                     _hover={{ borderColor: "whiteAlpha.500" }}
                     _focus={{ borderColor: "blue.300", boxShadow: "0 0 0 1px rgba(66, 153, 225, 0.6)" }}
+                    isDisabled={isCheckingUsername}
                   />
+                  <FormErrorMessage>{errors.username}</FormErrorMessage>
                 </FormControl>
               )}
-              <FormControl>
+              <FormControl isInvalid={!!errors.email}>
                 <FormLabel color="white">Email</FormLabel>
                 <Input
                   type="email"
@@ -128,8 +208,9 @@ const AuthPage = () => {
                   _hover={{ borderColor: "whiteAlpha.500" }}
                   _focus={{ borderColor: "blue.300", boxShadow: "0 0 0 1px rgba(66, 153, 225, 0.6)" }}
                 />
+                <FormErrorMessage>{errors.email}</FormErrorMessage>
               </FormControl>
-              <FormControl>
+              <FormControl isInvalid={!!errors.password}>
                 <FormLabel color="white">Password</FormLabel>
                 <Input
                   type="password"
@@ -141,6 +222,7 @@ const AuthPage = () => {
                   _hover={{ borderColor: "whiteAlpha.500" }}
                   _focus={{ borderColor: "blue.300", boxShadow: "0 0 0 1px rgba(66, 153, 225, 0.6)" }}
                 />
+                <FormErrorMessage>{errors.password}</FormErrorMessage>
               </FormControl>
               <Button
                 type="submit"
@@ -153,6 +235,7 @@ const AuthPage = () => {
                 borderColor="rgba(0, 198, 224, 1)"
                 position="relative"
                 overflow="hidden"
+                isLoading={isLoading || isCheckingUsername}
                 _before={{
                   content: '""',
                   position: 'absolute',
@@ -173,7 +256,6 @@ const AuthPage = () => {
                     opacity: 0.7,
                   }
                 }}
-                isDisabled={!isFormValid()}
               >
                 <Box as="span" position="relative" zIndex={1}>
                   {isLogin ? 'Login' : 'Register'}
@@ -181,14 +263,34 @@ const AuthPage = () => {
               </Button>
             </VStack>
           </form>
-          <Text 
-            color="white" 
-            textAlign="center" 
-            cursor="pointer" 
-            onClick={() => setIsLogin(!isLogin)}
-          >
-            {isLogin ? "Don't have an account? Register" : "Already have an account? Login"}
-          </Text>
+          <VStack spacing={2}>
+            <Text 
+              color="white" 
+              textAlign="center" 
+              cursor="pointer" 
+              onClick={() => {
+                setIsLogin(!isLogin);
+                setErrors({});
+                setUsername('');
+                setEmail('');
+                setPassword('');
+              }}
+            >
+              {isLogin ? "Don't have an account? Register" : "Already have an account? Login"}
+            </Text>
+            {isLogin && (
+              <Text
+                color="blue.300"
+                fontSize="sm"
+                textAlign="center"
+                cursor="pointer"
+                _hover={{ textDecoration: "underline" }}
+                onClick={() => navigate('/auth/reset-password')}
+              >
+                Forgot your password?
+              </Text>
+            )}
+          </VStack>
         </VStack>
       </Box>
     </Box>

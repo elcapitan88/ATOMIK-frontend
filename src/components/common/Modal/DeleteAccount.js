@@ -20,19 +20,12 @@ const glassEffect = {
   borderRadius: "xl",
 };
 
-const DeleteAccount = ({ isOpen, onClose, onConfirm, accountName }) => {
+const DeleteAccount = ({ isOpen, onClose, onConfirm, accountName, accountDetails }) => {
   return (
     <Modal isOpen={isOpen} onClose={onClose} isCentered>
       <ModalOverlay bg="blackAlpha.300" backdropFilter="blur(5px)" />
-      <ModalContent 
-        {...glassEffect}
-        maxW="400px"
-        color="white"
-      >
-        <ModalHeader 
-          borderBottom="1px solid rgba(255, 255, 255, 0.18)" 
-          pb={4}
-        >
+      <ModalContent {...glassEffect} maxW="400px" color="white">
+        <ModalHeader borderBottom="1px solid rgba(255, 255, 255, 0.18)" pb={4}>
           Confirm Account Deletion
         </ModalHeader>
         <ModalCloseButton />
@@ -40,23 +33,23 @@ const DeleteAccount = ({ isOpen, onClose, onConfirm, accountName }) => {
           <VStack spacing={4} align="stretch">
             <Text>Are you sure you want to delete this account?</Text>
             <Text fontSize="xs" color="whiteAlpha.700">{accountName}</Text>
+            {accountDetails?.environment && (
+              <Text fontSize="xs" color="whiteAlpha.600">
+                Environment: {accountDetails.environment}
+              </Text>
+            )}
             <Text color="red.300" fontStyle="italic">This action cannot be undone.</Text>
           </VStack>
         </ModalBody>
 
         <ModalFooter borderTop="1px solid rgba(255, 255, 255, 0.18)" pt={4}>
-          <Button 
-            variant="ghost" 
-            mr={3} 
-            onClick={onClose}
-            _hover={{ bg: 'whiteAlpha.100' }}
-          >
+          <Button variant="ghost" mr={3} onClick={onClose} _hover={{ bg: 'whiteAlpha.100' }}>
             Cancel
           </Button>
           <Button 
             colorScheme="red" 
-            onClick={onConfirm}
-            bg="red.500"
+            onClick={onConfirm} 
+            bg="red.500" 
             _hover={{ bg: 'red.600' }}
           >
             Delete
@@ -66,5 +59,4 @@ const DeleteAccount = ({ isOpen, onClose, onConfirm, accountName }) => {
     </Modal>
   );
 };
-
 export default DeleteAccount;

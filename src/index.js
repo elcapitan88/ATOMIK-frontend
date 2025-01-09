@@ -1,7 +1,7 @@
-// src/index.js
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
+import { AuthProvider } from './contexts/AuthContext';
 
 // Import service configurations
 import './services/axiosConfig';
@@ -73,18 +73,15 @@ const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
     <ErrorBoundary>
-      <App />
+      <AuthProvider>
+        <App />
+      </AuthProvider>
     </ErrorBoundary>
   </React.StrictMode>
 );
 
 // Report web vitals if needed
 reportWebVitals();
-
-// Enable hot module replacement for development
-if (process.env.NODE_ENV === 'development' && module.hot) {
-  module.hot.accept();
-}
 
 // Handle unhandled promise rejections
 window.addEventListener('unhandledrejection', (event) => {

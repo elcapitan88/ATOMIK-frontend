@@ -8,7 +8,7 @@ function getCookie(name) {
 }
 
 const axiosInstance = axios.create({
-    baseURL: 'http://localhost:8000',
+    baseURL: process.env.REACT_APP_API_URL || 'http://localhost:8000',
     withCredentials: true,
 });
 
@@ -42,26 +42,21 @@ axiosInstance.interceptors.response.use(
     async (error) => {
         const originalRequest = error.config;
 
-        // If the error is 401 and we haven't retried yet
         if (error.response?.status === 401 && !originalRequest._retry) {
             originalRequest._retry = true;
 
             try {
-                // Try to refresh the token
-                const response = await axios.post('/api/auth/refresh/', {}, {
-                    withCredentials: true
+                // Use POST instead of GET
+                const response = await axios.post('/api/v1/auth/verify', {}, {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+                    }
                 });
 
-                // If we get a new token
-                if (response.data.access) {
-                    localStorage.setItem('access_token', response.data.access);
-                    
-                    // Retry the original request with new token
-                    originalRequest.headers.Authorization = `Bearer ${response.data.access}`;
+                if (response.data.valid) {
                     return axiosInstance(originalRequest);
                 }
             } catch (refreshError) {
-                // If refresh fails, redirect to login
                 localStorage.removeItem('access_token');
                 window.location.href = '/auth';
                 return Promise.reject(refreshError);

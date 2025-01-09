@@ -1,71 +1,46 @@
 // App.js
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
 import { ChakraProvider, Box, Spinner } from '@chakra-ui/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { webSocketManagerInstance } from './services/websocket/webSocketManager';
+import { useAuth } from './contexts/AuthContext';
 import axiosInstance from './services/axiosConfig';
 import theme from './styles/theme';
 
-// Import components with relative paths for now
+// Import components
 import Dashboard from './components/pages/Dashboard';
 import AuthPage from './components/pages/AuthPage';
+import ResetPassword from './components/pages/ResetPassword';
 import SettingsPage from './components/pages/SettingsPage';
+
+// Create a client
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false, // disable automatic refetch on window focus
+      retry: 1, // retry failed queries once before displaying error
+      staleTime: 30000, // consider data fresh for 30 seconds
+      cacheTime: 5 * 60 * 1000, // cache for 5 minutes
+      onError: (error) => {
+        console.error('Query Error:', error);
+      },
+    },
+    mutations: {
+      retry: 1,
+      onError: (error) => {
+        console.error('Mutation Error:', error);
+      },
+    },
+  },
+});
 
 // Authentication guard component
 const PrivateRoute = ({ children }) => {
-  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const { isAuthenticated, isLoading } = useAuth();
 
-  useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const token = localStorage.getItem('access_token');
-        if (!token) {
-          setIsAuthenticated(false);
-          setIsCheckingAuth(false);
-          return;
-        }
-
-        // Verify token is still valid
-        await axiosInstance.get('/api/auth/verify/');
-        setIsAuthenticated(true);
-      } catch (error) {
-        console.error('Auth check failed:', error);
-        // Try to refresh token
-        try {
-          const refreshToken = localStorage.getItem('refresh_token');
-          if (refreshToken) {
-            const response = await axiosInstance.post('/api/auth/refresh/', {
-              refresh: refreshToken
-            });
-            if (response.data.access) {
-              localStorage.setItem('access_token', response.data.access);
-              axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${response.data.access}`;
-              setIsAuthenticated(true);
-            } else {
-              handleAuthFailure();
-            }
-          } else {
-            handleAuthFailure();
-          }
-        } catch (refreshError) {
-          handleAuthFailure();
-        }
-      } finally {
-        setIsCheckingAuth(false);
-      }
-    };
-
-    const handleAuthFailure = () => {
-      localStorage.removeItem('access_token');
-      localStorage.removeItem('refresh_token');
-      setIsAuthenticated(false);
-    };
-
-    checkAuth();
-  }, []);
-
-  if (isCheckingAuth) {
+  if (isLoading) {
     return (
       <Box display="flex" alignItems="center" justifyContent="center" height="100vh">
         <Spinner size="xl" color="blue.500" />
@@ -78,9 +53,9 @@ const PrivateRoute = ({ children }) => {
 
 // Public route guard
 const PublicRoute = ({ children }) => {
-  const token = localStorage.getItem('access_token');
+  const { isAuthenticated } = useAuth();
   
-  if (token) {
+  if (isAuthenticated) {
     return <Navigate to="/dashboard" replace />;
   }
   
@@ -153,7 +128,6 @@ function App() {
   useEffect(() => {
     const handleError = (event) => {
       console.error('Global error:', event.error || event.reason);
-      // Add your error reporting service here if needed
     };
 
     window.addEventListener('error', handleError);
@@ -166,55 +140,67 @@ function App() {
   }, []);
 
   return (
-    <ChakraProvider theme={theme}>
-      <Router>
-        <Routes>
-          {/* Public Routes */}
-          <Route 
-            path="/auth" 
-            element={
-              <PublicRoute>
-                <AuthPage />
-              </PublicRoute>
-            } 
-          />
+    <QueryClientProvider client={queryClient}>
+      <ChakraProvider theme={theme}>
+        <Router>
+          <Routes>
+            {/* Public Routes */}
+            <Route 
+              path="/auth" 
+              element={
+                <PublicRoute>
+                  <AuthPage />
+                </PublicRoute>
+              } 
+            />
+            
+            <Route 
+              path="/auth/reset-password" 
+              element={
+                <PublicRoute>
+                  <ResetPassword />
+                </PublicRoute>
+              } 
+            />
 
-          {/* Protected Routes */}
-          <Route
-            path="/"
-            element={
-              <PrivateRoute>
-                <Dashboard />
-              </PrivateRoute>
-            }
-          />
+            {/* Protected Routes */}
+            <Route
+              path="/"
+              element={
+                <PrivateRoute>
+                  <Dashboard />
+                </PrivateRoute>
+              }
+            />
 
-          <Route
-            path="/dashboard"
-            element={
-              <PrivateRoute>
-                <Dashboard />
-              </PrivateRoute>
-            }
-          />
+            <Route
+              path="/dashboard"
+              element={
+                <PrivateRoute>
+                  <Dashboard />
+                </PrivateRoute>
+              }
+            />
 
-          <Route
-            path="/settings"
-            element={
-              <PrivateRoute>
-                <SettingsPage />
-              </PrivateRoute>
-            }
-          />
-
-          {/* Catch all route - redirect to dashboard */}
-          <Route 
-            path="*" 
-            element={<Navigate to="/dashboard" replace />} 
-          />
-        </Routes>
-      </Router>
-    </ChakraProvider>
+            <Route
+              path="/settings"
+              element={
+                <PrivateRoute>
+                  <SettingsPage />
+                </PrivateRoute>
+              }
+            />
+            
+            {/* Catch all route - redirect to dashboard */}
+            <Route 
+              path="*" 
+              element={<Navigate to="/dashboard" replace />} 
+            />
+          </Routes>
+        </Router>
+      </ChakraProvider>
+      {process.env.NODE_ENV === 'development' && <ReactQueryDevtools />}
+    </QueryClientProvider>
   );
 }
 

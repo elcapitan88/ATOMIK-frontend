@@ -3,7 +3,7 @@ import axiosInstance from '@/services/axiosConfig';
 
 class WebhookApi {
     constructor() {
-        this.baseUrl = '/api/webhooks';
+        this.baseUrl = '/api/v1/webhooks';
     }
 
     async errorHandler(apiCall) {
@@ -17,9 +17,24 @@ class WebhookApi {
     }
 
     async generateWebhook(webhookData) {
-        return this.errorHandler(() => 
-            axiosInstance.post(`${this.baseUrl}/generate/`, webhookData)
-        );
+        try {
+            console.log('Sending webhook data:', webhookData);
+            const response = await axiosInstance.post(
+                `${this.baseUrl}/generate`,  // Remove trailing slash
+                webhookData,
+                {
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                }
+            );
+            console.log('Response:', response.data);
+            return response.data;
+        } catch (error) {
+            console.error('Webhook creation error:', error);
+            console.error('Error response:', error.response?.data);
+            throw error;
+        }
     }
 
     async listWebhooks() {

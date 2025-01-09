@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Box, VStack, Text, Flex, Link, Popover, PopoverTrigger, PopoverContent, PopoverHeader, PopoverBody, useToast } from '@chakra-ui/react';
+import { Box, VStack, Text, Flex, Popover, PopoverTrigger, PopoverContent, PopoverHeader, PopoverBody, useToast } from '@chakra-ui/react';
 import { useNavigate } from 'react-router-dom';
 import { Settings, HelpCircle, Download, LogOut, ChevronDown, User } from 'lucide-react';
-import axios from '@/services/axiosConfig';
+import { useAuth } from '@/contexts/AuthContext';
+import authService from '@/services/auth/authService';
 
 const MenuItem = ({ icon: Icon, children, onClick, external }) => (
   <Flex
@@ -35,6 +36,7 @@ const Menu = ({ onSelectItem }) => {
   
   const navigate = useNavigate();
   const toast = useToast();
+  const { logout } = useAuth();
 
   useEffect(() => {
     const token = localStorage.getItem('access_token');
@@ -57,8 +59,8 @@ const Menu = ({ onSelectItem }) => {
 
   const handleLogout = async () => {
     try {
-      await axios.post('/api/auth/logout/');
-      localStorage.removeItem('access_token');
+      await authService.logout();
+      logout(); // Update auth context
       toast({
         title: "Logged out successfully",
         status: "success",

@@ -24,8 +24,6 @@ import {
 import { 
   Settings, 
   Trash2, 
-  Copy, 
-  CheckCircle,
   MoreVertical,
   RefreshCw,
   Clock,
@@ -35,44 +33,35 @@ import { webhookApi } from '@/services/api/Webhooks/webhookApi';
 import useWebSocket from '@/hooks/useWebSocket';
 import { formatDate } from '@/utils/formatting/date';
 
-const scrollbarStyles = {
-  "&::-webkit-scrollbar": {
-    width: "8px",
-    height: "8px",
-  },
-  "&::-webkit-scrollbar-track": {
-    background: "rgba(255, 255, 255, 0.1)",
-    borderRadius: "4px",
-  },
-  "&::-webkit-scrollbar-thumb": {
-    background: "rgba(255, 255, 255, 0.2)",
-    borderRadius: "4px",
-    "&:hover": {
-      background: "rgba(255, 255, 255, 0.3)",
-    },
-  },
-};
-
 const CopyableUrl = ({ webhook }) => {
-  const url = webhook.webhook_url;
-  const { hasCopied, onCopy } = useClipboard(url);
+  const fullUrl = `${webhook.webhook_url}?secret=${webhook.secret_key}`;
+  
+  const abbreviateText = (text, startLength = 8, endLength = 6) => {
+    if (!text) return '';
+    if (text.length <= startLength + endLength) return text;
+    return `${text.substring(0, startLength)}...${text.substring(text.length - endLength)}`;
+  };
+
+  const displayUrl = abbreviateText(webhook.webhook_url, 15, 8);
+  const displaySecret = abbreviateText(webhook.secret_key, 6, 4);
+  const displayText = `${displayUrl}?secret=${displaySecret}`;
+
+  const { hasCopied, onCopy } = useClipboard(fullUrl);
   
   return (
-    <Tooltip label={hasCopied ? "Copied!" : "Click to copy"}>
+    <Tooltip 
+      label={hasCopied ? "Copied!" : "Click to copy URL"}
+      placement="top"
+      hasArrow
+    >
       <Text
         fontSize="sm"
-        isTruncated
-        maxW="300px"
         cursor="pointer"
         onClick={onCopy}
         color="whiteAlpha.800"
         _hover={{ color: "white" }}
-        display="flex"
-        alignItems="center"
-        gap={2}
       >
-        {url}
-        {hasCopied ? <CheckCircle size={14} /> : <Copy size={14} />}
+        {displayText}
       </Text>
     </Tooltip>
   );
@@ -94,6 +83,7 @@ const WebhooksView = ({ onDetailsOpen, onDeleteOpen, setSelectedWebhook, onWebho
       setWebhooks(response);
       setError(null);
     } catch (error) {
+      console.error('Error fetching webhooks:', error);
       setError(error.message);
       toast({
         title: "Error fetching webhooks",
@@ -178,30 +168,40 @@ const WebhooksView = ({ onDetailsOpen, onDeleteOpen, setSelectedWebhook, onWebho
 
   if (isLoading) {
     return (
-      <Flex justify="center" align="center" height="100%" width="100%">
-        <Spinner size="xl" color="blue.500" />
-      </Flex>
+      <Box h="full" w="full">
+        <Flex justify="center" align="center" h="full">
+          <Spinner size="xl" color="blue.500" />
+        </Flex>
+      </Box>
     );
   }
 
   if (error) {
     return (
-      <Flex justify="center" align="center" height="100%" width="100%">
-        <Text color="red.400">{error}</Text>
-      </Flex>
+      <Box h="full" w="full">
+        <Flex justify="center" align="center" h="full">
+          <Text color="red.400">{error}</Text>
+        </Flex>
+      </Box>
     );
   }
 
   if (!webhooks || webhooks.length === 0) {
     return (
-      <Flex justify="center" align="center" height="100%" width="100%">
-        <Text color="whiteAlpha.600">No webhooks configured</Text>
-      </Flex>
+      <Box h="full" w="full">
+        <Flex justify="center" align="center" h="full">
+          <Text color="whiteAlpha.600">No webhooks configured</Text>
+        </Flex>
+      </Box>
     );
   }
 
   return (
-    <Box maxH="250px" overflowY="auto" sx={scrollbarStyles} width="100%">
+    <Box 
+      h="full" 
+      w="full"
+      position="relative"
+    >
       <Flex justify="space-between" align="center" mb={4} px={4}>
         <HStack spacing={4}>
           <Text fontSize="lg" fontWeight="semibold" color="white">
@@ -226,99 +226,111 @@ const WebhooksView = ({ onDetailsOpen, onDeleteOpen, setSelectedWebhook, onWebho
         />
       </Flex>
 
-      <Table variant="unstyled" size="sm" width="100%">
-        <Thead>
-          <Tr>
-            <Th color="whiteAlpha.600">Name</Th>
-            <Th color="whiteAlpha.600">URL</Th>
-            <Th color="whiteAlpha.600">Last Triggered</Th>
-            <Th color="whiteAlpha.600">Details</Th>
-            <Th color="whiteAlpha.600" width="100px">Actions</Th>
-          </Tr>
-        </Thead>
-        <Tbody>
-          {webhooks.map((webhook) => (
-            <Tr 
-              key={webhook.token}
-              _hover={{ bg: 'whiteAlpha.100' }}
-              transition="background 0.2s"
-            >
-              <Td color="white">
-                <Text fontWeight="medium">
-                  {webhook.name || 'Unnamed Webhook'}
-                </Text>
-                <Text fontSize="xs" color="whiteAlpha.600">
-                  {webhook.source_type}
-                </Text>
-              </Td>
-              <Td>
-                <CopyableUrl webhook={webhook} />
-              </Td>
-              <Td color="whiteAlpha.800">
-                <HStack spacing={2}>
-                  <Clock size={14} />
-                  <Text>
-                    {webhook.last_triggered ? formatDate(webhook.last_triggered) : 'Never'}
-                  </Text>
-                </HStack>
-              </Td>
-              <Td>
-                {webhook.details ? (
-                  <Tooltip 
-                    label={webhook.details}
-                    placement="top"
-                    hasArrow
-                    bg="gray.800"
-                    color="white"
-                    maxW="300px"
-                  >
-                    <Box>
-                      <Info size={14} color="whiteAlpha.600" />
-                    </Box>
-                  </Tooltip>
-                ) : (
-                  <Text color="whiteAlpha.400" fontSize="xs">No details</Text>
-                )}
-              </Td>
-              <Td>
-                <Menu>
-                  <MenuButton
-                    as={IconButton}
-                    icon={<MoreVertical size={16} color="white" />}
-                    variant="ghost"
-                    size="sm"
-                    _hover={{ bg: 'transparent' }}
-                    _active={{ bg: 'transparent' }}
-                    _expanded={{ bg: 'transparent' }}
-                  />
-                  <MenuList 
-                    bg="rgba(26, 32, 44, 0.9)"
-                    borderColor="whiteAlpha.200"
-                  >
-                    <MenuItem
-                      icon={<Settings size={14} />}
-                      onClick={() => handleWebhookAction(webhook, 'details')}
-                      _hover={{ bg: 'whiteAlpha.200' }}
-                      bg="rgba(26, 32, 44, 0.9)"
-                    >
-                      Setup
-                    </MenuItem>
-                    <MenuItem
-                      icon={<Trash2 size={14} />}
-                      onClick={() => handleWebhookAction(webhook, 'delete')}
-                      color="red.300"
-                      _hover={{ bg: 'red.900' }}
-                      bg="rgba(26, 32, 44, 0.9)"
-                    >
-                      Delete
-                    </MenuItem>
-                  </MenuList>
-                </Menu>
-              </Td>
+      <Box
+        overflowY="auto"
+        h="calc(100% - 60px)"
+        css={{
+          '&::-webkit-scrollbar': {
+            display: 'none'
+          },
+          'scrollbarWidth': 'none',
+          '-ms-overflow-style': 'none'
+        }}
+      >
+        <Table variant="unstyled" size="sm">
+          <Thead>
+            <Tr>
+              <Th color="whiteAlpha.600">Name</Th>
+              <Th color="whiteAlpha.600" width="50%">URL</Th>
+              <Th color="whiteAlpha.600">Last Triggered</Th>
+              <Th color="whiteAlpha.600">Details</Th>
+              <Th color="whiteAlpha.600" width="80px">Actions</Th>
             </Tr>
-          ))}
-        </Tbody>
-      </Table>
+          </Thead>
+          <Tbody>
+            {webhooks.map((webhook) => (
+              <Tr 
+                key={webhook.token}
+                _hover={{ bg: 'whiteAlpha.100' }}
+                transition="background 0.2s"
+              >
+                <Td color="white">
+                  <Text fontWeight="medium">
+                    {webhook.name || 'Unnamed Webhook'}
+                  </Text>
+                  <Text fontSize="xs" color="whiteAlpha.600">
+                    {webhook.source_type}
+                  </Text>
+                </Td>
+                <Td>
+                  <CopyableUrl webhook={webhook} />
+                </Td>
+                <Td color="whiteAlpha.800">
+                  <HStack spacing={2}>
+                    <Clock size={14} />
+                    <Text>
+                      {webhook.last_triggered ? formatDate(webhook.last_triggered) : 'Never'}
+                    </Text>
+                  </HStack>
+                </Td>
+                <Td>
+                  {webhook.details ? (
+                    <Tooltip 
+                      label={webhook.details}
+                      placement="top"
+                      hasArrow
+                      bg="gray.800"
+                      color="white"
+                      maxW="300px"
+                    >
+                      <Box>
+                        <Info size={14} color="white" />
+                      </Box>
+                    </Tooltip>
+                  ) : (
+                    <Text color="whiteAlpha.400" fontSize="xs">No details</Text>
+                  )}
+                </Td>
+                <Td>
+                  <Menu>
+                    <MenuButton
+                      as={IconButton}
+                      icon={<MoreVertical size={16} color="white" />}
+                      variant="ghost"
+                      size="sm"
+                      _hover={{ bg: 'transparent' }}
+                      _active={{ bg: 'transparent' }}
+                      _expanded={{ bg: 'transparent' }}
+                    />
+                    <MenuList 
+                      bg="rgba(26, 32, 44, 0.9)"
+                      borderColor="whiteAlpha.200"
+                    >
+                      <MenuItem
+                        icon={<Settings size={14} />}
+                        onClick={() => handleWebhookAction(webhook, 'details')}
+                        _hover={{ bg: 'whiteAlpha.200' }}
+                        bg="transparent"
+                      >
+                        Setup
+                      </MenuItem>
+                      <MenuItem
+                        icon={<Trash2 size={14} />}
+                        onClick={() => handleWebhookAction(webhook, 'delete')}
+                        color="red.300"
+                        _hover={{ bg: 'red.900' }}
+                        bg="transparent"
+                      >
+                        Delete
+                      </MenuItem>
+                    </MenuList>
+                  </Menu>
+                </Td>
+              </Tr>
+            ))}
+          </Tbody>
+        </Table>
+      </Box>
     </Box>
   );
 };

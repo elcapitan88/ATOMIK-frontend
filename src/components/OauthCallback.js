@@ -1,50 +1,42 @@
 import React, { useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import axios from 'axios';
 import { Box, Text, Spinner } from '@chakra-ui/react';
+import { useOAuth } from '@/hooks/useOAuth';
 
 const OAuthCallback = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { handleCallback } = useOAuth();
 
   useEffect(() => {
-    const handleCallback = async () => {
-      const urlParams = new URLSearchParams(location.search);
-      const code = urlParams.get('code');
+    const processCallback = async () => {
+      try {
+        const urlParams = new URLSearchParams(location.search);
+        const code = urlParams.get('code');
+        const state = urlParams.get('state');
 
-      if (code) {
-        try {
-          const response = await axios.get(`/tradovate/oauth-callback/?code=${code}`);
-          const { access_token, md_access_token } = response.data;
-
-          // Store tokens securely (e.g., in HttpOnly cookies via your backend)
-          // For now, we'll just log them
-          console.log('Access Token:', access_token);
-          console.log('MD Access Token:', md_access_token);
-
-          // TODO: Update your app state to reflect successful authentication
-
-          // Redirect to the main dashboard or appropriate page
+        if (!code) {
+          console.error('No code provided in OAuth callback');
           navigate('/dashboard');
-        } catch (error) {
-          console.error('Error during OAuth callback:', error);
-          // Handle error (e.g., show an error message to the user)
-          navigate('/error');
+          return;
         }
-      } else {
-        console.error('No code provided in OAuth callback');
-        navigate('/error');
+
+        await handleCallback('tradovate', code);
+        navigate('/dashboard');
+      } catch (error) {
+        console.error('Error during OAuth callback:', error);
+        navigate('/dashboard');
       }
     };
 
-    handleCallback();
-  }, [location, navigate]);
+    processCallback();
+  }, [location, navigate, handleCallback]);
 
   return (
-    <Box display="flex" justifyContent="center" alignItems="center" height="100vh">
+    <Box display="flex" justifyContent="center" alignItems="center" height="100vh" bg="background">
       <Box textAlign="center">
-        <Spinner size="xl" mb={4} />
-        <Text fontSize="xl">Completing authentication...</Text>
+        <Spinner size="xl" mb={4} color="blue.500" />
+        <Text fontSize="xl" color="white">Completing authentication...</Text>
       </Box>
     </Box>
   );

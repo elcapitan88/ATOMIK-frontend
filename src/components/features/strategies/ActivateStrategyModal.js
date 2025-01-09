@@ -7,7 +7,6 @@ import {
   ModalBody,
   Button,
   Box,
-  Flex,
   Text,
   VStack,
   Select,
@@ -19,10 +18,16 @@ import {
   NumberDecrementStepper,
   Input,
   useToast,
-  Divider
+  Divider,
+  Alert,
+  AlertIcon,
+  ModalCloseButton,
 } from '@chakra-ui/react';
-import tradovateApi from '@/services/api/brokers/tradovate/tradovateApi';
+import axiosInstance from '@/services/axiosConfig';
+import { useStrategies } from '@/hooks/useStrategies';
 import { webhookApi } from '@/services/api/Webhooks/webhookApi';
+
+
 
 const glassEffect = {
   bg: "rgba(255, 255, 255, 0.1)",
@@ -47,10 +52,7 @@ const selectStyles = {
   sx: {
     backgroundColor: "rgba(255, 255, 255, 0.05) !important",
     "& option": {
-      background: "rgba(26, 32, 44, 0.9)",
-      _hover: {
-        background: "rgba(255, 255, 255, 0.1)"
-      }
+      background: "rgba(26, 32, 44, 0.9)"
     }
   }
 };
@@ -80,21 +82,30 @@ const ActivateStrategyModal = ({ isOpen, onClose, onSubmit, strategy = null }) =
   
   const [accounts, setAccounts] = useState([]);
   const [webhooks, setWebhooks] = useState([]);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { createStrategy, isCreating, createStrategyError } = useStrategies();
   const toast = useToast();
 
-  const tickers = ['NQZ4', 'MNQ24', 'ESZ4', 'MESZ4'];
+  const tickers = ['ESZ4', 'NQZ4', 'MNQ24', 'MESZ4']; // Your available tickers
 
   useEffect(() => {
     if (isOpen) {
       const fetchData = async () => {
         try {
+          console.log('Fetching accounts and webhooks...');
           const [accountsResponse, webhooksResponse] = await Promise.all([
-            tradovateApi.fetchAccounts(),
+            axiosInstance.get('/api/v1/brokers/tradovate/accounts'),
             webhookApi.listWebhooks()
           ]);
 
-          setAccounts(accountsResponse);
+          // Log the raw response
+          console.log('Raw accounts response:', accountsResponse);
+
+          // Make sure we're using the data property and it's an array
+          const accountsData = accountsResponse?.data || [];
+          console.log('Accounts data to be set:', accountsData);
+
+          // Set the accounts state
+          setAccounts(accountsData);
           setWebhooks(webhooksResponse);
 
           if (webhooksResponse.length > 0) {
@@ -103,7 +114,13 @@ const ActivateStrategyModal = ({ isOpen, onClose, onSubmit, strategy = null }) =
               selectedWebhook: webhooksResponse[0].token
             }));
           }
+
+          // If editing, populate form data
+          if (strategy) {
+            // ... strategy population code ...
+          }
         } catch (error) {
+          console.error('Error fetching data:', error);
           toast({
             title: "Error fetching data",
             description: error.message,
@@ -116,42 +133,70 @@ const ActivateStrategyModal = ({ isOpen, onClose, onSubmit, strategy = null }) =
 
       fetchData();
     }
-  }, [isOpen, toast]);
+  }, [isOpen, strategy, toast]);
 
   const handleSubmit = async () => {
-    setIsSubmitting(true);
     try {
-      const strategyData = {
-        type: formData.selectedType,
-        webhookToken: formData.selectedWebhook,
-        ticker: formData.selectedTicker,
-        ...(formData.selectedType === 'single' ? {
-          accountId: formData.selectedAccount,
-          quantity: formData.quantity
-        } : {
-          leaderAccountId: formData.selectedLeaderAccount,
-          followerAccountIds: formData.selectedFollowerAccounts,
-          leaderQuantity: formData.leaderQuantity,
-          followerQuantity: formData.followerQuantity,
-          groupName: formData.groupName
-        })
-      };
+        const strategyData = {
+            strategy_type: formData.selectedType,
+            webhook_id: formData.selectedWebhook,
+            ticker: formData.selectedTicker,
+            ...(formData.selectedType === 'single' 
+                ? {
+                    account_id: formData.selectedAccount,
+                    quantity: Number(formData.quantity)
+                } 
+                : {
+                    leader_account_id: formData.selectedLeaderAccount,
+                    follower_account_ids: formData.selectedFollowerAccounts,
+                    leader_quantity: Number(formData.leaderQuantity),
+                    follower_quantity: Number(formData.followerQuantity),
+                    group_name: formData.groupName
+                }
+            )
+        };
 
-      await onSubmit(strategyData);
-      onClose();
-      
-    } catch (error) {
-      toast({
-        title: "Error activating strategy",
-        description: error.message,
-        status: "error",
-        duration: 5000,
-        isClosable: true,
-      });
-    } finally {
-      setIsSubmitting(false);
+        console.log('Submitting strategy data:', strategyData);
+        
+        // Use createStrategy instead of onSubmit
+        await createStrategy(strategyData);
+        onClose();
+        
+        // Show success message
+        toast({
+            title: "Strategy Created",
+            description: "Strategy has been successfully activated",
+            status: "success",
+            duration: 3000,
+            isClosable: true,
+        });
+
+        // Close modal and reset form
+        onClose();
+        setFormData({
+            selectedType: 'single',
+            selectedAccount: '',
+            selectedLeaderAccount: '',
+            selectedFollowerAccounts: [],
+            selectedWebhook: webhooks[0]?.token || '',
+            quantity: 1,
+            leaderQuantity: 1,
+            followerQuantity: 1,
+            selectedTicker: '',
+            groupName: ''
+        });
+        
+      } catch (error) {
+        console.error('Strategy submission error:', error);
+        toast({
+            title: "Error creating strategy",
+            description: error.message,
+            status: "error",
+            duration: 5000,
+            isClosable: true,
+        });
     }
-  };
+};
 
   const validateForm = () => {
     if (formData.selectedType === 'single') {
@@ -172,7 +217,7 @@ const ActivateStrategyModal = ({ isOpen, onClose, onSubmit, strategy = null }) =
       onClose={onClose} 
       isCentered
       size="xl"
-      closeOnOverlayClick={!isSubmitting}
+      closeOnOverlayClick={!isCreating}
     >
       <ModalOverlay bg="blackAlpha.300" backdropFilter="blur(5px)" />
       <ModalContent 
@@ -187,9 +232,17 @@ const ActivateStrategyModal = ({ isOpen, onClose, onSubmit, strategy = null }) =
         <ModalHeader borderBottom="1px solid rgba(255, 255, 255, 0.18)" pb={4}>
           {strategy ? 'Update Strategy' : 'Create New Strategy'}
         </ModalHeader>
-
+        <ModalCloseButton />
+   
         <ModalBody py={4}>
           <VStack spacing={4} align="stretch">
+            {createStrategyError && (
+              <Alert status="error" borderRadius="md">
+                <AlertIcon />
+                {createStrategyError.message}
+              </Alert>
+            )}
+   
             <HStack width="full" spacing={4}>
               <Button
                 flex={1}
@@ -222,9 +275,11 @@ const ActivateStrategyModal = ({ isOpen, onClose, onSubmit, strategy = null }) =
                 Multiple Account
               </Button>
             </HStack>
-
+   
             <Divider borderColor="whiteAlpha.300" />
-
+   
+            {console.log('Rendering with accounts:', accounts)}
+   
             {formData.selectedType === 'single' ? (
               <VStack spacing={3} align="stretch">
                 <StrategyFormInput label="Trading Account">
@@ -237,14 +292,18 @@ const ActivateStrategyModal = ({ isOpen, onClose, onSubmit, strategy = null }) =
                     }))}
                     placeholder="Select Trading Account"
                   >
-                    {accounts.map(account => (
-                      <option key={account.account_id} value={account.account_id}>
-                        {account.nickname || account.name || account.account_id}
-                      </option>
-                    ))}
+                    {console.log('Accounts before mapping:', accounts)}
+                    {(accounts || []).map(account => {
+                      console.log('Mapping account:', account);
+                      return (
+                        <option key={account.account_id} value={account.account_id}>
+                          {account.name || account.account_id}
+                        </option>
+                      );
+                    })}
                   </Select>
                 </StrategyFormInput>
-
+   
                 <HStack spacing={6} align="flex-start">
                   <StrategyFormInput label="Quantity" flex={1}>
                     <NumberInput
@@ -262,7 +321,7 @@ const ActivateStrategyModal = ({ isOpen, onClose, onSubmit, strategy = null }) =
                       </NumberInputStepper>
                     </NumberInput>
                   </StrategyFormInput>
-
+   
                   <StrategyFormInput label="Ticker" flex={1}>
                     <Select
                       {...selectStyles}
@@ -293,7 +352,7 @@ const ActivateStrategyModal = ({ isOpen, onClose, onSubmit, strategy = null }) =
                     placeholder="Enter group name"
                   />
                 </StrategyFormInput>
-
+   
                 <HStack spacing={4} align="flex-start">
                   <StrategyFormInput label="Leader Account" flex={2}>
                     <Select
@@ -305,14 +364,14 @@ const ActivateStrategyModal = ({ isOpen, onClose, onSubmit, strategy = null }) =
                       }))}
                       placeholder="Select Leader Account"
                     >
-                      {accounts.map(account => (
+                      {(accounts || []).map(account => (
                         <option key={account.account_id} value={account.account_id}>
-                          {account.nickname || account.name || account.account_id}
+                          {account.name || account.account_id}
                         </option>
                       ))}
                     </Select>
                   </StrategyFormInput>
-
+   
                   <StrategyFormInput label="Leader Quantity" flex={1}>
                     <NumberInput
                       min={1}
@@ -330,7 +389,7 @@ const ActivateStrategyModal = ({ isOpen, onClose, onSubmit, strategy = null }) =
                     </NumberInput>
                   </StrategyFormInput>
                 </HStack>
-
+   
                 <HStack spacing={4} align="flex-start">
                   <StrategyFormInput label="Follower Accounts" flex={2}>
                     <Select
@@ -343,18 +402,20 @@ const ActivateStrategyModal = ({ isOpen, onClose, onSubmit, strategy = null }) =
                       }))}
                       height="100px"
                     >
-                      {accounts.map(account => (
-                        <option
-                          key={account.account_id}
-                          value={account.account_id}
-                          disabled={account.account_id === formData.selectedLeaderAccount}
-                        >
-                          {account.nickname || account.name || account.account_id}
-                        </option>
-                      ))}
+                      {(accounts || [])
+                        .filter(account => account.account_id !== formData.selectedLeaderAccount)
+                        .map(account => (
+                          <option 
+                            key={account.account_id} 
+                            value={account.account_id}
+                          >
+                            {account.name || account.account_id}
+                          </option>
+                        ))
+                      }
                     </Select>
                   </StrategyFormInput>
-
+   
                   <StrategyFormInput label="Follower Quantity" flex={1}>
                     <NumberInput
                       min={1}
@@ -372,7 +433,7 @@ const ActivateStrategyModal = ({ isOpen, onClose, onSubmit, strategy = null }) =
                     </NumberInput>
                   </StrategyFormInput>
                 </HStack>
-
+   
                 <StrategyFormInput label="Ticker">
                   <Select
                     {...selectStyles}
@@ -390,7 +451,7 @@ const ActivateStrategyModal = ({ isOpen, onClose, onSubmit, strategy = null }) =
                 </StrategyFormInput>
               </VStack>
             )}
-
+   
             <StrategyFormInput label="Webhook">
               <Select
                 {...selectStyles}
@@ -408,12 +469,12 @@ const ActivateStrategyModal = ({ isOpen, onClose, onSubmit, strategy = null }) =
                 ))}
               </Select>
             </StrategyFormInput>
-
+   
             <Button
               width="full"
               colorScheme="green"
               onClick={handleSubmit}
-              isLoading={isSubmitting}
+              isLoading={isCreating}
               loadingText={strategy ? "Updating..." : "Creating..."}
               isDisabled={!validateForm()}
               size="lg"
@@ -435,7 +496,7 @@ const ActivateStrategyModal = ({ isOpen, onClose, onSubmit, strategy = null }) =
         </ModalBody>
       </ModalContent>
     </Modal>
-  );
+   );
 };
 
 export default ActivateStrategyModal;

@@ -1,32 +1,28 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
-  Box, 
+  Box,
   Flex,
   Button,
   Text,
   useDisclosure,
-  useToast,
   VStack,
   IconButton,
   Switch,
   Spinner,
   Alert,
   AlertIcon,
-  AlertTitle,
-  AlertDescription,
   Divider
 } from '@chakra-ui/react';
 import { 
   Settings,
   Trash2,
   PlusCircle,
-  RefreshCw
 } from 'lucide-react';
-import { strategiesApi } from '@/services/api/strategies/strategiesApi';
+import { useStrategies } from '@/hooks/useStrategies';
 import ActivateStrategyModal from './ActivateStrategyModal';
 import DeleteStrategy from './DeleteStrategy';
 
-const StrategyItem = ({ strategy, onToggle, onDelete, onUpdate }) => (
+const StrategyItem = ({ strategy, onToggle, onDelete, onUpdate, isToggling }) => (
   <Box 
     bg="whiteAlpha.100" 
     borderRadius="lg"
@@ -42,8 +38,8 @@ const StrategyItem = ({ strategy, onToggle, onDelete, onUpdate }) => (
         </Text>
         <Text fontSize="xs" color="whiteAlpha.700">
           {strategy.type === 'single' 
-            ? `Account: ${strategy.accountId.slice(-4)} • Qty: ${strategy.quantity}`
-            : `Leader: ${strategy.leaderAccountId.slice(-4)} • Followers: ${strategy.followerAccountIds?.length || 0}`}
+            ? `Account: ${strategy.accountId ? strategy.accountId.slice(-4) : 'N/A'} • Qty: ${strategy.quantity || 0}`
+            : `Leader: ${strategy.leaderAccountId ? strategy.leaderAccountId.slice(-4) : 'N/A'} • Followers: ${strategy.followerAccountIds?.length || 0}`}
         </Text>
       </Flex>
 
@@ -61,6 +57,7 @@ const StrategyItem = ({ strategy, onToggle, onDelete, onUpdate }) => (
           colorScheme="green"
           isChecked={strategy.isActive}
           onChange={() => onToggle(strategy.id)}
+          isDisabled={isToggling}
           size="sm"
           mx={1}
         />
@@ -78,7 +75,7 @@ const StrategyItem = ({ strategy, onToggle, onDelete, onUpdate }) => (
   </Box>
 );
 
-const StrategyGroup = ({ title, strategies, onToggle, onDelete, onUpdate }) => (
+const StrategyGroup = ({ title, strategies, onToggle, onDelete, onUpdate, isToggling }) => (
   <Box mb={4}>
     <Text fontSize="sm" color="whiteAlpha.600" mb={2}>
       {title} ({strategies.length})
@@ -91,6 +88,7 @@ const StrategyGroup = ({ title, strategies, onToggle, onDelete, onUpdate }) => (
           onToggle={onToggle}
           onDelete={onDelete}
           onUpdate={onUpdate}
+          isToggling={isToggling}
         />
       ))}
     </VStack>
@@ -98,12 +96,7 @@ const StrategyGroup = ({ title, strategies, onToggle, onDelete, onUpdate }) => (
 );
 
 const ActivateStrategies = () => {
-  const [strategies, setStrategies] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [selectedStrategy, setSelectedStrategy] = useState(null);
-  const [isRefreshing, setIsRefreshing] = useState(false);
-
   const { 
     isOpen: isActivateOpen, 
     onOpen: onActivateOpen, 
@@ -116,122 +109,29 @@ const ActivateStrategies = () => {
     onClose: onDeleteClose 
   } = useDisclosure();
 
-  const toast = useToast();
-
-  const fetchStrategies = useCallback(async (showLoading = true) => {
-    try {
-      if (showLoading) setIsLoading(true);
-      setError(null);
-      const response = await strategiesApi.listStrategies();
-      setStrategies(response);
-      
-      localStorage.setItem('cachedStrategies', JSON.stringify({
-        data: response,
-        timestamp: Date.now()
-      }));
-
-    } catch (error) {
-      setError(error.message);
-      toast({
-        title: "Error fetching strategies",
-        description: error.message,
-        status: "error",
-        duration: 5000,
-        isClosable: true,
-      });
-    } finally {
-      if (showLoading) setIsLoading(false);
-    }
-  }, [toast]);
-
-  useEffect(() => {
-    const loadStrategies = async () => {
-      const cached = localStorage.getItem('cachedStrategies');
-      if (cached) {
-        const { data, timestamp } = JSON.parse(cached);
-        const isCacheValid = Date.now() - timestamp < 5 * 60 * 1000;
-
-        if (isCacheValid) {
-          setStrategies(data);
-          setIsLoading(false);
-          fetchStrategies(false);
-          return;
-        }
-      }
-      await fetchStrategies();
-    };
-
-    loadStrategies();
-  }, [fetchStrategies]);
-
-  useEffect(() => {
-    const refreshInterval = setInterval(() => {
-      fetchStrategies(false);
-    }, 30000);
-
-    return () => clearInterval(refreshInterval);
-  }, [fetchStrategies]);
-
-  const handleRefresh = async () => {
-    setIsRefreshing(true);
-    await fetchStrategies(false);
-    setIsRefreshing(false);
-  };
+  // Use our new strategies hook
+  const {
+    strategies = [],
+    isLoading,
+    isError,
+    error,
+    createStrategy,
+    toggleStrategy,
+    deleteStrategy,
+    isToggling,
+    isDeleting
+  } = useStrategies();
 
   const handleActivateStrategy = useCallback(async (strategyData) => {
-    try {
-      const response = await strategiesApi.activateStrategy(strategyData);
-      setStrategies(prev => [...prev, response]);
-      toast({
-        title: "Strategy Activated",
-        status: "success",
-        duration: 3000,
-        isClosable: true,
-      });
-      return response;
-    } catch (error) {
-      toast({
-        title: "Error activating strategy",
-        description: error.message,
-        status: "error",
-        duration: 5000,
-        isClosable: true,
-      });
-      throw error;
-    }
-  }, [toast]);
+    await createStrategy(strategyData);
+    onActivateClose();
+    setSelectedStrategy(null);
+  }, [createStrategy, onActivateClose]);
 
   const handleUpdateStrategy = useCallback((strategy) => {
     setSelectedStrategy(strategy);
     onActivateOpen();
   }, [onActivateOpen]);
-
-  const handleToggleStrategy = async (strategyId) => {
-    try {
-      await strategiesApi.toggleStrategy(strategyId);
-      setStrategies(prev =>
-        prev.map(strategy =>
-          strategy.id === strategyId
-            ? { ...strategy, isActive: !strategy.isActive }
-            : strategy
-        )
-      );
-      toast({
-        title: "Strategy Updated",
-        status: "success",
-        duration: 3000,
-        isClosable: true,
-      });
-    } catch (error) {
-      toast({
-        title: "Error updating strategy",
-        description: error.message,
-        status: "error",
-        duration: 5000,
-        isClosable: true,
-      });
-    }
-  };
 
   const handleDeleteClick = useCallback((strategy) => {
     setSelectedStrategy(strategy);
@@ -239,31 +139,13 @@ const ActivateStrategies = () => {
   }, [onDeleteOpen]);
 
   const handleDeleteConfirm = async () => {
-    try {
-      await strategiesApi.deleteStrategy(selectedStrategy.id);
-      setStrategies(prev =>
-        prev.filter(strategy => strategy.id !== selectedStrategy.id)
-      );
-      toast({
-        title: "Strategy Deleted",
-        status: "success",
-        duration: 3000,
-        isClosable: true,
-      });
-      onDeleteClose();
-    } catch (error) {
-      toast({
-        title: "Error deleting strategy",
-        description: error.message,
-        status: "error",
-        duration: 5000,
-        isClosable: true,
-      });
-    }
+    await deleteStrategy(selectedStrategy.id);
+    onDeleteClose();
+    setSelectedStrategy(null);
   };
 
   // Group strategies by type
-  const groupedStrategies = strategies.reduce(
+  const groupedStrategies = (strategies || []).reduce(
     (acc, strategy) => {
       if (strategy.type === 'single') {
         acc.single.push(strategy);
@@ -283,19 +165,14 @@ const ActivateStrategies = () => {
     );
   }
 
-  if (error) {
+  if (isError) {
     return (
       <Alert status="error" borderRadius="xl" bg="red.900" color="white">
         <AlertIcon />
         <Box flex="1">
-          <AlertTitle>Error loading strategies</AlertTitle>
-          <AlertDescription display="block">
-            {error}
-          </AlertDescription>
+          <Text fontWeight="bold">Error loading strategies</Text>
+          <Text>{error?.message || 'An unexpected error occurred'}</Text>
         </Box>
-        <Button onClick={() => fetchStrategies()} ml={3} variant="outline">
-          Retry
-        </Button>
       </Alert>
     );
   }
@@ -339,9 +216,10 @@ const ActivateStrategies = () => {
               <StrategyGroup
                 title="Single Account Strategies"
                 strategies={groupedStrategies.single}
-                onToggle={handleToggleStrategy}
+                onToggle={toggleStrategy}
                 onDelete={handleDeleteClick}
                 onUpdate={handleUpdateStrategy}
+                isToggling={isToggling}
               />
             )}
             
@@ -353,9 +231,10 @@ const ActivateStrategies = () => {
               <StrategyGroup
                 title="Group Strategies"
                 strategies={groupedStrategies.group}
-                onToggle={handleToggleStrategy}
+                onToggle={toggleStrategy}
                 onDelete={handleDeleteClick}
                 onUpdate={handleUpdateStrategy}
+                isToggling={isToggling}
               />
             )}
           </VStack>
@@ -379,6 +258,7 @@ const ActivateStrategies = () => {
           setSelectedStrategy(null);
         }}
         onConfirm={handleDeleteConfirm}
+        isLoading={isDeleting}
         strategyName={selectedStrategy?.type === 'single'
           ? `${selectedStrategy?.ticker} (${selectedStrategy?.accountId})`
           : `Group: ${selectedStrategy?.groupName}`}

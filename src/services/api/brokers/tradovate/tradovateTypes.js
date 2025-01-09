@@ -1,5 +1,6 @@
 // services/api/brokers/tradovate/tradovateTypes.js
 
+
 /**
  * @typedef {Object} TradovateEnvironments
  * @property {string} DEMO - Demo environment
@@ -176,7 +177,7 @@ export const validators = {
   }
 };
 
-export default {
+const tradovateTypes = {
   TradovateEnvironment,
   AccountStatus,
   AccountType,
@@ -184,3 +185,5 @@ export default {
   PositionSide,
   validators
 };
+
+export default tradovateTypes;

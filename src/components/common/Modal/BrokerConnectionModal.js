@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Modal,
   ModalOverlay,
@@ -15,6 +15,7 @@ import {
 import { useLocation } from 'react-router-dom';
 import { AlertTriangle } from 'lucide-react';
 import { useOAuth } from '@/hooks/useOAuth';
+import { brokerAuthService } from '@/services/api/auth/brokerAuth';
 
 const glassEffect = {
   background: "rgba(255, 255, 255, 0.1)",
@@ -102,7 +103,6 @@ const BrokerConnectionModal = ({ isOpen, onClose, onAccountConnected }) => {
   const { 
     isProcessing, 
     error, 
-    initiateBrokerAuth, 
     handleCallback, 
     clearError 
   } = useOAuth();
@@ -121,10 +121,29 @@ const BrokerConnectionModal = ({ isOpen, onClose, onAccountConnected }) => {
     }
   }, [location, handleCallback, onAccountConnected, initialLoad]);
 
-  const handleBrokerSelection = (environment) => {
-    initiateBrokerAuth('tradovate', environment);
-    onClose();
-  };
+  const handleBrokerSelection = async (environment) => {
+    try {
+        const payload = {
+            environment: environment,
+            credentials: { 
+                type: 'oauth',
+                environment: environment 
+            }
+        };
+        console.log('Request payload:', payload);  // Add this
+
+        const response = await brokerAuthService.initiateTradovateOAuth(environment);
+        if (response.auth_url) {
+            window.location.href = response.auth_url;
+        } else {
+            throw new Error('No authentication URL received');
+        }
+        onClose();
+    } catch (error) {
+        console.error('OAuth initiation error:', error);
+        throw error;
+    }
+};
 
   const handleModalClose = () => {
     if (!isProcessing) {
