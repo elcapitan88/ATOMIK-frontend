@@ -1,264 +1,91 @@
-// src/hooks/useWebSocket.js
+import { useState, useRef, useCallback, useEffect } from 'react';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { useToast } from '@chakra-ui/react';
-import { Subject } from 'rxjs';
-import axiosInstance from '@/services/axiosConfig';
-
-const useWebSocket = (broker, accountId) => {
-    // State management
+const useWebSocket = (broker) => {
     const [status, setStatus] = useState('disconnected');
-    const [hasActiveAccounts, setHasActiveAccounts] = useState(false);
-    const [isChecking, setIsChecking] = useState(true);
-    const [error, setError] = useState(null);
-    const [positions, setPositions] = useState([]);
-    const [accountInfo, setAccountInfo] = useState(null);
-    
-    // References
-    const ws = useRef(null);
-    const messageSubject = useRef(new Subject());
-    const reconnectAttempts = useRef(0);
-    const reconnectTimeout = useRef(null);
-    const heartbeatInterval = useRef(null);
-    const connectionTimeout = useRef(null);
+    const wsRef = useRef(null);
+    const reconnectAttemptsRef = useRef(0);
+    const MAX_RECONNECT_ATTEMPTS = 3;
+    const RECONNECT_DELAY = 3000;
+    const lastAttemptRef = useRef(Date.now());
 
-    // Constants
-    const MAX_RECONNECT_ATTEMPTS = 5;
-    const RECONNECT_INTERVAL = 1000;
-    const HEARTBEAT_INTERVAL = 15000;
-    const CONNECTION_TIMEOUT = 5000;
-
-    const toast = useToast();
-
-    const checkAccountAccess = useCallback(async () => {
-        try {
-            const response = await axiosInstance.get('/api/tradovate/fetch-accounts/');
-            const activeAccounts = response.data.filter(account => 
-                account.active && account.status === 'active' && !account.is_token_expired
-            );
-            setHasActiveAccounts(activeAccounts.length > 0);
-            if (activeAccounts.length > 0) {
-                setAccountInfo(activeAccounts);
-            }
-            return activeAccounts.length > 0;
-        } catch (error) {
-            console.error('Error checking account access:', error);
+    const connect = useCallback(async (accountId) => {
+        if (!accountId) return false;
+        if (wsRef.current?.readyState === WebSocket.OPEN) return true;
+        
+        // Add cooldown for reconnection attempts
+        const now = Date.now();
+        if (now - lastAttemptRef.current < RECONNECT_DELAY) {
             return false;
-        } finally {
-            setIsChecking(false);
         }
-    }, []);
-
-    const handleError = useCallback((message) => {
-        console.error('WebSocket error:', message);
-        setError(message);
-        setStatus('error');
-        toast({
-            title: "Connection Error",
-            description: message,
-            status: "error",
-            duration: 5000,
-            isClosable: true,
-        });
-    }, [toast]);
-
-    const startHeartbeat = useCallback(() => {
-        if (heartbeatInterval.current) {
-            clearInterval(heartbeatInterval.current);
-        }
-
-        heartbeatInterval.current = setInterval(() => {
-            if (ws.current?.readyState === WebSocket.OPEN) {
-                ws.current.send(JSON.stringify({ type: 'heartbeat' }));
-            }
-        }, HEARTBEAT_INTERVAL);
-    }, []);
-
-    const stopHeartbeat = useCallback(() => {
-        if (heartbeatInterval.current) {
-            clearInterval(heartbeatInterval.current);
-            heartbeatInterval.current = null;
-        }
-    }, []);
-
-    const cleanupConnection = useCallback(() => {
-        if (connectionTimeout.current) {
-            clearTimeout(connectionTimeout.current);
-            connectionTimeout.current = null;
-        }
-        if (reconnectTimeout.current) {
-            clearTimeout(reconnectTimeout.current);
-            reconnectTimeout.current = null;
-        }
-        stopHeartbeat();
-        if (ws.current) {
-            ws.current.close();
-            ws.current = null;
-        }
-    }, [stopHeartbeat]);
-
-    const setupWebSocket = useCallback(() => {
-        if (!ws.current) return;
-
-        ws.current.onopen = () => {
-            console.log('WebSocket connected');
-            setStatus('connected');
-            reconnectAttempts.current = 0;
-            startHeartbeat();
-
-            if (connectionTimeout.current) {
-                clearTimeout(connectionTimeout.current);
-                connectionTimeout.current = null;
-            }
-
-            // Send initial authentication message
-            ws.current.send(JSON.stringify({
-                type: 'authenticate',
-                accountId: accountId || 'all'
-            }));
-        };
-
-        ws.current.onclose = () => {
-            console.log('WebSocket closed');
-            setStatus('disconnected');
-            stopHeartbeat();
-            handleReconnect();
-        };
-
-        ws.current.onerror = (event) => {
-            console.error('WebSocket error:', event);
-            handleError('Connection error occurred');
-        };
-
-        ws.current.onmessage = (event) => {
-            try {
-                const message = JSON.parse(event.data);
-                handleMessage(message);
-            } catch (error) {
-                console.error('Error parsing message:', error);
-            }
-        };
-    }, [accountId, startHeartbeat, stopHeartbeat, handleError]);
-
-    const handleMessage = useCallback((message) => {
-        switch (message.type) {
-            case 'position_update':
-                setPositions(message.data);
-                break;
-                
-            case 'account_update':
-                setAccountInfo(message.data);
-                break;
-                
-            case 'error':
-                handleError(message.message);
-                break;
-                
-            case 'heartbeat_response':
-                // Handle heartbeat response
-                break;
-                
-            default:
-                messageSubject.current.next(message);
-        }
-    }, [handleError]);
-
-    const handleReconnect = useCallback(() => {
-        if (reconnectAttempts.current >= MAX_RECONNECT_ATTEMPTS) {
-            handleError('Maximum reconnection attempts reached');
-            return;
-        }
-
-        const delay = RECONNECT_INTERVAL * Math.pow(2, reconnectAttempts.current);
-        console.log(`Reconnecting in ${delay}ms, attempt ${reconnectAttempts.current + 1}`);
-
-        reconnectTimeout.current = setTimeout(() => {
-            reconnectAttempts.current++;
-            connect();
-        }, delay);
-    }, []);
-
-    const connect = useCallback(async () => {
-        if (ws.current?.readyState === WebSocket.OPEN) return;
+        lastAttemptRef.current = now;
 
         try {
-            const hasAccess = await checkAccountAccess();
-            if (!hasAccess) {
-                handleError('No active trading accounts found');
-                return;
+            const token = localStorage.getItem('access_token');
+            if (!token) {
+                throw new Error('No authentication token found');
             }
-
-            cleanupConnection();
 
             const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-            const host = window.location.host;
-            const accountPath = accountId || 'all';
-            const wsUrl = `${protocol}//${host}/ws/${broker}/${accountPath}/`;
+            const host = process.env.REACT_APP_WS_HOST || window.location.host;
+            const wsUrl = `${protocol}//${host}/ws/${broker}/${accountId}?token=${token}`;
 
-            console.log('Connecting to WebSocket:', wsUrl);
-            ws.current = new WebSocket(wsUrl);
-            
-            connectionTimeout.current = setTimeout(() => {
-                if (ws.current?.readyState !== WebSocket.OPEN) {
-                    cleanupConnection();
-                    handleError('Connection timeout');
-                }
-            }, CONNECTION_TIMEOUT);
+            return new Promise((resolve, reject) => {
+                const ws = new WebSocket(wsUrl);
+                wsRef.current = ws;
 
-            setupWebSocket();
+                const timeout = setTimeout(() => {
+                    ws.close();
+                    setStatus('disconnected');
+                    resolve(false);
+                }, 10000);
+
+                ws.onopen = () => {
+                    clearTimeout(timeout);
+                    setStatus('connected');
+                    reconnectAttemptsRef.current = 0;
+                    resolve(true);
+                };
+
+                ws.onclose = () => {
+                    setStatus('disconnected');
+                    resolve(false);
+                };
+
+                ws.onerror = (error) => {
+                    clearTimeout(timeout);
+                    console.error('WebSocket connection error:', error);
+                    setStatus('disconnected');
+                    resolve(false);
+                };
+            });
         } catch (error) {
-            console.error('Connection error:', error);
-            handleError('Failed to establish connection');
+            console.error('WebSocket connection error:', error);
+            setStatus('disconnected');
+            return false;
         }
-    }, [broker, accountId, checkAccountAccess, cleanupConnection, setupWebSocket, handleError]);
+    }, [broker]);
 
-    const sendMessage = useCallback((message) => {
-        if (ws.current?.readyState === WebSocket.OPEN) {
-            ws.current.send(JSON.stringify(message));
-            return true;
+    const disconnect = useCallback(async (accountId) => {
+        if (wsRef.current) {
+            wsRef.current.close();
+            wsRef.current = null;
+            setStatus('disconnected');
         }
-        return false;
     }, []);
 
-    const subscribeToMarketData = useCallback((symbols) => {
-        if (!Array.isArray(symbols)) {
-            symbols = [symbols];
-        }
-        return sendMessage({
-            type: 'subscribe_market_data',
-            symbols: symbols
-        });
-    }, [sendMessage]);
-
-    const unsubscribeFromMarketData = useCallback((symbols) => {
-        if (!Array.isArray(symbols)) {
-            symbols = [symbols];
-        }
-        return sendMessage({
-            type: 'unsubscribe_market_data',
-            symbols: symbols
-        });
-    }, [sendMessage]);
-
+    // Cleanup on unmount
     useEffect(() => {
-        connect();
-
         return () => {
-            cleanupConnection();
+            if (wsRef.current) {
+                wsRef.current.close();
+            }
         };
-    }, [connect, cleanupConnection]);
+    }, []);
 
     return {
         status,
-        hasActiveAccounts,
-        isChecking,
-        error,
-        positions,
-        accountInfo,
-        sendMessage,
-        subscribeToMarketData,
-        unsubscribeFromMarketData,
-        connect
+        connect,
+        disconnect
     };
 };
 

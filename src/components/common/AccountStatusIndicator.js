@@ -9,6 +9,7 @@ import {
 
 const AccountStatusIndicator = ({ tokenValid, wsStatus }) => {
     const getConnectionState = () => {
+        console.log('AccountStatusIndicator state:', { tokenValid, wsStatus });
         if (!tokenValid) return CONNECTION_STATE.DISCONNECTED;
         if (!wsStatus) return CONNECTION_STATE.TOKEN_VALID;
         if (wsStatus === 'connecting') return CONNECTION_STATE.WS_CONNECTING;
@@ -19,6 +20,7 @@ const AccountStatusIndicator = ({ tokenValid, wsStatus }) => {
     const state = getConnectionState();
     const color = CONNECTION_STATE_COLORS[state];
     const message = CONNECTION_STATE_MESSAGES[state];
+    console.log('Connection state:', state); 
 
     return (
         <Tooltip label={message}>

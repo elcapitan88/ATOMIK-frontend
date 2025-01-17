@@ -60,7 +60,9 @@ export const WS_STATUS = {
 export const getWebSocketUrl = (accountId, broker = 'tradovate') => {
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
   const host = process.env.REACT_APP_WS_HOST || window.location.host;
-  return `${protocol}//${host}/ws/${broker}/${accountId}/`;
+  const token = localStorage.getItem('access_token');
+  
+  return `${protocol}//${host}/ws/${broker}/${accountId}?token=${token}`;
 };
 
 /**

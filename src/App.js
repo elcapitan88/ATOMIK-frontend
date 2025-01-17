@@ -4,7 +4,7 @@ import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-d
 import { ChakraProvider, Box, Spinner } from '@chakra-ui/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
-import { webSocketManagerInstance } from './services/websocket/webSocketManager';
+import webSocketManager from './services/websocket/webSocketManager';
 import { useAuth } from './contexts/AuthContext';
 import axiosInstance from './services/axiosConfig';
 import theme from './styles/theme';
@@ -19,10 +19,10 @@ import SettingsPage from './components/pages/SettingsPage';
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      refetchOnWindowFocus: false, // disable automatic refetch on window focus
-      retry: 1, // retry failed queries once before displaying error
-      staleTime: 30000, // consider data fresh for 30 seconds
-      cacheTime: 5 * 60 * 1000, // cache for 5 minutes
+      refetchOnWindowFocus: false,
+      retry: 1,
+      staleTime: 30000,
+      cacheTime: 5 * 60 * 1000,
       onError: (error) => {
         console.error('Query Error:', error);
       },
@@ -63,8 +63,8 @@ const PublicRoute = ({ children }) => {
 };
 
 function App() {
+  // Initialize services and handle cleanup
   useEffect(() => {
-    // Initialize WebSocket and API configuration
     const initializeServices = async () => {
       const token = localStorage.getItem('access_token');
       if (token) {
@@ -73,8 +73,8 @@ function App() {
           axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${token}`;
           
           // Initialize WebSocket connections if needed
-          if (webSocketManagerInstance?.checkActiveAccounts) {
-            await webSocketManagerInstance.checkActiveAccounts();
+          if (webSocketManager.checkActiveAccounts) {
+            await webSocketManager.checkActiveAccounts();
           }
         } catch (error) {
           console.error('Error initializing services:', error);
@@ -86,8 +86,8 @@ function App() {
 
     // Cleanup function
     return () => {
-      if (webSocketManagerInstance?.disconnectAll) {
-        webSocketManagerInstance.disconnectAll().catch(error => {
+      if (webSocketManager.disconnectAll) {
+        webSocketManager.disconnectAll().catch(error => {
           console.error('Error disconnecting WebSockets:', error);
         });
       }
@@ -96,22 +96,54 @@ function App() {
 
   // Handle token refresh and WebSocket reconnection
   useEffect(() => {
+    const initializeServices = async () => {
+      const token = localStorage.getItem('access_token');
+      if (token) {
+        try {
+          axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+          
+          if (webSocketManager?.checkActiveAccounts) {
+            await webSocketManager.checkActiveAccounts();
+          }
+        } catch (error) {
+          console.error('Error initializing services:', error);
+        }
+      }
+    };
+  
+    initializeServices();
+  
+    // Updated cleanup function
+    return () => {
+      if (typeof webSocketManager?.disconnectAll === 'function') {
+        // Handle the promise properly
+        webSocketManager.disconnectAll()
+          .catch(error => {
+            console.error('Error disconnecting WebSockets:', error);
+          });
+      }
+    };
+  }, []);
+  
+  // Update the storage change handler
+  useEffect(() => {
     const handleStorageChange = async (event) => {
       if (event.key === 'access_token') {
         if (event.newValue) {
           axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${event.newValue}`;
-          if (webSocketManagerInstance?.reconnectAll) {
+          
+          if (typeof webSocketManager?.reconnectAll === 'function') {
             try {
-              await webSocketManagerInstance.reconnectAll();
+              await webSocketManager.reconnectAll();
             } catch (error) {
               console.error('Error reconnecting WebSockets:', error);
             }
           }
         } else {
           delete axiosInstance.defaults.headers.common['Authorization'];
-          if (webSocketManagerInstance?.disconnectAll) {
+          if (typeof webSocketManager?.disconnectAll === 'function') {
             try {
-              await webSocketManagerInstance.disconnectAll();
+              await webSocketManager.disconnectAll();
             } catch (error) {
               console.error('Error disconnecting WebSockets:', error);
             }
@@ -119,24 +151,9 @@ function App() {
         }
       }
     };
-
+  
     window.addEventListener('storage', handleStorageChange);
     return () => window.removeEventListener('storage', handleStorageChange);
-  }, []);
-
-  // Global error handling
-  useEffect(() => {
-    const handleError = (event) => {
-      console.error('Global error:', event.error || event.reason);
-    };
-
-    window.addEventListener('error', handleError);
-    window.addEventListener('unhandledrejection', handleError);
-
-    return () => {
-      window.removeEventListener('error', handleError);
-      window.removeEventListener('unhandledrejection', handleError);
-    };
   }, []);
 
   return (

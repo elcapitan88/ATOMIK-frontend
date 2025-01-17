@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState } from 'react';
 import {
   Modal,
   ModalOverlay,
@@ -11,19 +11,10 @@ import {
   Text,
   Box,
   Spinner,
+  useToast,
 } from '@chakra-ui/react';
-import { useLocation } from 'react-router-dom';
 import { AlertTriangle } from 'lucide-react';
 import { useOAuth } from '@/hooks/useOAuth';
-import { brokerAuthService } from '@/services/api/auth/brokerAuth';
-
-const glassEffect = {
-  background: "rgba(255, 255, 255, 0.1)",
-  backdropFilter: "blur(10px)",
-  boxShadow: "0 8px 32px 0 rgba(0, 198, 224, 0.37)",
-  border: "1px solid rgba(255, 255, 255, 0.18)",
-  borderRadius: "xl",
-};
 
 const BrokerOption = ({ title, onClick, isDisabled = false }) => (
   <VStack spacing={2} align="center">
@@ -73,20 +64,22 @@ const ErrorDisplay = ({ error, onRetry }) => (
   <VStack spacing={4} align="center" py={8}>
     <AlertTriangle size={24} color="#F56565" />
     <Text color="red.400" textAlign="center">{error}</Text>
-    <Box
-      as="button"
-      px={4}
-      py={2}
-      bg="transparent"
-      color="white"
-      borderWidth={1}
-      borderColor="red.400"
-      borderRadius="md"
-      onClick={onRetry}
-      _hover={{ bg: 'whiteAlpha.100' }}
-    >
-      Try Again
-    </Box>
+    {onRetry && (
+      <Box
+        as="button"
+        px={4}
+        py={2}
+        bg="transparent"
+        color="white"
+        borderWidth={1}
+        borderColor="red.400"
+        borderRadius="md"
+        onClick={onRetry}
+        _hover={{ bg: 'whiteAlpha.100' }}
+      >
+        Try Again
+      </Box>
+    )}
   </VStack>
 );
 
@@ -97,106 +90,46 @@ const LoadingDisplay = () => (
   </VStack>
 );
 
-const BrokerConnectionModal = ({ isOpen, onClose, onAccountConnected }) => {
-  const [initialLoad, setInitialLoad] = useState(true);
-  const location = useLocation();
-  const { 
-    isProcessing, 
-    error, 
-    handleCallback, 
-    clearError 
-  } = useOAuth();
-
-  useEffect(() => {
-    if (initialLoad) {
-      const code = new URLSearchParams(location.search).get('code');
-      if (code) {
-        handleCallback('tradovate', code).then(response => {
-          if (response?.accounts) {
-            onAccountConnected(response.accounts);
-          }
-        });
-      }
-      setInitialLoad(false);
-    }
-  }, [location, handleCallback, onAccountConnected, initialLoad]);
+const BrokerConnectionModal = ({ isOpen, onClose }) => {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { initiateBrokerAuth } = useOAuth();
+  const toast = useToast();
 
   const handleBrokerSelection = async (environment) => {
     try {
-        const payload = {
-            environment: environment,
-            credentials: { 
-                type: 'oauth',
-                environment: environment 
-            }
-        };
-        console.log('Request payload:', payload);  // Add this
-
-        const response = await brokerAuthService.initiateTradovateOAuth(environment);
-        if (response.auth_url) {
-            window.location.href = response.auth_url;
-        } else {
-            throw new Error('No authentication URL received');
-        }
-        onClose();
+      setIsSubmitting(true);
+      await initiateBrokerAuth('tradovate', environment);
+      
+      // If successful, modal will be closed when redirection happens
+      // No need to explicitly close here
     } catch (error) {
-        console.error('OAuth initiation error:', error);
-        throw error;
+      toast({
+        title: "Connection Error",
+        description: error.message || "Failed to connect broker account",
+        status: "error",
+        duration: 5000,
+        isClosable: true,
+      });
+      setIsSubmitting(false);
     }
-};
-
-  const handleModalClose = () => {
-    if (!isProcessing) {
-      clearError();
-      onClose();
-    }
-  };
-
-  const getModalContent = () => {
-    if (isProcessing) {
-      return <LoadingDisplay />;
-    }
-
-    if (error) {
-      return <ErrorDisplay error={error} onRetry={clearError} />;
-    }
-
-    return (
-      <>
-        <HStack spacing={8} justify="center">
-          <BrokerOption 
-            title="Demo" 
-            onClick={() => handleBrokerSelection('demo')}
-            isDisabled={isProcessing}
-          />
-          <BrokerOption 
-            title="Live" 
-            onClick={() => handleBrokerSelection('live')}
-            isDisabled={isProcessing}
-          />
-        </HStack>
-        
-        <Text 
-          mt={6} 
-          fontSize="sm" 
-          color="whiteAlpha.600" 
-          textAlign="center"
-        >
-          Select Demo for practice or Live for real trading
-        </Text>
-      </>
-    );
   };
 
   return (
     <Modal 
       isOpen={isOpen} 
-      onClose={handleModalClose} 
+      onClose={onClose}
+      closeOnOverlayClick={!isSubmitting}
       isCentered
-      closeOnOverlayClick={!isProcessing}
     >
       <ModalOverlay bg="blackAlpha.300" backdropFilter="blur(5px)" />
-      <ModalContent {...glassEffect} maxW="400px">
+      <ModalContent 
+        bg="rgba(255, 255, 255, 0.1)"
+        backdropFilter="blur(10px)"
+        boxShadow="0 8px 32px 0 rgba(0, 198, 224, 0.37)"
+        border="1px solid rgba(255, 255, 255, 0.18)"
+        borderRadius="xl"
+        maxW="400px"
+      >
         <ModalHeader 
           borderBottom="1px solid rgba(255, 255, 255, 0.18)" 
           pb={4}
@@ -204,9 +137,34 @@ const BrokerConnectionModal = ({ isOpen, onClose, onAccountConnected }) => {
         >
           Connect Trading Account
         </ModalHeader>
-        {!isProcessing && <ModalCloseButton color="white" />}
+        {!isSubmitting && <ModalCloseButton color="white" />}
+        
         <ModalBody pt={6} pb={8}>
-          {getModalContent()}
+          {isSubmitting ? (
+            <LoadingDisplay />
+          ) : (
+            <>
+              <HStack spacing={8} justify="center">
+                <BrokerOption 
+                  title="Demo" 
+                  onClick={() => handleBrokerSelection('demo')}
+                />
+                <BrokerOption 
+                  title="Live" 
+                  onClick={() => handleBrokerSelection('live')}
+                />
+              </HStack>
+              
+              <Text 
+                mt={6} 
+                fontSize="sm" 
+                color="whiteAlpha.600" 
+                textAlign="center"
+              >
+                Select Demo for practice or Live for real trading
+              </Text>
+            </>
+          )}
         </ModalBody>
       </ModalContent>
     </Modal>

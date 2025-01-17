@@ -11,32 +11,40 @@ class TradovateApi extends BaseApi {
   // Implement standard broker interface
   async fetchAccounts() {
     try {
-        // Use the correct endpoint from our API router
+        console.log('TradovateApi: Initiating account fetch');
         const response = await axiosInstance.get('/api/v1/brokers/accounts');
         
-        // Debug the response
-        console.log('Raw API Response:', response.data);
+        if (!response || !response.data) {
+            throw new Error('Invalid response from server');
+        }
 
-        // Handle the case where response.data is directly the accounts array
-        // or when it's wrapped in an 'accounts' property
-        const accountsData = response.data.accounts || response.data || [];
+        console.log('TradovateApi: Raw response:', response);
 
-        // Map and normalize the account data
-        return accountsData.map(account => ({
-            account_id: account.account_id,
-            broker_id: account.broker_id || 'tradovate',
-            name: account.name || 'Unknown Account',
-            environment: account.environment || 'demo',
-            status: account.status || 'inactive',
-            balance: parseFloat(account.balance || 0),
-            day_pnl: parseFloat(account.day_pnl || 0),
-            active: Boolean(account.active),
-            is_token_expired: Boolean(account.is_token_expired),
-            last_connected: account.last_connected || null
+        // Process accounts
+        const accounts = Array.isArray(response.data) ? response.data : [];
+        
+        // Transform the response data
+        const processedAccounts = accounts.map(acc => ({
+            account_id: acc.account_id,
+            broker_id: acc.broker_id || 'tradovate',
+            name: acc.name || 'Unknown Account',
+            environment: acc.environment || 'demo',
+            status: acc.status || 'inactive',
+            balance: parseFloat(acc.balance || 0).toFixed(2),
+            active: Boolean(acc.active),
+            is_token_expired: Boolean(acc.is_token_expired),
+            last_connected: acc.last_connected || null,
+            error_message: acc.error_message || null,
+            has_credentials: Boolean(acc.has_credentials),
+            token_expires_at: acc.token_expires_at || null
         }));
+
+        console.log('TradovateApi: Processed accounts:', processedAccounts);
+        return processedAccounts;
+
     } catch (error) {
-        console.error('Error in fetchAccounts:', error.response || error);
-        throw error;
+        console.error('TradovateApi: Error fetching accounts:', error);
+        throw error?.response?.data?.detail || 'Failed to fetch accounts';
     }
 }
 
@@ -53,29 +61,29 @@ class TradovateApi extends BaseApi {
   }
 
   async getAccountStatus(accountId) {
-    return this.errorHandler(async () => 
-        this.axiosInstance.get(`/api/v1/brokers/accounts/${accountId}/status`)
-    );
+    try {
+        const response = await axiosInstance.get(
+            `/api/v1/brokers/accounts/${accountId}/status`
+        );
+        return response.data;
+    } catch (error) {
+        console.error('Error getting account status:', error);
+        throw error?.response?.data?.detail || 'Failed to get account status';
+    }
 }
 
 async removeAccount(accountId) {
   try {
-      const response = await axiosInstance.delete(`/api/v1/brokers/accounts/${accountId}`);
-      
-      // Log the response for debugging
-      console.log('Delete account response:', response);
-      
-      // Return the response data
+      const response = await axiosInstance.delete(
+          `/api/v1/brokers/accounts/${accountId}`
+      );
       return response.data;
   } catch (error) {
-      // Log the error for debugging
       console.error('Error removing account:', error);
-      
-      // Throw error to be handled by the UI
       throw error?.response?.data?.detail || 'Failed to remove account';
   }
-  
 }
+
 
   async toggleAccount(accountId) {
     return this.errorHandler(() => 

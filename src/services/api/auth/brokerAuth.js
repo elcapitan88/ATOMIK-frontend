@@ -9,24 +9,33 @@ class BrokerAuthService {
     /**
      * Initialize OAuth flow for Tradovate
      * @param {string} environment - 'demo' or 'live'
-     * @returns {Promise<{auth_url: string}>}
+     * @returns {Promise<{auth_url: string, state: string}>}
      */
     async initiateTradovateOAuth(environment) {
         try {
+            console.log('Initiating OAuth for:', environment);
+
             const response = await axiosInstance.post(`${this.baseUrl}/tradovate/connect`, {
-                environment,
-                credentials: {
-                    type: 'oauth'
-                }
+                environment: environment.toLowerCase()
             });
+
+            console.log('OAuth response:', response.data);
 
             if (!response.data?.auth_url) {
                 throw new Error('Invalid response: Missing authentication URL');
             }
 
+            // Store auth state for verification
+            if (response.data.state) {
+                localStorage.setItem('oauth_state', response.data.state);
+                localStorage.setItem('oauth_environment', environment);
+                localStorage.setItem('oauth_timestamp', Date.now().toString());
+            }
+
             return response.data;
+
         } catch (error) {
-            console.error('OAuth initialization failed:', error);
+            console.error('OAuth initiation error:', error);
             throw this.handleError(error);
         }
     }
@@ -34,16 +43,42 @@ class BrokerAuthService {
     /**
      * Handle OAuth callback after successful authorization
      * @param {string} code - Authorization code from OAuth provider
+     * @param {string} state - State parameter for CSRF protection
      * @returns {Promise<Object>}
      */
-    async handleOAuthCallback(code) {
+    async handleOAuthCallback(code, state) {
         try {
+            console.log('Processing OAuth callback:', { code, state });
+
+            // Verify state matches what we stored
+            const storedState = localStorage.getItem('oauth_state');
+            const storedTimestamp = parseInt(localStorage.getItem('oauth_timestamp'));
+            const environment = localStorage.getItem('oauth_environment');
+
+            // Verify state and check if the stored timestamp is not older than 10 minutes
+            if (state !== storedState || !storedTimestamp || 
+                Date.now() - storedTimestamp > 600000) {
+                throw new Error('Invalid or expired OAuth state');
+            }
+
             const response = await axiosInstance.get(`${this.baseUrl}/tradovate/callback`, {
-                params: { code }
+                params: { 
+                    code,
+                    state,
+                    environment 
+                }
             });
+
+            console.log('OAuth callback response:', response.data);
+
+            // Clear stored OAuth state
+            this.clearOAuthState();
+
             return response.data;
+
         } catch (error) {
             console.error('OAuth callback failed:', error);
+            this.clearOAuthState();
             throw this.handleError(error);
         }
     }
@@ -79,21 +114,6 @@ class BrokerAuthService {
     }
 
     /**
-     * Refresh broker access tokens
-     * @param {string} accountId 
-     * @returns {Promise<Object>}
-     */
-    async refreshTokens(accountId) {
-        try {
-            const response = await axiosInstance.post(`${this.baseUrl}/accounts/${accountId}/refresh`);
-            return response.data;
-        } catch (error) {
-            console.error('Token refresh failed:', error);
-            throw this.handleError(error);
-        }
-    }
-
-    /**
      * Get broker account status
      * @param {string} accountId 
      * @returns {Promise<Object>}
@@ -109,80 +129,56 @@ class BrokerAuthService {
     }
 
     /**
+     * Clear OAuth state from localStorage
+     * @private
+     */
+    clearOAuthState() {
+        localStorage.removeItem('oauth_state');
+        localStorage.removeItem('oauth_environment');
+        localStorage.removeItem('oauth_timestamp');
+    }
+
+    /**
      * Standard error handler for broker auth operations
      * @private
-     * @param {Error} error 
-     * @returns {Error}
      */
     handleError(error) {
+        console.error('API Error details:', {
+            response: error.response?.data,
+            status: error.response?.status,
+            headers: error.response?.headers
+        });
+
         if (error.response) {
-            // Handle specific HTTP error codes
+            // Handle specific error status codes
             switch (error.response.status) {
+                case 400:
+                    return new Error(error.response.data?.detail || 'Invalid request parameters');
                 case 401:
-                    return new Error('Authentication failed. Please try again.');
+                    return new Error('Authentication token expired or invalid');
                 case 403:
-                    return new Error('Access denied. Please check your permissions.');
+                    return new Error('Insufficient permissions for this operation');
                 case 404:
-                    return new Error('Requested resource not found.');
+                    return new Error('Requested resource not found');
                 case 422:
-                    return new Error(error.response.data.detail || 'Invalid request data.');
-                case 429:
-                    return new Error('Too many requests. Please try again later.');
+                    return new Error(error.response.data?.detail || 'Invalid request data');
                 case 500:
-                    return new Error('Server error. Please try again later.');
+                    return new Error('Server error. Please try again later');
                 default:
-                    return new Error(error.response.data?.detail || 'An unexpected error occurred.');
+                    return new Error(error.response.data?.detail || 'An unexpected error occurred');
             }
         }
 
         if (error.request) {
-            // Network error
-            return new Error('Network error. Please check your connection.');
+            return new Error('Network error. Please check your connection');
         }
 
-        // Default error
-        return new Error(error.message || 'An unexpected error occurred.');
-    }
-
-    /**
-     * Check if environment is supported by broker
-     * @param {string} brokerId 
-     * @param {string} environment 
-     * @returns {Promise<boolean>}
-     */
-    async isEnvironmentSupported(brokerId, environment) {
-        try {
-            const response = await axiosInstance.get(`${this.baseUrl}/${brokerId}/environments`);
-            return response.data.supported_environments.includes(environment);
-        } catch (error) {
-            console.error('Environment check failed:', error);
-            return false;
-        }
+        return error;
     }
 }
 
 // Export singleton instance
-export const brokerAuthService = {
-  initiateTradovateOAuth: async (brokerId, request) => {
-    try {
-      const response = await axiosInstance.post(`/api/v1/brokers/${brokerId}/connect`, request);
-      return response.data;
-    } catch (error) {
-      console.error('OAuth initialization failed:', error);
-      throw error;
-    }
-  },
+export const brokerAuthService = new BrokerAuthService();
 
-  validateConnection: async (accountId) => {
-    try {
-      const response = await axiosInstance.get(`/api/v1/brokers/accounts/${accountId}/validate`);
-      return response.data;
-    } catch (error) {
-      console.error('Connection validation failed:', error);
-      throw error;
-    }
-  }
-};
-
-// Export class for potential direct usage
+// Export class for potential direct usage or testing
 export default BrokerAuthService;
