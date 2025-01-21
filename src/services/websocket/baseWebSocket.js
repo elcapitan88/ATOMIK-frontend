@@ -2,6 +2,16 @@
 
 import logger from '@/utils/logger';
 import { WS_CONFIG, WS_STATUS, parseWSMessage } from '@/utils/config/wsConfig';
+import { WebSocketConfig } from '@/core/config/websocket_config';
+import { HeartbeatMetrics } from './metrics';
+
+export const WSConnectionStatus = {
+  CONNECTING: "CONNECTING",
+  CONNECTED: "CONNECTED",
+  DISCONNECTED: "DISCONNECTED",
+  RECONNECTING: "RECONNECTING",
+  ERROR: "ERROR"
+};
 
 class BaseWebSocket {
   constructor(accountId, options = {}) {
@@ -21,6 +31,10 @@ class BaseWebSocket {
     this.status = WS_STATUS.DISCONNECTED;
     this.lastHeartbeat = null;
     this.connectionPromise = null;
+    this.config = WebSocketConfig.HEARTBEAT;
+    this.metrics = new HeartbeatMetrics();
+    this.heartbeatTimer = null;
+    this.healthCheckTimer = null;
 
     // Message handling
     this.messageQueue = [];
@@ -65,34 +79,37 @@ class BaseWebSocket {
   }
 
   async connect() {
-    if (this.ws?.readyState === WebSocket.OPEN) return true;
+    if (this.websocket?.readyState === WebSocket.OPEN) {
+        return true;
+    }
 
     try {
-        const token = localStorage.getItem('access_token');
-        const url = new URL(this.getWebSocketUrl());
-        url.searchParams.append('token', token);
+        if (this.status === WSConnectionStatus.CONNECTING) {
+            return false;
+        }
 
-        this.ws = new WebSocket(url.toString());
+        this.status = WSConnectionStatus.CONNECTING;
         
-        return new Promise((resolve, reject) => {
-            const timeout = setTimeout(() => {
-                reject(new Error('Connection timeout'));
-            }, this.options.connectionTimeout);
+        const connected = await this.establishConnection();
+        if (connected) {
+            this.status = WSConnectionStatus.CONNECTED;
+            this.lastHeartbeat = Date.now();
+            this.error_count = 0;
+            this.reconnect_attempts = 0;
+            
+            // Start monitoring
+            this.startHeartbeat();
+            this.startHealthCheck();
+            
+            logger.info(`WebSocket connected: ${this.connection_id}`);
+            return true;
+        }
 
-            this.ws.onopen = () => {
-                clearTimeout(timeout);
-                this.startHeartbeat();
-                resolve(true);
-            };
-
-            this.ws.onerror = (error) => {
-                clearTimeout(timeout);
-                reject(error);
-            };
-        });
+        return false;
 
     } catch (error) {
-        this.handleError(error);
+        logger.error(`Connection error: ${error}`);
+        this.status = WSConnectionStatus.ERROR;
         return false;
     }
 }
@@ -238,6 +255,75 @@ class BaseWebSocket {
     }
   }
 
+  startHeartbeat() {
+    if (this.heartbeatTimer) {
+        clearInterval(this.heartbeatTimer);
+    }
+
+    this.heartbeatTimer = setInterval(
+        () => this.sendHeartbeat(),
+        this.config.INTERVAL
+    );
+  }
+
+  startHealthCheck() {
+      if (this.healthCheckTimer) {
+          clearInterval(this.healthCheckTimer);
+      }
+
+      this.healthCheckTimer = setInterval(
+          () => this.checkConnectionHealth(),
+          this.config.CLEANUP_INTERVAL
+      );
+  }
+
+  async sendHeartbeat() {
+      if (!this.isConnected()) return;
+
+      const startTime = Date.now();
+      try {
+          await this.send({
+              type: 'heartbeat',
+              timestamp: new Date().toISOString()
+          });
+
+          this.metrics.totalHeartbeats++;
+          this.metrics.lastSuccessful = startTime;
+          this.updateHeartbeatMetrics(Date.now() - startTime);
+
+      } catch (error) {
+          await this.handleHeartbeatFailure(error);
+      }
+  }
+
+  async checkConnectionHealth() {
+      const now = Date.now();
+      const timeSinceLastHeartbeat = now - this.metrics.lastSuccessful;
+
+      if (timeSinceLastHeartbeat > this.config.INTERVAL * 1.5) {
+          await this.handleHeartbeatFailure(
+              new Error('Heartbeat timeout')
+          );
+      }
+  }
+
+  async handleHeartbeatFailure(error) {
+      this.metrics.missedHeartbeats++;
+      this.metrics.lastFailure = Date.now();
+
+      logger.warn(`Heartbeat failure: ${error.message}`);
+
+      if (this.metrics.missedHeartbeats >= this.config.MAX_MISSED) {
+          await this.initiateReconnection();
+      }
+  }
+
+  updateHeartbeatMetrics(latency) {
+      // Simple moving average for latency
+      this.metrics.averageLatency = 
+          (this.metrics.averageLatency * 0.7) + (latency * 0.3);
+  }
+
   async sendWithTimeout(message) {
     return new Promise((resolve, reject) => {
       const timeout = setTimeout(() => {
@@ -276,18 +362,6 @@ class BaseWebSocket {
         break;
       }
     }
-  }
-
-  startHeartbeat() {
-    if (this.heartbeatTimer) {
-      clearInterval(this.heartbeatTimer);
-    }
-
-    this.heartbeatTimer = setInterval(() => {
-      if (this.isConnected) {
-        this.send({ type: 'heartbeat' }).catch(this.handleError.bind(this));
-      }
-    }, this.options.heartbeatInterval);
   }
 
   shouldReconnect() {
@@ -331,18 +405,33 @@ class BaseWebSocket {
   }
 
   async reconnect() {
-    this.status = WS_STATUS.RECONNECTING;
-    this.updateStatus();
+    if (this.reconnect_attempts >= this.max_reconnect_attempts) {
+        logger.error('Max reconnection attempts reached');
+        return false;
+    }
 
     try {
-      await this.connect();
-      if (this.isConnected) {
-        await this.resubscribeAll();
-      }
+        this.status = WSConnectionStatus.RECONNECTING;
+        this.reconnect_attempts++;
+        this.metrics.reconnectionAttempts++;
+
+        // Calculate backoff time
+        const backoff = Math.min(
+            this.config.RECONNECT_BACKOFF.MAX,
+            this.config.RECONNECT_BACKOFF.INITIAL * 
+            Math.pow(this.config.RECONNECT_BACKOFF.FACTOR, this.reconnect_attempts)
+        );
+
+        logger.info(`Attempting reconnection in ${backoff}ms`);
+        await new Promise(resolve => setTimeout(resolve, backoff));
+
+        return await this.connect();
+
     } catch (error) {
-      this.handleError(error);
+        logger.error(`Reconnection error: ${error}`);
+        return false;
     }
-  }
+}
 
   async resubscribeAll() {
     for (const subscription of this.subscriptions) {
@@ -372,18 +461,35 @@ class BaseWebSocket {
   }
 
   async disconnect() {
-    this.autoReconnect = false;
-    this.cleanup();
+    try {
+        // Clear timers
+        if (this.heartbeatTimer) {
+            clearInterval(this.heartbeatTimer);
+            this.heartbeatTimer = null;
+        }
 
-    if (this.ws) {
-      try {
-        this.ws.close();
-      } catch (error) {
-        logger.error('Error closing WebSocket:', error);
-      }
-      this.ws = null;
+        if (this.healthCheckTimer) {
+            clearInterval(this.healthCheckTimer);
+            this.healthCheckTimer = null;
+        }
+
+        // Close websocket
+        if (this.websocket) {
+            await this.websocket.close();
+            this.websocket = null;
+        }
+
+        this.status = WSConnectionStatus.DISCONNECTED;
+        this.lastHeartbeat = null;
+        logger.info(`WebSocket disconnected: ${this.connection_id}`);
+        return true;
+
+    } catch (error) {
+        logger.error(`Disconnect error: ${error}`);
+        return false;
     }
-  }
+}
+
 
   cleanup() {
     if (this.heartbeatTimer) {
@@ -414,13 +520,19 @@ class BaseWebSocket {
 
   getMetrics() {
     return {
-      ...this.metrics,
-      queuedMessages: this.messageQueue.length,
-      pendingMessages: this.pendingMessages.size,
-      circuitBreakerStatus: this.circuitBreaker.status,
-      lastHeartbeat: this.lastHeartbeat,
-      status: this.status
+        healthScore: this.metrics.getHealthScore(),
+        averageLatency: this.metrics.averageLatency,
+        totalHeartbeats: this.metrics.totalHeartbeats,
+        missedHeartbeats: this.metrics.missedHeartbeats,
+        lastFailure: this.metrics.lastFailure,
+        reconnectionAttempts: this.metrics.reconnectionAttempts,
+        status: this.status,
+        lastHeartbeat: this.lastHeartbeat
     };
+}
+
+  resetMetrics() {
+      this.metrics = new HeartbeatMetrics();
   }
 }
 

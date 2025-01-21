@@ -1,6 +1,5 @@
 // services/api/brokers/tradovate/tradovateTypes.js
 
-
 /**
  * @typedef {Object} TradovateEnvironments
  * @property {string} DEMO - Demo environment
@@ -119,6 +118,59 @@ export const PositionSide = {
 * @property {Array<TradovatePosition>} positions - Updated positions
 */
 
+/**
+* @typedef {Object} TradovateAccountUpdate
+* @property {string} accountId - Account identifier
+* @property {number} cashBalance - Current cash balance
+* @property {number} totalPnL - Total profit/loss
+* @property {number} dayPnL - Day's profit/loss
+* @property {number} openPositionsPnL - Open positions profit/loss
+* @property {string} timestamp - Update timestamp
+*/
+
+/**
+* Account Update Factories and Normalizers
+*/
+export const AccountUpdate = {
+  /**
+   * Create a standardized account balance object
+   * @param {Object} data - Raw account data
+   * @returns {Object} Normalized account balance
+   */
+  createAccountBalance: (data) => ({
+      accountId: data.accountId,
+      balance: Number(data.balance || 0),
+      totalPnL: Number(data.totalPnL || 0),
+      todaysPnL: Number(data.todaysPnL || 0),
+      openPnL: Number(data.openPnL || 0),
+      timestamp: Date.now()
+  }),
+
+  /**
+   * Normalize a Tradovate account update
+   * @param {TradovateAccountUpdate} rawUpdate - Raw Tradovate update
+   * @returns {Object} Normalized update
+   */
+  normalizeTradovateUpdate: (rawUpdate) => {
+      try {
+          return {
+              type: 'account_update',
+              data: {
+                  accountId: rawUpdate.accountId,
+                  balance: rawUpdate.cashBalance,
+                  totalPnL: rawUpdate.totalPnL,
+                  todaysPnL: rawUpdate.dayPnL,
+                  openPnL: rawUpdate.openPositionsPnL,
+                  timestamp: Date.now()
+              }
+          };
+      } catch (error) {
+          console.error('Error normalizing Tradovate update:', error);
+          return null;
+      }
+  }
+};
+
 // Export validation utilities
 export const validators = {
   /**
@@ -174,6 +226,22 @@ export const validators = {
           typeof order.quantity === 'number' &&
           typeof order.price === 'number'
       );
+  },
+
+  /**
+   * Validate account update message
+   * @param {Object} update - Account update to validate
+   * @returns {boolean} - Validation result
+   */
+  isValidAccountUpdate: (update) => {
+      return Boolean(
+          update &&
+          update.accountId &&
+          typeof update.balance === 'number' &&
+          typeof update.totalPnL === 'number' &&
+          typeof update.todaysPnL === 'number' &&
+          typeof update.openPnL === 'number'
+      );
   }
 };
 
@@ -183,6 +251,7 @@ const tradovateTypes = {
   AccountType,
   OrderType,
   PositionSide,
+  AccountUpdate,
   validators
 };
 

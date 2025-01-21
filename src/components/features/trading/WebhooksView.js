@@ -19,7 +19,8 @@ import {
   MenuButton,
   MenuList,
   MenuItem,
-  useToast
+  useToast,
+  useDisclosure
 } from '@chakra-ui/react';
 import { 
   Settings, 
@@ -27,11 +28,13 @@ import {
   MoreVertical,
   RefreshCw,
   Clock,
-  Info
+  Info,
+  Share 
 } from 'lucide-react';
 import { webhookApi } from '@/services/api/Webhooks/webhookApi';
 import useWebSocket from '@/hooks/useWebSocket';
 import { formatDate } from '@/utils/formatting/date';
+import ShareStrategyModal from '@/components/common/Modal/ShareStrategyModal';
 
 const CopyableUrl = ({ webhook }) => {
   const fullUrl = `${webhook.webhook_url}?secret=${webhook.secret_key}`;
@@ -72,9 +75,21 @@ const WebhooksView = ({ onDetailsOpen, onDeleteOpen, setSelectedWebhook, onWebho
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [selectedWebhookForShare, setSelectedWebhookForShare] = useState(null);
   
   const toast = useToast();
   const { status: wsStatus } = useWebSocket('tradovate');
+
+  const {
+    isOpen: isShareModalOpen,
+    onOpen: onShareModalOpen,
+    onClose: onShareModalClose
+  } = useDisclosure();
+
+  const handleShareModalClose = () => {
+    onShareModalClose();
+    setSelectedWebhookForShare(null);
+  };
 
   const fetchWebhooks = useCallback(async (showLoading = true) => {
     if (showLoading) setIsLoading(true);
@@ -115,56 +130,30 @@ const WebhooksView = ({ onDetailsOpen, onDeleteOpen, setSelectedWebhook, onWebho
           onDetailsOpen();
           break;
           
-        case 'delete':
-          setSelectedWebhook(webhook);
-          try {
-            await webhookApi.deleteWebhook(webhook.token);
-            setWebhooks(prevWebhooks => 
-              prevWebhooks.filter(w => w.token !== webhook.token)
-            );
-            toast({
-              title: "Webhook Deleted",
-              status: "success",
-              duration: 3000,
-              isClosable: true,
-            });
-          } catch (error) {
-            toast({
-              title: "Error Deleting Webhook",
-              description: error.message,
-              status: "error",
-              duration: 5000,
-              isClosable: true,
-            });
-          }
+        case 'share':
+          setSelectedWebhookForShare(webhook);
+          onShareModalOpen();
           break;
           
+        case 'delete':
+          setSelectedWebhook(webhook);
+          onDeleteOpen();
+          break;
+
         default:
           break;
       }
     } catch (error) {
+      console.error('Error in webhook action:', error);
       toast({
         title: "Error",
-        description: error.message,
+        description: error.message || "An unexpected error occurred",
         status: "error",
         duration: 5000,
         isClosable: true,
       });
     }
   };
-
-  const addWebhook = useCallback((webhook) => {
-    setWebhooks(prevWebhooks => [...prevWebhooks, webhook]);
-  }, []);
-
-  useEffect(() => {
-    if (onWebhooksChange) {
-      onWebhooksChange({
-        addWebhook,
-        refreshWebhooks: fetchWebhooks
-      });
-    }
-  }, [onWebhooksChange, addWebhook, fetchWebhooks]);
 
   if (isLoading) {
     return (
@@ -303,23 +292,36 @@ const WebhooksView = ({ onDetailsOpen, onDeleteOpen, setSelectedWebhook, onWebho
                       _expanded={{ bg: 'transparent' }}
                     />
                     <MenuList 
-                      bg="rgba(26, 32, 44, 0.9)"
-                      borderColor="whiteAlpha.200"
+                      bg="rgba(255, 255, 255, 0.1)"
+                      backdropFilter="blur(10px)"
+                      borderColor="rgba(255, 255, 255, 0.18)"
+                      boxShadow="0 8px 32px 0 rgba(0, 198, 224, 0.37)"
+                      borderRadius="xl"
                     >
                       <MenuItem
-                        icon={<Settings size={14} />}
                         onClick={() => handleWebhookAction(webhook, 'details')}
-                        _hover={{ bg: 'whiteAlpha.200' }}
+                        _hover={{ bg: "whiteAlpha.200" }}
                         bg="transparent"
+                        color="white"
+                        icon={<Settings size={14} />}
                       >
                         Setup
                       </MenuItem>
                       <MenuItem
-                        icon={<Trash2 size={14} />}
-                        onClick={() => handleWebhookAction(webhook, 'delete')}
-                        color="red.300"
-                        _hover={{ bg: 'red.900' }}
+                        onClick={() => handleWebhookAction(webhook, 'share')}
+                        _hover={{ bg: "whiteAlpha.200" }}
                         bg="transparent"
+                        color="white"
+                        icon={<Share size={14} />}
+                      >
+                        Share Strategy
+                      </MenuItem>
+                      <MenuItem
+                        onClick={() => handleWebhookAction(webhook, 'delete')}
+                        _hover={{ bg: "whiteAlpha.200" }}
+                        bg="transparent"
+                        color="red.400"
+                        icon={<Trash2 size={14} />}
                       >
                         Delete
                       </MenuItem>
@@ -331,6 +333,12 @@ const WebhooksView = ({ onDetailsOpen, onDeleteOpen, setSelectedWebhook, onWebho
           </Tbody>
         </Table>
       </Box>
+
+      <ShareStrategyModal 
+        isOpen={isShareModalOpen}
+        onClose={handleShareModalClose}
+        webhook={selectedWebhookForShare}
+      />
     </Box>
   );
 };

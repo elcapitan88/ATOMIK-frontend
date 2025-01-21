@@ -14,6 +14,7 @@ import Dashboard from './components/pages/Dashboard';
 import AuthPage from './components/pages/AuthPage';
 import ResetPassword from './components/pages/ResetPassword';
 import SettingsPage from './components/pages/SettingsPage';
+import MarketplacePage from './components/pages/MarketplacePage';
 
 // Create a client
 const queryClient = new QueryClient({
@@ -195,6 +196,14 @@ function App() {
               element={
                 <PrivateRoute>
                   <Dashboard />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/marketplace"
+              element={
+                <PrivateRoute>
+                  <MarketplacePage />
                 </PrivateRoute>
               }
             />

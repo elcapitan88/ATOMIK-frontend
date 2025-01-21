@@ -5,26 +5,21 @@ import { Settings, HelpCircle, Download, LogOut, ChevronDown, User } from 'lucid
 import { useAuth } from '@/contexts/AuthContext';
 import authService from '@/services/auth/authService';
 
-const MenuItem = ({ icon: Icon, children, onClick, external }) => (
-  <Flex
-    align="center"
-    p={2}
-    cursor="pointer"
-    _hover={{ bg: "whiteAlpha.200" }}
+const MenuItem = ({ item, isSelected, onClick }) => (
+  <Box
+    py={2}
+    px={3}
+    bg={isSelected ? 'whiteAlpha.200' : 'transparent'}
     borderRadius="md"
-    onClick={onClick}
+    onClick={() => onClick(item)}
+    cursor="pointer"
+    transition="all 0.2s"
+    _hover={{
+      bg: isSelected ? 'whiteAlpha.200' : 'whiteAlpha.100'
+    }}
   >
-    <Icon size={16} className="mr-2" />
-    <Text fontSize="sm">{children}</Text>
-    {external && (
-      <Box ml="auto">
-        <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-          <path d="M2.5 2.5V9.5H9.5V6M9.5 2.5H6" stroke="currentColor" strokeWidth="1.5"/>
-          <path d="M6 6L9.5 2.5" stroke="currentColor" strokeWidth="1.5"/>
-        </svg>
-      </Box>
-    )}
-  </Flex>
+    <Text color="white" fontSize="sm">{item}</Text>
+  </Box>
 );
 
 const Menu = ({ onSelectItem }) => {
@@ -32,7 +27,7 @@ const Menu = ({ onSelectItem }) => {
   const [selectedItem, setSelectedItem] = useState('Dashboard');
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [userEmail, setUserEmail] = useState('');
-  const menuItems = ['Dashboard', 'Strategies'];
+  const menuItems = ['Dashboard', 'Strategy Builder', 'Marketplace'];
   
   const navigate = useNavigate();
   const toast = useToast();

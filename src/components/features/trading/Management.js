@@ -1,4 +1,5 @@
 // src/components/features/trading/Management.js
+import { useRef } from 'react';
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
     Box,
@@ -135,6 +136,8 @@ const Management = () => {
     const [fetchError, setFetchError] = useState(null);
     const [connectionStatuses, setConnectionStatuses] = useState(new Map());
     const [sortBy, setSortBy] = useState(null);
+    const [accountUpdates, setAccountUpdates] = useState({});
+    const updateSubscriptions = useRef([]);
     const [editingAccount, setEditingAccount] = useState(null);
 
     // Hooks
@@ -169,6 +172,58 @@ const Management = () => {
     const handleSort = (sortKey) => {
         setSortBy(sortKey);
     };
+
+    useEffect(() => {
+        const subscriptions = [];
+
+        accounts.forEach(account => {
+            // Subscribe to account updates
+            const accountSub = webSocketManager.onAccountUpdates()
+                .subscribe({
+                    next: (update) => {
+                        if (update.data.accountId === account.account_id) {
+                            setAccountUpdates(prev => ({
+                                ...prev,
+                                [account.account_id]: {
+                                    balance: update.data.balance,
+                                    totalPnL: update.data.totalPnL,
+                                    todaysPnL: update.data.todaysPnL,
+                                    openPnL: update.data.openPnL,
+                                    timestamp: update.data.timestamp
+                                }
+                            }));
+                        }
+                    },
+                    error: (error) => {
+                        logger.error(`WebSocket update error for account ${account.account_id}:`, error);
+                    }
+                });
+
+            // Store subscription for cleanup
+            subscriptions.push(accountSub);
+        });
+
+        // Cleanup subscriptions
+        return () => {
+            subscriptions.forEach(sub => sub.unsubscribe());
+        };
+    }, [accounts]);
+
+    useEffect(() => {
+        const statusSub = webSocketManager.onStatus()
+            .subscribe({
+                next: (statusUpdate) => {
+                    setConnectionStatuses(prev => 
+                        new Map(prev).set(statusUpdate.accountId, statusUpdate.status)
+                    );
+                },
+                error: (error) => {
+                    logger.error('WebSocket status subscription error:', error);
+                }
+            });
+
+        return () => statusSub.unsubscribe();
+    }, []);
 
     const fetchAccounts = async (showLoadingState = true) => {
         try {
@@ -410,124 +465,147 @@ const Management = () => {
         onToggleExpand, 
         onDelete,
         onEditName,
-    }) => (
-        <Box 
-            bg="whiteAlpha.100" 
-            borderRadius="lg"
-            overflow="hidden"
-            transition="all 0.3s"
-            _hover={{ bg: "whiteAlpha.200" }}
-        >
-            {/* Main Account Row - More Compact */}
-            <Flex 
-                py={2}  // Reduced from p={3}
-                px={3}
-                align="center"
-                justify="space-between"
+    }) => {
+        // Get latest updates for this account
+        const updates = accountUpdates[account.account_id];
+        console.log('Rendering account with updates:', { 
+            accountId: account.account_id, 
+            updates, 
+            currentValues: {
+                balance: updates?.balance ?? account.balance ?? 0,
+                totalPnL: updates?.totalPnL ?? account.totalPnL ?? 0,
+                todaysPnL: updates?.todaysPnL ?? account.todaysPnL ?? 0,
+                openPnL: updates?.openPnL ?? account.openPnL ?? 0
+            }
+        });
+    
+        // Use real-time values if available, otherwise fall back to account values
+        const displayValues = {
+            balance: updates?.balance ?? account.balance ?? 0,
+            totalPnL: updates?.totalPnL ?? account.totalPnL ?? 0,
+            todaysPnL: updates?.todaysPnL ?? account.todaysPnL ?? 0,
+            openPnL: updates?.openPnL ?? account.openPnL ?? 0
+        };
+
+        return (
+            <Box 
+                bg="whiteAlpha.100" 
+                borderRadius="lg"
+                overflow="hidden"
+                transition="all 0.3s"
+                _hover={{ bg: "whiteAlpha.200" }}
             >
-                {/* Account Info Group - More Compact */}
-                <Flex align="center" gap={2} flex="2">  
-                    <AccountStatusIndicator 
-                        tokenValid={!account.is_token_expired}
-                        wsStatus={connectionStatus}
-                    />
-                    <VStack spacing={0} align="flex-start"> 
-                        <Text fontWeight="bold" fontSize="sm" lineHeight="1.2">
-                            {account.name}
-                        </Text>
-                        <Text fontSize="xs" color="whiteAlpha.700" lineHeight="1.2">
-                            {account.broker_id} • {account.environment}
-                        </Text>
-                    </VStack>
-                </Flex>
-    
-                {/* Balance Group - More Compact */}
-                <Flex align="center" gap={4} flex="3" px={3}> 
-                    <VStack spacing={0} align="flex-start">  
-                        <Text fontSize="xs" color="whiteAlpha.700" lineHeight="1.2">Balance</Text>
-                        <Text fontSize="sm" fontWeight="bold" lineHeight="1.2">
-                            ${account.balance}
-                        </Text>
-                    </VStack>
-    
-                    <VStack spacing={0} align="flex-start">
-                        <Text fontSize="xs" color="whiteAlpha.700" lineHeight="1.2">Total P&L</Text>
-                        <Text 
-                            fontSize="sm" 
-                            fontWeight="bold"
-                            lineHeight="1.2"
-                            color={account.totalPnL >= 0 ? 'green.400' : 'red.400'}
-                        >
-                            ${account.totalPnL || '0.00'}
-                        </Text>
-                    </VStack>
-    
-                    <VStack spacing={0} align="flex-start">
-                        <Text fontSize="xs" color="whiteAlpha.700" lineHeight="1.2">Today's P&L</Text>
-                        <Text 
-                            fontSize="sm" 
-                            fontWeight="bold"
-                            lineHeight="1.2"
-                            color={account.openPnL >= 0 ? 'green.400' : 'red.400'}
-                        >
-                            ${account.openPnL || '0.00'}
-                        </Text>
-                    </VStack>
-                </Flex>
-    
-                {/* Actions Group */}
-                <Flex align="center" gap={1} flex="0 0 auto"> 
-                    <AccountOptions 
-                        account={account}
-                        onEditName={onEditName}
-                        onDelete={onDelete}
-                    />
-                    <Box 
-                        as="button"
-                        onClick={() => onToggleExpand(account.account_id)}
-                        opacity={0.6}
-                        _hover={{ opacity: 1 }}
-                        transition="opacity 0.2s"
-                    >
-                        {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />} 
-                    </Box>
-                </Flex>
-            </Flex>
-    
-            {/* Expanded Section */}
-            {isExpanded && (
-                <Box 
-                    p={3} 
-                    borderTop="1px solid" 
-                    borderColor="whiteAlpha.200"
-                    bg="whiteAlpha.50"
+                {/* Main Account Row - More Compact */}
+                <Flex 
+                    py={2}
+                    px={3}
+                    align="center"
+                    justify="space-between"
                 >
-                    <HStack spacing={6}>
-                        <Box>
-                            <Text fontSize="xs" color="whiteAlpha.700">Open P&L</Text>
-                            <Text fontSize="sm" fontWeight="semibold" color={account.openPnL >= 0 ? 'green.400' : 'red.400'}>
-                                ${account.openPnL || '0.00'}
+                    {/* Account Info Group - More Compact */}
+                    <Flex align="center" gap={2} flex="2">  
+                        <AccountStatusIndicator 
+                            tokenValid={!account.is_token_expired}
+                            wsStatus={connectionStatus}
+                        />
+                        <VStack spacing={0} align="flex-start"> 
+                            <Text fontWeight="bold" fontSize="sm" lineHeight="1.2">
+                                {account.name}
                             </Text>
-                        </Box>
-                        <Box>
-                            <Text fontSize="xs" color="whiteAlpha.700">Realized P&L</Text>
-                            <Text fontSize="sm" fontWeight="semibold" color={account.realizedPnL >= 0 ? 'green.400' : 'red.400'}>
-                                ${account.realizedPnL || '0.00'}
+                            <Text fontSize="xs" color="whiteAlpha.700" lineHeight="1.2">
+                                {account.broker_id} • {account.environment}
                             </Text>
-                        </Box>
-                        <Box>
-                            <Text fontSize="xs" color="whiteAlpha.700">Weekly P&L</Text>
-                            <Text fontSize="sm" fontWeight="semibold" color={account.weeklyPnL >= 0 ? 'green.400' : 'red.400'}>
-                                ${account.weeklyPnL || '0.00'}
+                        </VStack>
+                    </Flex>
+        
+                    {/* Balance Group - More Compact */}
+                    <Flex align="center" gap={4} flex="3" px={3}> 
+                        <VStack spacing={0} align="flex-start">  
+                            <Text fontSize="xs" color="whiteAlpha.700" lineHeight="1.2">Balance</Text>
+                            <Text fontSize="sm" fontWeight="bold" lineHeight="1.2">
+                                ${displayValues.balance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </Text>
+                        </VStack>
+        
+                        <VStack spacing={0} align="flex-start">
+                            <Text fontSize="xs" color="whiteAlpha.700" lineHeight="1.2">Total P&L</Text>
+                            <Text 
+                                fontSize="sm" 
+                                fontWeight="bold"
+                                lineHeight="1.2"
+                                color={displayValues.totalPnL >= 0 ? 'green.400' : 'red.400'}
+                            >
+                                ${displayValues.totalPnL.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </Text>
+                        </VStack>
+        
+                        <VStack spacing={0} align="flex-start">
+                            <Text fontSize="xs" color="whiteAlpha.700" lineHeight="1.2">Today's P&L</Text>
+                            <Text 
+                                fontSize="sm" 
+                                fontWeight="bold"
+                                lineHeight="1.2"
+                                color={displayValues.todaysPnL >= 0 ? 'green.400' : 'red.400'}
+                            >
+                                ${displayValues.todaysPnL.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </Text>
+                        </VStack>
+                    </Flex>
+        
+                    {/* Actions Group */}
+                    <Flex align="center" gap={1} flex="0 0 auto"> 
+                        <AccountOptions 
+                            account={account}
+                            onEditName={onEditName}
+                            onDelete={onDelete}
+                        />
+                        <Box 
+                            as="button"
+                            onClick={() => onToggleExpand(account.account_id)}
+                            opacity={0.6}
+                            _hover={{ opacity: 1 }}
+                            transition="opacity 0.2s"
+                        >
+                            {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />} 
                         </Box>
-                    </HStack>
-                </Box>
-            )}
-        </Box>
-    );
+                    </Flex>
+                </Flex>
+        
+                {/* Expanded Section */}
+                {isExpanded && (
+                    <Box 
+                        p={3} 
+                        borderTop="1px solid" 
+                        borderColor="whiteAlpha.200"
+                        bg="whiteAlpha.50"
+                    >
+                        <HStack spacing={6}>
+                            <Box>
+                                <Text fontSize="xs" color="whiteAlpha.700">Open P&L</Text>
+                                <Text fontSize="sm" fontWeight="semibold" color={displayValues.openPnL >= 0 ? 'green.400' : 'red.400'}>
+                                    ${displayValues.openPnL.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                </Text>
+                            </Box>
+                            <Box>
+                                <Text fontSize="xs" color="whiteAlpha.700">Realized P&L</Text>
+                                <Text fontSize="sm" fontWeight="semibold" color={displayValues.realizedPnL >= 0 ? 'green.400' : 'red.400'}>
+                                    ${displayValues.realizedPnL.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                </Text>
+                            </Box>
+                            <Box>
+                                <Text fontSize="xs" color="whiteAlpha.700">Weekly P&L</Text>
+                                <Text fontSize="sm" fontWeight="semibold" color={displayValues.weeklyPnL >= 0 ? 'green.400' : 'red.400'}>
+                                    ${displayValues.weeklyPnL.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                </Text>
+                            </Box>
+                        </HStack>
+                    </Box>
+                )}
+            </Box>
+        );
+    };
     
-    // Render accounts list
+    // Render accounts list with loading and error states
     const renderAccounts = () => {
         if (isLoading) {
             return (

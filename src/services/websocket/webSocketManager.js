@@ -1,348 +1,209 @@
-// src/services/websocket/webSocketManager.js
-
 import { Subject } from 'rxjs';
 import logger from '@/utils/logger';
-import { WS_CONFIG } from '@/services/Config/wsConfig';
 
 class WebSocketManager {
     constructor() {
         // Connection management
         this.connections = new Map();
         this.connectionStatuses = new Map();
-        this.heartbeatIntervals = new Map();
-        this.reconnectTimers = new Map();
-        this.pendingMessages = new Map();
+        this.lastHeartbeats = new Map();
         
-        // Observable for messages and status updates
+        // Message handling
+        this.messageQueue = [];
+        this.isProcessing = false;
+        this.processingInterval = 50;
+
+        // Observable subjects for different message types
         this.messageSubject = new Subject();
         this.statusSubject = new Subject();
+        this.accountUpdateSubject = new Subject();
+        this.marketDataSubject = new Subject();
+        this.positionUpdateSubject = new Subject();
 
-        // Connection tracking
-        this.reconnectAttempts = new Map();
-        this.MAX_RECONNECT_ATTEMPTS = 5;
-        this.HEARTBEAT_INTERVAL = 30000;
-        this.CONNECTION_TIMEOUT = 10000;
-
-        // Circuit breaker pattern
-        this.circuitBreaker = {
-            failures: 0,
-            lastFailure: null,
-            status: 'closed', // closed, open, half-open
-            threshold: 5,
-            resetTimeout: 60000
-        };
-
-        // Bind methods
-        this.handleMessage = this.handleMessage.bind(this);
-        this.handleConnectionError = this.handleConnectionError.bind(this);
-        this.handleConnectionClose = this.handleConnectionClose.bind(this);
+        // Debug mode for detailed logging
+        this.debug = true;
     }
 
     async connect(accountId, token) {
-        if (!accountId) {
-            logger.error('No account ID provided for WebSocket connection');
+        if (!accountId || !token) {
+            logger.error('Missing required connection parameters');
             return false;
         }
-    
-        if (!token) {
-            logger.error('No token provided for WebSocket connection');
-            return false;
-        }
-    
-        logger.info(`Attempting to connect WebSocket for account ${accountId}`);
-    
+
         try {
             // Check for existing connection
             if (this.connections.get(accountId)?.readyState === WebSocket.OPEN) {
                 logger.info(`WebSocket already connected for account ${accountId}`);
                 return true;
             }
-    
-            // Clean up any existing connection
-            await this.disconnect(accountId);
-    
+
             // Construct WebSocket URL
             const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
             const host = process.env.REACT_APP_WS_HOST || window.location.host;
             const wsUrl = `${protocol}//${host}/api/v1/ws/tradovate/${accountId}?token=${token}`;
+
+            const ws = new WebSocket(wsUrl);
             
-            logger.info(`Connecting to WebSocket URL: ${wsUrl}`);
-    
-            return new Promise((resolve, reject) => {
-                const ws = new WebSocket(wsUrl);
-                
-                // Set up connection timeout
-                const connectionTimeout = setTimeout(() => {
-                    if (ws.readyState !== WebSocket.OPEN) {
-                        ws.close();
-                        logger.error('WebSocket connection timeout');
-                        this.statusSubject.next({
-                            accountId,
-                            status: 'error',
-                            error: 'Connection timeout',
-                            timestamp: Date.now()
-                        });
-                        resolve(false);
-                    }
-                }, 10000); // 10 second timeout
-    
-                // Connection opening
-                ws.onopen = async () => {
-                    clearTimeout(connectionTimeout);
-                    logger.info(`WebSocket open event received for account ${accountId}`);
-                    
-                    try {
-                        // Send initial setup message
-                        const setupMessage = {
-                            type: 'setup',
-                            accountId: accountId,
-                            timestamp: new Date().toISOString()
-                        };
-                        
-                        ws.send(JSON.stringify(setupMessage));
-                        
-                        // Store connection
-                        this.connections.set(accountId, ws);
-                        this.connectionStatuses.set(accountId, 'connected');
-                        
-                        // Emit connected status
-                        this.statusSubject.next({
-                            accountId,
-                            status: 'connected',
-                            timestamp: Date.now()
-                        });
-                        
-                        // Setup handlers
-                        this.setupHeartbeat(accountId, ws);
-                        this.resetReconnectAttempts(accountId);
-                        
-                        logger.info(`WebSocket fully initialized for account ${accountId}`);
-                        resolve(true);
-                    } catch (error) {
-                        logger.error(`Error during WebSocket setup for account ${accountId}:`, error);
-                        this.statusSubject.next({
-                            accountId,
-                            status: 'error',
-                            error: error.message,
-                            timestamp: Date.now()
-                        });
-                        ws.close();
-                        resolve(false);
-                    }
-                };
-    
-                // Add detailed close event logging
-                ws.onclose = (event) => {
-                    clearTimeout(connectionTimeout);
-                    logger.info(`WebSocket closed for account ${accountId}. Code: ${event.code}, Reason: ${event.reason}, Clean: ${event.wasClean}`);
-                    this.handleConnectionClose(accountId);
-                    this.statusSubject.next({
-                        accountId,
-                        status: 'disconnected',
-                        timestamp: Date.now()
-                    });
-                    resolve(false);
-                };
-    
-                // Add detailed error logging
-                ws.onerror = (error) => {
-                    clearTimeout(connectionTimeout);
-                    logger.error(`WebSocket error for account ${accountId}:`, {
-                        error: error,
-                        readyState: ws.readyState,
-                        bufferedAmount: ws.bufferedAmount
-                    });
-                    this.handleConnectionError(accountId, error);
-                    this.statusSubject.next({
-                        accountId,
-                        status: 'error',
-                        error: error.message || 'Connection error',
-                        timestamp: Date.now()
-                    });
-                    resolve(false);
-                };
-    
-                // Set up message handler with logging
-                ws.onmessage = (event) => {
-                    try {
-                        const message = JSON.parse(event.data);
-                        logger.debug(`Message received for account ${accountId}:`, message);
-                        
-                        // Update connection status based on message type
-                        if (message.type === 'status') {
-                            this.statusSubject.next({
-                                accountId,
-                                status: message.status,
-                                timestamp: Date.now()
-                            });
-                        }
-                        
-                        this.handleMessage(accountId, event);
-                    } catch (error) {
-                        logger.error(`Error processing message for account ${accountId}:`, error);
-                    }
-                };
-            });
-    
+            // Set up message handler
+            ws.onmessage = (event) => {
+                try {
+                    const message = JSON.parse(event.data);
+                    this.handleMessage(accountId, message, ws);
+                } catch (error) {
+                    logger.error('Failed to parse WebSocket message:', error);
+                }
+            };
+
+            // Handle connection events
+            ws.onopen = () => {
+                logger.info(`WebSocket connected for account ${accountId}`);
+                this.connections.set(accountId, ws);
+                this.connectionStatuses.set(accountId, 'connected');
+                this.statusSubject.next({ 
+                    accountId, 
+                    status: 'connected',
+                    timestamp: Date.now()
+                });
+            };
+
+            ws.onclose = () => {
+                logger.info(`WebSocket closed for account ${accountId}`);
+                this.handleDisconnect(accountId);
+            };
+
+            ws.onerror = (error) => {
+                logger.error(`WebSocket error for account ${accountId}:`, error);
+                this.statusSubject.next({ 
+                    accountId, 
+                    status: 'error', 
+                    error: 'Connection error',
+                    timestamp: Date.now()
+                });
+            };
+
+            // Store the connection
+            this.connections.set(accountId, ws);
+            return true;
+
         } catch (error) {
-            logger.error(`Error establishing WebSocket connection for account ${accountId}:`, error);
-            this.statusSubject.next({
-                accountId,
-                status: 'error',
-                error: error.message,
-                timestamp: Date.now()
-            });
+            logger.error(`Failed to establish WebSocket connection:`, error);
             return false;
         }
     }
 
-    setupHeartbeat(accountId, ws) {
-        // Clear any existing heartbeat
-        if (this.heartbeatIntervals.has(accountId)) {
-            clearInterval(this.heartbeatIntervals.get(accountId));
+    handleMessage(accountId, message, ws) {
+        // Log all messages in debug mode
+        if (this.debug) {
+            logger.info(`Received WebSocket message for ${accountId}:`, message);
         }
 
-        // Set up new heartbeat
-        const interval = setInterval(() => {
-            if (ws.readyState === WebSocket.OPEN) {
-                ws.send(JSON.stringify({ 
-                    type: 'heartbeat',
-                    timestamp: new Date().toISOString()
-                }));
-            } else {
-                clearInterval(interval);
-                this.heartbeatIntervals.delete(accountId);
-            }
-        }, this.HEARTBEAT_INTERVAL);
-
-        this.heartbeatIntervals.set(accountId, interval);
-    }
-
-    handleMessage(accountId, event) {
         try {
-            const message = JSON.parse(event.data);
-            logger.debug(`Message received for account ${accountId}:`, message);
-
-            // Emit message to subscribers
-            this.messageSubject.next({
-                accountId,
-                message,
-                timestamp: Date.now()
-            });
+            // Handle heartbeat messages
+            if (message.type === 'heartbeat') {
+                this.handleHeartbeat(accountId, message, ws);
+                return;
+            }
 
             // Handle different message types
             switch (message.type) {
-                case 'heartbeat':
-                    this.connectionStatuses.set(accountId, 'connected');
+                case 'account_update':
+                    this.accountUpdateSubject.next({
+                        accountId,
+                        ...message,
+                        timestamp: Date.now()
+                    });
                     break;
-                case 'error':
-                    logger.error(`Error message from server for account ${accountId}:`, message);
-                    this.handleError(accountId, new Error(message.error));
+
+                case 'market_data':
+                    this.marketDataSubject.next({
+                        accountId,
+                        ...message,
+                        timestamp: Date.now()
+                    });
                     break;
+
+                case 'position_update':
+                    this.positionUpdateSubject.next({
+                        accountId,
+                        ...message,
+                        timestamp: Date.now()
+                    });
+                    break;
+
+                default:
+                    // Emit other messages to general subscribers
+                    this.messageSubject.next({
+                        accountId,
+                        ...message,
+                        timestamp: Date.now()
+                    });
+            }
+        } catch (error) {
+            logger.error(`Error processing message for account ${accountId}:`, error);
+        }
+    }
+
+    async handleHeartbeat(accountId, message, ws) {
+        try {
+            const sequence = message.sequence || message.seq || 'unknown';
+            
+            // Log full heartbeat message in debug mode
+            if (this.debug) {
+                logger.info('Raw heartbeat message:', message);
+            }
+            
+            logger.info(`Received heartbeat ${sequence} for account ${accountId}`);
+
+            // Store last heartbeat time
+            this.lastHeartbeats.set(accountId, Date.now());
+
+            // Prepare acknowledgment
+            const ackMessage = {
+                type: 'heartbeat_ack',
+                sequence: sequence,
+                original_timestamp: message.timestamp,
+                timestamp: new Date().toISOString(),
+                account_id: accountId
+            };
+
+            // Send acknowledgment
+            if (ws.readyState === WebSocket.OPEN) {
+                await ws.send(JSON.stringify(ackMessage));
+                logger.info(`Sent heartbeat acknowledgment ${sequence} for account ${accountId}`);
             }
 
         } catch (error) {
-            logger.error('Error processing message:', error);
-            this.handleError(accountId, error);
+            logger.error(`Error handling heartbeat for account ${accountId}:`, error);
         }
     }
 
-    handleConnectionError(accountId, error) {
-        logger.error(`WebSocket error for account ${accountId}:`, error);
-        this.connectionStatuses.set(accountId, 'error');
-        this.updateCircuitBreaker('failure');
-        this.scheduleReconnection(accountId);
-    }
-
-    handleConnectionClose(accountId) {
-        this.connectionStatuses.set(accountId, 'disconnected');
+    handleDisconnect(accountId) {
+        // Clean up connection state
         this.connections.delete(accountId);
+        this.connectionStatuses.set(accountId, 'disconnected');
+        this.lastHeartbeats.delete(accountId);
         
-        // Clear intervals
-        if (this.heartbeatIntervals.has(accountId)) {
-            clearInterval(this.heartbeatIntervals.get(accountId));
-            this.heartbeatIntervals.delete(accountId);
-        }
-
-        // Schedule reconnection if appropriate
-        this.scheduleReconnection(accountId);
-    }
-
-    async scheduleReconnection(accountId) {
-        const attempts = this.reconnectAttempts.get(accountId) || 0;
-        
-        if (attempts < this.MAX_RECONNECT_ATTEMPTS && this.circuitBreaker.status !== 'open') {
-            this.reconnectAttempts.set(accountId, attempts + 1);
-            const delay = Math.min(1000 * Math.pow(2, attempts), 30000);
-            
-            logger.info(`Scheduling reconnection attempt ${attempts + 1} in ${delay}ms`);
-            
-            const timer = setTimeout(async () => {
-                await this.connect(accountId, localStorage.getItem('access_token'));
-            }, delay);
-
-            this.reconnectTimers.set(accountId, timer);
-        } else {
-            logger.warn(`Max reconnection attempts reached for account ${accountId}`);
-            this.emitStatus(accountId, 'max_retries_reached');
-        }
-    }
-
-    updateCircuitBreaker(result) {
-        if (result === 'success') {
-            this.circuitBreaker.failures = 0;
-            this.circuitBreaker.status = 'closed';
-        } else {
-            this.circuitBreaker.failures++;
-            this.circuitBreaker.lastFailure = Date.now();
-            
-            if (this.circuitBreaker.failures >= this.circuitBreaker.threshold) {
-                this.circuitBreaker.status = 'open';
-                setTimeout(() => {
-                    this.circuitBreaker.status = 'half-open';
-                    this.circuitBreaker.failures = 0;
-                }, this.circuitBreaker.resetTimeout);
-            }
-        }
-    }
-
-    resetReconnectAttempts(accountId) {
-        this.reconnectAttempts.set(accountId, 0);
+        // Notify subscribers
+        this.statusSubject.next({
+            accountId,
+            status: 'disconnected',
+            timestamp: Date.now()
+        });
     }
 
     async disconnect(accountId) {
         const ws = this.connections.get(accountId);
         if (ws) {
-            // Clear all timers and intervals
-            clearInterval(this.heartbeatIntervals.get(accountId));
-            clearTimeout(this.reconnectTimers.get(accountId));
-            
-            // Clean up state
-            this.heartbeatIntervals.delete(accountId);
-            this.reconnectTimers.delete(accountId);
-            this.connections.delete(accountId);
-            this.connectionStatuses.delete(accountId);
-            this.reconnectAttempts.delete(accountId);
-            
-            // Close connection if open
-            if (ws.readyState === WebSocket.OPEN) {
+            try {
                 ws.close();
+            } catch (error) {
+                logger.error(`Error closing WebSocket for account ${accountId}:`, error);
             }
         }
+        this.handleDisconnect(accountId);
     }
 
-    emitStatus(accountId, status) {
-        this.statusSubject.next({
-            accountId,
-            status,
-            timestamp: Date.now()
-        });
-    }
-
-    getConnectionStatus(accountId) {
-        return this.connectionStatuses.get(accountId) || 'disconnected';
-    }
-
+    // Observable subscriptions
     onMessage() {
         return this.messageSubject.asObservable();
     }
@@ -351,10 +212,25 @@ class WebSocketManager {
         return this.statusSubject.asObservable();
     }
 
-    async disconnectAll() {
-        for (const accountId of this.connections.keys()) {
-            await this.disconnect(accountId);
-        }
+    onAccountUpdates() {
+        return this.accountUpdateSubject.asObservable();
+    }
+
+    onMarketData() {
+        return this.marketDataSubject.asObservable();
+    }
+
+    onPositionUpdates() {
+        return this.positionUpdateSubject.asObservable();
+    }
+
+    // Utility methods
+    getConnectionStatus(accountId) {
+        return this.connectionStatuses.get(accountId) || 'disconnected';
+    }
+
+    getLastHeartbeat(accountId) {
+        return this.lastHeartbeats.get(accountId);
     }
 }
 

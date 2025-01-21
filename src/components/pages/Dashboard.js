@@ -7,8 +7,9 @@ import TradesTable from '../features/trading/TradesTable';
 
 // Lazy loaded components
 const Management = lazy(() => import('../features/trading/Management'));
+const OrderControl = lazy(() => import('../features/trading/OrderControl')); 
 const StrategyGroups = lazy(() => import('../features/strategies/ActivateStrategies'));
-
+const MarketplacePage = lazy(() => import('./MarketplacePage'));
 
 const Dashboard = () => {
   const [selectedItem, setSelectedItem] = useState('Dashboard');
@@ -16,44 +17,54 @@ const Dashboard = () => {
   const renderContent = () => {
     switch (selectedItem) {
       case 'Dashboard':
-        return (
-          <Flex position="relative" h="full" p={4} zIndex={2} gap={4}>
-            <Flex flexDirection="column" flex={7}>
-              {/* Trading chart */}
-              <Box h="60%" bg="whiteAlpha.100" borderRadius="xl" overflow="hidden">
-                <Suspense fallback={<Spinner size="xl" color="blue.500" />}>
-                  <TradingViewWidget />
-                </Suspense>
-              </Box>
-              
-              {/* Trades table */}
-              <Box mt={4} flex={1}>
-                <Suspense fallback={<Spinner size="xl" color="blue.500" />}>
-                  <TradesTable />
-                </Suspense>
-              </Box>
-            </Flex>
-            
-            {/* Right sidebar */}
-            <Flex flex={3} flexDirection="column" gap={4}>
-              {/* Account management */}
-              <Box flex="0 0 auto">
-                <Suspense fallback={<Spinner size="xl" color="blue.500" />}>
-                  <Management />
-                </Suspense>
-              </Box>
-              
-              {/* Strategy groups */}
-              <Box flex={1}>
-                <Suspense fallback={<Spinner size="xl" color="blue.500" />}>
-                  <StrategyGroups />
-                </Suspense>
-              </Box>
-            </Flex>
-          </Flex>
-        );
+  return (
+    <Flex position="relative" h="full" p={4} zIndex={2} gap={4}>
+      <Flex flexDirection="column" flex={7}>
+        {/* Trading chart */}
+        <Box h="60%" bg="whiteAlpha.100" borderRadius="xl" overflow="hidden">
+          <Suspense fallback={<Spinner size="xl" color="blue.500" />}>
+            <TradingViewWidget />
+          </Suspense>
+        </Box>
+        
+        {/* Bottom section with TradesTable and OrderControl side by side */}
+        <Flex mt={4} gap={4} flex={1}>
+          {/* TradesTable */}
+          <Box flex={1}>
+            <Suspense fallback={<Spinner size="xl" color="blue.500" />}>
+              <TradesTable />
+            </Suspense>
+          </Box>
+          
+          {/* Order Control */}
+          <Box flex="0 0 400px"> {/* Fixed width for OrderControl */}
+            <Suspense fallback={<Spinner size="xl" color="blue.500" />}>
+              <OrderControl />
+            </Suspense>
+          </Box>
+        </Flex>
+      </Flex>
+      
+      {/* Right sidebar */}
+      <Flex flex={3} flexDirection="column" gap={4}>
+        {/* Account management */}
+        <Box flex="0 0 auto">
+          <Suspense fallback={<Spinner size="xl" color="blue.500" />}>
+            <Management />
+          </Suspense>
+        </Box>
+        
+        {/* Strategy groups */}
+        <Box flex={1}>
+          <Suspense fallback={<Spinner size="xl" color="blue.500" />}>
+            <StrategyGroups />
+          </Suspense>
+        </Box>
+      </Flex>
+    </Flex>
+  );
 
-      case 'Strategies':
+      case 'Strategy Builder':
         return (
           <Flex position="relative" h="full" p={4} zIndex={2}>
             <Box 
@@ -69,6 +80,13 @@ const Dashboard = () => {
               </Suspense>
             </Box>
           </Flex>
+        );
+
+      case 'Marketplace':
+        return (
+          <Suspense fallback={<Spinner size="xl" color="blue.500" />}>
+            <MarketplacePage />
+          </Suspense>
         );
 
       default:
