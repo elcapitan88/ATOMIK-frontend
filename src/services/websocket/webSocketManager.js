@@ -91,63 +91,61 @@ class WebSocketManager {
         }
     }
 
-    handleMessage(accountId, message, ws) {
-        // Log all messages in debug mode
+    async handleMessage(accountId, message, ws) {
         if (this.debug) {
             logger.info(`Received WebSocket message for ${accountId}:`, message);
         }
 
         try {
-            // Handle heartbeat messages
             if (message.type === 'heartbeat') {
-                this.handleHeartbeat(accountId, message, ws);
+                await this.sendHeartbeatAck(accountId, message, ws);
                 return;
             }
 
-            // Handle different message types
-            switch (message.type) {
-                case 'account_update':
-                    this.accountUpdateSubject.next({
-                        accountId,
-                        ...message,
-                        timestamp: Date.now()
-                    });
-                    break;
-
-                case 'market_data':
-                    this.marketDataSubject.next({
-                        accountId,
-                        ...message,
-                        timestamp: Date.now()
-                    });
-                    break;
-
-                case 'position_update':
-                    this.positionUpdateSubject.next({
-                        accountId,
-                        ...message,
-                        timestamp: Date.now()
-                    });
-                    break;
-
-                default:
-                    // Emit other messages to general subscribers
-                    this.messageSubject.next({
-                        accountId,
-                        ...message,
-                        timestamp: Date.now()
-                    });
+            if (message.type === 'account_update') {
+                logger.info('Processing account update:', message);
+                this.accountUpdateSubject.next({
+                    accountId,
+                    data: message.data,
+                    timestamp: Date.now()
+                });
+                return;
             }
+
+            if (message.type === 'market_data') {
+                this.marketDataSubject.next({
+                    accountId,
+                    ...message,
+                    timestamp: Date.now()
+                });
+                return;
+            }
+
+            if (message.type === 'position_update') {
+                this.positionUpdateSubject.next({
+                    accountId,
+                    ...message,
+                    timestamp: Date.now()
+                });
+                return;
+            }
+
+            // Default message handling
+            this.messageSubject.next({
+                accountId,
+                ...message,
+                timestamp: Date.now()
+            });
+
         } catch (error) {
             logger.error(`Error processing message for account ${accountId}:`, error);
         }
     }
 
-    async handleHeartbeat(accountId, message, ws) {
+    async sendHeartbeatAck(accountId, message, ws) {
         try {
-            const sequence = message.sequence || message.seq || 'unknown';
+            const sequence = message.sequence || 'unknown';
             
-            // Log full heartbeat message in debug mode
             if (this.debug) {
                 logger.info('Raw heartbeat message:', message);
             }
@@ -157,7 +155,7 @@ class WebSocketManager {
             // Store last heartbeat time
             this.lastHeartbeats.set(accountId, Date.now());
 
-            // Prepare acknowledgment
+            // Send acknowledgment
             const ackMessage = {
                 type: 'heartbeat_ack',
                 sequence: sequence,
@@ -166,7 +164,6 @@ class WebSocketManager {
                 account_id: accountId
             };
 
-            // Send acknowledgment
             if (ws.readyState === WebSocket.OPEN) {
                 await ws.send(JSON.stringify(ackMessage));
                 logger.info(`Sent heartbeat acknowledgment ${sequence} for account ${accountId}`);
@@ -203,7 +200,6 @@ class WebSocketManager {
         this.handleDisconnect(accountId);
     }
 
-    // Observable subscriptions
     onMessage() {
         return this.messageSubject.asObservable();
     }
@@ -224,7 +220,6 @@ class WebSocketManager {
         return this.positionUpdateSubject.asObservable();
     }
 
-    // Utility methods
     getConnectionStatus(accountId) {
         return this.connectionStatuses.get(accountId) || 'disconnected';
     }

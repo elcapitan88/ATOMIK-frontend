@@ -137,7 +137,6 @@ const Management = () => {
     const [connectionStatuses, setConnectionStatuses] = useState(new Map());
     const [sortBy, setSortBy] = useState(null);
     const [accountUpdates, setAccountUpdates] = useState({});
-    const updateSubscriptions = useRef([]);
     const [editingAccount, setEditingAccount] = useState(null);
 
     // Hooks
@@ -175,35 +174,39 @@ const Management = () => {
 
     useEffect(() => {
         const subscriptions = [];
-
+    
         accounts.forEach(account => {
-            // Subscribe to account updates
+            console.log('Setting up subscription for account:', account.account_id);
             const accountSub = webSocketManager.onAccountUpdates()
                 .subscribe({
                     next: (update) => {
-                        if (update.data.accountId === account.account_id) {
-                            setAccountUpdates(prev => ({
-                                ...prev,
-                                [account.account_id]: {
-                                    balance: update.data.balance,
-                                    totalPnL: update.data.totalPnL,
-                                    todaysPnL: update.data.todaysPnL,
-                                    openPnL: update.data.openPnL,
-                                    timestamp: update.data.timestamp
-                                }
-                            }));
+                        console.log('Received WebSocket update:', update);
+                        if (update.data && update.data.accountId === account.account_id) {
+                            console.log('Processing update for account:', account.account_id, update.data);
+                            setAccountUpdates(prev => {
+                                const newState = {
+                                    ...prev,
+                                    [account.account_id]: {
+                                        balance: update.data.balance,
+                                        totalPnL: update.data.totalPnL,
+                                        dayPnL: update.data.dayPnL,
+                                        openPnL: update.data.openPositionsPnL,
+                                        timestamp: update.timestamp
+                                    }
+                                };
+                                console.log('New account updates state:', newState);
+                                return newState;
+                            });
                         }
                     },
                     error: (error) => {
-                        logger.error(`WebSocket update error for account ${account.account_id}:`, error);
+                        console.error(`WebSocket update error for account ${account.account_id}:`, error);
                     }
                 });
-
-            // Store subscription for cleanup
+    
             subscriptions.push(accountSub);
         });
-
-        // Cleanup subscriptions
+    
         return () => {
             subscriptions.forEach(sub => sub.unsubscribe());
         };
@@ -457,6 +460,40 @@ const Management = () => {
         };
     }, [accounts]);
 
+    useEffect(() => {
+        const subscriptions = [];
+    
+        accounts.forEach(account => {
+            // Subscribe to account updates
+            const accountSub = webSocketManager.onAccountUpdates()
+                .subscribe({
+                    next: (update) => {
+                        if (update.data.accountId === account.account_id) {
+                            setAccountUpdates(prev => ({
+                                ...prev,
+                                [account.account_id]: {
+                                    balance: update.data.balance,
+                                    totalPnL: update.data.totalPnL,
+                                    todaysPnL: update.data.todaysPnL,
+                                    openPnL: update.data.openPnL,
+                                    timestamp: update.data.timestamp
+                                }
+                            }));
+                        }
+                    },
+                    error: (error) => {
+                        logger.error(`WebSocket update error for account ${account.account_id}:`, error);
+                    }
+                });
+    
+            subscriptions.push(accountSub);
+        });
+    
+        return () => {
+            subscriptions.forEach(sub => sub.unsubscribe());
+        };
+    }, [accounts]);
+
     // AccountItem Component
     const AccountItem = ({ 
         account, 
@@ -466,12 +503,12 @@ const Management = () => {
         onDelete,
         onEditName,
     }) => {
-        // Get latest updates for this account
         const updates = accountUpdates[account.account_id];
-        console.log('Rendering account with updates:', { 
-            accountId: account.account_id, 
-            updates, 
-            currentValues: {
+        console.log('Account render:', {
+            accountId: account.account_id,
+            rawUpdates: updates,
+            connectionStatus,
+            displayValues: {
                 balance: updates?.balance ?? account.balance ?? 0,
                 totalPnL: updates?.totalPnL ?? account.totalPnL ?? 0,
                 todaysPnL: updates?.todaysPnL ?? account.todaysPnL ?? 0,
@@ -484,7 +521,9 @@ const Management = () => {
             balance: updates?.balance ?? account.balance ?? 0,
             totalPnL: updates?.totalPnL ?? account.totalPnL ?? 0,
             todaysPnL: updates?.todaysPnL ?? account.todaysPnL ?? 0,
-            openPnL: updates?.openPnL ?? account.openPnL ?? 0
+            openPnL: updates?.openPnL ?? account.openPnL ?? 0,
+            realizedPnL: updates?.realizedPnL ?? account.realizedPnL ?? 0,
+            weeklyPnL: updates?.weeklyPnL ?? account.weeklyPnL ?? 0
         };
 
         return (
@@ -526,7 +565,7 @@ const Management = () => {
                                 ${displayValues.balance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </Text>
                         </VStack>
-        
+
                         <VStack spacing={0} align="flex-start">
                             <Text fontSize="xs" color="whiteAlpha.700" lineHeight="1.2">Total P&L</Text>
                             <Text 
@@ -538,16 +577,16 @@ const Management = () => {
                                 ${displayValues.totalPnL.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </Text>
                         </VStack>
-        
+
                         <VStack spacing={0} align="flex-start">
-                            <Text fontSize="xs" color="whiteAlpha.700" lineHeight="1.2">Today's P&L</Text>
+                            <Text fontSize="xs" color="whiteAlpha.700" lineHeight="1.2">Open P&L</Text>
                             <Text 
                                 fontSize="sm" 
                                 fontWeight="bold"
                                 lineHeight="1.2"
-                                color={displayValues.todaysPnL >= 0 ? 'green.400' : 'red.400'}
+                                color={displayValues.openPnL >= 0 ? 'green.400' : 'red.400'}
                             >
-                                ${displayValues.todaysPnL.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                ${displayValues.openPnL.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </Text>
                         </VStack>
                     </Flex>
@@ -574,32 +613,32 @@ const Management = () => {
                 {/* Expanded Section */}
                 {isExpanded && (
                     <Box 
-                        p={3} 
-                        borderTop="1px solid" 
-                        borderColor="whiteAlpha.200"
-                        bg="whiteAlpha.50"
-                    >
-                        <HStack spacing={6}>
-                            <Box>
-                                <Text fontSize="xs" color="whiteAlpha.700">Open P&L</Text>
-                                <Text fontSize="sm" fontWeight="semibold" color={displayValues.openPnL >= 0 ? 'green.400' : 'red.400'}>
-                                    ${displayValues.openPnL.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                </Text>
-                            </Box>
-                            <Box>
-                                <Text fontSize="xs" color="whiteAlpha.700">Realized P&L</Text>
-                                <Text fontSize="sm" fontWeight="semibold" color={displayValues.realizedPnL >= 0 ? 'green.400' : 'red.400'}>
-                                    ${displayValues.realizedPnL.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                </Text>
-                            </Box>
-                            <Box>
-                                <Text fontSize="xs" color="whiteAlpha.700">Weekly P&L</Text>
-                                <Text fontSize="sm" fontWeight="semibold" color={displayValues.weeklyPnL >= 0 ? 'green.400' : 'red.400'}>
-                                    ${displayValues.weeklyPnL.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                </Text>
-                            </Box>
-                        </HStack>
-                    </Box>
+                    p={3} 
+                    borderTop="1px solid" 
+                    borderColor="whiteAlpha.200"
+                    bg="whiteAlpha.50"
+                >
+                    <HStack spacing={6}>
+                        <Box>
+                            <Text fontSize="xs" color="whiteAlpha.700">Today's P&L</Text>
+                            <Text fontSize="sm" fontWeight="semibold" color={displayValues.todaysPnL >= 0 ? 'green.400' : 'red.400'}>
+                                ${displayValues.todaysPnL.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </Text>
+                        </Box>
+                        <Box>
+                            <Text fontSize="xs" color="whiteAlpha.700">Realized P&L</Text>
+                            <Text fontSize="sm" fontWeight="semibold" color={displayValues.realizedPnL >= 0 ? 'green.400' : 'red.400'}>
+                                ${displayValues.realizedPnL.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </Text>
+                        </Box>
+                        <Box>
+                            <Text fontSize="xs" color="whiteAlpha.700">Weekly P&L</Text>
+                            <Text fontSize="sm" fontWeight="semibold" color={displayValues.weeklyPnL >= 0 ? 'green.400' : 'red.400'}>
+                                ${displayValues.weeklyPnL.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </Text>
+                        </Box>
+                    </HStack>
+                </Box>
                 )}
             </Box>
         );
