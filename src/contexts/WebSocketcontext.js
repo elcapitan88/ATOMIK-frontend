@@ -1,35 +1,42 @@
-import React, { createContext, useContext, useReducer, useEffect, useCallback, useState } from 'react';
+import React, { 
+  createContext, 
+  useContext, 
+  useReducer, 
+  useEffect, 
+  useCallback, 
+  useRef,
+  useMemo 
+} from 'react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import logger from '@/utils/logger';
 
-// Define WebSocket states
-const WebSocketState = {
-  CONNECTING: 'CONNECTING',
-  CONNECTED: 'CONNECTED',
-  DISCONNECTED: 'DISCONNECTED',
-  RECONNECTING: 'RECONNECTING',
-  ERROR: 'ERROR'
+// WebSocket states
+export const WebSocketState = {
+  CONNECTING: 'connecting',
+  CONNECTED: 'connected',
+  DISCONNECTED: 'disconnected',
+  ERROR: 'error'
 };
 
-// Define action types
+// Action types
 const ActionTypes = {
-  SET_CONNECTION_STATE: 'SET_CONNECTION_STATE',
+  UPDATE_CONNECTION: 'UPDATE_CONNECTION',
   UPDATE_MARKET_DATA: 'UPDATE_MARKET_DATA',
-  UPDATE_ORDER: 'UPDATE_ORDER',
-  UPDATE_POSITION: 'UPDATE_POSITION',
   UPDATE_ACCOUNT: 'UPDATE_ACCOUNT',
   SET_ERROR: 'SET_ERROR',
-  CLEAR_ERROR: 'CLEAR_ERROR'
+  CLEAR_ERROR: 'CLEAR_ERROR',
+  INCREMENT_RECONNECT: 'INCREMENT_RECONNECT',
+  RESET_RECONNECT: 'RESET_RECONNECT'
 };
 
 // Initial state
 const initialState = {
-  connectionState: WebSocketState.DISCONNECTED,
-  marketData: {},
-  orders: {},
-  positions: {},
-  accountData: null,
+  connections: new Map(),
+  marketData: new Map(),
+  accountData: new Map(),
   error: null,
-  lastUpdated: null
+  reconnectAttempts: 0,
+  lastHeartbeat: null
 };
 
 // Create context
@@ -38,271 +45,250 @@ const WebSocketContext = createContext(null);
 // Reducer function
 const webSocketReducer = (state, action) => {
   switch (action.type) {
-    case ActionTypes.SET_CONNECTION_STATE:
-      return {
-        ...state,
-        connectionState: action.payload,
-        lastUpdated: new Date().toISOString()
-      };
-    
-    case ActionTypes.UPDATE_MARKET_DATA:
-      return {
-        ...state,
-        marketData: {
-          ...state.marketData,
-          [action.payload.symbol]: {
-            ...action.payload,
-            timestamp: new Date().toISOString()
-          }
-        },
-        lastUpdated: new Date().toISOString()
-      };
-    
-    case ActionTypes.UPDATE_ORDER:
-      return {
-        ...state,
-        orders: {
-          ...state.orders,
-          [action.payload.orderId]: {
-            ...action.payload,
-            timestamp: new Date().toISOString()
-          }
-        },
-        lastUpdated: new Date().toISOString()
-      };
-    
-    case ActionTypes.UPDATE_POSITION:
-      return {
-        ...state,
-        positions: {
-          ...state.positions,
-          [action.payload.symbol]: {
-            ...action.payload,
-            timestamp: new Date().toISOString()
-          }
-        },
-        lastUpdated: new Date().toISOString()
-      };
-    
-    case ActionTypes.UPDATE_ACCOUNT:
-      return {
-        ...state,
-        accountData: {
-          ...action.payload,
-          timestamp: new Date().toISOString()
-        },
-        lastUpdated: new Date().toISOString()
-      };
-    
-    case ActionTypes.SET_ERROR:
-      return {
-        ...state,
-        error: action.payload,
-        lastUpdated: new Date().toISOString()
-      };
-    
-    case ActionTypes.CLEAR_ERROR:
-      return {
-        ...state,
-        error: null,
-        lastUpdated: new Date().toISOString()
-      };
-    
-    default:
-      return state;
+      case ActionTypes.UPDATE_CONNECTION: {
+          const newConnections = new Map(state.connections);
+          newConnections.set(action.payload.accountId, {
+              status: action.payload.status,
+              timestamp: Date.now()
+          });
+          return {
+              ...state,
+              connections: newConnections
+          };
+      }
+
+      case ActionTypes.UPDATE_MARKET_DATA: {
+          const newMarketData = new Map(state.marketData);
+          newMarketData.set(action.payload.symbol, {
+              ...action.payload,
+              timestamp: Date.now()
+          });
+          return {
+              ...state,
+              marketData: newMarketData
+          };
+      }
+
+      case ActionTypes.UPDATE_ACCOUNT: {
+          const newAccountData = new Map(state.accountData);
+          newAccountData.set(action.payload.accountId, {
+              ...action.payload,
+              timestamp: Date.now()
+          });
+          return {
+              ...state,
+              accountData: newAccountData
+          };
+      }
+
+      case ActionTypes.SET_ERROR:
+          return {
+              ...state,
+              error: action.payload
+          };
+
+      case ActionTypes.CLEAR_ERROR:
+          return {
+              ...state,
+              error: null
+          };
+
+      case ActionTypes.INCREMENT_RECONNECT:
+          return {
+              ...state,
+              reconnectAttempts: state.reconnectAttempts + 1
+          };
+
+      case ActionTypes.RESET_RECONNECT:
+          return {
+              ...state,
+              reconnectAttempts: 0
+          };
+
+      default:
+          return state;
   }
 };
 
 // WebSocket Provider Component
-const WebSocketProvider = ({ children, url }) => {
+export const WebSocketProvider = ({ children }) => {
   const [state, dispatch] = useReducer(webSocketReducer, initialState);
-  const [ws, setWs] = useState(null);
-  const [reconnectAttempts, setReconnectAttempts] = useState(0);
-  const maxReconnectAttempts = 5;
-  const reconnectDelay = 1000; // Start with 1 second
+  const wsConnections = useRef(new Map());
+  const heartbeatIntervals = useRef(new Map());
 
-  const connect = useCallback(() => {
-    try {
-      dispatch({ type: ActionTypes.SET_CONNECTION_STATE, payload: WebSocketState.CONNECTING });
-      
-      const websocket = new WebSocket(url);
-      
-      websocket.onopen = () => {
-        dispatch({ type: ActionTypes.SET_CONNECTION_STATE, payload: WebSocketState.CONNECTED });
-        setReconnectAttempts(0);
-      };
-      
-      websocket.onmessage = (event) => {
-        try {
-          const data = JSON.parse(event.data);
-          handleWebSocketMessage(data, dispatch);
-        } catch (error) {
-          console.error('Error parsing WebSocket message:', error);
-        }
-      };
-      
-      websocket.onerror = (error) => {
-        dispatch({
+  const validateConnection = useCallback(async (token) => {
+      try {
+          const response = await fetch(
+              `${process.env.REACT_APP_API_URL}/api/v1/ws/test?token=${token}`
+          );
+          const data = await response.json();
+          logger.info('Connection validation:', data);
+          return data.valid;
+      } catch (error) {
+          logger.error('Validation error:', error);
+          return false;
+      }
+  }, []);
+
+  const handleWebSocketError = useCallback((accountId, error) => {
+      logger.error(`WebSocket error for account ${accountId}:`, error);
+      dispatch({
           type: ActionTypes.SET_ERROR,
-          payload: 'WebSocket connection error'
-        });
-        dispatch({ type: ActionTypes.SET_CONNECTION_STATE, payload: WebSocketState.ERROR });
+          payload: 'Connection error occurred'
+      });
+      dispatch({
+          type: ActionTypes.UPDATE_CONNECTION,
+          payload: { accountId, status: WebSocketState.ERROR }
+      });
+  }, []);
+
+  const setupHeartbeat = useCallback((ws, accountId) => {
+      if (heartbeatIntervals.current.has(accountId)) {
+          clearInterval(heartbeatIntervals.current.get(accountId));
+      }
+
+      const intervalId = setInterval(() => {
+          if (ws.readyState === WebSocket.OPEN) {
+              ws.send('[]');
+          }
+      }, 30000);
+
+      heartbeatIntervals.current.set(accountId, intervalId);
+
+      return () => {
+          clearInterval(intervalId);
+          heartbeatIntervals.current.delete(accountId);
       };
-      
-      websocket.onclose = () => {
-        dispatch({ type: ActionTypes.SET_CONNECTION_STATE, payload: WebSocketState.DISCONNECTED });
-        attemptReconnect();
-      };
-      
-      setWs(websocket);
-    } catch (error) {
-      console.error('Error establishing WebSocket connection:', error);
-      dispatch({
-        type: ActionTypes.SET_ERROR,
-        payload: 'Failed to establish WebSocket connection'
-      });
-    }
-  }, [url]);
+  }, []);
 
-  const attemptReconnect = useCallback(() => {
-    if (reconnectAttempts < maxReconnectAttempts) {
-      dispatch({ type: ActionTypes.SET_CONNECTION_STATE, payload: WebSocketState.RECONNECTING });
-      
-      setTimeout(() => {
-        setReconnectAttempts(prev => prev + 1);
-        connect();
-      }, reconnectDelay * Math.pow(2, reconnectAttempts)); // Exponential backoff
-    } else {
-      dispatch({
-        type: ActionTypes.SET_ERROR,
-        payload: 'Maximum reconnection attempts reached'
-      });
-    }
-  }, [reconnectAttempts, connect]);
+  const clearHeartbeat = useCallback((accountId) => {
+      if (heartbeatIntervals.current.has(accountId)) {
+          clearInterval(heartbeatIntervals.current.get(accountId));
+          heartbeatIntervals.current.delete(accountId);
+      }
+  }, []);
 
-  const disconnect = useCallback(() => {
-    if (ws) {
-      ws.close();
-      setWs(null);
-    }
-  }, [ws]);
+  const createWebSocket = useCallback(async (accountId) => {
+      try {
+          const token = localStorage.getItem('access_token');
+          if (!token) {
+              dispatch({
+                  type: ActionTypes.SET_ERROR,
+                  payload: 'No authentication token found'
+              });
+              return null;
+          }
 
-  const sendMessage = useCallback((message) => {
-    if (ws && ws.readyState === WebSocket.OPEN) {
-      ws.send(JSON.stringify(message));
-    } else {
-      console.error('WebSocket is not connected');
-      dispatch({
-        type: ActionTypes.SET_ERROR,
-        payload: 'WebSocket is not connected'
-      });
-    }
-  }, [ws]);
+          const wsUrl = `${process.env.REACT_APP_WS_HOST}/ws/tradovate/${accountId}?token=${token}`;
+          console.log('Connecting to:', wsUrl);
+
+          const ws = new WebSocket(wsUrl);
+
+          ws.onopen = () => {
+              console.log(`WebSocket connected for account ${accountId}`);
+              dispatch({
+                  type: ActionTypes.UPDATE_CONNECTION,
+                  payload: { accountId, status: WebSocketState.CONNECTED }
+              });
+          };
+
+          ws.onclose = (event) => {
+              console.log(`WebSocket closed. Code: ${event.code}, Reason: ${event.reason}`);
+              dispatch({
+                  type: ActionTypes.UPDATE_CONNECTION,
+                  payload: { accountId, status: WebSocketState.DISCONNECTED }
+              });
+          };
+
+          ws.onerror = (error) => {
+              console.error('WebSocket error:', error);
+          };
+
+          return ws;
+      } catch (error) {
+          console.error('WebSocket creation error:', error);
+          return null;
+      }
+  }, []);
+
+  const connect = useCallback(async (accountId) => {
+      if (!accountId) {
+          dispatch({
+              type: ActionTypes.SET_ERROR,
+              payload: 'Account ID is required'
+          });
+          return;
+      }
+
+      const existingWs = wsConnections.current.get(accountId);
+      if (existingWs) {
+          existingWs.close();
+          wsConnections.current.delete(accountId);
+      }
+
+      const ws = await createWebSocket(accountId);
+      if (ws) {
+          wsConnections.current.set(accountId, ws);
+          dispatch({
+              type: ActionTypes.UPDATE_CONNECTION,
+              payload: { accountId, status: WebSocketState.CONNECTING }
+          });
+      }
+  }, [createWebSocket]);
+
+  const disconnect = useCallback((accountId) => {
+      const ws = wsConnections.current.get(accountId);
+      if (ws) {
+          clearHeartbeat(accountId);
+          ws.close();
+          wsConnections.current.delete(accountId);
+          dispatch({
+              type: ActionTypes.UPDATE_CONNECTION,
+              payload: { accountId, status: WebSocketState.DISCONNECTED }
+          });
+      }
+  }, [clearHeartbeat]);
 
   useEffect(() => {
-    connect();
-    return () => {
-      disconnect();
-    };
-  }, [connect, disconnect]);
+      return () => {
+          wsConnections.current.forEach((ws, accountId) => {
+              clearHeartbeat(accountId);
+              ws.close();
+          });
+          wsConnections.current.clear();
+      };
+  }, [clearHeartbeat]);
 
-  // Provide the WebSocket context
+  const contextValue = useMemo(() => ({
+      state,
+      connect,
+      disconnect,
+      getConnectionStatus: (accountId) => 
+          state.connections.get(accountId)?.status || WebSocketState.DISCONNECTED,
+      getMarketData: (symbol) => state.marketData.get(symbol),
+      getAccountData: (accountId) => state.accountData.get(accountId),
+      clearError: () => dispatch({ type: ActionTypes.CLEAR_ERROR })
+  }), [state, connect, disconnect]);
+
   return (
-    <WebSocketContext.Provider value={{ state, dispatch, sendMessage }}>
-      {state.error && (
-        <Alert variant="destructive" className="mb-4">
-          <AlertDescription>{state.error}</AlertDescription>
-        </Alert>
-      )}
-      {children}
-    </WebSocketContext.Provider>
+      <WebSocketContext.Provider value={contextValue}>
+          {state.error && (
+              <Alert variant="destructive" className="mb-4">
+                  <AlertDescription>{state.error}</AlertDescription>
+              </Alert>
+          )}
+          {children}
+      </WebSocketContext.Provider>
   );
 };
 
 // Custom hook for using WebSocket context
-const useWebSocket = () => {
+export const useWebSocket = () => {
   const context = useContext(WebSocketContext);
   if (!context) {
-    throw new Error('useWebSocket must be used within a WebSocketProvider');
+      throw new Error('useWebSocket must be used within a WebSocketProvider');
   }
   return context;
 };
 
-// Helper function to handle different types of WebSocket messages
-const handleWebSocketMessage = (data, dispatch) => {
-  switch (data.type) {
-    case 'MARKET_DATA':
-      dispatch({
-        type: ActionTypes.UPDATE_MARKET_DATA,
-        payload: data.payload
-      });
-      break;
-    
-    case 'ORDER_UPDATE':
-      dispatch({
-        type: ActionTypes.UPDATE_ORDER,
-        payload: data.payload
-      });
-      break;
-    
-    case 'POSITION_UPDATE':
-      dispatch({
-        type: ActionTypes.UPDATE_POSITION,
-        payload: data.payload
-      });
-      break;
-    
-    case 'ACCOUNT_UPDATE':
-      dispatch({
-        type: ActionTypes.UPDATE_ACCOUNT,
-        payload: data.payload
-      });
-      break;
-    
-    default:
-      console.warn('Unknown message type:', data.type);
-  }
-};
-
-export {
-  WebSocketProvider,
-  useWebSocket,
-  WebSocketState,
-  ActionTypes
-};
-
-// Example usage component
-const WebSocketStatus = () => {
-  const { state } = useWebSocket();
-  
-  const getStatusColor = () => {
-    switch (state.connectionState) {
-      case WebSocketState.CONNECTED:
-        return 'text-green-500';
-      case WebSocketState.CONNECTING:
-      case WebSocketState.RECONNECTING:
-        return 'text-yellow-500';
-      case WebSocketState.ERROR:
-        return 'text-red-500';
-      default:
-        return 'text-gray-500';
-    }
-  };
-  
-  return (
-    <div className="p-4 rounded-lg bg-gray-50">
-      <h3 className="text-lg font-semibold mb-2">WebSocket Status</h3>
-      <div className={`flex items-center ${getStatusColor()}`}>
-        <div className={`w-3 h-3 rounded-full mr-2 ${getStatusColor()}`}></div>
-        {state.connectionState}
-      </div>
-      {state.lastUpdated && (
-        <div className="text-sm text-gray-500 mt-2">
-          Last Updated: {new Date(state.lastUpdated).toLocaleString()}
-        </div>
-      )}
-    </div>
-  );
-};
-
-export default WebSocketStatus;
+export default WebSocketContext;

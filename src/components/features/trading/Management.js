@@ -134,7 +134,7 @@ const Management = () => {
     const [selectedBroker, setSelectedBroker] = useState(null);
     const [expandedAccounts, setExpandedAccounts] = useState(new Set());
     const [fetchError, setFetchError] = useState(null);
-    const [connectionStatuses, setConnectionStatuses] = useState(new Map());
+    const [connectionStatuses, setConnectionStatuses] = useState(() => new Map());
     const [sortBy, setSortBy] = useState(null);
     const [accountUpdates, setAccountUpdates] = useState({});
     const [editingAccount, setEditingAccount] = useState(null);
@@ -216,15 +216,17 @@ const Management = () => {
         const statusSub = webSocketManager.onStatus()
             .subscribe({
                 next: (statusUpdate) => {
-                    setConnectionStatuses(prev => 
-                        new Map(prev).set(statusUpdate.accountId, statusUpdate.status)
-                    );
+                    setConnectionStatuses(prev => {
+                        const newMap = new Map(prev);
+                        newMap.set(statusUpdate.accountId, statusUpdate.status);
+                        return newMap;
+                    });
                 },
                 error: (error) => {
                     logger.error('WebSocket status subscription error:', error);
                 }
             });
-
+    
         return () => statusSub.unsubscribe();
     }, []);
 

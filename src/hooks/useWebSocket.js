@@ -1,92 +1,161 @@
-import { useState, useRef, useCallback, useEffect } from 'react';
+// src/hooks/useWebSocket.js
+import { useCallback, useEffect, useState } from 'react';
+import { webSocketManager } from '@/services/websocket/webSocketManager';
+import { CONNECTION_STATE } from '@/services/Config/wsConfig';
+import logger from '@/utils/logger';
 
-const useWebSocket = (broker) => {
-    const [status, setStatus] = useState('disconnected');
-    const wsRef = useRef(null);
-    const reconnectAttemptsRef = useRef(0);
-    const MAX_RECONNECT_ATTEMPTS = 3;
-    const RECONNECT_DELAY = 3000;
-    const lastAttemptRef = useRef(Date.now());
+const useWebSocket = (accountId, options = {}) => {
+    const [connectionState, setConnectionState] = useState(CONNECTION_STATE.DISCONNECTED);
+    const [error, setError] = useState(null);
+    const [lastMessage, setLastMessage] = useState(null);
 
-    const connect = useCallback(async (accountId) => {
-        if (!accountId) return false;
-        if (wsRef.current?.readyState === WebSocket.OPEN) return true;
-        
-        // Add cooldown for reconnection attempts
-        const now = Date.now();
-        if (now - lastAttemptRef.current < RECONNECT_DELAY) {
+    // Connection handling
+    const connect = useCallback(async () => {
+        if (!accountId) {
+            setError('Account ID is required');
             return false;
         }
-        lastAttemptRef.current = now;
 
         try {
-            const token = localStorage.getItem('access_token');
-            if (!token) {
-                throw new Error('No authentication token found');
+            const connected = await webSocketManager.connect(accountId);
+            if (!connected) {
+                setError('Failed to establish connection');
+                return false;
             }
-
-            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-            const host = process.env.REACT_APP_WS_HOST || window.location.host;
-            const wsUrl = `${protocol}//${host}/ws/${broker}/${accountId}?token=${token}`;
-
-            return new Promise((resolve, reject) => {
-                const ws = new WebSocket(wsUrl);
-                wsRef.current = ws;
-
-                const timeout = setTimeout(() => {
-                    ws.close();
-                    setStatus('disconnected');
-                    resolve(false);
-                }, 10000);
-
-                ws.onopen = () => {
-                    clearTimeout(timeout);
-                    setStatus('connected');
-                    reconnectAttemptsRef.current = 0;
-                    resolve(true);
-                };
-
-                ws.onclose = () => {
-                    setStatus('disconnected');
-                    resolve(false);
-                };
-
-                ws.onerror = (error) => {
-                    clearTimeout(timeout);
-                    console.error('WebSocket connection error:', error);
-                    setStatus('disconnected');
-                    resolve(false);
-                };
-            });
-        } catch (error) {
-            console.error('WebSocket connection error:', error);
-            setStatus('disconnected');
+            return true;
+        } catch (err) {
+            setError(err.message);
             return false;
         }
-    }, [broker]);
+    }, [accountId]);
 
-    const disconnect = useCallback(async (accountId) => {
-        if (wsRef.current) {
-            wsRef.current.close();
-            wsRef.current = null;
-            setStatus('disconnected');
+    const disconnect = useCallback(() => {
+        if (accountId) {
+            webSocketManager.disconnect(accountId);
         }
-    }, []);
+    }, [accountId]);
 
-    // Cleanup on unmount
+    // Set up subscriptions
     useEffect(() => {
+        if (!accountId) return;
+
+        const statusSub = webSocketManager.onStatus()
+            .subscribe({
+                next: (update) => {
+                    if (update.accountId === accountId) {
+                        setConnectionState(update.status);
+                        if (update.status === CONNECTION_STATE.ERROR) {
+                            setError('Connection error occurred');
+                        } else {
+                            setError(null);
+                        }
+                    }
+                },
+                error: (err) => {
+                    logger.error('Status subscription error:', err);
+                    setError(err.message);
+                }
+            });
+
+        const messageSub = webSocketManager.onMessage()
+            .subscribe({
+                next: (message) => {
+                    if (message.accountId === accountId) {
+                        setLastMessage(message);
+                        options.onMessage?.(message);
+                    }
+                },
+                error: (err) => {
+                    logger.error('Message subscription error:', err);
+                    setError(err.message);
+                }
+            });
+
+        // Optional market data subscription
+        let marketDataSub;
+        if (options.subscribeToMarketData) {
+            marketDataSub = webSocketManager.onMarketData()
+                .subscribe({
+                    next: (data) => {
+                        if (data.accountId === accountId) {
+                            options.onMarketData?.(data);
+                        }
+                    },
+                    error: (err) => {
+                        logger.error('Market data subscription error:', err);
+                        setError(err.message);
+                    }
+                });
+        }
+
+        // Optional account updates subscription
+        let accountSub;
+        if (options.subscribeToAccountUpdates) {
+            accountSub = webSocketManager.onAccountUpdates()
+                .subscribe({
+                    next: (update) => {
+                        if (update.accountId === accountId) {
+                            options.onAccountUpdate?.(update);
+                        }
+                    },
+                    error: (err) => {
+                        logger.error('Account subscription error:', err);
+                        setError(err.message);
+                    }
+                });
+        }
+
+        // Auto-connect if specified
+        if (options.autoConnect) {
+            connect();
+        }
+
+        // Cleanup subscriptions
         return () => {
-            if (wsRef.current) {
-                wsRef.current.close();
+            statusSub.unsubscribe();
+            messageSub.unsubscribe();
+            if (marketDataSub) marketDataSub.unsubscribe();
+            if (accountSub) accountSub.unsubscribe();
+            
+            // Disconnect if autoDisconnect is true
+            if (options.autoDisconnect) {
+                disconnect();
             }
         };
-    }, []);
+    }, [accountId, connect, disconnect, options]);
+
+    // Additional utility methods
+    const sendMessage = useCallback((type, data) => {
+        if (!accountId || connectionState !== CONNECTION_STATE.CONNECTED) {
+            return false;
+        }
+
+        try {
+            webSocketManager.send(accountId, type, data);
+            return true;
+        } catch (err) {
+            setError(err.message);
+            return false;
+        }
+    }, [accountId, connectionState]);
+
+    const getConnectionInfo = useCallback(() => {
+        if (!accountId) return null;
+        return webSocketManager.getConnectionInfo(accountId);
+    }, [accountId]);
 
     return {
-        status,
+        connectionState,
+        error,
+        lastMessage,
+        isConnected: connectionState === CONNECTION_STATE.CONNECTED,
         connect,
-        disconnect
+        disconnect,
+        sendMessage,
+        getConnectionInfo,
+        clearError: () => setError(null)
     };
 };
 
 export default useWebSocket;
+

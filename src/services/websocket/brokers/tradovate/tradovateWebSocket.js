@@ -1,375 +1,151 @@
-// services/websocket/brokers/tradovate/tradovateWebSocket.js
-
+// src/services/websocket/brokers/tradovate/tradovateWebSocket.js
 import BaseWebSocket from '../../baseWebSocket';
-import { getWebSocketUrl } from '@/utils/config/wsConfig';
-import logger from '@/utils/logger';
 import { 
-  TradovateEnvironment, 
-  OrderType, 
-  PositionSide 
-} from '@/services/api/brokers/tradovate/tradovateTypes';
+    WS_CONFIG,
+    BROKER_CONFIG,
+    MESSAGE_TYPES,
+    getWebSocketUrl,
+    MESSAGE_FORMATTERS
+} from '@/services/Config/wsConfig';
+import logger from '@/utils/logger';
 
 class TradovateWebSocket extends BaseWebSocket {
-  constructor(accountId, environment = TradovateEnvironment.DEMO) {
-    super(accountId, {
-      reconnectAttempts: 5,
-      reconnectInterval: 1000,
-      heartbeatInterval: 15000,
-      connectionTimeout: 10000,
-      maxQueueSize: 1000
-    });
+    constructor(accountId, environment = 'demo') {
+        super(accountId, {
+            broker: 'tradovate',
+            environment,
+            heartbeatInterval: BROKER_CONFIG.tradovate.heartbeat.interval,
+            reconnectAttempts: WS_CONFIG.RECONNECT.MAX_ATTEMPTS,
+            reconnectDelay: WS_CONFIG.RECONNECT.INITIAL_DELAY
+        });
 
-    this.environment = environment;
-    this.positionCache = new Map();
-    this.orderCache = new Map();
-    this.symbolData = new Map();
-    
-    // Tradovate-specific subscriptions
-    this.subscriptions = {
-      marketData: new Set(),
-      userSync: false,
-      positions: false,
-      orders: false
-    };
-
-    // Event handlers
-    this.onMarketData = null;
-    this.onOrderUpdate = null;
-    this.onPositionUpdate = null;
-    this.onAccountUpdate = null;
-    this.onFillUpdate = null;
-  }
-
-  getWebSocketUrl() {
-    return getWebSocketUrl(this.accountId, 'tradovate', this.environment);
-  }
-
-  async initialize() {
-    try {
-      await this.connect();
-      await this.authenticate();
-      await this.subscribeToUserData();
-      this.startHeartbeat();
-      return true;
-    } catch (error) {
-      logger.error('Failed to initialize Tradovate WebSocket:', error);
-      return false;
+        // Tradovate-specific properties
+        this.missedHeartbeats = 0;
+        this.lastHeartbeatTime = 0;
     }
-  }
 
-  async authenticate() {
-    try {
-      const token = localStorage.getItem('access_token');
-      if (!token) {
-        throw new Error('No authentication token found');
-      }
-
-      const authMessage = {
-        type: 'authorize',
-        token,
-        timestamp: Date.now()
-      };
-
-      const response = await this.send(authMessage);
-      
-      if (response?.success) {
-        logger.info('Successfully authenticated with Tradovate WebSocket');
-        return true;
-      } else {
-        throw new Error('Authentication failed');
-      }
-    } catch (error) {
-      logger.error('Tradovate WebSocket authentication failed:', error);
-      throw error;
+    // Override BaseWebSocket methods as needed
+    getWebSocketUrl() {
+        return getWebSocketUrl(this.accountId, 'tradovate', this.environment);
     }
-  }
 
-  async subscribeToUserData() {
-    if (this.subscriptions.userSync) return;
-
-    try {
-      const message = {
-        type: 'subscribe',
-        channels: ['user/changes'],
-        params: {
-          users: true,
-          accounts: true,
-          positions: true,
-          orders: true,
-          fills: true
+    // Tradovate-specific heartbeat implementation
+    startHeartbeat() {
+        if (this.heartbeatInterval) {
+            clearInterval(this.heartbeatInterval);
         }
-      };
 
-      const response = await this.send(message);
-      if (response?.success) {
-        this.subscriptions.userSync = true;
-        logger.info('Successfully subscribed to user data');
-      }
-    } catch (error) {
-      logger.error('Failed to subscribe to user data:', error);
-      throw error;
-    }
-  }
+        this.heartbeatInterval = setInterval(() => {
+            if (this.isConnected()) {
+                this.ws.send(MESSAGE_FORMATTERS.heartbeat());
+                this.missedHeartbeats++;
 
-  async subscribeToMarketData(symbols) {
-    if (!Array.isArray(symbols)) {
-      symbols = [symbols];
-    }
+                if (this.missedHeartbeats > WS_CONFIG.HEARTBEAT.MAX_MISSED) {
+                    logger.warn('Too many missed heartbeats, reconnecting...');
+                    this.reconnect();
+                }
+            }
+        }, BROKER_CONFIG.tradovate.heartbeat.interval);
 
-    const newSymbols = symbols.filter(symbol => !this.subscriptions.marketData.has(symbol));
-    if (newSymbols.length === 0) return;
-
-    try {
-      const message = {
-        type: 'subscribe',
-        channels: ['md/subscribeQuote'],
-        params: { symbols: newSymbols }
-      };
-
-      const response = await this.send(message);
-      if (response?.success) {
-        newSymbols.forEach(symbol => this.subscriptions.marketData.add(symbol));
-        logger.info(`Successfully subscribed to market data for: ${newSymbols.join(', ')}`);
-      }
-    } catch (error) {
-      logger.error('Failed to subscribe to market data:', error);
-      throw error;
-    }
-  }
-
-  async unsubscribeFromMarketData(symbols) {
-    if (!Array.isArray(symbols)) {
-      symbols = [symbols];
+        this.lastHeartbeatTime = Date.now();
+        this.missedHeartbeats = 0;
     }
 
-    const subscribedSymbols = symbols.filter(symbol => this.subscriptions.marketData.has(symbol));
-    if (subscribedSymbols.length === 0) return;
+    // Override message handling for Tradovate-specific messages
+    async handleMessage(event) {
+        try {
+            // Reset missed heartbeats on any message
+            this.missedHeartbeats = 0;
+            this.lastHeartbeatTime = Date.now();
 
-    try {
-      const message = {
-        type: 'unsubscribe',
-        channels: ['md/unsubscribeQuote'],
-        params: { symbols: subscribedSymbols }
-      };
+            // Handle Tradovate heartbeat response
+            if (event.data === '[]') {
+                return;
+            }
 
-      const response = await this.send(message);
-      if (response?.success) {
-        subscribedSymbols.forEach(symbol => this.subscriptions.marketData.delete(symbol));
-        logger.info(`Successfully unsubscribed from market data for: ${subscribedSymbols.join(', ')}`);
-      }
-    } catch (error) {
-      logger.error('Failed to unsubscribe from market data:', error);
-      throw error;
+            const message = JSON.parse(event.data);
+            
+            // Handle different message types
+            switch (message.type) {
+                case MESSAGE_TYPES.MARKET_DATA:
+                    await this.handleMarketData(message.data);
+                    break;
+
+                case MESSAGE_TYPES.ORDER_UPDATE:
+                    await this.handleOrderUpdate(message.data);
+                    break;
+
+                case MESSAGE_TYPES.ACCOUNT_UPDATE:
+                    await this.handleAccountUpdate(message.data);
+                    break;
+
+                default:
+                    // Pass unhandled messages to base class
+                    await super.handleMessage(event);
+            }
+        } catch (error) {
+            logger.error('Error handling message:', error);
+            this.handleError(error);
+        }
     }
-  }
 
-  async handleMessage(message) {
-    this.lastHeartbeat = Date.now();
-
-    try {
-      switch (message.e) {
-        case 'heartbeat':
-          await this.handleHeartbeat(message);
-          break;
-
-        case 'position':
-          await this.handlePositionUpdate(message.d);
-          break;
-
-        case 'order':
-          await this.handleOrderUpdate(message.d);
-          break;
-
-        case 'fill':
-          await this.handleFillUpdate(message.d);
-          break;
-
-        case 'account':
-          await this.handleAccountUpdate(message.d);
-          break;
-
-        case 'md':
-          await this.handleMarketData(message.d);
-          break;
-
-        case 'error':
-          await this.handleError(new Error(message.d?.message || 'Unknown error'));
-          break;
-
-        default:
-          logger.debug('Unhandled message type:', message.e);
-      }
-
-      if (this.onMessage) {
-        this.onMessage(message);
-      }
-
-    } catch (error) {
-      logger.error('Error processing message:', error);
-      await this.handleError(error);
+    // Tradovate-specific message handlers
+    async handleMarketData(data) {
+        this.emit('marketData', {
+            accountId: this.accountId,
+            data,
+            timestamp: Date.now()
+        });
     }
-  }
 
-  async handlePositionUpdate(position) {
-    try {
-      this.positionCache.set(position.contractId, position);
-
-      const normalizedPosition = {
-        symbol: position.symbol,
-        side: position.quantity > 0 ? PositionSide.LONG : PositionSide.SHORT,
-        quantity: Math.abs(position.quantity),
-        averagePrice: position.averagePrice,
-        unrealizedPnL: position.unrealizedPnL,
-        realizedPnL: position.realizedPnL,
-        timestamp: Date.now()
-      };
-
-      if (this.onPositionUpdate) {
-        this.onPositionUpdate(normalizedPosition);
-      }
-    } catch (error) {
-      logger.error('Error handling position update:', error);
+    async handleOrderUpdate(data) {
+        this.emit('orderUpdate', {
+            accountId: this.accountId,
+            data,
+            timestamp: Date.now()
+        });
     }
-  }
 
-  async handleOrderUpdate(order) {
-    try {
-      this.orderCache.set(order.orderId, order);
-
-      const normalizedOrder = {
-        orderId: order.orderId,
-        symbol: order.symbol,
-        type: order.type,
-        side: order.side,
-        quantity: order.quantity,
-        filledQuantity: order.filledQuantity,
-        remainingQuantity: order.remainingQuantity,
-        price: order.price,
-        status: order.status,
-        timestamp: Date.now()
-      };
-
-      if (this.onOrderUpdate) {
-        this.onOrderUpdate(normalizedOrder);
-      }
-    } catch (error) {
-      logger.error('Error handling order update:', error);
+    async handleAccountUpdate(data) {
+        this.emit('accountUpdate', {
+            accountId: this.accountId,
+            data,
+            timestamp: Date.now()
+        });
     }
-  }
 
-  async handleFillUpdate(fill) {
-    try {
-      const normalizedFill = {
-        orderId: fill.orderId,
-        symbol: fill.symbol,
-        quantity: fill.quantity,
-        price: fill.price,
-        side: fill.side,
-        timestamp: fill.timestamp
-      };
-
-      if (this.onFillUpdate) {
-        this.onFillUpdate(normalizedFill);
-      }
-    } catch (error) {
-      logger.error('Error handling fill update:', error);
+    // Override cleanup to handle Tradovate-specific cleanup
+    cleanup() {
+        super.cleanup();
+        this.missedHeartbeats = 0;
+        this.lastHeartbeatTime = 0;
     }
-  }
 
-  async handleAccountUpdate(accountData) {
-    try {
-      const normalizedAccount = {
-        accountId: accountData.accountId,
-        balance: accountData.balance,
-        marginUsed: accountData.marginUsed,
-        availableMargin: accountData.availableMargin,
-        timestamp: Date.now()
-      };
-
-      if (this.onAccountUpdate) {
-        this.onAccountUpdate(normalizedAccount);
-      }
-    } catch (error) {
-      logger.error('Error handling account update:', error);
+    // Override connection methods if needed
+    async connect() {
+        logger.info(`Connecting to Tradovate WebSocket for account ${this.accountId}`);
+        return super.connect();
     }
-  }
 
-  async handleMarketData(marketData) {
-    try {
-      this.symbolData.set(marketData.symbol, marketData);
-
-      const normalizedMarketData = {
-        symbol: marketData.symbol,
-        price: marketData.price,
-        bid: marketData.bid,
-        ask: marketData.ask,
-        volume: marketData.volume,
-        timestamp: Date.now()
-      };
-
-      if (this.onMarketData) {
-        this.onMarketData(normalizedMarketData);
-      }
-    } catch (error) {
-      logger.error('Error handling market data:', error);
+    disconnect() {
+        logger.info(`Disconnecting Tradovate WebSocket for account ${this.accountId}`);
+        super.disconnect();
     }
-  }
 
-  async resubscribeAll() {
-    try {
-      // Resubscribe to user data
-      if (this.subscriptions.userSync) {
-        await this.subscribeToUserData();
-      }
-
-      // Resubscribe to market data
-      const symbols = Array.from(this.subscriptions.marketData);
-      if (symbols.length > 0) {
-        await this.subscribeToMarketData(symbols);
-      }
-    } catch (error) {
-      logger.error('Error resubscribing to data:', error);
-      throw error;
+    // Helper methods
+    formatOrderMessage(order) {
+        return MESSAGE_FORMATTERS.order(order);
     }
-  }
 
-  getPosition(symbol) {
-    return this.positionCache.get(symbol);
-  }
-
-  getOrder(orderId) {
-    return this.orderCache.get(orderId);
-  }
-
-  getMarketData(symbol) {
-    return this.symbolData.get(symbol);
-  }
-
-  async cleanup() {
-    try {
-      // Unsubscribe from all market data
-      const symbols = Array.from(this.subscriptions.marketData);
-      if (symbols.length > 0) {
-        await this.unsubscribeFromMarketData(symbols);
-      }
-
-      // Clear caches
-      this.positionCache.clear();
-      this.orderCache.clear();
-      this.symbolData.clear();
-
-      // Reset subscriptions
-      this.subscriptions.marketData.clear();
-      this.subscriptions.userSync = false;
-      this.subscriptions.positions = false;
-      this.subscriptions.orders = false;
-
-      // Call parent cleanup
-      await super.cleanup();
-    } catch (error) {
-      logger.error('Error during cleanup:', error);
+    getConnectionInfo() {
+        return {
+            ...super.getConnectionInfo(),
+            broker: 'tradovate',
+            environment: this.environment,
+            lastHeartbeat: this.lastHeartbeatTime,
+            missedHeartbeats: this.missedHeartbeats
+        };
     }
-  }
 }
 
 export default TradovateWebSocket;

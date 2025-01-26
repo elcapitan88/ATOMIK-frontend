@@ -1,63 +1,91 @@
-// services/config/wsConfig.js
+// src/services/Config/wsConfig.js
 
 /**
- * WebSocket configuration and constants
+ * WebSocket configuration constants
  */
 export const WS_CONFIG = {
-  // Reconnection settings
-  RECONNECT_ATTEMPTS: 5,
-  RECONNECT_INTERVAL: 1000, // Base interval in ms
-  MAX_RECONNECT_INTERVAL: 30000, // Maximum interval between attempts
-
-  // Heartbeat settings
-  HEARTBEAT_INTERVAL: 15000, // 15 seconds
-  HEARTBEAT_TIMEOUT: 5000, // Time to wait for heartbeat response
-
-  // Connection timeouts
-  CONNECTION_TIMEOUT: 10000, // Time to wait for initial connection
-  RESPONSE_TIMEOUT: 5000, // Time to wait for message responses
-
-  // Message types
-  MESSAGE_TYPES: {
-      HEARTBEAT: 'heartbeat',
-      AUTH: 'auth',
-      SUBSCRIBE: 'subscribe',
-      UNSUBSCRIBE: 'unsubscribe',
-      ERROR: 'error',
-      MARKET_DATA: 'market_data',
-      ORDER_UPDATE: 'order_update',
-      POSITION_UPDATE: 'position_update',
-      ACCOUNT_UPDATE: 'account_update'
+  // Connection settings
+  RECONNECT: {
+      MAX_ATTEMPTS: 5,
+      INITIAL_DELAY: 1000,  // Initial delay in ms
+      MAX_DELAY: 30000,     // Maximum delay between attempts
+      BACKOFF_FACTOR: 2     // Exponential backoff multiplier
   },
 
-  // Subscription channels
-  CHANNELS: {
-      MARKET_DATA: 'market_data',
-      ORDERS: 'orders',
-      POSITIONS: 'positions',
-      ACCOUNT: 'account'
+  // Heartbeat settings (Tradovate specific)
+  HEARTBEAT: {
+      INTERVAL: 2500,       // 2.5 seconds required by Tradovate
+      MAX_MISSED: 3         // Maximum missed heartbeats before reconnect
+  },
+
+  // Timeouts
+  TIMEOUTS: {
+      CONNECTION: 10000,    // Initial connection timeout
+      RESPONSE: 5000        // Message response timeout
   }
 };
 
 /**
-* WebSocket status constants
+* Broker-specific configurations
 */
-export const WS_STATUS = {
+export const BROKER_CONFIG = {
+  tradovate: {
+      heartbeat: {
+          message: '[]',
+          interval: 2500,
+          timeout: 5000
+      },
+      endpoints: {
+          demo: {
+              ws: process.env.REACT_APP_TRADOVATE_DEMO_WS_URL,
+              rest: process.env.REACT_APP_TRADOVATE_DEMO_API_URL
+          },
+          live: {
+              ws: process.env.REACT_APP_TRADOVATE_LIVE_WS_URL,
+              rest: process.env.REACT_APP_TRADOVATE_LIVE_API_URL
+          }
+      },
+      responseTimeout: 5000
+  }
+  // Add more brokers here as needed
+};
+
+/**
+* WebSocket message types
+*/
+export const MESSAGE_TYPES = {
+  MARKET_DATA: 'market_data',
+  ORDER_UPDATE: 'order_update',
+  POSITION_UPDATE: 'position_update',
+  ACCOUNT_UPDATE: 'account_update',
+  ERROR: 'error',
+  HEARTBEAT: 'heartbeat'
+};
+
+/**
+* WebSocket connection states
+*/
+export const CONNECTION_STATE = {
   CONNECTING: 'connecting',
   CONNECTED: 'connected',
   DISCONNECTED: 'disconnected',
   RECONNECTING: 'reconnecting',
-  ERROR: 'error',
-  AUTHENTICATED: 'authenticated'
+  ERROR: 'error'
 };
 
 /**
-* Get WebSocket URL based on environment and configuration
-* @param {string} accountId 
-* @param {string} broker 
-* @returns {string}
+* Get WebSocket URL based on environment
+* @param {string} accountId - Account identifier
+* @param {string} broker - Broker identifier (default: 'tradovate')
+* @param {string} environment - Trading environment (default: 'demo')
+* @returns {string} WebSocket URL
 */
-export const getWebSocketUrl = (accountId, broker = 'tradovate') => {
+export const getWebSocketUrl = (accountId, broker = 'tradovate', environment = 'demo') => {
+  if (BROKER_CONFIG[broker]?.endpoints[environment]?.ws) {
+      return `${BROKER_CONFIG[broker].endpoints[environment].ws}/${accountId}`;
+  }
+
+  // Fallback to default construction
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
   const host = process.env.REACT_APP_WS_HOST || window.location.host;
   const token = localStorage.getItem('access_token');
@@ -66,78 +94,40 @@ export const getWebSocketUrl = (accountId, broker = 'tradovate') => {
 };
 
 /**
-* Generate a heartbeat message
-* @returns {Object}
+* Message formatters
 */
-export const createHeartbeatMessage = () => ({
-  type: WS_CONFIG.MESSAGE_TYPES.HEARTBEAT,
-  timestamp: new Date().toISOString()
-});
-
-/**
-* Create an authentication message
-* @param {string} token 
-* @returns {Object}
-*/
-export const createAuthMessage = (token) => ({
-  type: WS_CONFIG.MESSAGE_TYPES.AUTH,
-  token
-});
-
-/**
-* Create a subscription message
-* @param {string} channel 
-* @param {Object} params 
-* @returns {Object}
-*/
-export const createSubscribeMessage = (channel, params = {}) => ({
-  type: WS_CONFIG.MESSAGE_TYPES.SUBSCRIBE,
-  channel,
-  params
-});
-
-/**
-* Create an unsubscribe message
-* @param {string} channel 
-* @returns {Object}
-*/
-export const createUnsubscribeMessage = (channel) => ({
-  type: WS_CONFIG.MESSAGE_TYPES.UNSUBSCRIBE,
-  channel
-});
-
-/**
-* Parse WebSocket message
-* @param {string|Object} message 
-* @returns {Object}
-*/
-export const parseWSMessage = (message) => {
-  try {
-      return typeof message === 'string' ? JSON.parse(message) : message;
-  } catch (error) {
-      console.error('Error parsing WebSocket message:', error);
-      return null;
-  }
+export const MESSAGE_FORMATTERS = {
+  heartbeat: () => '[]',  // Tradovate specific
+  order: (data) => JSON.stringify({
+      type: MESSAGE_TYPES.ORDER_UPDATE,
+      data
+  }),
+  marketData: (data) => JSON.stringify({
+      type: MESSAGE_TYPES.MARKET_DATA,
+      data
+  })
 };
 
 /**
 * Default WebSocket options
 */
-export const DEFAULT_WS_OPTIONS = {
-  reconnectAttempts: WS_CONFIG.RECONNECT_ATTEMPTS,
-  reconnectInterval: WS_CONFIG.RECONNECT_INTERVAL,
-  heartbeatInterval: WS_CONFIG.HEARTBEAT_INTERVAL,
-  connectionTimeout: WS_CONFIG.CONNECTION_TIMEOUT
+export const DEFAULT_OPTIONS = {
+  reconnectAttempts: WS_CONFIG.RECONNECT.MAX_ATTEMPTS,
+  reconnectDelay: WS_CONFIG.RECONNECT.INITIAL_DELAY,
+  heartbeatInterval: WS_CONFIG.HEARTBEAT.INTERVAL,
+  responseTimeout: WS_CONFIG.TIMEOUTS.RESPONSE
 };
 
-export default {
+// Create configuration object
+const wsConfig = {
   WS_CONFIG,
-  WS_STATUS,
+  BROKER_CONFIG,
+  MESSAGE_TYPES,
+  CONNECTION_STATE,
   getWebSocketUrl,
-  createHeartbeatMessage,
-  createAuthMessage,
-  createSubscribeMessage,
-  createUnsubscribeMessage,
-  parseWSMessage,
-  DEFAULT_WS_OPTIONS
+  MESSAGE_FORMATTERS,
+  DEFAULT_OPTIONS
 };
+
+// Export default configuration
+export default wsConfig;
