@@ -46,17 +46,21 @@ axiosInstance.interceptors.response.use(
             originalRequest._retry = true;
 
             try {
-                // Use POST instead of GET
-                const response = await axios.post('/api/v1/auth/verify', {}, {
+                // Try to refresh the token
+                const response = await axios.post('/api/v1/auth/refresh-token', {}, {
                     headers: {
                         'Authorization': `Bearer ${localStorage.getItem('access_token')}`
                     }
                 });
 
-                if (response.data.valid) {
+                if (response.data.access_token) {
+                    localStorage.setItem('access_token', response.data.access_token);
+                    axiosInstance.defaults.headers.common['Authorization'] = 
+                        `Bearer ${response.data.access_token}`;
                     return axiosInstance(originalRequest);
                 }
             } catch (refreshError) {
+                // If refresh fails, clear token and redirect to login
                 localStorage.removeItem('access_token');
                 window.location.href = '/auth';
                 return Promise.reject(refreshError);

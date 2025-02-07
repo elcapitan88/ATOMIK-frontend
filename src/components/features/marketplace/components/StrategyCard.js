@@ -1,25 +1,87 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Box,
   VStack,
   HStack,
   Text,
   Badge,
-  Flex,
-  Avatar,
+  Icon,
+  Tooltip,
   Button,
-  useDisclosure,
+  useToast,
 } from '@chakra-ui/react';
-import { TrendingUp, Star, Users, Clock } from 'lucide-react';
+import { Users, Lock, Unlock, CheckCircle2 } from 'lucide-react';
+import { webhookApi } from '@/services/api/Webhooks/webhookApi';
+import StarRating from '../StarRating';
 
-const StrategyCard = ({ strategy }) => {
+const StrategyCard = ({ strategy, onSubscriptionChange }) => {
+  const {
+    token,
+    name,
+    description,
+    username,
+    strategyType,
+    rating = 0,
+    subscriberCount = 0,
+    isPublic,
+    isSubscribed = false
+  } = strategy;
+
+  const [currentRating, setCurrentRating] = useState(rating);
+  const [isLoading, setIsLoading] = useState(false);
+  const [subscribed, setSubscribed] = useState(isSubscribed);
+  const toast = useToast();
+
+  const handleSubscription = async () => {
+    try {
+      setIsLoading(true);
+      if (subscribed) {
+        await webhookApi.unsubscribeFromStrategy(token);
+        toast({
+          title: "Unsubscribed",
+          description: "You have unsubscribed from this strategy",
+          status: "info",
+          duration: 3000,
+          isClosable: true,
+        });
+      } else {
+        await webhookApi.subscribeToStrategy(token);
+        toast({
+          title: "Subscribed!",
+          description: "You are now subscribed to this strategy",
+          status: "success",
+          duration: 3000,
+          isClosable: true,
+        });
+      }
+      setSubscribed(!subscribed);
+      if (onSubscriptionChange) {
+        onSubscriptionChange(token, !subscribed);
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update subscription",
+        status: "error",
+        duration: 5000,
+        isClosable: true,
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleRatingChange = (newRating) => {
+    setCurrentRating(newRating);
+  };
+
   return (
     <Box
       bg="rgba(255, 255, 255, 0.1)"
       backdropFilter="blur(10px)"
       borderWidth="1px"
-      borderColor="whiteAlpha.200"
-      borderRadius="xl"
+      borderColor={subscribed ? "rgba(0, 198, 224, 0.6)" : "whiteAlpha.200"}
+      borderRadius="lg"
       overflow="hidden"
       transition="all 0.2s"
       _hover={{
@@ -27,89 +89,95 @@ const StrategyCard = ({ strategy }) => {
         borderColor: "rgba(0, 198, 224, 0.6)",
         boxShadow: "0 4px 12px rgba(0, 198, 224, 0.15)"
       }}
-      minW="300px"
-      maxW="300px"
-      cursor="pointer"
+      w="280px"
+      h="260px"
     >
-      {/* Performance Banner */}
-      <Box 
-        bg={Number(strategy.winRate) >= 60 ? "green.500" : "blue.500"} 
-        px={4} 
-        py={1}
-      >
-        <HStack spacing={2} justify="center">
-          <TrendingUp size={14} />
-          <Text fontSize="sm" fontWeight="medium">
-            {strategy.winRate}% Win Rate
-          </Text>
-        </HStack>
-      </Box>
-
-      {/* Main Content */}
-      <VStack p={4} align="stretch" spacing={4}>
-        <VStack align="stretch" spacing={1}>
-          <HStack justify="space-between">
-            <Text fontSize="lg" fontWeight="bold">
-              {strategy.name}
-            </Text>
-            <Badge 
-              colorScheme={strategy.risk === 'Low' ? 'green' : strategy.risk === 'Medium' ? 'yellow' : 'red'}
-              variant="subtle"
+      <VStack p={4} spacing={3} align="stretch" h="full">
+        {/* Header Section */}
+        <HStack justify="space-between" align="start">
+          <VStack align="start" spacing={0}>
+            <Text 
+              fontSize="md" 
+              fontWeight="bold" 
+              color="white"
+              noOfLines={1}
             >
-              {strategy.risk} Risk
-            </Badge>
-          </HStack>
-          <Text fontSize="sm" color="whiteAlpha.700" noOfLines={2}>
-            {strategy.description}
-          </Text>
-        </VStack>
-
-        {/* Stats */}
-        <HStack spacing={4} justify="space-between">
-          <HStack spacing={1}>
-            <Star size={14} color="#FFD700" />
-            <Text fontSize="sm">{strategy.rating}</Text>
-          </HStack>
-          <HStack spacing={1}>
-            <Users size={14} />
-            <Text fontSize="sm">{strategy.users} Users</Text>
-          </HStack>
-          <HStack spacing={1}>
-            <Clock size={14} />
-            <Text fontSize="sm">{strategy.timeframe}</Text>
-          </HStack>
-        </HStack>
-
-        {/* Author */}
-        <HStack spacing={2}>
-          <Avatar size="sm" name={strategy.author} src={strategy.authorAvatar} />
-          <VStack spacing={0} align="start">
-            <Text fontSize="sm" fontWeight="medium">
-              {strategy.author}
+              {name}
             </Text>
-            <Text fontSize="xs" color="whiteAlpha.600">
-              {strategy.authorTitle}
+            <Text fontSize="sm" color="whiteAlpha.700">
+              by {username}
             </Text>
           </VStack>
-          <Box flex={1} />
-          <Text fontSize="lg" fontWeight="bold" color="green.400">
-            ${strategy.price}
-          </Text>
+          <Tooltip 
+            label={isPublic ? "Public Strategy" : "Private Strategy"} 
+            placement="top"
+          >
+            <Box color="whiteAlpha.600">
+              <Icon 
+                as={isPublic ? Unlock : Lock} 
+                size={16}
+              />
+            </Box>
+          </Tooltip>
         </HStack>
 
-        {/* Action Button */}
-        <Button
-          w="full"
-          bg="transparent"
+        {/* Strategy Type Badge */}
+        <Badge
+          colorScheme="blue"
+          bg="rgba(0, 198, 224, 0.2)"
           color="white"
-          fontWeight="medium"
-          borderWidth={1}
-          borderColor="rgba(0, 198, 224, 1)"
-          _hover={{
-            bg: 'whiteAlpha.100'
-          }}
+          borderRadius="full"
+          px={2}
+          py={0.5}
+          fontSize="xs"
+          alignSelf="flex-start"
         >
-          View Details
+          {strategyType}
+        </Badge>
+
+        {/* Description */}
+        <Text 
+          fontSize="sm" 
+          color="whiteAlpha.800" 
+          noOfLines={2}
+          flex={1}
+        >
+          {description}
+        </Text>
+
+        {/* Stats Row */}
+        <HStack justify="space-between" align="center">
+          <StarRating 
+            rating={currentRating} 
+            token={token}
+            onRatingChange={handleRatingChange}
+            isInteractive={subscribed}
+          />
+          <HStack spacing={1} color="whiteAlpha.800">
+            <Icon as={Users} size={14} />
+            <Text fontSize="sm">
+              {subscriberCount.toLocaleString()}
+            </Text>
+          </HStack>
+        </HStack>
+
+        {/* Subscribe Button */}
+        <Button
+          onClick={handleSubscription}
+          isLoading={isLoading}
+          variant="outline"
+          size="sm"
+          w="full"
+          colorScheme={subscribed ? "blue" : "gray"}
+          borderColor={subscribed ? "rgba(0, 198, 224, 0.6)" : "whiteAlpha.200"}
+          color={subscribed ? "rgba(0, 198, 224, 0.9)" : "white"}
+          _hover={{
+            bg: subscribed ? "rgba(0, 198, 224, 0.1)" : "whiteAlpha.100",
+            borderColor: "rgba(0, 198, 224, 0.6)"
+          }}
+          leftIcon={subscribed ? <CheckCircle2 size={16} /> : null}
+        >
+          {subscribed ? "Subscribed" : "Subscribe"}
         </Button>
       </VStack>
     </Box>

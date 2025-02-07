@@ -24,7 +24,6 @@ import { HelpCircle } from 'lucide-react';
 
 const SOURCE_TYPES = [
   { value: 'tradingview', label: 'TradingView' },
-  { value: 'trendspider', label: 'TrendSpider' },
   { value: 'custom', label: 'Custom Implementation' }
 ];
 
@@ -56,10 +55,7 @@ const WebhookModal = ({ isOpen, onClose, onSubmit, webhook = null }) => {
     switch (formData.source_type) {
       case 'tradingview':
         return {
-          strategy: "RSI Strategy",
-          action: "BUY",
-          price: 100.50,
-          quantity: 1
+          action: "{{strategy.order.action}}",
         };
       case 'trendspider':
         return {
@@ -71,11 +67,7 @@ const WebhookModal = ({ isOpen, onClose, onSubmit, webhook = null }) => {
       default:
         return {
           action: "BUY",
-          strategy: "Custom Strategy",
-          data: {
-            price: 100.50,
-            quantity: 1
-          }
+          
         };
     }
   };
@@ -168,21 +160,40 @@ const WebhookModal = ({ isOpen, onClose, onSubmit, webhook = null }) => {
 
             <Box width="full">
               <Text mb={2}>Source Type</Text>
-              <Select
-                value={formData.source_type}
-                onChange={(e) => setFormData(prev => ({
-                  ...prev,
-                  source_type: e.target.value
-                }))}
-                bg="whiteAlpha.100"
-                borderColor="whiteAlpha.300"
+              <Box
+                position="relative"
+                width="full"
               >
-                {SOURCE_TYPES.map(type => (
-                  <option key={type.value} value={type.value}>
-                    {type.label}
-                  </option>
-                ))}
-              </Select>
+                <Select
+                  value={formData.source_type}
+                  onChange={(e) => setFormData(prev => ({
+                    ...prev,
+                    source_type: e.target.value
+                  }))}
+                  bg="rgba(255, 255, 255, 0.1)"
+                  backdropFilter="blur(10px)"
+                  borderColor="rgba(255, 255, 255, 0.18)"
+                  color="white"
+                  _hover={{ bg: "whiteAlpha.200" }}
+                  css={{
+                    option: {
+                      background: "rgba(23, 25, 35, 0.95) !important",
+                      backdropFilter: "blur(10px)",
+                      color: "white !important",
+                      padding: "8px"
+                    },
+                    "option:hover": {
+                      background: "rgba(255, 255, 255, 0.1) !important"
+                    }
+                  }}
+                >
+                  {SOURCE_TYPES.map(type => (
+                    <option key={type.value} value={type.value}>
+                      {type.label}
+                    </option>
+                  ))}
+                </Select>
+              </Box>
             </Box>
 
             <Box width="full">

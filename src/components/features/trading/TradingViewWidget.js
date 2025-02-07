@@ -35,15 +35,15 @@ const TradingViewWidget = ({
           style: "1",
           locale: "en",
           toolbar_bg: "#1C1C1C",
-          enable_publishing: false,
+          enable_publishing: true,
           hide_top_toolbar: false,
           hide_side_toolbar: true,
           allow_symbol_change: true,
-          save_image: false,
+          save_image: true,
           container_id: "tradingview_widget",
           studies: [
             "MASimple@tv-basicstudies",
-            "RSI@tv-basicstudies"
+            
           ],
           disabled_features: [
             "header_symbol_search",

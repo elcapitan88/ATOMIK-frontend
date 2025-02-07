@@ -63,15 +63,14 @@ class StrategiesApi {
         const cached = this.getCachedStrategies();
         if (cached) return cached;
       }
-
+  
       const response = await this.withRetry(() =>
         axiosInstance.get(`${this.baseUrl}/list`)
       );
-
+  
       const strategies = response.data;
       this.setCachedStrategies(strategies);
       return strategies;
-
     } catch (error) {
       throw handleApiError(error);
     }
@@ -79,21 +78,41 @@ class StrategiesApi {
 
   async activateStrategy(strategyData) {
     try {
-      console.log('Activating strategy with data:', strategyData);
+      console.log('Activating strategy with data:', JSON.stringify(strategyData, null, 2));
 
-      const response = await this.withRetry(() =>
-        axiosInstance.post(`${this.baseUrl}/activate`, strategyData)
-      );
+        // Normalize the data before sending
+        const normalizedData = strategyData.strategy_type === 'single' 
+            ? {
+                strategy_type: 'single',
+                webhook_id: strategyData.webhook_id,
+                ticker: strategyData.ticker,
+                account_id: strategyData.account_id,
+                quantity: Number(strategyData.quantity)
+            }
+            : {
+                strategy_type: 'multiple',
+                webhook_id: strategyData.webhook_id,
+                ticker: strategyData.ticker,
+                leader_account_id: strategyData.leader_account_id,
+                leader_quantity: Number(strategyData.leader_quantity),
+                follower_account_ids: strategyData.follower_account_ids,
+                follower_quantities: strategyData.follower_quantities.map(Number),
+                group_name: strategyData.group_name
+            };
 
-      // Invalidate cache after creating new strategy
-      this.clearCache();
-      
-      console.log('Strategy activation response:', response.data);
-      return response.data;
+        const response = await this.withRetry(() =>
+            axiosInstance.post(`${this.baseUrl}/activate`, normalizedData)
+        );
+
+        // Invalidate cache after creating new strategy
+        this.clearCache();
+        
+        console.log('Strategy activation response:', response.data);
+        return response.data;
 
     } catch (error) {
-      console.error('Strategy activation error:', error);
-      throw handleApiError(error);
+        console.error('Strategy activation error:', error);
+        throw handleApiError(error);
     }
   }
 
@@ -116,10 +135,10 @@ class StrategiesApi {
       const response = await this.withRetry(() =>
         axiosInstance.post(`${this.baseUrl}/${strategyId}/toggle`)
       );
-
+  
       this.clearCache();
-      return response.data;
-
+      return response.data;  // Make sure the backend returns the updated strategy
+  
     } catch (error) {
       throw handleApiError(error);
     }

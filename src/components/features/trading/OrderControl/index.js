@@ -1,45 +1,44 @@
-// src/components/features/trading/OrderControl/OrderControl.js
+// src/components/features/trading/OrderControl/index.js
 import React, { useState, useCallback } from 'react';
 import {
   Box,
   VStack,
   HStack,
   Button,
-  ButtonGroup,
   NumberInput,
   NumberInputField,
   NumberInputStepper,
   NumberIncrementStepper,
   NumberDecrementStepper,
-  Text,
-  useDisclosure,
   Switch,
+  useDisclosure,
   Tooltip,
   useToast,
-  Divider,
+  Select,
 } from '@chakra-ui/react';
 import { 
   ArrowBigUp, 
+  AlertTriangle,
   ArrowBigDown, 
-  Ban, 
-  Info,
-  Minus,
-  Plus,
-  RotateCcw,
+  Ban,
 } from 'lucide-react';
+
 import AccountSelection from './AccountSelection';
 import OrderConfirmationModal from './OrderConfirmationModal';
-import OrderFeedback from './OrderFeedback';
 
-const QUANTITY_PRESETS = [1, 5, 10];
+
+// Sample tickers - replace with your actual ticker data source
+const AVAILABLE_TICKERS = ['ES', 'NQ', 'RTY', 'CL', 'GC', 'SI'];
 
 const OrderControl = () => {
   const toast = useToast();
   const [quantity, setQuantity] = useState(1);
   const [skipConfirmation, setSkipConfirmation] = useState(false);
   const [selectedAccounts, setSelectedAccounts] = useState([]);
+  const [selectedTicker, setSelectedTicker] = useState('');
   const [orderStatus, setOrderStatus] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [pendingOrder, setPendingOrder] = useState(null);
 
   const {
     isOpen: isConfirmationOpen,
@@ -47,12 +46,22 @@ const OrderControl = () => {
     onClose: onConfirmationClose
   } = useDisclosure();
 
-  const [pendingOrder, setPendingOrder] = useState(null);
-
   const handleOrderSubmit = useCallback(async (orderType) => {
+    if (!selectedTicker) {
+      toast({
+        title: "No ticker selected",
+        description: "Please select a ticker first",
+        status: "warning",
+        duration: 3000,
+        isClosable: true,
+      });
+      return;
+    }
+
     const order = {
       type: orderType,
       quantity,
+      ticker: selectedTicker,
       accounts: selectedAccounts,
       timestamp: new Date().toISOString()
     };
@@ -63,58 +72,7 @@ const OrderControl = () => {
       setPendingOrder(order);
       onConfirmationOpen();
     }
-  }, [quantity, selectedAccounts, skipConfirmation, onConfirmationOpen]);
-
-  const executeOrder = async (order) => {
-    setIsSubmitting(true);
-    setOrderStatus('pending');
-    
-    try {
-      // Here you would make your API call to execute the order
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      setOrderStatus('success');
-      toast({
-        title: "Order Executed",
-        description: `Successfully placed ${order.type} order for ${order.quantity} contracts`,
-        status: "success",
-        duration: 3000,
-        isClosable: true,
-      });
-    } catch (error) {
-      setOrderStatus('error');
-      toast({
-        title: "Order Failed",
-        description: error.message || "Failed to execute order",
-        status: "error",
-        duration: 5000,
-        isClosable: true,
-      });
-    } finally {
-      setIsSubmitting(false);
-      setTimeout(() => setOrderStatus(null), 3000);
-    }
-  };
-
-  const handleQuantityPresetClick = (preset) => {
-    setQuantity(preset);
-  };
-
-  const handleQuantityAdjust = (action) => {
-    switch (action) {
-      case 'double':
-        setQuantity(prev => prev * 2);
-        break;
-      case 'half':
-        setQuantity(prev => Math.max(1, Math.floor(prev / 2)));
-        break;
-      case 'reset':
-        setQuantity(1);
-        break;
-      default:
-        break;
-    }
-  };
+  }, [quantity, selectedTicker, selectedAccounts, skipConfirmation, onConfirmationOpen, toast]);
 
   const handleCloseAllTrades = async () => {
     if (!selectedAccounts.length) {
@@ -128,217 +86,228 @@ const OrderControl = () => {
       return;
     }
 
+    const order = {
+      type: 'close-all',
+      accounts: selectedAccounts,
+      timestamp: new Date().toISOString()
+    };
+
     if (!skipConfirmation) {
-      setPendingOrder({ type: 'close-all', accounts: selectedAccounts });
+      setPendingOrder(order);
       onConfirmationOpen();
       return;
     }
 
+    executeOrder(order);
+  };
+
+  const executeOrder = async (order) => {
     setIsSubmitting(true);
     setOrderStatus('pending');
+    setPendingOrder(order);
     
     try {
+      // Here you would make your API call to execute the order
       await new Promise(resolve => setTimeout(resolve, 1000));
+
       setOrderStatus('success');
+      const title = order.type === 'buy' ? "Buy Order Executed" : 
+                   order.type === 'sell' ? "Sell Order Executed" : 
+                   "Positions Closed";
+      const description = order.type === 'close-all' ? 
+                         "Successfully closed all positions" :
+                         `Successfully ${order.type === 'buy' ? 'bought' : 'sold'} ${order.quantity} ${order.ticker} contracts`;
+
       toast({
-        title: "Trades Closed",
-        description: "Successfully closed all trades",
+        title,
+        description,
         status: "success",
-        duration: 3000,
+        duration: 2000,
         isClosable: true,
+        position: "top-right",
       });
     } catch (error) {
       setOrderStatus('error');
       toast({
-        title: "Failed to close trades",
-        description: error.message,
+        title: "Order Failed",
+        description: error.message || "Failed to execute order",
         status: "error",
-        duration: 5000,
+        duration: 4000,
         isClosable: true,
+        position: "top-right",
       });
     } finally {
       setIsSubmitting(false);
-      setTimeout(() => setOrderStatus(null), 3000);
+      setTimeout(() => {
+        setOrderStatus(null);
+        setPendingOrder(null);
+      }, 1000);
     }
   };
 
   return (
-    <Box 
-      h="full" 
-      bg="whiteAlpha.100" 
-      borderRadius="xl" 
-      borderWidth="1px" 
-      borderColor="whiteAlpha.200" 
-      boxShadow="lg" 
-      overflow="hidden"
-    >
-      <VStack p={4} color="white" spacing={4}>
-        <Text fontSize="lg" fontWeight="semibold">Order Entry</Text>
+    <Box h="full" display="flex" flexDirection="column">
+      {/* Header Section */}
+      <Box p={3} borderBottom="1px solid" borderColor="whiteAlpha.200">
+        <HStack width="full" spacing={2}>
+          <Box flex={1}>
+            <AccountSelection
+              selectedAccounts={selectedAccounts}
+              onChange={setSelectedAccounts}
+            />
+          </Box>
+          <Tooltip
+            label={skipConfirmation ? 
+              "Orders will execute immediately" : 
+              "Orders require confirmation"
+            }
+            placement="top"
+            hasArrow
+          >
+            <HStack spacing={2}>
+              {skipConfirmation && (
+                <AlertTriangle size={12} color="#ED8936" />
+              )}
+              <Switch
+                size="sm"
+                isChecked={skipConfirmation}
+                onChange={(e) => setSkipConfirmation(e.target.checked)}
+                colorScheme="blue"
+              />
+            </HStack>
+          </Tooltip>
+        </HStack>
+      </Box>
+
+      {/* Main Trading Controls */}
+      <VStack p={3} spacing={3} flex="1">
+        {/* Inputs Row */}
+        <HStack width="full" spacing={2}>
+          <Select
+            value={selectedTicker}
+            onChange={(e) => setSelectedTicker(e.target.value)}
+            placeholder="Select Ticker"
+            size="sm"
+            bg="whiteAlpha.50"
+            borderColor="whiteAlpha.200"
+            flex="1.5"
+            _hover={{ borderColor: "whiteAlpha.300" }}
+            _focus={{ 
+              borderColor: "rgba(0, 198, 224, 0.6)",
+              boxShadow: "0 0 0 1px rgba(0, 198, 224, 0.6)"
+            }}
+          >
+            {AVAILABLE_TICKERS.map(ticker => (
+              <option key={ticker} value={ticker}>{ticker}</option>
+            ))}
+          </Select>
+
+          <NumberInput 
+            value={quantity} 
+            onChange={(value) => setQuantity(Number(value))}
+            min={1}
+            max={100}
+            size="sm"
+            bg="whiteAlpha.50"
+            borderColor="whiteAlpha.200"
+            flex="1"
+            _hover={{ borderColor: "whiteAlpha.300" }}
+            _focus={{ 
+              borderColor: "rgba(0, 198, 224, 0.6)",
+              boxShadow: "0 0 0 1px rgba(0, 198, 224, 0.6)"
+            }}
+          >
+            <NumberInputField />
+            <NumberInputStepper>
+              <NumberIncrementStepper />
+              <NumberDecrementStepper />
+            </NumberInputStepper>
+          </NumberInput>
+        </HStack>
+
         
-        {/* Account Selection */}
-        <AccountSelection
-          selectedAccounts={selectedAccounts}
-          onChange={setSelectedAccounts}
-        />
 
-        <Divider borderColor="whiteAlpha.200" />
-
-        {/* Quantity Controls */}
-        <VStack width="full" spacing={2}>
+        {/* Trading Buttons */}
+        <VStack spacing={2} width="full" mt="auto">
           <HStack width="full" spacing={2}>
-            <NumberInput 
-              value={quantity} 
-              onChange={(value) => setQuantity(Number(value))}
-              min={1}
-              max={100}
+            <Button
               flex={1}
-              bg="whiteAlpha.50"
-              borderColor="whiteAlpha.200"
-              _hover={{ borderColor: "whiteAlpha.300" }}
-              _focus={{ 
-                borderColor: "rgba(0, 198, 224, 0.6)",
-                boxShadow: "0 0 0 1px rgba(0, 198, 224, 0.6)"
+              h="40px"
+              leftIcon={orderStatus === 'pending' && pendingOrder?.type === 'buy' ? null : <ArrowBigUp />}
+              onClick={() => handleOrderSubmit('buy')}
+              isDisabled={!selectedAccounts.length || isSubmitting}
+              isLoading={orderStatus === 'pending' && pendingOrder?.type === 'buy'}
+              loadingText="Buying..."
+              spinnerPlacement="start"
+              color="white"
+              bgGradient="linear(to-r, #22c55e, #16a34a)"
+              _hover={{ 
+                bgGradient: "linear(to-r, #16a34a, #15803d)",
+                transform: "translateY(-1px)",
+                boxShadow: "lg"
+              }}
+              _active={{
+                bgGradient: "linear(to-r, #15803d, #166534)",
+                transform: "translateY(0)",
+                boxShadow: "md"
               }}
             >
-              <NumberInputField />
-              <NumberInputStepper>
-                <NumberIncrementStepper />
-                <NumberDecrementStepper />
-              </NumberInputStepper>
-            </NumberInput>
+              Buy
+            </Button>
 
-            <ButtonGroup size="sm" isAttached variant="outline">
-              <Button 
-                onClick={() => handleQuantityAdjust('half')}
-                leftIcon={<Minus size={14} />}
-                _hover={{ bg: 'whiteAlpha.100' }}
-              >
-                ½
-              </Button>
-              <Button 
-                onClick={() => handleQuantityAdjust('double')}
-                leftIcon={<Plus size={14} />}
-                _hover={{ bg: 'whiteAlpha.100' }}
-              >
-                2×
-              </Button>
-              <Button 
-                onClick={() => handleQuantityAdjust('reset')}
-                leftIcon={<RotateCcw size={14} />}
-                _hover={{ bg: 'whiteAlpha.100' }}
-              >
-                Reset
-              </Button>
-            </ButtonGroup>
-          </HStack>
-
-          <ButtonGroup size="sm" width="full">
-            {QUANTITY_PRESETS.map(preset => (
-              <Button
-                key={preset}
-                onClick={() => handleQuantityPresetClick(preset)}
-                flex={1}
-                variant="ghost"
-                _hover={{ bg: 'whiteAlpha.100' }}
-              >
-                {preset}
-              </Button>
-            ))}
-          </ButtonGroup>
-        </VStack>
-
-        {/* Trading Actions */}
-        <HStack width="full" spacing={4}>
-          <Button
-            flex={1}
-            leftIcon={<ArrowBigUp />}
-            onClick={() => handleOrderSubmit('buy')}
-            isDisabled={!selectedAccounts.length || isSubmitting}
-            bgGradient="linear(to-r, green.500, green.600)"
-            _hover={{ 
-              bgGradient: "linear(to-r, green.600, green.700)",
-              transform: "translateY(-1px)",
-              boxShadow: "lg"
-            }}
-            _active={{
-              bgGradient: "linear(to-r, green.700, green.800)",
-              transform: "translateY(0)",
-              boxShadow: "md"
-            }}
-            transition="all 0.2s"
-          >
-            Buy
-          </Button>
-
-          <Button
-            flex={1}
-            leftIcon={<ArrowBigDown />}
-            onClick={() => handleOrderSubmit('sell')}
-            isDisabled={!selectedAccounts.length || isSubmitting}
-            bgGradient="linear(to-r, red.500, red.600)"
-            _hover={{ 
-              bgGradient: "linear(to-r, red.600, red.700)",
-              transform: "translateY(-1px)",
-              boxShadow: "lg"
-            }}
-            _active={{
-              bgGradient: "linear(to-r, red.700, red.800)",
-              transform: "translateY(0)",
-              boxShadow: "md"
-            }}
-            transition="all 0.2s"
-          >
-            Sell
-          </Button>
-        </HStack>
-
-        {/* Close All Trades */}
-        <Button
-          width="full"
-          leftIcon={<Ban />}
-          onClick={handleCloseAllTrades}
-          isDisabled={!selectedAccounts.length || isSubmitting}
-          bgGradient="linear(to-r, orange.500, orange.600)"
-          _hover={{ 
-            bgGradient: "linear(to-r, orange.600, orange.700)",
-            transform: "translateY(-1px)",
-            boxShadow: "lg"
-          }}
-          _active={{
-            bgGradient: "linear(to-r, orange.700, orange.800)",
-            transform: "translateY(0)",
-            boxShadow: "md"
-          }}
-          transition="all 0.2s"
-        >
-          Close All Trades
-        </Button>
-
-        <Divider borderColor="whiteAlpha.200" />
-
-        {/* Settings */}
-        <HStack width="full" justify="space-between">
-          <HStack>
-            <Text fontSize="sm">Skip Confirmation</Text>
-            <Tooltip 
-              label="Bypass order confirmation modal" 
-              placement="top"
-              hasArrow
+            <Button
+              flex={1}
+              h="40px"
+              leftIcon={orderStatus === 'pending' && pendingOrder?.type === 'sell' ? null : <ArrowBigDown />}
+              onClick={() => handleOrderSubmit('sell')}
+              isDisabled={!selectedAccounts.length || isSubmitting}
+              isLoading={orderStatus === 'pending' && pendingOrder?.type === 'sell'}
+              loadingText="Selling..."
+              spinnerPlacement="start"
+              color="white"
+              bgGradient="linear(to-r, #ef4444, #dc2626)"
+              _hover={{ 
+                bgGradient: "linear(to-r, #dc2626, #b91c1c)",
+                transform: "translateY(-1px)",
+                boxShadow: "lg"
+              }}
+              _active={{
+                bgGradient: "linear(to-r, #b91c1c, #991b1b)",
+                transform: "translateY(0)",
+                boxShadow: "md"
+              }}
             >
-              <Box display="inline-block">
-                <Info size={14} />
-              </Box>
-            </Tooltip>
+              Sell
+            </Button>
           </HStack>
-          <Switch
-            isChecked={skipConfirmation}
-            onChange={(e) => setSkipConfirmation(e.target.checked)}
-            colorScheme="blue"
-          />
-        </HStack>
 
-        {/* Order Status Feedback */}
-        <OrderFeedback status={orderStatus} />
+          {/* Close All Trades Button */}
+          <Button
+            width="full"
+            h="32px"
+            leftIcon={orderStatus === 'pending' && pendingOrder?.type === 'close-all' ? null : <Ban size={14} />}
+            size="sm"
+            onClick={handleCloseAllTrades}
+            isDisabled={!selectedAccounts.length || isSubmitting}
+            isLoading={orderStatus === 'pending' && pendingOrder?.type === 'close-all'}
+            loadingText="Closing All..."
+            spinnerPlacement="start"
+            color="white"
+            bgGradient="linear(to-r, #dc2626, #991b1b)"
+            _hover={{ 
+              bgGradient: "linear(to-r, #991b1b, #7f1d1d)",
+              transform: "translateY(-1px)",
+              boxShadow: "lg"
+            }}
+            _active={{
+              bgGradient: "linear(to-r, #7f1d1d, #450a0a)",
+              transform: "translateY(0)",
+              boxShadow: "md"
+            }}
+          >
+            Close All Trades
+          </Button>
+        </VStack>
       </VStack>
 
       {/* Confirmation Modal */}

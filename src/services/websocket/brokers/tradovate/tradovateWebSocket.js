@@ -1,95 +1,69 @@
-// src/services/websocket/brokers/tradovate/tradovateWebSocket.js
-import BaseWebSocket from '../../baseWebSocket';
+import BaseWebSocket from '../baseWebSocket';
 import { 
-    WS_CONFIG,
     BROKER_CONFIG,
-    MESSAGE_TYPES,
     getWebSocketUrl,
-    MESSAGE_FORMATTERS
+    MESSAGE_TYPES 
 } from '@/services/Config/wsConfig';
 import logger from '@/utils/logger';
 
 class TradovateWebSocket extends BaseWebSocket {
     constructor(accountId, environment = 'demo') {
         super(accountId, {
-            broker: 'tradovate',
-            environment,
-            heartbeatInterval: BROKER_CONFIG.tradovate.heartbeat.interval,
-            reconnectAttempts: WS_CONFIG.RECONNECT.MAX_ATTEMPTS,
-            reconnectDelay: WS_CONFIG.RECONNECT.INITIAL_DELAY
+            heartbeatThreshold: 2500, // Tradovate requires 2.5 seconds
+            maxMissedHeartbeats: 3,
+            connectionTimeout: 10000,
+            environment
         });
 
-        // Tradovate-specific properties
-        this.missedHeartbeats = 0;
-        this.lastHeartbeatTime = 0;
+        this.environment = environment;
+        this.messageHandlers = new Map();
+        this.subscriptions = new Set();
+        
+        // Initialize message handlers
+        this.initializeMessageHandlers();
     }
 
-    // Override BaseWebSocket methods as needed
     getWebSocketUrl() {
-        return getWebSocketUrl(this.accountId, 'tradovate', this.environment);
-    }
-
-    // Tradovate-specific heartbeat implementation
-    startHeartbeat() {
-        if (this.heartbeatInterval) {
-            clearInterval(this.heartbeatInterval);
+        const config = BROKER_CONFIG.tradovate.endpoints[this.environment];
+        if (!config?.ws) {
+            throw new Error(`Invalid environment: ${this.environment}`);
         }
 
-        this.heartbeatInterval = setInterval(() => {
-            if (this.isConnected()) {
-                this.ws.send(MESSAGE_FORMATTERS.heartbeat());
-                this.missedHeartbeats++;
+        const token = localStorage.getItem('access_token');
+        if (!token) {
+            throw new Error('No authentication token found');
+        }
 
-                if (this.missedHeartbeats > WS_CONFIG.HEARTBEAT.MAX_MISSED) {
-                    logger.warn('Too many missed heartbeats, reconnecting...');
-                    this.reconnect();
-                }
-            }
-        }, BROKER_CONFIG.tradovate.heartbeat.interval);
-
-        this.lastHeartbeatTime = Date.now();
-        this.missedHeartbeats = 0;
+        return `${config.ws}/${this.accountId}?token=${encodeURIComponent(token)}`;
     }
 
-    // Override message handling for Tradovate-specific messages
-    async handleMessage(event) {
+    initializeMessageHandlers() {
+        this.messageHandlers.set(MESSAGE_TYPES.MARKET_DATA, this.handleMarketData.bind(this));
+        this.messageHandlers.set(MESSAGE_TYPES.ORDER_UPDATE, this.handleOrderUpdate.bind(this));
+        this.messageHandlers.set(MESSAGE_TYPES.POSITION_UPDATE, this.handlePositionUpdate.bind(this));
+        this.messageHandlers.set(MESSAGE_TYPES.ACCOUNT_UPDATE, this.handleAccountUpdate.bind(this));
+    }
+
+    async processMessage(message) {
         try {
-            // Reset missed heartbeats on any message
-            this.missedHeartbeats = 0;
-            this.lastHeartbeatTime = Date.now();
-
-            // Handle Tradovate heartbeat response
-            if (event.data === '[]') {
-                return;
-            }
-
-            const message = JSON.parse(event.data);
+            // Try to parse message if it's a string
+            const data = typeof message === 'string' ? JSON.parse(message) : message;
             
-            // Handle different message types
-            switch (message.type) {
-                case MESSAGE_TYPES.MARKET_DATA:
-                    await this.handleMarketData(message.data);
-                    break;
-
-                case MESSAGE_TYPES.ORDER_UPDATE:
-                    await this.handleOrderUpdate(message.data);
-                    break;
-
-                case MESSAGE_TYPES.ACCOUNT_UPDATE:
-                    await this.handleAccountUpdate(message.data);
-                    break;
-
-                default:
-                    // Pass unhandled messages to base class
-                    await super.handleMessage(event);
+            // Get handler for message type
+            const handler = this.messageHandlers.get(data.type);
+            if (handler) {
+                await handler(data);
+            } else {
+                logger.debug(`No handler for message type: ${data.type}`);
             }
+            
         } catch (error) {
-            logger.error('Error handling message:', error);
-            this.handleError(error);
+            logger.error(`Error processing message: ${error.message}`);
+            throw error;
         }
     }
 
-    // Tradovate-specific message handlers
+    // Message Handlers
     async handleMarketData(data) {
         this.emit('marketData', {
             accountId: this.accountId,
@@ -106,6 +80,14 @@ class TradovateWebSocket extends BaseWebSocket {
         });
     }
 
+    async handlePositionUpdate(data) {
+        this.emit('positionUpdate', {
+            accountId: this.accountId,
+            data,
+            timestamp: Date.now()
+        });
+    }
+
     async handleAccountUpdate(data) {
         this.emit('accountUpdate', {
             accountId: this.accountId,
@@ -114,36 +96,95 @@ class TradovateWebSocket extends BaseWebSocket {
         });
     }
 
-    // Override cleanup to handle Tradovate-specific cleanup
-    cleanup() {
-        super.cleanup();
-        this.missedHeartbeats = 0;
-        this.lastHeartbeatTime = 0;
+    // Subscription Management
+    async subscribe(symbol) {
+        if (!this.isConnected) {
+            throw new Error('WebSocket not connected');
+        }
+
+        try {
+            await this.send({
+                type: 'subscribe',
+                symbol
+            });
+            this.subscriptions.add(symbol);
+            logger.info(`Subscribed to ${symbol}`);
+        } catch (error) {
+            logger.error(`Subscription error for ${symbol}: ${error.message}`);
+            throw error;
+        }
     }
 
-    // Override connection methods if needed
+    async unsubscribe(symbol) {
+        if (!this.isConnected) {
+            throw new Error('WebSocket not connected');
+        }
+
+        try {
+            await this.send({
+                type: 'unsubscribe',
+                symbol
+            });
+            this.subscriptions.delete(symbol);
+            logger.info(`Unsubscribed from ${symbol}`);
+        } catch (error) {
+            logger.error(`Unsubscription error for ${symbol}: ${error.message}`);
+            throw error;
+        }
+    }
+
+    // Override connection handling methods
     async connect() {
         logger.info(`Connecting to Tradovate WebSocket for account ${this.accountId}`);
-        return super.connect();
+        const connected = await super.connect();
+        
+        if (connected) {
+            // Resubscribe to previous subscriptions after reconnect
+            for (const symbol of this.subscriptions) {
+                await this.subscribe(symbol);
+            }
+        }
+        
+        return connected;
     }
 
-    disconnect() {
+    async disconnect() {
         logger.info(`Disconnecting Tradovate WebSocket for account ${this.accountId}`);
-        super.disconnect();
+        return super.disconnect();
     }
 
-    // Helper methods
-    formatOrderMessage(order) {
-        return MESSAGE_FORMATTERS.order(order);
+    shouldReconnect(event) {
+        // Don't reconnect on authentication failures
+        if (event.code === 4001 || event.code === 4003) {
+            logger.warn(`Not reconnecting due to authentication error: ${event.code}`);
+            return false;
+        }
+        
+        return super.shouldReconnect(event);
     }
 
-    getConnectionInfo() {
+    handleError(error) {
+        logger.error(`Tradovate WebSocket error: ${error.message}`);
+        this.emit('error', {
+            accountId: this.accountId,
+            error,
+            timestamp: Date.now()
+        });
+    }
+
+    // Utility methods
+    emit(event, data) {
+        // Override this method to integrate with your event system
+        // For example, you might want to use RxJS subjects here
+        logger.debug(`Event emitted: ${event}`, data);
+    }
+
+    getStatus() {
         return {
-            ...super.getConnectionInfo(),
-            broker: 'tradovate',
+            ...super.getMetrics(),
             environment: this.environment,
-            lastHeartbeat: this.lastHeartbeatTime,
-            missedHeartbeats: this.missedHeartbeats
+            subscriptions: Array.from(this.subscriptions),
+            broker: 'tradovate'
         };
     }
 }

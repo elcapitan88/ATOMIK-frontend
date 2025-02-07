@@ -5,105 +5,154 @@ import {
   ModalContent,
   ModalHeader,
   ModalBody,
-  ModalFooter,
-  Button,
+  ModalCloseButton,
   FormControl,
   FormLabel,
-  Input,
-  VStack,
-  HStack,
-  Box,
-  Text,
-  Select,
+  FormHelperText,
   Textarea,
   useToast,
+  VStack,
+  Text,
+  Box,
+  Switch,
+  Flex,
+  Select,
+  Alert,
+  AlertIcon,
+  Spinner
 } from '@chakra-ui/react';
-import StrategyCard from '@/components/features/marketplace/components/StrategyCard';
+import { webhookApi } from '@/services/api/Webhooks/webhookApi';
+import { STRATEGY_TYPE_OPTIONS } from '@utils/constants/strategyTypes';
+import { Info } from 'lucide-react';
 
-const ShareStrategyModal = ({ isOpen, onClose, webhook }) => {
+const ShareStrategyModal = ({ isOpen, onClose, webhook, onWebhookUpdate }) => {
   const toast = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     description: '',
-    category: 'momentum',
-    riskLevel: 'medium',
-    timeframe: '5m',
-    winRate: '',
-    totalTrades: '',
-    author: '',
-    authorTitle: 'Trader',
-    price: 0,
-    isPublic: true
+    isShared: false,
+    strategyType: '',
   });
 
-  // Populate form with webhook data if available
+  // Debug logging
+  useEffect(() => {
+    console.log('Form data updated:', formData);
+  }, [formData]);
+
+  useEffect(() => {
+    console.log('Webhook updated:', webhook);
+  }, [webhook]);
+
+  // Reset and sync form data when modal opens or webhook changes
   useEffect(() => {
     if (webhook) {
-      setFormData(prev => ({
-        ...prev,
+      setFormData({
         name: webhook.name || '',
         description: webhook.details || '',
-      }));
+        isShared: Boolean(webhook.is_shared),
+        strategyType: webhook.strategy_type || webhook.strategyType || null
+      });
     }
   }, [webhook]);
 
-  const handleInputChange = (field) => (e) => {
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [field]: e.target.value
+      [name]: value
     }));
   };
 
   const validateForm = () => {
-    const required = ['name', 'category', 'timeframe', 'riskLevel'];
-    return required.every(field => formData[field]);
-  };
-
-  const handleShare = async () => {
-    try {
-      setIsSubmitting(true);
-
-      if (!validateForm()) {
+    if (formData.isActive) {
+      if (!formData.strategyType) {
         toast({
-          title: "Validation Error",
-          description: "Please fill in all required fields",
-          status: "error",
+          title: "Strategy Type Required",
+          description: "Please select a strategy type before sharing",
+          status: "warning",
           duration: 3000,
           isClosable: true,
         });
-        return;
+        return false;
       }
+      if (!formData.description) {
+        toast({
+          title: "Description Required",
+          description: "Please provide a description of your strategy",
+          status: "warning",
+          duration: 3000,
+          isClosable: true,
+        });
+        return false;
+      }
+    }
+    return true;
+  };
 
-      // Here you would typically make an API call to save the strategy
-      // const response = await api.shareStrategy({ ...formData, webhookId: webhook.id });
+  const handleToggleShare = async (e) => {
+    try {
+        const newSharedState = e.target.checked;
+        setIsSubmitting(true);
 
-      toast({
-        title: "Strategy Shared",
-        description: "Your strategy has been successfully shared",
-        status: "success",
-        duration: 3000,
-        isClosable: true,
-      });
+        // If trying to deactivate sharing, make sure we keep the existing strategy type
+        const data = {
+            isActive: newSharedState,
+            description: formData.description,
+            strategyType: formData.strategyType // Keep existing strategy type even when deactivating
+        };
 
-      onClose();
+        console.log('Sending toggle data:', data);
+
+        // Optimistically update UI
+        setFormData(prev => ({
+            ...prev,
+            isShared: newSharedState
+        }));
+
+        const response = await webhookApi.toggleSharing(webhook.token, data);
+
+        // Update parent component
+        if (onWebhookUpdate) {
+            onWebhookUpdate(response);
+        }
+
+        toast({
+            title: newSharedState ? "Strategy Sharing Activated" : "Strategy Sharing Deactivated",
+            status: "success",
+            duration: 3000,
+            isClosable: true,
+        });
+
     } catch (error) {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to share strategy",
-        status: "error",
-        duration: 5000,
-        isClosable: true,
-      });
+        // Revert on error
+        setFormData(prev => ({
+            ...prev,
+            isShared: !e.target.checked
+        }));
+
+        toast({
+            title: "Error",
+            description: error.message || "Failed to update sharing status",
+            status: "error",
+            duration: 5000,
+            isClosable: true,
+        });
     } finally {
-      setIsSubmitting(false);
+        setIsSubmitting(false);
+    }
+};
+
+  const handleClose = () => {
+    if (!isSubmitting) {
+      onClose();
     }
   };
 
   return (
     <Modal 
       isOpen={isOpen} 
-      onClose={onClose} 
+      onClose={handleClose} 
       size="xl"
       closeOnOverlayClick={!isSubmitting}
     >
@@ -118,19 +167,35 @@ const ShareStrategyModal = ({ isOpen, onClose, webhook }) => {
           borderBottom="1px solid rgba(255, 255, 255, 0.18)" 
           pb={4} 
           color="white"
+          pr={12}
         >
-          Share Your Strategy
+          Share Strategy
         </ModalHeader>
+        <ModalCloseButton 
+          color="white"
+          _hover={{ bg: 'whiteAlpha.200' }}
+          isDisabled={isSubmitting}
+        />
         
         <ModalBody py={6}>
           <VStack spacing={6}>
-            {/* Basic Info Section */}
-            <FormControl isRequired>
-              <FormLabel color="white">Strategy Name</FormLabel>
-              <Input 
-                placeholder="E.g., MACD Momentum Strategy"
-                value={formData.name}
-                onChange={handleInputChange('name')}
+            {/* Strategy Name Display */}
+            <Box width="full">
+              <Text color="whiteAlpha.700" fontSize="sm" mb={1}>
+                Strategy Name
+              </Text>
+              <Text color="white" fontWeight="medium" fontSize="lg">
+                {formData.name || 'Unnamed Strategy'}
+              </Text>
+            </Box>
+
+            {/* Strategy Type Selector */}
+            <FormControl isRequired={formData.isActive}>
+              <FormLabel color="white">Strategy Type</FormLabel>
+              <Select
+                name="strategyType"
+                value={formData.strategyType}
+                onChange={handleInputChange}
                 bg="whiteAlpha.100"
                 border="1px solid"
                 borderColor="whiteAlpha.200"
@@ -140,15 +205,28 @@ const ShareStrategyModal = ({ isOpen, onClose, webhook }) => {
                   boxShadow: "0 0 0 1px rgba(0, 198, 224, 0.6)"
                 }}
                 color="white"
-              />
+                placeholder="Select strategy type"
+                isDisabled={isSubmitting}
+              >
+                {STRATEGY_TYPE_OPTIONS.map(option => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </Select>
+              <FormHelperText color="whiteAlpha.600">
+                Choose the type that best describes your strategy
+              </FormHelperText>
             </FormControl>
 
-            <FormControl>
-              <FormLabel color="white">Description</FormLabel>
+            {/* Strategy Description */}
+            <FormControl isRequired={formData.isActive}>
+              <FormLabel color="white">Strategy Description</FormLabel>
               <Textarea
+                name="description"
                 placeholder="Describe your strategy..."
                 value={formData.description}
-                onChange={handleInputChange('description')}
+                onChange={handleInputChange}
                 bg="whiteAlpha.100"
                 border="1px solid"
                 borderColor="whiteAlpha.200"
@@ -159,128 +237,70 @@ const ShareStrategyModal = ({ isOpen, onClose, webhook }) => {
                 }}
                 color="white"
                 rows={3}
+                isDisabled={isSubmitting}
               />
+              <FormHelperText color="whiteAlpha.600">
+                Provide details about your strategy's approach and objectives
+              </FormHelperText>
             </FormControl>
 
-            <HStack spacing={4} width="full">
-              <FormControl isRequired>
-                <FormLabel color="white">Category</FormLabel>
-                <Select
-                  value={formData.category}
-                  onChange={handleInputChange('category')}
-                  bg="whiteAlpha.100"
-                  border="1px solid"
-                  borderColor="whiteAlpha.200"
-                  _hover={{ borderColor: "whiteAlpha.300" }}
-                  _focus={{ 
-                    borderColor: "rgba(0, 198, 224, 0.6)",
-                    boxShadow: "0 0 0 1px rgba(0, 198, 224, 0.6)"
+            {/* Sharing Toggle */}
+            <Flex
+              width="full"
+              justifyContent="space-between"
+              alignItems="center"
+              p={4}
+              bg="whiteAlpha.100"
+              borderRadius="md"
+              borderWidth="1px"
+              borderColor="whiteAlpha.200"
+              opacity={isSubmitting ? 0.7 : 1}
+              transition="opacity 0.2s"
+            >
+              <Box>
+                <Text color="white" fontWeight="medium">
+                  Activate Strategy Sharing
+                </Text>
+                <Text color="whiteAlpha.600" fontSize="sm">
+                  Make this strategy available in the marketplace
+                </Text>
+              </Box>
+              <Box position="relative">
+                {isSubmitting && (
+                  <Spinner
+                    position="absolute"
+                    right="100%"
+                    mr={2}
+                    size="sm"
+                    color="blue.500"
+                  />
+                )}
+                <Switch
+                  isChecked={formData.isShared}  // Use formData.isShared directly
+                  onChange={handleToggleShare}
+                  isDisabled={isSubmitting}
+                  colorScheme="green"
+                  size="lg"
+                  sx={{
+                      '& .chakra-switch__track': {
+                          transition: 'background-color 0.2s'
+                      }
                   }}
-                  color="white"
-                >
-                  <option value="momentum">Momentum</option>
-                  <option value="mean-reversion">Mean Reversion</option>
-                  <option value="breakout">Breakout</option>
-                </Select>
-              </FormControl>
+              />
+              </Box>
+            </Flex>
 
-              <FormControl isRequired>
-                <FormLabel color="white">Risk Level</FormLabel>
-                <Select
-                  value={formData.riskLevel}
-                  onChange={handleInputChange('riskLevel')}
-                  bg="whiteAlpha.100"
-                  border="1px solid"
-                  borderColor="whiteAlpha.200"
-                  _hover={{ borderColor: "whiteAlpha.300" }}
-                  _focus={{ 
-                    borderColor: "rgba(0, 198, 224, 0.6)",
-                    boxShadow: "0 0 0 1px rgba(0, 198, 224, 0.6)"
-                  }}
-                  color="white"
-                >
-                  <option value="low">Low</option>
-                  <option value="medium">Medium</option>
-                  <option value="high">High</option>
-                </Select>
-              </FormControl>
-            </HStack>
-
-            <HStack spacing={4} width="full">
-              <FormControl>
-                <FormLabel color="white">Win Rate (%)</FormLabel>
-                <Input 
-                  type="number"
-                  min="0"
-                  max="100"
-                  value={formData.winRate}
-                  onChange={handleInputChange('winRate')}
-                  bg="whiteAlpha.100"
-                  border="1px solid"
-                  borderColor="whiteAlpha.200"
-                  _hover={{ borderColor: "whiteAlpha.300" }}
-                  _focus={{ 
-                    borderColor: "rgba(0, 198, 224, 0.6)",
-                    boxShadow: "0 0 0 1px rgba(0, 198, 224, 0.6)"
-                  }}
-                  color="white"
-                />
-              </FormControl>
-              
-              <FormControl>
-                <FormLabel color="white">Total Trades</FormLabel>
-                <Input 
-                  type="number"
-                  min="0"
-                  value={formData.totalTrades}
-                  onChange={handleInputChange('totalTrades')}
-                  bg="whiteAlpha.100"
-                  border="1px solid"
-                  borderColor="whiteAlpha.200"
-                  _hover={{ borderColor: "whiteAlpha.300" }}
-                  _focus={{ 
-                    borderColor: "rgba(0, 198, 224, 0.6)",
-                    boxShadow: "0 0 0 1px rgba(0, 198, 224, 0.6)"
-                  }}
-                  color="white"
-                />
-              </FormControl>
-            </HStack>
-
-            {/* Preview Section */}
-            <Box width="full">
-              <Text fontWeight="bold" mb={2} color="white">Preview</Text>
-              <StrategyCard strategy={formData} isPreview />
-            </Box>
+            {/* Info Alert */}
+            {formData.isActive && (
+              <Alert status="info" bg="whiteAlpha.200" color="white">
+                <AlertIcon as={Info} color="blue.300" />
+                <Text fontSize="sm">
+                  Your strategy will be visible to other users in the marketplace
+                </Text>
+              </Alert>
+            )}
           </VStack>
         </ModalBody>
-        
-        <ModalFooter 
-          borderTop="1px solid rgba(255, 255, 255, 0.18)" 
-          pt={4}
-        >
-          <Button 
-            variant="ghost" 
-            mr={3} 
-            onClick={onClose}
-            color="white"
-            _hover={{ bg: 'whiteAlpha.100' }}
-            isDisabled={isSubmitting}
-          >
-            Cancel
-          </Button>
-          <Button 
-            bg="rgba(0, 198, 224, 0.6)"
-            color="white"
-            onClick={handleShare}
-            isLoading={isSubmitting}
-            loadingText="Sharing..."
-            _hover={{ bg: 'rgba(0, 198, 224, 0.8)' }}
-            isDisabled={!validateForm()}
-          >
-            Share Strategy
-          </Button>
-        </ModalFooter>
       </ModalContent>
     </Modal>
   );

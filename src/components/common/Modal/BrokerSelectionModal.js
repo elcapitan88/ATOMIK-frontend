@@ -80,7 +80,7 @@ const BrokerSelectionModal = ({ isOpen, onClose, onBrokerSelect }) => {
           borderBottom="1px solid rgba(255, 255, 255, 0.18)" 
           pb={4}
         >
-          Select Trading Platform
+          Select Broker
         </ModalHeader>
         <ModalCloseButton />
         <ModalBody pt={6} pb={8}>
@@ -100,7 +100,7 @@ const BrokerSelectionModal = ({ isOpen, onClose, onBrokerSelect }) => {
             color="whiteAlpha.600" 
             textAlign="center"
           >
-            Select your preferred trading platform to connect
+            Select your preferred broker to connect
           </Text>
         </ModalBody>
       </ModalContent>

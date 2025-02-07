@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Box,
   VStack,
@@ -7,215 +7,510 @@ import {
   Input,
   InputGroup,
   InputLeftElement,
+  InputRightElement,
   Flex,
   Container,
   Select,
   Badge,
+  useToast,
+  Spinner,
+  ButtonGroup,
+  Button,
+  Icon,
+  IconButton,
 } from '@chakra-ui/react';
-import { Search, TrendingUp, BarChart2, Zap } from 'lucide-react';
-import CategoryRow from '../features/marketplace/components/CategoryRow';
+import {
+  Search,
+  TrendingUp,
+  BarChart2,
+  Target,
+  Gauge,
+  TimerReset,
+  BookMarked,
+  Layout,
+  X,
+} from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { webhookApi } from '@/services/api/Webhooks/webhookApi';
+import { STRATEGY_TYPE_OPTIONS } from '@utils/constants/strategyTypes';
+import StrategyCard from '../features/marketplace/components/StrategyCard';
+import Menu from '../layout/Sidebar/Menu';
 
-// Dummy data for testing
-const dummyStrategies = {
-  momentum: [
-    {
-      id: 1,
-      name: "Trend Following Master",
-      description: "Capture strong market trends with sophisticated momentum indicators",
-      risk: "Medium",
-      winRate: "65",
-      rating: "4.8",
-      users: "234",
-      timeframe: "15m",
-      author: "John Smith",
-      authorTitle: "Pro Trader",
-      price: 149,
-      category: "momentum"
-    },
-    {
-      id: 2,
-      name: "MACD Momentum Pro",
-      description: "Advanced MACD strategy for momentum trading",
-      risk: "High",
-      winRate: "72",
-      rating: "4.6",
-      users: "156",
-      timeframe: "1h",
-      author: "Sarah Johnson",
-      authorTitle: "Strategy Expert",
-      price: 199,
-      category: "momentum"
-    },
-    // Add more momentum strategies...
-  ],
-  meanReversion: [
-    {
-      id: 3,
-      name: "Mean Reversion Elite",
-      description: "Statistical arbitrage using advanced mean reversion techniques",
-      risk: "Low",
-      winRate: "58",
-      rating: "4.9",
-      users: "312",
-      timeframe: "5m",
-      author: "Mike Chen",
-      authorTitle: "Quant Developer",
-      price: 299,
-      category: "mean-reversion"
-    },
-    // Add more mean reversion strategies...
-  ],
-  breakout: [
-    {
-      id: 4,
-      name: "Volatility Breakout",
-      description: "Capture explosive moves with volume-based breakout detection",
-      risk: "High",
-      winRate: "62",
-      rating: "4.7",
-      users: "189",
-      timeframe: "30m",
-      author: "Lisa Zhang",
-      authorTitle: "Technical Analyst",
-      price: 179,
-      category: "breakout"
-    },
-    // Add more breakout strategies...
-  ]
-};
+const MotionFlex = motion(Flex);
+const MotionBox = motion(Box);
 
 const categories = [
   {
     id: 'momentum',
     title: 'Momentum Strategies',
-    description: 'Strategies that capitalize on market momentum',
-    icon: TrendingUp
+    icon: TrendingUp,
+    description: 'Strategies that capitalize on strong market movements and trends',
   },
   {
-    id: 'meanReversion',
+    id: 'mean_reversion',
     title: 'Mean Reversion',
-    description: 'Statistical arbitrage and mean reversion strategies',
-    icon: BarChart2
+    icon: TimerReset,
+    description: 'Strategies that trade price returns to statistical averages',
   },
   {
     id: 'breakout',
-    title: 'Breakout Trading',
-    description: 'Strategies focused on market breakouts',
-    icon: Zap
-  }
+    title: 'Breakout Strategies',
+    icon: Target,
+    description: 'Strategies that capture significant price breakouts from ranges',
+  },
+  {
+    id: 'arbitrage',
+    title: 'Arbitrage Strategies',
+    icon: BarChart2,
+    description: 'Strategies that exploit price differences across markets',
+  },
+  {
+    id: 'scalping',
+    title: 'Scalping Strategies',
+    icon: Gauge,
+    description: 'High-frequency strategies for short-term opportunities',
+  },
 ];
 
-const MarketplaceLayout = () => {
+const MarketplacePage = () => {
+  // State management
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
+  const [strategies, setStrategies] = useState({});
+  const [isLoading, setIsLoading] = useState(true);
+  const [viewMode, setViewMode] = useState('all');
+  const [subscribedStrategies, setSubscribedStrategies] = useState(new Set());
+  const [searchFocused, setSearchFocused] = useState(false);
+  const toast = useToast();
+
+  // Calculate totals
+  const totalStrategies = useMemo(() => {
+    return Object.values(strategies).reduce(
+      (acc, categoryStrategies) => acc + categoryStrategies.length,
+      0
+    );
+  }, [strategies]);
+
+  const totalSubscribed = useMemo(() => {
+    return subscribedStrategies.size;
+  }, [subscribedStrategies]);
+
+  // Fetch strategies and subscriptions
+  const fetchStrategies = async () => {
+    try {
+      setIsLoading(true);
+      const [sharedResponse, subscribedResponse] = await Promise.all([
+        webhookApi.listSharedStrategies(),
+        webhookApi.getSubscribedStrategies()
+      ]);
+      
+      const subscribedSet = new Set(subscribedResponse.map(s => s.token));
+      setSubscribedStrategies(subscribedSet);
+      
+      const groupedStrategies = sharedResponse.reduce((acc, strategy) => {
+        const type = strategy.strategy_type || 'uncategorized';
+        if (!acc[type]) {
+          acc[type] = [];
+        }
+        acc[type].push({
+          ...strategy,
+          name: strategy.name || 'Unnamed Strategy',
+          description: strategy.details || 'No description provided',
+          username: strategy.username || 'Anonymous',
+          strategyType: strategy.strategy_type,
+          isPublic: strategy.is_shared,
+          rating: strategy.rating || 0,
+          subscriberCount: strategy.subscriber_count || 0,
+          isSubscribed: subscribedSet.has(strategy.token)
+        });
+        return acc;
+      }, {});
+
+      setStrategies(groupedStrategies);
+    } catch (error) {
+      toast({
+        title: "Error fetching strategies",
+        description: error.message,
+        status: "error",
+        duration: 5000,
+        isClosable: true,
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchStrategies();
+  }, []);
+
+  // Handle subscription changes
+  const handleSubscriptionChange = (token, isSubscribed) => {
+    setSubscribedStrategies(prev => {
+      const newSet = new Set(prev);
+      if (isSubscribed) {
+        newSet.add(token);
+      } else {
+        newSet.delete(token);
+      }
+      return newSet;
+    });
+    
+    setStrategies(prev => {
+      const updated = { ...prev };
+      Object.keys(updated).forEach(category => {
+        updated[category] = updated[category].map(strategy => {
+          if (strategy.token === token) {
+            return {
+              ...strategy,
+              isSubscribed,
+              subscriberCount: isSubscribed 
+                ? strategy.subscriberCount + 1 
+                : Math.max(0, strategy.subscriberCount - 1)
+            };
+          }
+          return strategy;
+        });
+      });
+      return updated;
+    });
+  };
+
+  // Filter strategies based on search and category
+  const getFilteredStrategies = (categoryStrategies, categoryId) => {
+    if (!categoryStrategies) return [];
+    
+    return categoryStrategies.filter(strategy => {
+      const matchesSearch = searchQuery === '' || 
+        strategy.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        strategy.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        strategy.username.toLowerCase().includes(searchQuery.toLowerCase());
+      
+      const matchesCategory = selectedCategory === 'all' || categoryId === selectedCategory;
+      
+      return matchesSearch && matchesCategory;
+    });
+  };
+
+  // Get subscribed strategies
+  const getSubscribedStrategiesArray = () => {
+    return Object.values(strategies)
+      .flat()
+      .filter(strategy => subscribedStrategies.has(strategy.token));
+  };
+
+  // Component for empty states
+  const EmptyState = ({ message, icon }) => (
+    <MotionBox
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -20 }}
+      transition={{ duration: 0.3 }}
+    >
+      <Flex
+        direction="column"
+        align="center"
+        justify="center"
+        minH="300px"
+        p={8}
+        textAlign="center"
+      >
+        <Icon as={icon} size={48} color="whiteAlpha.400" mb={4} />
+        <Text color="whiteAlpha.600" fontSize="lg">
+          {message}
+        </Text>
+      </Flex>
+    </MotionBox>
+  );
+
+  // Strategy grid component
+  const StrategyGrid = ({ strategies }) => (
+    <MotionFlex
+      gap={6}
+      flexWrap="wrap"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.3 }}
+    >
+      <AnimatePresence mode="wait">
+        {strategies.map((strategy) => (
+          <MotionBox
+            key={strategy.token}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.3 }}
+          >
+            <StrategyCard
+              strategy={strategy}
+              onSubscriptionChange={handleSubscriptionChange}
+            />
+          </MotionBox>
+        ))}
+      </AnimatePresence>
+    </MotionFlex>
+  );
+
+  // Search bar component
+  const SearchBar = () => (
+    <InputGroup
+      maxW="300px"
+      transition="all 0.3s"
+      transform={searchFocused ? 'translateY(-2px)' : 'none'}
+      boxShadow={searchFocused ? '0 4px 12px rgba(0, 198, 224, 0.15)' : 'none'}
+    >
+      <InputLeftElement pointerEvents="none">
+        <Search size={18} color="white" opacity={0.5} />
+      </InputLeftElement>
+      <Input
+        placeholder="Search strategies..."
+        value={searchQuery}
+        onChange={(e) => setSearchQuery(e.target.value)}
+        onFocus={() => setSearchFocused(true)}
+        onBlur={() => setSearchFocused(false)}
+        bg="whiteAlpha.100"
+        border="1px solid"
+        borderColor="whiteAlpha.200"
+        _hover={{ borderColor: "whiteAlpha.300" }}
+        _focus={{ 
+          borderColor: "rgba(0, 198, 224, 0.6)",
+          boxShadow: "0 0 0 1px rgba(0, 198, 224, 0.6)"
+        }}
+        color="white"
+      />
+      {searchQuery && (
+        <InputRightElement>
+          <IconButton
+            icon={<X size={14} />}
+            size="sm"
+            variant="ghost"
+            colorScheme="whiteAlpha"
+            onClick={() => setSearchQuery('')}
+            aria-label="Clear search"
+          />
+        </InputRightElement>
+      )}
+    </InputGroup>
+  );
+
+  // Render main content
+  const renderContent = () => {
+    if (isLoading) {
+      return (
+        <Flex justify="center" align="center" minH="400px">
+          <Spinner size="xl" color="blue.500" />
+        </Flex>
+      );
+    }
+
+    // Subscribed view mode
+    if (viewMode === 'subscribed') {
+      const subscribedStrategiesArray = getSubscribedStrategiesArray();
+      
+      if (subscribedStrategiesArray.length === 0) {
+        return (
+          <EmptyState
+            message="You haven't subscribed to any strategies yet"
+            icon={BookMarked}
+          />
+        );
+      }
+
+      return (
+        <VStack spacing={8} align="stretch">
+          <StrategyGrid strategies={subscribedStrategiesArray} />
+        </VStack>
+      );
+    }
+
+    // All strategies view mode
+    const subscribedStrategiesArray = getSubscribedStrategiesArray();
+    
+    return (
+      <VStack spacing={8} align="stretch">
+        {/* Subscribed Strategies Section */}
+        {subscribedStrategiesArray.length > 0 && (
+          <Box mb={8}>
+            <HStack mb={4} align="center">
+              <BookMarked size={20} color="white" />
+              <Text fontSize="xl" fontWeight="bold" color="white">
+                Your Subscribed Strategies
+              </Text>
+              <Badge
+                ml={2}
+                colorScheme="blue"
+                bg="rgba(0, 198, 224, 0.2)"
+                color="white"
+              >
+                {subscribedStrategiesArray.length}
+              </Badge>
+            </HStack>
+            <StrategyGrid strategies={subscribedStrategiesArray} />
+          </Box>
+        )}
+
+        {/* Category Sections */}
+        {categories.map((category) => {
+          const filteredStrategies = getFilteredStrategies(
+            strategies[category.id],
+            category.id
+          );
+
+          if (
+            (selectedCategory !== 'all' && category.id !== selectedCategory) ||
+            (searchQuery && filteredStrategies.length === 0)
+          ) {
+            return null;
+          }
+
+          return (
+            <Box key={category.id}>
+              <HStack mb={4} align="center">
+                <category.icon size={20} color="white" />
+                <Text fontSize="xl" fontWeight="bold" color="white">
+                  {category.title}
+                </Text>
+                <Badge
+                  ml={2}
+                  colorScheme="blue"
+                  bg="rgba(0, 198, 224, 0.2)"
+                  color="white"
+                >
+                  {filteredStrategies.length}
+                </Badge>
+              </HStack>
+
+              <Text color="whiteAlpha.700" fontSize="sm" mb={4}>
+                {category.description}
+              </Text>
+
+              <StrategyGrid strategies={filteredStrategies} />
+            </Box>
+          );
+        })}
+
+        {/* Empty State */}
+        {Object.keys(strategies).length === 0 && (
+          <EmptyState
+            message="No strategies found"
+            icon={Layout}
+          />
+        )}
+      </VStack>
+    );
+  };
 
   return (
-    <Box 
-      minH="100vh" 
-      bg="background" 
-      color="text.primary"
-      p={6}
-      position="relative"
-    >
-      {/* Background effects */}
-      <Box 
-        position="absolute" 
-        inset={0} 
-        bgGradient="linear(to-br, blackAlpha.400, blackAlpha.200, blackAlpha.400)" 
-        pointerEvents="none"
-      />
-      <Box 
-        position="absolute" 
-        inset={0} 
-        backdropFilter="blur(16px)" 
-        bg="blackAlpha.300"
-      />
+    <Flex minH="100vh" bg="background" color="text.primary" fontFamily="body">
+      <Menu onSelectItem={() => {}} />
       
-      {/* Content */}
-      <Container maxW="container.xl" position="relative" zIndex={1}>
-        <VStack spacing={8} align="stretch">
-          {/* Header Section */}
-          <Flex 
-            direction={{ base: 'column', md: 'row' }} 
-            justify="space-between" 
-            align={{ base: 'stretch', md: 'center' }}
-            gap={4}
+      <Box flexGrow={1} ml={16}>
+        <Box h="100vh" w="full" overflow="hidden" position="relative">
+          {/* Background Effects */}
+          <Box 
+            position="absolute" 
+            inset={0} 
+            bgGradient="linear(to-br, blackAlpha.400, blackAlpha.200, blackAlpha.400)" 
+            pointerEvents="none" 
+          />
+          <Box 
+            position="absolute" 
+            inset={0} 
+            backdropFilter="blur(16px)" 
+            bg="blackAlpha.300" 
+          />
+          
+          {/* Content */}
+          <Box 
+            position="relative" 
+            h="full" 
+            zIndex={1} 
+            overflowY="auto"
+            p={4}
           >
-            <VStack align="stretch" spacing={1}>
-              <Text fontSize="2xl" fontWeight="bold">
-                Strategy Marketplace
-              </Text>
-              <Text color="whiteAlpha.700">
-                Discover and implement proven trading strategies
-              </Text>
-            </VStack>
-
-            {/* Search and Filter */}
-            <HStack spacing={4} flex={{ base: '1', md: 'initial' }}>
-              <InputGroup maxW="300px">
-                <InputLeftElement pointerEvents="none">
-                  <Search size={18} color="white" opacity={0.5} />
-                </InputLeftElement>
-                <Input
-                  placeholder="Search strategies..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  bg="whiteAlpha.100"
-                  border="1px solid"
-                  borderColor="whiteAlpha.200"
-                  _hover={{ borderColor: "whiteAlpha.300" }}
-                  _focus={{ 
-                    borderColor: "rgba(0, 198, 224, 0.6)",
-                    boxShadow: "0 0 0 1px rgba(0, 198, 224, 0.6)"
-                  }}
-                />
-              </InputGroup>
-
-              <Select
-                value={selectedCategory}
-                onChange={(e) => setSelectedCategory(e.target.value)}
-                bg="whiteAlpha.100"
-                border="1px solid"
-                borderColor="whiteAlpha.200"
-                _hover={{ borderColor: "whiteAlpha.300" }}
-                _focus={{ 
-                  borderColor: "rgba(0, 198, 224, 0.6)",
-                  boxShadow: "0 0 0 1px rgba(0, 198, 224, 0.6)"
-                }}
-                maxW="200px"
+            <Container maxW="container.xl" py={4}>
+              {/* Header */}
+              <Flex 
+                direction={{ base: 'column', md: 'row' }} 
+                justify="space-between" 
+                align={{ base: 'stretch', md: 'center' }}
+                gap={4}
+                mb={6}
               >
-                <option value="all">All Categories</option>
-                <option value="momentum">Momentum</option>
-                <option value="mean-reversion">Mean Reversion</option>
-                <option value="breakout">Breakout</option>
-              </Select>
-            </HStack>
-          </Flex>
-
-          {/* Categories Sections */}
-          <VStack spacing={12} align="stretch">
-            {categories.map((category) => (
-              <Box key={category.id}>
-                <HStack spacing={2} mb={4}>
-                  <category.icon size={20} />
-                  <Text fontSize="xl" fontWeight="bold">
-                    {category.title}
+                <VStack align="flex-start" spacing={1}>
+                  <Text 
+                    fontSize="2xl" 
+                    fontWeight="bold" 
+                    color="white"
+                    textShadow="0 0 10px rgba(0, 198, 224, 0.3)"
+                  >
+                    Strategy Marketplace
                   </Text>
-                  <Badge colorScheme="blue" ml={2}>
-                    {dummyStrategies[category.id]?.length || 0} Strategies
-                  </Badge>
-                </HStack>
-                
-                <CategoryRow 
-                  strategies={dummyStrategies[category.id] || []}
-                />
-              </Box>
-            ))}
-          </VStack>
-        </VStack>
-      </Container>
-    </Box>
-  );
-};
+                  <Text color="whiteAlpha.700" fontSize="sm">
+                    {totalStrategies} Strategies Available • {totalSubscribed} Subscribed
+                  </Text>
+                </VStack>
 
-export default MarketplaceLayout;
+                {/* Controls */}
+                <HStack spacing={4} flex={{ base: '1', md: '0' }}>
+                  <ButtonGroup size="sm" isAttached variant="outline">
+                    <Button
+                      onClick={() => setViewMode('all')}
+                      colorScheme={viewMode === 'all' ? 'blue' : 'gray'}
+                      borderColor="whiteAlpha.200"
+                      leftIcon={<Layout size={16} />}
+                    >
+                      All
+                    </Button>
+                    <Button
+                      onClick={() => setViewMode('subscribed')}
+                      colorScheme={viewMode === 'subscribed' ? 'blue' : 'gray'}
+                      borderColor="whiteAlpha.200"
+                      leftIcon={<BookMarked size={16} />}
+                    >
+                      Subscribed
+                    </Button>
+                  </ButtonGroup>
+
+                  <SearchBar />
+
+                  {viewMode === 'all' && (
+                    <Select
+                      value={selectedCategory}
+                      onChange={(e) => setSelectedCategory(e.target.value)}
+                      bg="whiteAlpha.100"
+                      border="1px solid"
+                      borderColor="whiteAlpha.200"
+                      _hover={{ borderColor: "whiteAlpha.300" }}
+                      _focus={{ 
+                        borderColor: "rgba(0, 198, 224, 0.6)",
+                        boxShadow: "0 0 0 1px rgba(0, 198, 224, 0.6)"
+                      }}
+                      maxW="200px"
+                      color="white"
+                    >
+                      <option value="all">All Types</option>
+                      {STRATEGY_TYPE_OPTIONS.map(option => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </Select>
+                  )}
+                </HStack>
+              </Flex>
+
+              {/* Main Content with Animation */}
+              <AnimatePresence mode="wait">
+                {renderContent()}
+              </AnimatePresence>
+            </Container>
+          </Box>
+        </Box>
+      </Box>
+    </Flex>
+  );
+}
+
+export default MarketplacePage;

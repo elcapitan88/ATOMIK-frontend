@@ -1,5 +1,6 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
+  Box,
   Table,
   Thead,
   Tbody,
@@ -7,102 +8,168 @@ import {
   Th,
   Td,
   HStack,
+  VStack,
   Text,
   IconButton,
   Tooltip,
-  Box,
-  Flex,
-  useClipboard,
-  Spinner,
-  Badge,
   Menu,
   MenuButton,
   MenuList,
   MenuItem,
+  useClipboard,
+  Flex,
   useToast,
-  useDisclosure
+  useDisclosure,
+  Icon,
+  Spinner,
 } from '@chakra-ui/react';
-import { 
-  Settings, 
-  Trash2, 
+import {
+  Settings,
+  Trash2,
   MoreVertical,
-  RefreshCw,
-  Clock,
+  Share,
+  Users,
+  Star,
+  UserMinus,
+  Inbox,
+  Copy,
   Info,
-  Share 
 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { webhookApi } from '@/services/api/Webhooks/webhookApi';
-import useWebSocket from '@/hooks/useWebSocket';
-import { formatDate } from '@/utils/formatting/date';
+import WebhookModal from '@/components/features/webhooks/WebhookModal';
+import WebhookDetailsModal from '@/components/features/webhooks/WebhookDetailsModal';
 import ShareStrategyModal from '@/components/common/Modal/ShareStrategyModal';
+import DeleteWebhook from '@/components/common/Modal/DeleteWebhook';
 
-const CopyableUrl = ({ webhook }) => {
-  const fullUrl = `${webhook.webhook_url}?secret=${webhook.secret_key}`;
-  
-  const abbreviateText = (text, startLength = 8, endLength = 6) => {
-    if (!text) return '';
-    if (text.length <= startLength + endLength) return text;
-    return `${text.substring(0, startLength)}...${text.substring(text.length - endLength)}`;
-  };
+// URL Display Component
+const WebhookUrl = ({ webhook }) => {
+  const { hasCopied, onCopy } = useClipboard(
+    `${webhook.webhook_url}?secret=${webhook.secret_key}`
+  );
 
-  const displayUrl = abbreviateText(webhook.webhook_url, 15, 8);
-  const displaySecret = abbreviateText(webhook.secret_key, 6, 4);
-  const displayText = `${displayUrl}?secret=${displaySecret}`;
-
-  const { hasCopied, onCopy } = useClipboard(fullUrl);
-  
   return (
-    <Tooltip 
-      label={hasCopied ? "Copied!" : "Click to copy URL"}
-      placement="top"
-      hasArrow
-    >
+    <HStack spacing={2}>
       <Text
+        color="whiteAlpha.900"
         fontSize="sm"
-        cursor="pointer"
-        onClick={onCopy}
-        color="whiteAlpha.800"
-        _hover={{ color: "white" }}
+        fontFamily="mono"
+        isTruncated
+        maxW="300px"
       >
-        {displayText}
+        {webhook.webhook_url}
       </Text>
-    </Tooltip>
+      <Tooltip
+        label={hasCopied ? "Copied!" : "Copy URL with secret"}
+        placement="top"
+      >
+        <IconButton
+          icon={<Copy size={14} />}
+          size="xs"
+          variant="ghost"
+          color={hasCopied ? "green.400" : "whiteAlpha.600"}
+          _hover={{ color: "white" }}
+          onClick={onCopy}
+          aria-label="Copy webhook URL"
+        />
+      </Tooltip>
+    </HStack>
   );
 };
 
-const WebhooksView = ({ onDetailsOpen, onDeleteOpen, setSelectedWebhook, onWebhooksChange }) => {
+const WebhooksView = ({ onWebhooksChange }) => {
+  // State Management
   const [webhooks, setWebhooks] = useState([]);
+  const [selectedWebhook, setSelectedWebhook] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [selectedWebhookForShare, setSelectedWebhookForShare] = useState(null);
-  
-  const toast = useToast();
-  const { status: wsStatus } = useWebSocket('tradovate');
+  const [isAtTop, setIsAtTop] = useState(true);
+  const [isAtBottom, setIsAtBottom] = useState(true);
 
+  // Modal Controls
   const {
-    isOpen: isShareModalOpen,
-    onOpen: onShareModalOpen,
-    onClose: onShareModalClose
+    isOpen: isDetailsOpen,
+    onOpen: onDetailsOpen,
+    onClose: onDetailsClose
   } = useDisclosure();
 
-  const handleShareModalClose = () => {
-    onShareModalClose();
-    setSelectedWebhookForShare(null);
+  const {
+    isOpen: isShareOpen,
+    onOpen: onShareOpen,
+    onClose: onShareClose
+  } = useDisclosure();
+
+  const {
+    isOpen: isDeleteOpen,
+    onOpen: onDeleteOpen,
+    onClose: onDeleteClose
+  } = useDisclosure();
+
+  const toast = useToast();
+
+  // Scroll fade effect component
+  const ScrollFade = ({ position = 'bottom' }) => (
+    <Box
+      position="absolute"
+      left={0}
+      right={0}
+      height="40px"
+      pointerEvents="none"
+      {...(position === 'bottom' ? {
+        bottom: 0,
+        background: "linear-gradient(to bottom, transparent, rgba(0, 0, 0, 0.2))"
+      } : {
+        top: 0,
+        background: "linear-gradient(to top, transparent, rgba(0, 0, 0, 0.2))"
+      })}
+      opacity={0}
+      transition="opacity 0.2s"
+      sx={{
+        '.scrolled-container:not([data-at-bottom="true"]) &[data-position="bottom"]': {
+          opacity: 1
+        },
+        '.scrolled-container:not([data-at-top="true"]) &[data-position="top"]': {
+          opacity: 1
+        }
+      }}
+      data-position={position}
+    />
+  );
+
+  // Scroll handler
+  const handleScroll = (e) => {
+    const target = e.target;
+    const atTop = target.scrollTop === 0;
+    const atBottom = Math.abs(
+      target.scrollHeight - target.clientHeight - target.scrollTop
+    ) < 1;
+
+    setIsAtTop(atTop);
+    setIsAtBottom(atBottom);
   };
 
-  const fetchWebhooks = useCallback(async (showLoading = true) => {
-    if (showLoading) setIsLoading(true);
+  // Fetch Webhooks
+  const fetchWebhooks = useCallback(async () => {
     try {
-      const response = await webhookApi.listWebhooks();
-      setWebhooks(response);
+      setIsLoading(true);
+      const [ownedWebhooks, subscribedWebhooks] = await Promise.all([
+        webhookApi.listWebhooks(),
+        webhookApi.getSubscribedStrategies()
+      ]);
+
+      const formattedSubscribed = subscribedWebhooks.map(webhook => ({
+        ...webhook,
+        isSubscribed: true
+      }));
+
+      setWebhooks([...ownedWebhooks, ...formattedSubscribed]);
       setError(null);
-    } catch (error) {
-      console.error('Error fetching webhooks:', error);
-      setError(error.message);
+    } catch (err) {
+      console.error('Error fetching webhooks:', err);
+      setError('Failed to load webhooks');
       toast({
-        title: "Error fetching webhooks",
-        description: error.message,
+        title: "Error loading webhooks",
+        description: err.message,
         status: "error",
         duration: 5000,
         isClosable: true,
@@ -112,42 +179,46 @@ const WebhooksView = ({ onDetailsOpen, onDeleteOpen, setSelectedWebhook, onWebho
     }
   }, [toast]);
 
+  // Initial Load and expose refresh function
   useEffect(() => {
     fetchWebhooks();
   }, [fetchWebhooks]);
 
-  const handleRefresh = async () => {
-    setIsRefreshing(true);
-    await fetchWebhooks(false);
-    setIsRefreshing(false);
-  };
+  useEffect(() => {
+    if (onWebhooksChange) {
+      onWebhooksChange({ refreshData: fetchWebhooks });
+    }
+  }, [onWebhooksChange, fetchWebhooks]);
 
-  const handleWebhookAction = async (webhook, action) => {
+  // Action Handler
+  const handleAction = async (webhook, action) => {
     try {
+      setSelectedWebhook(webhook);
+      
       switch (action) {
         case 'details':
-          setSelectedWebhook(webhook);
           onDetailsOpen();
           break;
           
         case 'share':
-          setSelectedWebhookForShare(webhook);
-          onShareModalOpen();
+          onShareOpen();
           break;
           
         case 'delete':
-          setSelectedWebhook(webhook);
           onDeleteOpen();
           break;
-
-        default:
+          
+        case 'unsubscribe':
+          await handleUnsubscribe(webhook);
           break;
+          
+        default:
+          console.warn(`Unhandled action: ${action}`);
       }
     } catch (error) {
-      console.error('Error in webhook action:', error);
       toast({
         title: "Error",
-        description: error.message || "An unexpected error occurred",
+        description: error.message || "An error occurred",
         status: "error",
         duration: 5000,
         isClosable: true,
@@ -155,190 +226,332 @@ const WebhooksView = ({ onDetailsOpen, onDeleteOpen, setSelectedWebhook, onWebho
     }
   };
 
-  if (isLoading) {
-    return (
-      <Box h="full" w="full">
-        <Flex justify="center" align="center" h="full">
-          <Spinner size="xl" color="blue.500" />
-        </Flex>
-      </Box>
-    );
-  }
+  // Share Handler
+  const handleShareUpdate = async (webhook, shareData) => {
+    try {
+      const updatedWebhook = await webhookApi.toggleSharing(webhook.token, shareData);
+      setWebhooks(current =>
+        current.map(w => w.token === webhook.token ? updatedWebhook : w)
+      );
+      onShareClose();
+      setSelectedWebhook(null);
+      
+      toast({
+        title: "Success",
+        description: "Sharing settings updated",
+        status: "success",
+        duration: 3000,
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error.message,
+        status: "error",
+        duration: 5000,
+      });
+    }
+  };
 
-  if (error) {
-    return (
-      <Box h="full" w="full">
-        <Flex justify="center" align="center" h="full">
-          <Text color="red.400">{error}</Text>
-        </Flex>
-      </Box>
-    );
-  }
+  // Delete Handler
+  const handleDeleteWebhook = async (webhookToken) => {
+    try {
+      // Remove the API call from here since it's already done in DeleteWebhook component
+      setWebhooks(prevWebhooks => 
+        prevWebhooks.filter(w => w.token !== webhookToken)
+      );
+      
+      setSelectedWebhook(null);
+      onDeleteClose();
+      
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error.message,
+        status: "error",
+        duration: 5000,
+      });
+    }
+  };
 
-  if (!webhooks || webhooks.length === 0) {
-    return (
-      <Box h="full" w="full">
-        <Flex justify="center" align="center" h="full">
-          <Text color="whiteAlpha.600">No webhooks configured</Text>
-        </Flex>
-      </Box>
-    );
-  }
+  // Unsubscribe Handler
+  const handleUnsubscribe = async (webhook) => {
+    try {
+      await webhookApi.unsubscribeFromStrategy(webhook.token);
+      setWebhooks(current => current.filter(w => w.token !== webhook.token));
+      
+      toast({
+        title: "Unsubscribed",
+        description: "Successfully unsubscribed from the strategy",
+        status: "success",
+        duration: 3000,
+        isClosable: true,
+      });
+    } catch (error) {
+      toast({
+        title: "Error unsubscribing",
+        description: error.message || "Failed to unsubscribe from strategy",
+        status: "error",
+        duration: 5000,
+        isClosable: true,
+      });
+    }
+  };
 
   return (
-    <Box 
-      h="full" 
-      w="full"
-      position="relative"
-    >
-      <Flex justify="space-between" align="center" mb={4} px={4}>
-        <HStack spacing={4}>
-          <Text fontSize="lg" fontWeight="semibold" color="white">
-            Active Webhooks
-          </Text>
-          <Badge colorScheme="blue">
-            {webhooks.length} Webhook{webhooks.length !== 1 ? 's' : ''}
-          </Badge>
-          {wsStatus === 'connected' && (
-            <Badge colorScheme="green">Live</Badge>
-          )}
-        </HStack>
-
-        <IconButton
-          icon={<RefreshCw size={16} />}
-          variant="ghost"
-          size="sm"
-          isLoading={isRefreshing}
-          onClick={handleRefresh}
-          color="whiteAlpha.700"
-          _hover={{ color: 'white', bg: 'whiteAlpha.200' }}
-        />
-      </Flex>
-
-      <Box
-        overflowY="auto"
-        h="calc(100% - 60px)"
-        css={{
-          '&::-webkit-scrollbar': {
-            display: 'none'
-          },
-          'scrollbarWidth': 'none',
-          '-ms-overflow-style': 'none'
-        }}
-      >
-        <Table variant="unstyled" size="sm">
-          <Thead>
-            <Tr>
-              <Th color="whiteAlpha.600">Name</Th>
-              <Th color="whiteAlpha.600" width="50%">URL</Th>
-              <Th color="whiteAlpha.600">Last Triggered</Th>
-              <Th color="whiteAlpha.600">Details</Th>
-              <Th color="whiteAlpha.600" width="80px">Actions</Th>
-            </Tr>
-          </Thead>
-          <Tbody>
-            {webhooks.map((webhook) => (
-              <Tr 
-                key={webhook.token}
-                _hover={{ bg: 'whiteAlpha.100' }}
-                transition="background 0.2s"
-              >
-                <Td color="white">
-                  <Text fontWeight="medium">
-                    {webhook.name || 'Unnamed Webhook'}
-                  </Text>
-                  <Text fontSize="xs" color="whiteAlpha.600">
-                    {webhook.source_type}
-                  </Text>
-                </Td>
-                <Td>
-                  <CopyableUrl webhook={webhook} />
-                </Td>
-                <Td color="whiteAlpha.800">
-                  <HStack spacing={2}>
-                    <Clock size={14} />
-                    <Text>
-                      {webhook.last_triggered ? formatDate(webhook.last_triggered) : 'Never'}
-                    </Text>
-                  </HStack>
-                </Td>
-                <Td>
-                  {webhook.details ? (
-                    <Tooltip 
-                      label={webhook.details}
-                      placement="top"
-                      hasArrow
-                      bg="gray.800"
-                      color="white"
-                      maxW="300px"
-                    >
-                      <Box>
-                        <Info size={14} color="white" />
-                      </Box>
-                    </Tooltip>
-                  ) : (
-                    <Text color="whiteAlpha.400" fontSize="xs">No details</Text>
-                  )}
-                </Td>
-                <Td>
-                  <Menu>
-                    <MenuButton
-                      as={IconButton}
-                      icon={<MoreVertical size={16} color="white" />}
-                      variant="ghost"
-                      size="sm"
-                      _hover={{ bg: 'transparent' }}
-                      _active={{ bg: 'transparent' }}
-                      _expanded={{ bg: 'transparent' }}
-                    />
-                    <MenuList 
-                      bg="rgba(255, 255, 255, 0.1)"
-                      backdropFilter="blur(10px)"
-                      borderColor="rgba(255, 255, 255, 0.18)"
-                      boxShadow="0 8px 32px 0 rgba(0, 198, 224, 0.37)"
-                      borderRadius="xl"
-                    >
-                      <MenuItem
-                        onClick={() => handleWebhookAction(webhook, 'details')}
-                        _hover={{ bg: "whiteAlpha.200" }}
-                        bg="transparent"
-                        color="white"
-                        icon={<Settings size={14} />}
-                      >
-                        Setup
-                      </MenuItem>
-                      <MenuItem
-                        onClick={() => handleWebhookAction(webhook, 'share')}
-                        _hover={{ bg: "whiteAlpha.200" }}
-                        bg="transparent"
-                        color="white"
-                        icon={<Share size={14} />}
-                      >
-                        Share Strategy
-                      </MenuItem>
-                      <MenuItem
-                        onClick={() => handleWebhookAction(webhook, 'delete')}
-                        _hover={{ bg: "whiteAlpha.200" }}
-                        bg="transparent"
-                        color="red.400"
-                        icon={<Trash2 size={14} />}
-                      >
-                        Delete
-                      </MenuItem>
-                    </MenuList>
-                  </Menu>
-                </Td>
+    <Box position="relative" h="full" overflow="hidden">
+      {/* Loading State */}
+      {isLoading && (
+        <Flex justify="center" align="center" h="200px">
+          <Spinner size="xl" color="blue.400" />
+        </Flex>
+      )}
+  
+      {/* Error State */}
+      {error && (
+        <Flex justify="center" align="center" h="200px" color="red.400">
+          <VStack spacing={4}>
+            <Icon as={Info} boxSize={8} />
+            <Text>{error}</Text>
+          </VStack>
+        </Flex>
+      )}
+  
+      {/* Empty State */}
+      {!isLoading && !error && webhooks.length === 0 ? (
+        <Flex 
+          justify="center" 
+          align="center" 
+          h="full" 
+          color="whiteAlpha.600"
+          flexDirection="column"
+          gap={4}
+        >
+          <Icon as={Inbox} size={40} />
+          <Text>No webhooks created yet</Text>
+        </Flex>
+      ) : (
+        <Box 
+          h="full" 
+          overflowY="auto" 
+          px={4}
+          onScroll={handleScroll}
+          className="scrolled-container"
+          data-at-top={isAtTop}
+          data-at-bottom={isAtBottom}
+          position="relative"
+          sx={{
+            '&::-webkit-scrollbar': {
+              width: '8px',
+              borderRadius: '8px',
+              backgroundColor: 'rgba(0, 0, 0, 0.05)',
+            },
+            '&::-webkit-scrollbar-thumb': {
+              backgroundColor: 'rgba(255, 255, 255, 0.1)',
+              borderRadius: '8px',
+              transition: 'all 0.2s',
+              '&:hover': {
+                backgroundColor: 'rgba(255, 255, 255, 0.2)',
+              },
+            },
+            '&::-webkit-scrollbar-track': {
+              backgroundColor: 'transparent',
+              borderRadius: '8px',
+            },
+            scrollbarWidth: 'thin',
+            scrollbarColor: 'rgba(255, 255, 255, 0.1) transparent',
+          }}
+        >
+          <ScrollFade position="top" />
+          <Table variant="unstyled" size="sm">
+            <Thead>
+              <Tr>
+                <Th color="whiteAlpha.600">Name</Th>
+                <Th color="whiteAlpha.600">URL</Th>
+                <Th color="whiteAlpha.600">Status</Th>
+                <Th color="whiteAlpha.600">Details</Th>
+                <Th color="whiteAlpha.600" width="80px">Actions</Th>
               </Tr>
-            ))}
-          </Tbody>
-        </Table>
-      </Box>
-
-      <ShareStrategyModal 
-        isOpen={isShareModalOpen}
-        onClose={handleShareModalClose}
-        webhook={selectedWebhookForShare}
-      />
+            </Thead>
+            <Tbody>
+              <AnimatePresence mode="wait">
+                {webhooks.map((webhook) => (
+                  <motion.tr
+                    key={webhook.token}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    transition={{ duration: 0.2 }}
+                    style={{ position: 'relative' }}
+                  >
+                    <Td position="relative">
+                      <Box
+                        position="absolute"
+                        left={0}
+                        top="6px"
+                        bottom="6px"
+                        width="2px"
+                        bg={
+                          webhook.isSubscribed 
+                            ? "purple.400" 
+                            : webhook.is_shared 
+                              ? "cyan.400" 
+                              : "transparent"
+                        }
+                      />
+                      <VStack align="flex-start" spacing={1} pl={1}>
+                        <Text color="white" fontWeight="medium">
+                          {webhook.name || 'Unnamed Webhook'}
+                        </Text>
+                        <Text fontSize="xs" color="whiteAlpha.600">
+                          {webhook.isSubscribed 
+                            ? `Subscribed from ${webhook.username}` 
+                            : webhook.source_type}
+                        </Text>
+                      </VStack>
+                    </Td>
+  
+                    <Td>
+                      {!webhook.isSubscribed && <WebhookUrl webhook={webhook} />}
+                    </Td>
+  
+                    <Td>
+                      {webhook.is_shared && (
+                        <HStack spacing={4} color="whiteAlpha.800">
+                          <HStack spacing={1}>
+                            <Icon as={Users} size={14} />
+                            <Text fontSize="sm">{webhook.subscriber_count || 0}</Text>
+                          </HStack>
+                          {webhook.rating > 0 && (
+                            <HStack spacing={1}>
+                              <Icon as={Star} size={14} color="yellow.400" />
+                              <Text fontSize="sm">{webhook.rating.toFixed(1)}</Text>
+                            </HStack>
+                          )}
+                        </HStack>
+                      )}
+                    </Td>
+  
+                    <Td>
+                      {webhook.details ? (
+                        <Tooltip label={webhook.details}>
+                          <Box cursor="help">
+                            <Icon as={Info} color="whiteAlpha.600" size={14} />
+                          </Box>
+                        </Tooltip>
+                      ) : (
+                        <Text color="whiteAlpha.400" fontSize="xs">
+                          No details
+                        </Text>
+                      )}
+                    </Td>
+  
+                    <Td>
+                      <Menu>
+                        <MenuButton
+                          as={IconButton}
+                          icon={<MoreVertical size={16} />}
+                          variant="ghost"
+                          size="sm"
+                          color="whiteAlpha.600"
+                          _hover={{ bg: 'whiteAlpha.100' }}
+                        />
+                        <MenuList
+                          bg="rgba(255, 255, 255, 0.1)"
+                          backdropFilter="blur(10px)"
+                          borderColor="rgba(255, 255, 255, 0.18)"
+                          boxShadow="0 8px 32px 0 rgba(0, 198, 224, 0.37)"
+                          borderRadius="xl"
+                        >
+                          {webhook.isSubscribed ? (
+                            <MenuItem
+                              onClick={() => handleAction(webhook, 'unsubscribe')}
+                              _hover={{ bg: "whiteAlpha.200" }}
+                              bg="transparent"
+                              color="red.400"
+                              icon={<UserMinus size={14} />}
+                            >
+                              Unsubscribe
+                            </MenuItem>
+                          ) : (
+                            <>
+                              <MenuItem
+                                onClick={() => handleAction(webhook, 'details')}
+                                _hover={{ bg: "whiteAlpha.200" }}
+                                bg="transparent"
+                                color="white"
+                                icon={<Settings size={14} />}
+                              >
+                                Setup
+                              </MenuItem>
+                              <MenuItem
+                                onClick={() => handleAction(webhook, 'share')}
+                                _hover={{ bg: "whiteAlpha.200" }}
+                                bg="transparent"
+                                color="white"
+                                icon={<Share size={14} />}
+                              >
+                                Share Strategy
+                              </MenuItem>
+                              <MenuItem
+                                onClick={() => {
+                                  console.log('Delete clicked for webhook:', webhook); // Debug log
+                                  handleAction(webhook, 'delete');
+                                }}
+                                _hover={{ bg: "whiteAlpha.200" }}
+                                bg="transparent"
+                                color="red.400"
+                                icon={<Trash2 size={14} />}
+                              >
+                                Delete
+                              </MenuItem>
+                            </>
+                          )}
+                        </MenuList>
+                      </Menu>
+                    </Td>
+                  </motion.tr>
+                ))}
+              </AnimatePresence>
+            </Tbody>
+          </Table>
+          <ScrollFade position="bottom" />
+        </Box>
+      )}
+  
+      {/* Modals */}
+      {selectedWebhook && (
+        <>
+          <WebhookDetailsModal
+            isOpen={isDetailsOpen}
+            onClose={() => {
+              onDetailsClose();
+              setSelectedWebhook(null);
+            }}
+            webhook={selectedWebhook}
+          />
+  
+          <ShareStrategyModal
+            isOpen={isShareOpen}
+            onClose={() => {
+              onShareClose();
+              setSelectedWebhook(null);
+            }}
+            webhook={selectedWebhook}
+            onWebhookUpdate={handleShareUpdate}
+          />
+  
+          <DeleteWebhook
+            isOpen={isDeleteOpen}
+            onClose={() => {
+              onDeleteClose();
+              setSelectedWebhook(null);
+            }}
+            webhookToken={selectedWebhook.token}
+            onWebhookDeleted={handleDeleteWebhook}
+          />
+          
+        </>
+      )}
     </Box>
   );
 };

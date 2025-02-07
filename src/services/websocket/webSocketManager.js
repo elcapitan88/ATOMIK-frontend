@@ -1,6 +1,6 @@
 // src/services/websocket/webSocketManager.js
 import { Subject } from 'rxjs';
-import axiosInstance from '../axiosConfig';
+import logger from '@/utils/logger';
 
 class WebSocketManager {
     constructor() {
@@ -11,242 +11,210 @@ class WebSocketManager {
         this.marketDataSubject = new Subject();
         
         // Connection tracking
-        this.connections = new Map(); // accountId -> WebSocket
-        this.connectionStatus = new Map(); // accountId -> status
-        this.connectionStates = new Map();
-        this.heartbeatIntervals = new Map(); // accountId -> interval
-        this.handleMessage = this.handleMessage.bind(this);
-        this.handleDisconnection = this.handleDisconnection.bind(this);
-        this.reconnectAttempts = new Map();
+        this.connections = new Map();
+        this.connectionStatus = new Map();
+        this.lastMessageTimes = new Map();
         
-        // Configuration
-        this.RECONNECT_ATTEMPTS = 5;
-        this.RECONNECT_DELAY = 1000;
-        this.HEARTBEAT_INTERVAL = 2500; // Tradovate requirement
-        this.CONNECTION_TIMEOUT = 10000;
+        // Heartbeat configuration
+        this.HEARTBEAT_INTERVAL = 2500;  // 2.5 seconds in milliseconds
         this.MAX_MISSED_HEARTBEATS = 3;
-
-    }
-
-    async validateToken() {
-        try {
-            const response = await axiosInstance.post('/api/v1/auth/verify');
-            return response.data.valid;
-        } catch (error) {
-            console.error('Token validation failed:', error);
-            return false;
-        }
+        this.frameIds = new Map();  // Track animation frames per connection
+        
+        // Performance tracking
+        this.metrics = new Map();
     }
 
     async connect(accountId) {
-        if (this.connections.has(accountId)) {
-            const existingWs = this.connections.get(accountId);
-            if (existingWs && existingWs.readyState === WebSocket.OPEN) {
-                console.log(`Already connected to account ${accountId}`);
-                return true;
-            }
-            await this.disconnect(accountId);
+        if (!accountId) {
+            logger.error('Account ID is required for connection');
+            return false;
+        }
+
+        // Check for existing connection
+        const existingWs = this.connections.get(accountId);
+        if (existingWs?.readyState === WebSocket.OPEN) {
+            logger.debug(`Already connected to account ${accountId}`);
+            return true;
         }
 
         try {
-            console.log(`Connecting to WebSocket for account ${accountId}`);
-            const wsUrl = this.getWebSocketUrl(accountId);
-            console.log('WebSocket URL:', wsUrl);
-
+            const wsUrl = this._getWebSocketUrl(accountId);
+            logger.info('Connecting to:', wsUrl);
+            
             const ws = new WebSocket(wsUrl);
 
-            return new Promise((resolve, reject) => {
-                const connectionTimeout = setTimeout(() => {
-                    ws.close();
+            // Set up connection promise
+            const connectionPromise = new Promise((resolve, reject) => {
+                const timeout = setTimeout(() => {
                     reject(new Error('Connection timeout'));
-                }, 10000);
+                    ws.close();
+                }, 10000); // 10 second timeout
 
-                // Use arrow functions to preserve 'this' context
                 ws.onopen = () => {
-                    clearTimeout(connectionTimeout);
+                    clearTimeout(timeout);
                     this.connections.set(accountId, ws);
-                    this.connectionStates.set(accountId, 'connected');
-                    this.reconnectAttempts.set(accountId, 0); // Now this will work
-                    this.updateStatus(accountId, 'connected'); // Add this to ensure status updates are propagated
-                    console.log(`WebSocket connected for account ${accountId}`);
+                    this.connectionStatus.set(accountId, 'connected');
+                    this.lastMessageTimes.set(accountId, Date.now());
+                    this.startHeartbeatMonitoring(accountId);
+                    
+                    this._emitStatus(accountId, 'connected');
+                    logger.info(`WebSocket connected for account ${accountId}`);
                     resolve(true);
                 };
 
                 ws.onclose = (event) => {
-                    clearTimeout(connectionTimeout);
-                    console.log(`WebSocket closed for account ${accountId}:`, event.code, event.reason);
-                    this.handleDisconnection(accountId, event);
+                    clearTimeout(timeout);
+                    this._handleDisconnection(accountId, event);
                     resolve(false);
                 };
 
                 ws.onerror = (error) => {
-                    console.error(`WebSocket error for account ${accountId}:`, error);
+                    logger.error(`WebSocket error for account ${accountId}:`, error);
+                    this._emitStatus(accountId, 'error');
                 };
 
                 ws.onmessage = (event) => {
-                    try {
-                        const data = JSON.parse(event.data);
-                        console.log(`Received message for account ${accountId}:`, data);
-                        this.handleMessage(accountId, data);
-                    } catch (e) {
-                        console.error('Error processing message:', e);
-                    }
+                    this._handleMessage(accountId, event);
                 };
             });
 
+            return await connectionPromise;
+
         } catch (error) {
-            console.error('Connection error:', error);
+            logger.error('Connection error:', error);
             return false;
         }
     }
-    
-    clearHeartbeat(accountId) {
-        const intervalId = this.heartbeatIntervals.get(accountId);
-        if (intervalId) {
-            clearInterval(intervalId);
-            this.heartbeatIntervals.delete(accountId);
-            console.debug(`Heartbeat cleared for account ${accountId}`);
-        }
+
+    startHeartbeatMonitoring(accountId) {
+        // Clear any existing monitoring
+        this.stopHeartbeatMonitoring(accountId);
+
+        const checkHeartbeat = () => {
+            const ws = this.connections.get(accountId);
+            const lastMessageTime = this.lastMessageTimes.get(accountId);
+            
+            if (ws?.readyState === WebSocket.OPEN) {
+                const now = Date.now();
+                const timeSinceLastMessage = now - lastMessageTime;
+
+                if (timeSinceLastMessage >= this.HEARTBEAT_INTERVAL) {
+                    try {
+                        ws.send('[]');
+                        this.lastMessageTimes.set(accountId, now);
+                        logger.debug(`Heartbeat sent for account ${accountId}`);
+                    } catch (error) {
+                        logger.error(`Failed to send heartbeat for ${accountId}:`, error);
+                        this._handleHeartbeatError(accountId);
+                    }
+                }
+            }
+            
+            // Continue monitoring
+            const frameId = requestAnimationFrame(() => checkHeartbeat());
+            this.frameIds.set(accountId, frameId);
+        };
+
+        const frameId = requestAnimationFrame(checkHeartbeat);
+        this.frameIds.set(accountId, frameId);
+        logger.info(`Started heartbeat monitoring for account ${accountId}`);
     }
 
-
-    getWebSocketUrl(accountId) {
-        if (!accountId) {
-            throw new Error('Account ID is required');
+    stopHeartbeatMonitoring(accountId) {
+        const frameId = this.frameIds.get(accountId);
+        if (frameId) {
+            cancelAnimationFrame(frameId);
+            this.frameIds.delete(accountId);
+            logger.debug(`Stopped heartbeat monitoring for account ${accountId}`);
         }
-
-        const wsHost = process.env.REACT_APP_WS_HOST || 'localhost:8000';
-        const token = localStorage.getItem('access_token');
-        
-        if (!token) {
-            throw new Error('Authentication token not found');
-        }
-
-        const cleanHost = wsHost.replace(/^(http|https|ws|wss):\/\//, '');
-        return `ws://${cleanHost}/ws/tradovate/${accountId}?token=${encodeURIComponent(token)}`;
-    }
-
-
-    async handleTokenInvalid() {
-        // Implement token refresh logic here
-        console.warn('Token invalid, refreshing...');
-        // You might want to trigger a token refresh here
     }
 
     async disconnect(accountId) {
-        console.log(`Disconnecting account ${accountId}`);
         const ws = this.connections.get(accountId);
         if (ws) {
-            ws.close(1000, 'Normal closure');
-            this.connections.delete(accountId);
-            this.connectionStates.set(accountId, 'disconnected');
+            this.stopHeartbeatMonitoring(accountId);
+            
+            try {
+                ws.close(1000, 'Normal closure');
+            } catch (error) {
+                logger.error(`Error closing connection for ${accountId}:`, error);
+            }
+
+            this._handleDisconnection(accountId);
         }
     }
 
-    startHeartbeat(accountId, ws) {
-        this.clearHeartbeat(accountId);
-    
-        const intervalId = setInterval(() => {
-            if (ws.readyState === WebSocket.OPEN) {
-                try {
-                    ws.send('[]');
-                    console.debug(`Heartbeat sent for account ${accountId}`);
-                } catch (error) {
-                    console.error(`Heartbeat error for account ${accountId}:`, error);
-                    this.clearHeartbeat(accountId);
-                }
-            }
-        }, this.HEARTBEAT_INTERVAL);
-    
-        this.heartbeatIntervals.set(accountId, intervalId);
-        console.debug(`Heartbeat started for account ${accountId}`);
-    }
+    _handleMessage(accountId, event) {
+        // Update last message time for ANY message
+        this.lastMessageTimes.set(accountId, Date.now());
 
-    handleMessage(accountId, event) {
-        try {
-            // Handle heartbeat response
-            if (event.data === '[]') {
-                console.debug(`Heartbeat response received for account ${accountId}`);
-                return;
-            }
-
-            const data = JSON.parse(event.data);
-            console.debug(`Message received for account ${accountId}:`, data);
-
-            switch (data.type) {
-                case 'market_data':
-                    this.marketDataSubject.next({
-                        accountId,
-                        data: data.data,
-                        timestamp: Date.now()
-                    });
-                    break;
-
-                case 'account_update':
-                    this.accountUpdateSubject.next({
-                        accountId,
-                        data: data.data,
-                        timestamp: Date.now()
-                    });
-                    break;
-
-                default:
-                    this.messageSubject.next({
-                        accountId,
-                        type: data.type,
-                        data: data.data,
-                        timestamp: Date.now()
-                    });
-            }
-        } catch (error) {
-            console.error(`Error processing message for account ${accountId}:`, error);
-        }
-    }
-
-    async handleDisconnection(accountId, event) {
-        this.connectionStates.set(accountId, 'disconnected');
-        this.connections.delete(accountId);
-
-        if (event.code !== 1000 && event.code !== 1001) {
-            const attempts = (this.reconnectAttempts.get(accountId) || 0) + 1;
-            if (attempts <= this.MAX_RECONNECT_ATTEMPTS) {
-                console.log(`Attempting reconnection ${attempts}/${this.MAX_RECONNECT_ATTEMPTS}`);
-                this.reconnectAttempts.set(accountId, attempts);
-                setTimeout(() => this.connect(accountId), this.RECONNECT_DELAY * attempts);
-            }
-        }
-    }
-
-    async attemptReconnection(accountId, attempt = 0) {
-        if (attempt >= this.RECONNECT_ATTEMPTS) {
-            console.error(`Max reconnection attempts reached for account ${accountId}`);
-            this.updateStatus(accountId, 'error');
+        // Don't process heartbeat responses
+        if (event.data === '[]') {
             return;
         }
 
-        const delay = this.RECONNECT_DELAY * Math.pow(2, attempt);
-        console.info(`Attempting reconnection ${attempt + 1}/${this.RECONNECT_ATTEMPTS} for ${accountId} in ${delay}ms`);
-
-        await new Promise(resolve => setTimeout(resolve, delay));
-
         try {
-            const connected = await this.connect(accountId);
-            if (!connected) {
-                await this.attemptReconnection(accountId, attempt + 1);
+            const message = JSON.parse(event.data);
+            logger.debug(`Received message for ${accountId}:`, message);
+            
+            // Route message to appropriate subject
+            if (message.type === 'market_data') {
+                this.marketDataSubject.next({ accountId, data: message });
+            } else if (message.type === 'account_update') {
+                this.accountUpdateSubject.next({ accountId, data: message });
+            } else {
+                this.messageSubject.next({ accountId, data: message });
             }
+            
         } catch (error) {
-            console.error(`Reconnection attempt failed for ${accountId}:`, error);
-            await this.attemptReconnection(accountId, attempt + 1);
+            logger.error(`Message parsing error for ${accountId}:`, error);
         }
     }
 
-    updateStatus(accountId, status) {
-        this.connectionStatus.set(accountId, status);
+    _handleDisconnection(accountId, event) {
+        this.stopHeartbeatMonitoring(accountId);
+        this.connections.delete(accountId);
+        this.connectionStatus.set(accountId, 'disconnected');
+        this.lastMessageTimes.delete(accountId);
+        
+        this._emitStatus(accountId, 'disconnected');
+        logger.info(`WebSocket disconnected for account ${accountId}`);
+    }
+
+    _handleHeartbeatError(accountId) {
+        const ws = this.connections.get(accountId);
+        if (ws) {
+            ws.close(4000, 'Heartbeat failure');
+            this._handleDisconnection(accountId);
+        }
+    }
+
+    _getWebSocketUrl(accountId) {
+        const token = localStorage.getItem('access_token');
+        if (!token) {
+            throw new Error('No authentication token found');
+        }
+
+        const wsHost = process.env.REACT_APP_WS_HOST || 'localhost:8000';
+        return `ws://${wsHost}/ws/tradovate/${accountId}?token=${encodeURIComponent(token)}`;
+    }
+
+    _emitStatus(accountId, status) {
         this.statusSubject.next({
             accountId,
             status,
             timestamp: Date.now()
         });
+    }
+
+    // Public methods for status and subscription
+    getStatus(accountId) {
+        return this.connectionStatus.get(accountId) || 'disconnected';
+    }
+
+    isConnected(accountId) {
+        const ws = this.connections.get(accountId);
+        return ws?.readyState === WebSocket.OPEN;
     }
 
     // Observable streams
@@ -264,15 +232,6 @@ class WebSocketManager {
 
     onMarketData() {
         return this.marketDataSubject.asObservable();
-    }
-
-    getStatus(accountId) {
-        return this.connectionStatus.get(accountId) || 'disconnected';
-    }
-
-    isConnected(accountId) {
-        const ws = this.connections.get(accountId);
-        return ws && ws.readyState === WebSocket.OPEN;
     }
 }
 

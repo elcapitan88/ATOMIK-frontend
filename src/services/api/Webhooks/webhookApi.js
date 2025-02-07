@@ -20,7 +20,7 @@ class WebhookApi {
         try {
             console.log('Sending webhook data:', webhookData);
             const response = await axiosInstance.post(
-                `${this.baseUrl}/generate`,  // Remove trailing slash
+                `${this.baseUrl}/generate`,
                 webhookData,
                 {
                     headers: {
@@ -39,43 +39,139 @@ class WebhookApi {
 
     async listWebhooks() {
         return this.errorHandler(() => 
-            axiosInstance.get(`${this.baseUrl}/list/`)
+            axiosInstance.get(`${this.baseUrl}/list`)
         );
     }
 
+    async toggleSharing(token, data) {
+        try {
+            console.log('Toggle sharing data being sent:', data);
+            const response = await axiosInstance.post(`${this.baseUrl}/${token}/share`, {
+                isActive: data.isActive,
+                description: data.description,
+                strategyType: data.strategyType
+            });
+            
+            console.log('Toggle sharing response:', response.data);
+            return response.data;
+        } catch (error) {
+            console.error('Share toggle error:', error);
+            throw error.response?.data?.detail 
+                ? new Error(error.response.data.detail)
+                : new Error('Failed to update webhook sharing status');
+        }
+    }
+
     async deleteWebhook(token) {
-        return this.errorHandler(() => 
-            axiosInstance.delete(`${this.baseUrl}/${token}/`)
-        );
+        console.log('DeleteWebhook called with token:', token);
+        console.log('Constructed URL:', `${this.baseUrl}/${token}`);
+        return this.errorHandler(async () => {
+            try {
+                const response = await axiosInstance.delete(`${this.baseUrl}/${token}`);
+                console.log('Delete response:', response);
+                return response;
+            } catch (error) {
+                console.log('Full error:', error);
+                console.log('Error response:', error.response);
+                throw error;
+            }
+        });
     }
 
     async toggleWebhook(token) {
         return this.errorHandler(() => 
-            axiosInstance.post(`${this.baseUrl}/${token}/toggle/`)
+            axiosInstance.post(`${this.baseUrl}/${token}/toggle`)
         );
     }
 
     async getWebhookLogs(token) {
         return this.errorHandler(() => 
-            axiosInstance.get(`${this.baseUrl}/${token}/logs/`)
+            axiosInstance.get(`${this.baseUrl}/${token}/logs`)
         );
     }
 
     async getWebhookStats(token) {
         return this.errorHandler(() => 
-            axiosInstance.get(`${this.baseUrl}/${token}/stats/`)
+            axiosInstance.get(`${this.baseUrl}/${token}/stats`)
         );
     }
 
     async testWebhook(token) {
         return this.errorHandler(() => 
-            axiosInstance.post(`${this.baseUrl}/${token}/test/`)
+            axiosInstance.post(`${this.baseUrl}/${token}/test`)
         );
     }
 
     async clearWebhookLogs(token) {
         return this.errorHandler(() => 
-            axiosInstance.post(`${this.baseUrl}/${token}/clear-logs/`)
+            axiosInstance.post(`${this.baseUrl}/${token}/clear-logs`)
+        );
+    }
+
+    // New marketplace-related methods
+    async listSharedStrategies() {
+        return this.errorHandler(() => 
+            axiosInstance.get(`${this.baseUrl}/shared`)
+        );
+    }
+
+    async subscribeToStrategy(token) {
+        return this.errorHandler(() => 
+            axiosInstance.post(`${this.baseUrl}/${token}/subscribe`)
+        );
+    }
+    
+    async unsubscribeFromStrategy(token) {
+        return this.errorHandler(() => 
+            axiosInstance.post(`${this.baseUrl}/${token}/unsubscribe`)
+        );
+    }
+
+    async getSubscribedStrategies() {
+        return this.errorHandler(() => 
+            axiosInstance.get(`${this.baseUrl}/subscribed`)
+        );
+    }
+
+    async rateStrategy(token, rating) {
+        console.log('Rating payload:', { rating }); // Debug log
+        return this.errorHandler(() => 
+            axiosInstance.post(
+                `${this.baseUrl}/${token}/rate`,
+                { rating: parseInt(rating) }, // Ensure rating is a number
+                {
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                }
+            )
+        );
+    }
+
+    async getStrategySubscribers(token) {
+        return this.errorHandler(() => 
+            axiosInstance.get(`${this.baseUrl}/${token}/subscribers`)
+        );
+    }
+
+    async validateWebhook(token, payload, signature) {
+        return this.errorHandler(() => 
+            axiosInstance.post(`${this.baseUrl}/${token}/validate`, {
+                payload,
+                signature
+            })
+        );
+    }
+
+    async getWebhookDetails(token) {
+        return this.errorHandler(() => 
+            axiosInstance.get(`${this.baseUrl}/${token}`)
+        );
+    }
+
+    async updateWebhook(token, data) {
+        return this.errorHandler(() => 
+            axiosInstance.patch(`${this.baseUrl}/${token}`, data)
         );
     }
 }

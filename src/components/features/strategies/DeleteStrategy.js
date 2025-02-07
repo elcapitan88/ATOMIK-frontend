@@ -21,8 +21,7 @@ import {
   Spinner
 } from '@chakra-ui/react';
 import { 
-  AlertTriangle, 
-  AlertCircle,
+  AlertTriangle,
   Trash2
 } from 'lucide-react';
 
@@ -35,23 +34,10 @@ const DeleteStrategy = ({
   isLoading = false,
   additionalInfo = null
 }) => {
-  const [confirmDelete, setConfirmDelete] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const toast = useToast();
 
   const handleDelete = async () => {
-    if (!confirmDelete) {
-      setConfirmDelete(true);
-      toast({
-        title: "Confirm Deletion",
-        description: "Click delete again to confirm",
-        status: "warning",
-        duration: 3000,
-        isClosable: true,
-      });
-      return;
-    }
-
     try {
       setIsDeleting(true);
       await onConfirm();
@@ -76,7 +62,6 @@ const DeleteStrategy = ({
   };
 
   const handleClose = () => {
-    setConfirmDelete(false);
     setIsDeleting(false);
     onClose();
   };
@@ -125,7 +110,7 @@ const DeleteStrategy = ({
           ) : (
             <>
               <AlertTriangle color="#F56565" />
-              Confirm Strategy Deletion
+              Delete Strategy
             </>
           )}
         </ModalHeader>
@@ -180,23 +165,6 @@ const DeleteStrategy = ({
               </Alert>
             )}
 
-            {confirmDelete && (
-              <Alert 
-                status="error" 
-                variant="subtle"
-                borderRadius="md"
-                bg="rgba(245, 101, 101, 0.2)"
-              >
-                <AlertIcon />
-                <Box>
-                  <AlertTitle>Confirmation Required</AlertTitle>
-                  <AlertDescription>
-                    Click delete again to permanently remove this strategy.
-                  </AlertDescription>
-                </Box>
-              </Alert>
-            )}
-
             <Text 
               color="red.300" 
               fontStyle="italic"
@@ -213,26 +181,16 @@ const DeleteStrategy = ({
           pt={4}
         >
           <Button 
-            variant="ghost" 
-            mr={3} 
-            onClick={handleClose}
-            isDisabled={isDeleting}
-            _hover={{ bg: 'whiteAlpha.100' }}
-          >
-            Cancel
-          </Button>
-          <Button 
-            colorScheme={confirmDelete ? "red" : "gray"}
+            w="full"
+            colorScheme="red"
             onClick={handleDelete}
             isLoading={isDeleting}
             loadingText="Deleting..."
-            leftIcon={confirmDelete ? <AlertCircle size={16} /> : <Trash2 size={16} />}
-            bg={confirmDelete ? "red.500" : "whiteAlpha.200"}
-            _hover={{
-              bg: confirmDelete ? "red.600" : "whiteAlpha.300"
-            }}
+            leftIcon={<Trash2 size={16} />}
+            bg="red.500"
+            _hover={{ bg: "red.600" }}
           >
-            {confirmDelete ? "Confirm Delete" : "Delete"}
+            Delete
           </Button>
         </ModalFooter>
       </ModalContent>

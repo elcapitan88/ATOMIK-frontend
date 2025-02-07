@@ -43,8 +43,17 @@ export const useStrategies = () => {
   // Mutation for creating strategy
   const createStrategyMutation = useMutation({
     mutationFn: (strategyData) => strategiesApi.activateStrategy(strategyData),
-    onSuccess: () => {
-      queryClient.invalidateQueries(STRATEGIES_KEYS.lists());
+    onMutate: async (newStrategy) => {
+      await queryClient.cancelQueries(STRATEGIES_KEYS.lists());
+      const previousStrategies = queryClient.getQueryData(STRATEGIES_KEYS.lists());
+      return { previousStrategies };
+    },
+    onSuccess: (response, variables) => {
+      // Immediately update the cache with the new strategy
+      queryClient.setQueryData(STRATEGIES_KEYS.lists(), (old = []) => {
+        return [...old, response];
+      });
+  
       toast({
         title: "Strategy Created",
         description: "Strategy has been successfully activated",
@@ -53,7 +62,12 @@ export const useStrategies = () => {
         isClosable: true,
       });
     },
-    onError: (error) => {
+    onError: (error, variables, context) => {
+      // Rollback to previous state if there was an error
+      if (context?.previousStrategies) {
+        queryClient.setQueryData(STRATEGIES_KEYS.lists(), context.previousStrategies);
+      }
+      
       toast({
         title: "Error creating strategy",
         description: error.message,
@@ -61,40 +75,49 @@ export const useStrategies = () => {
         duration: 5000,
         isClosable: true,
       });
+    },
+    onSettled: () => {
+      // Always refetch after error or success
+      queryClient.invalidateQueries(STRATEGIES_KEYS.lists());
     }
   });
 
   // Mutation for toggling strategy
   const toggleStrategyMutation = useMutation({
     mutationFn: (strategyId) => strategiesApi.toggleStrategy(strategyId),
-    onSuccess: (data, strategyId) => {
-      // Optimistic update
+    onMutate: async (strategyId) => {
+      // Cancel any outgoing refetches 
+      await queryClient.cancelQueries(STRATEGIES_KEYS.lists());
+  
+      // Snapshot the previous value
+      const previousStrategies = queryClient.getQueryData(STRATEGIES_KEYS.lists());
+  
+      // Optimistically update the cache
       queryClient.setQueryData(STRATEGIES_KEYS.lists(), (old) => {
         return old?.map(strategy => 
           strategy.id === strategyId 
             ? { ...strategy, is_active: !strategy.is_active }
             : strategy
-        );
+        ) ?? [];
       });
+  
+      return { previousStrategies };
+    },
+    onError: (err, strategyId, context) => {
+      // Rollback on error
+      queryClient.setQueryData(STRATEGIES_KEYS.lists(), context.previousStrategies);
       
       toast({
-        title: "Strategy Updated",
-        description: "Strategy status has been updated",
-        status: "success",
-        duration: 3000,
-        isClosable: true,
-      });
-    },
-    onError: (error, strategyId) => {
-      // Revert optimistic update on error
-      queryClient.invalidateQueries(STRATEGIES_KEYS.lists());
-      toast({
         title: "Error updating strategy",
-        description: error.message,
+        description: err.message,
         status: "error",
         duration: 5000,
         isClosable: true,
       });
+    },
+    onSettled: () => {
+      // Always refetch after error or success to ensure we're in sync
+      queryClient.invalidateQueries(STRATEGIES_KEYS.lists());
     }
   });
 

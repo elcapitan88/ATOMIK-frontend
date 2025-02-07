@@ -24,6 +24,7 @@ import {
     ChevronUp,
     MoreVertical,
     DollarSign,
+    SlidersHorizontal,
     AlertCircle,
     Edit,
 } from 'lucide-react';
@@ -38,6 +39,8 @@ import AccountNicknameModal from '@/components/common/Modal/AccountNicknameModal
 import logger from '@/utils/logger';
 import axiosInstance from '@/services/axiosConfig';
 
+
+
 // SortButton Component
 const SortButton = ({ onSort }) => {
     const sortOptions = [
@@ -50,18 +53,16 @@ const SortButton = ({ onSort }) => {
     return (
         <Menu>
             <MenuButton
-                as={Button}
-                rightIcon={<ChevronDown />}
-                bg="rgba(255, 255, 255, 0.1)"
-                backdropFilter="blur(10px)"
-                borderWidth="1px"
-                borderColor="rgba(255, 255, 255, 0.18)"
+                as={IconButton}
+                icon={<SlidersHorizontal size={18} />}
+                variant="ghost"
                 color="white"
-                _hover={{ bg: "whiteAlpha.200" }}
-                _active={{ bg: "whiteAlpha.300" }}
-            >
-                Sort By
-            </MenuButton>
+                aria-label="Sort strategies"
+                size="sm"
+                _hover={{
+                    bg: 'whiteAlpha.100'
+                }}
+            />
             <MenuList
                 bg="rgba(255, 255, 255, 0.1)"
                 backdropFilter="blur(10px)"
@@ -171,6 +172,7 @@ const Management = () => {
     const handleSort = (sortKey) => {
         setSortBy(sortKey);
     };
+    
 
     useEffect(() => {
         const subscriptions = [];
@@ -702,10 +704,10 @@ const Management = () => {
             boxShadow="lg" 
             overflow="hidden"
         >
-            <VStack p={3} color="white" h="full" spacing={4} align="stretch">
+            {/* Update this outer VStack */}
+            <VStack p={3} color="white" spacing={4} align="stretch">
                 {/* Header */}
-                <HStack justify="space-between">
-                    <SortButton onSort={handleSort} />
+                <HStack justify="space-between" flex="0 0 auto">
                     <Box
                         as="button"
                         px={4}
@@ -720,15 +722,29 @@ const Management = () => {
                     >
                         Connect Account
                     </Box>
+                    <SortButton onSort={handleSort} />
                 </HStack>
 
-                {/* Account List */}
+                {/* Update the Account List VStack */}
                 <VStack 
-                    flex={1} 
                     spacing={1} 
                     overflowY="auto" 
                     align="stretch"
-                    className="custom-scrollbar"
+                    maxH="336px"
+                    minH="0"
+                    w="full"
+                    css={{
+                        '&::-webkit-scrollbar': {
+                            width: '4px',
+                        },
+                        '&::-webkit-scrollbar-track': {
+                            width: '4px',
+                        },
+                        '&::-webkit-scrollbar-thumb': {
+                            background: 'rgba(255, 255, 255, 0.2)',
+                            borderRadius: '24px',
+                        },
+                    }}
                 >
                     {renderAccounts()}
                 </VStack>
