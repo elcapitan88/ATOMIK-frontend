@@ -46,12 +46,13 @@ class AuthService {
                 }),
                 credentials: 'include'
             });
-  
+    
             if (!response.ok) {
                 const errorData = await response.json();
                 throw new Error(errorData.detail || 'Registration failed');
             }
-  
+    
+            // Just return the registration response, don't auto-login
             return await response.json();
         } catch (error) {
             console.error('Registration error:', error);

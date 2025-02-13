@@ -135,13 +135,14 @@ const ActivateStrategyModal = ({ isOpen, onClose, onSubmit, strategy = null }) =
           console.log('Fetching accounts and webhooks...');
           const [accountsResponse, webhooksResponse] = await Promise.all([
             axiosInstance.get('/api/v1/brokers/tradovate/accounts'),
-            webhookApi.listWebhooks()
+            webhookApi.getAllAvailableWebhooks()
           ]);
 
           console.log('Raw accounts response:', accountsResponse);
           const accountsData = accountsResponse?.data || [];
           setAccounts(accountsData);
           setWebhooks(webhooksResponse);
+
 
           // Set initial webhook if available
           if (webhooksResponse.length > 0) {

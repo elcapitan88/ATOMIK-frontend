@@ -78,6 +78,31 @@ class WebhookApi {
         });
     }
 
+    async getAllAvailableWebhooks() {
+        try {
+          // Fetch both owned and subscribed webhooks in parallel
+          const [ownedWebhooks, subscribedWebhooks] = await Promise.all([
+            this.listWebhooks(),          // Uses existing method
+            this.getSubscribedStrategies() // Uses existing method
+          ]);
+    
+          // Combine and format the webhooks
+          const combinedWebhooks = [
+            ...ownedWebhooks,
+            ...subscribedWebhooks.map(webhook => ({
+              ...webhook,
+              isSubscribed: true // Add flag to identify subscribed webhooks
+            }))
+          ];
+    
+          return combinedWebhooks;
+        } catch (error) {
+          console.error('Error fetching all available webhooks:', error);
+          throw error;
+        }
+    }
+    
+
     async toggleWebhook(token) {
         return this.errorHandler(() => 
             axiosInstance.post(`${this.baseUrl}/${token}/toggle`)

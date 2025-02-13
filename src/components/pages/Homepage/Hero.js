@@ -17,7 +17,7 @@ const Hero = () => {
       overflow="hidden"
     >
       {/* Gradient Background */}
-      <Box
+      {/* <Box
         position="absolute"
         top="0"
         left="0"
@@ -25,7 +25,7 @@ const Hero = () => {
         bottom="0"
         bg="linear-gradient(45deg, rgba(0,0,0,0.95) 0%, rgba(0,198,224,0.1) 100%)"
         pointerEvents="none"
-      />
+      /> */}
 
       {/* Particle Effect */}
       <ParticleBackground />

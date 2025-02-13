@@ -1,176 +1,178 @@
-// src/contexts/AuthContext.js
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import axiosInstance from '../services/axiosConfig';
-import webSocketManager from '../services/websocket/webSocketManager';
+import React, { createContext, useContext, useState, useCallback, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useToast } from '@chakra-ui/react';
+import axiosInstance from '@/services/axiosConfig';
+import logger from '@/utils/logger';
 
 const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
   const [user, setUser] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [hasRegistrationPending, setHasRegistrationPending] = useState(false);
+  const loginInProgress = useRef(false);
+  const [isAuthenticating, setIsAuthenticating] = useState(false);
+
+  const navigate = useNavigate();
   const toast = useToast();
 
-  // Function to fetch user data
-  const fetchUserData = async () => {
-    try {
-      const response = await axiosInstance.get('/api/v1/auth/verify/');
-      if (response.data.valid) {
-        setUser(response.data.user);
+  React.useEffect(() => {
+    const checkRegistration = () => {
+      try {
+        const pendingData = localStorage.getItem('pendingRegistration');
+        setHasRegistrationPending(!!pendingData);
+        return !!pendingData;
+      } catch {
+        setHasRegistrationPending(false);
+        return false;
       }
-    } catch (error) {
-      console.error('Error fetching user data:', error);
-      setUser(null);
-      handleError(error);
-    }
-  };
+    };
 
-  // Error handling utility
-  const handleError = (error) => {
-    const errorMessage = error.response?.data?.detail || 'An error occurred';
-    toast({
-      title: 'Error',
-      description: errorMessage,
-      status: 'error',
-      duration: 5000,
-      isClosable: true,
-    });
-  };
-
-  // Initialize authentication state
-  useEffect(() => {
-    const checkAuthStatus = async () => {
+    const initializeAuth = async () => {
       try {
         const token = localStorage.getItem('access_token');
         if (!token) {
-          setIsAuthenticated(false);
-          setUser(null);
           setIsLoading(false);
+          checkRegistration();
           return;
         }
 
-        // Set up axios default authorization header
-        axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-
-        try {
-          const response = await axiosInstance.get('/api/v1/auth/verify/');
-          if (response.data.valid) {
-            setIsAuthenticated(true);
-            setUser(response.data.user);
-            
-            // Initialize WebSocket connections if needed
-            if (webSocketManager.checkActiveAccounts) {
-              await webSocketManager.checkActiveAccounts();
-            }
-          } else {
-            handleAuthFailure();
-          }
-        } catch (error) {
-          handleAuthFailure();
+        const response = await axiosInstance.get('/api/v1/auth/verify');
+        if (response.data.valid) {
+          setUser(response.data.user);
+          setIsAuthenticated(true);
+        } else {
+          handleLogout();
         }
       } catch (error) {
-        console.error('Auth check failed:', error);
-        handleAuthFailure();
+        logger.error('Auth initialization failed:', error);
+        handleLogout();
       } finally {
         setIsLoading(false);
+        checkRegistration();
       }
     };
 
-    checkAuthStatus();
-
-    // Cleanup function
-    return () => {
-      if (webSocketManager.disconnectAll) {
-        webSocketManager.disconnectAll().catch(error => {
-          console.error('Error disconnecting WebSockets:', error);
-        });
-      }
-    };
+    initializeAuth();
   }, []);
 
-  // Handle authentication failure
-  const handleAuthFailure = () => {
+  const handleLogin = async (credentials) => {
+    if (isAuthenticating) return { success: false };
+    
+    setIsAuthenticating(true);
+    try {
+      const response = await axiosInstance.post('/api/v1/auth/login', 
+        new URLSearchParams({
+          username: credentials.email,
+          password: credentials.password
+        })
+      );
+  
+      const { access_token, user } = response.data;
+      
+      // Set auth data
+      localStorage.setItem('access_token', access_token);
+      axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${access_token}`;
+      setUser(user);
+      setIsAuthenticated(true);
+  
+      return { success: true, user };
+    } catch (error) {
+      if (error.response?.status === 403) {
+        // Handle subscription-specific errors
+        const errorDetail = error.response.data?.detail;
+        if (errorDetail.includes('subscription')) {
+          navigate('/pricing');
+          return {
+            success: false,
+            error: 'Your subscription is inactive. Please renew to continue.'
+          };
+        }
+      }
+      return { 
+        success: false, 
+        error: error.response?.data?.detail || 'Login failed'
+      };
+    } finally {
+      setIsAuthenticating(false);
+    }
+  };
+
+  const handleRegistration = async (userData) => {
+    try {
+      setIsLoading(true);
+      
+      // Store registration data first
+      localStorage.setItem('pendingRegistration', JSON.stringify({
+        email: userData.email,
+        password: userData.password,
+        timestamp: Date.now()
+      }));
+      
+      setHasRegistrationPending(true);
+
+      const response = await axiosInstance.post('/api/v1/auth/register', userData);
+      navigate('/pricing');
+      return true;
+
+    } catch (error) {
+      localStorage.removeItem('pendingRegistration');
+      setHasRegistrationPending(false);
+      
+      const errorMessage = error.response?.data?.detail || 'Registration failed';
+      toast({
+        title: "Registration Error",
+        description: errorMessage,
+        status: "error",
+        duration: 5000,
+      });
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleLogout = useCallback(() => {
     localStorage.removeItem('access_token');
+    localStorage.removeItem('pendingRegistration');
     delete axiosInstance.defaults.headers.common['Authorization'];
-    setIsAuthenticated(false);
     setUser(null);
-  };
+    setIsAuthenticated(false);
+    setHasRegistrationPending(false);
+    navigate('/auth');
+  }, [navigate]);
 
-  // Login function
-  const login = async () => {
-    setIsAuthenticated(true);
-    await fetchUserData();
-
-    // Initialize WebSocket connections after login
-    if (webSocketManager.checkActiveAccounts) {
-      try {
-        await webSocketManager.checkActiveAccounts();
-      } catch (error) {
-        console.error('Error initializing WebSocket connections:', error);
-      }
-    }
-  };
-
-  // Logout function
-  const logout = async () => {
+  const checkPendingRegistration = useCallback(() => {
     try {
-      // Disconnect WebSockets
-      if (webSocketManager.disconnectAll) {
-        await webSocketManager.disconnectAll();
+      const data = localStorage.getItem('pendingRegistration');
+      if (!data) return null;
+
+      const parsed = JSON.parse(data);
+      const timeSinceRegistration = Date.now() - (parsed.timestamp || 0);
+      
+      // Clear if older than 1 hour
+      if (timeSinceRegistration > 3600000) {
+        localStorage.removeItem('pendingRegistration');
+        setHasRegistrationPending(false);
+        return null;
       }
 
-      // Clear authentication state
-      localStorage.removeItem('access_token');
-      delete axiosInstance.defaults.headers.common['Authorization'];
-      setIsAuthenticated(false);
-      setUser(null);
-
-      // Optional: Call logout endpoint
-      try {
-        await axiosInstance.post('/api/v1/auth/logout');
-      } catch (error) {
-        console.error('Error calling logout endpoint:', error);
-      }
-
-    } catch (error) {
-      console.error('Logout error:', error);
-      handleError(error);
+      return parsed;
+    } catch {
+      return null;
     }
-  };
+  }, []);
 
-  // Handle token refresh
-  const refreshToken = async () => {
-    try {
-      const response = await axiosInstance.post('/api/v1/auth/refresh-token');
-      if (response.data.access_token) {
-        localStorage.setItem('access_token', response.data.access_token);
-        axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${response.data.access_token}`;
-        return true;
-      }
-      return false;
-    } catch (error) {
-      console.error('Token refresh error:', error);
-      handleAuthFailure();
-      return false;
-    }
-  };
-
-  // Update user data
-  const updateUserData = async () => {
-    await fetchUserData();
-  };
-
-  // Context value
   const value = {
-    isAuthenticated,
-    isLoading,
     user,
-    login,
-    logout,
-    refreshToken,
-    updateUserData,
-    // Add any additional methods or state that might be needed
+    isLoading,
+    isAuthenticated,
+    hasRegistrationPending,
+    login: handleLogin,
+    logout: handleLogout,
+    register: handleRegistration,
+    checkPendingRegistration
   };
 
   return (
@@ -180,7 +182,6 @@ export const AuthProvider = ({ children }) => {
   );
 };
 
-// Custom hook for using auth context
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
@@ -188,5 +189,3 @@ export const useAuth = () => {
   }
   return context;
 };
-
-export default AuthProvider;

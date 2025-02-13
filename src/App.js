@@ -1,59 +1,50 @@
-// App.js
-import React, { useEffect } from 'react';
-import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
-import { ChakraProvider, Box, Spinner } from '@chakra-ui/react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
-import webSocketManager from './services/websocket/webSocketManager';
-import { useAuth } from './contexts/AuthContext';
-import axiosInstance from './services/axiosConfig';
-import theme from './styles/theme';
+import React, { Suspense } from 'react';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { Box, Spinner } from '@chakra-ui/react';
+import { useAuth } from '@/contexts/AuthContext';
 
 // Import components
+import Homepage from './components/pages/Homepage/Homepage';
+import PaymentSuccess from './components/pages/PaymentSuccess';
 import Dashboard from './components/pages/Dashboard';
 import AuthPage from './components/pages/AuthPage';
 import ResetPassword from './components/pages/ResetPassword';
 import SettingsPage from './components/pages/SettingsPage';
 import MarketplacePage from './components/pages/MarketplacePage';
+import PricingPage from './components/pages/PricingPage';
 
-// Create a client
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      refetchOnWindowFocus: false,
-      retry: 1,
-      staleTime: 30000,
-      cacheTime: 5 * 60 * 1000,
-      onError: (error) => {
-        console.error('Query Error:', error);
-      },
-    },
-    mutations: {
-      retry: 1,
-      onError: (error) => {
-        console.error('Mutation Error:', error);
-      },
-    },
-  },
-});
+// Layout wrapper for authenticated routes
+const DashboardLayout = ({ children }) => (
+  <Box minH="100vh" bg="background">
+    {children}
+  </Box>
+);
 
-// Authentication guard component
-const PrivateRoute = ({ children }) => {
+// Loading spinner component
+const LoadingSpinner = () => (
+  <Box display="flex" alignItems="center" justifyContent="center" height="100vh">
+    <Spinner size="xl" color="blue.500" />
+  </Box>
+);
+
+// Route guard for authenticated routes
+const WithAuth = React.memo(({ children }) => {
   const { isAuthenticated, isLoading } = useAuth();
+  const location = useLocation();
 
   if (isLoading) {
-    return (
-      <Box display="flex" alignItems="center" justifyContent="center" height="100vh">
-        <Spinner size="xl" color="blue.500" />
-      </Box>
-    );
+      return <LoadingSpinner />;
   }
 
-  return isAuthenticated ? children : <Navigate to="/auth" replace />;
-};
+  if (!isAuthenticated) {
+      return <Navigate to="/auth" state={{ from: location }} replace />;
+  }
 
-// Public route guard
-const PublicRoute = ({ children }) => {
+  return children;
+});
+
+// Route guard for non-authenticated routes
+const WithoutAuth = React.memo(({ children }) => {
   const { isAuthenticated } = useAuth();
   
   if (isAuthenticated) {
@@ -61,172 +52,126 @@ const PublicRoute = ({ children }) => {
   }
   
   return children;
-};
+});
+
+// Special route for payment success page
+const PaymentSuccessRoute = React.memo(({ children }) => {
+  const { isLoading } = useAuth();
+
+  if (isLoading) {
+    return <LoadingSpinner />;
+  }
+
+  // Check for pending registration
+  const hasPendingRegistration = localStorage.getItem('pendingRegistration');
+  if (!hasPendingRegistration) {
+    return <Navigate to="/auth" replace />;
+  }
+
+  return children;
+});
+
+// Pricing route guard
+const PricingRoute = React.memo(({ children }) => {
+  const { isAuthenticated, isLoading } = useAuth();
+
+  if (isLoading) {
+    return <LoadingSpinner />;
+  }
+
+  // Allow access if user is authenticated or has pending registration
+  const hasPendingRegistration = localStorage.getItem('pendingRegistration');
+  if (!isAuthenticated && !hasPendingRegistration) {
+    return <Navigate to="/auth" replace />;
+  }
+
+  return children;
+});
 
 function App() {
-  // Initialize services and handle cleanup
-  useEffect(() => {
-    const initializeServices = async () => {
-      const token = localStorage.getItem('access_token');
-      if (token) {
-        try {
-          // Set up axios default authorization header
-          axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-          
-          // Initialize WebSocket connections if needed
-          if (webSocketManager.checkActiveAccounts) {
-            await webSocketManager.checkActiveAccounts();
-          }
-        } catch (error) {
-          console.error('Error initializing services:', error);
-        }
-      }
-    };
-
-    initializeServices();
-
-    // Cleanup function
-    return () => {
-      if (webSocketManager.disconnectAll) {
-        webSocketManager.disconnectAll().catch(error => {
-          console.error('Error disconnecting WebSockets:', error);
-        });
-      }
-    };
-  }, []);
-
-  // Handle token refresh and WebSocket reconnection
-  useEffect(() => {
-    const initializeServices = async () => {
-      const token = localStorage.getItem('access_token');
-      if (token) {
-        try {
-          axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-          
-          if (webSocketManager?.checkActiveAccounts) {
-            await webSocketManager.checkActiveAccounts();
-          }
-        } catch (error) {
-          console.error('Error initializing services:', error);
-        }
-      }
-    };
-  
-    initializeServices();
-  
-    // Updated cleanup function
-    return () => {
-      if (typeof webSocketManager?.disconnectAll === 'function') {
-        // Handle the promise properly
-        webSocketManager.disconnectAll()
-          .catch(error => {
-            console.error('Error disconnecting WebSockets:', error);
-          });
-      }
-    };
-  }, []);
-  
-  // Update the storage change handler
-  useEffect(() => {
-    const handleStorageChange = async (event) => {
-      if (event.key === 'access_token') {
-        if (event.newValue) {
-          axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${event.newValue}`;
-          
-          if (typeof webSocketManager?.reconnectAll === 'function') {
-            try {
-              await webSocketManager.reconnectAll();
-            } catch (error) {
-              console.error('Error reconnecting WebSockets:', error);
-            }
-          }
-        } else {
-          delete axiosInstance.defaults.headers.common['Authorization'];
-          if (typeof webSocketManager?.disconnectAll === 'function') {
-            try {
-              await webSocketManager.disconnectAll();
-            } catch (error) {
-              console.error('Error disconnecting WebSockets:', error);
-            }
-          }
-        }
-      }
-    };
-  
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
-  }, []);
-
   return (
-    <QueryClientProvider client={queryClient}>
-      <ChakraProvider theme={theme}>
-        <Router>
-          <Routes>
-            {/* Public Routes */}
-            <Route 
-              path="/auth" 
-              element={
-                <PublicRoute>
-                  <AuthPage />
-                </PublicRoute>
-              } 
-            />
-            
-            <Route 
-              path="/auth/reset-password" 
-              element={
-                <PublicRoute>
-                  <ResetPassword />
-                </PublicRoute>
-              } 
-            />
+    <Suspense fallback={<LoadingSpinner />}>
+      <Routes>
+        {/* Public Routes */}
+        <Route path="/" element={<Homepage />} />
+        
+        {/* Pricing Route */}
+        <Route
+          path="/pricing"
+          element={
+            <PricingRoute>
+              <PricingPage />
+            </PricingRoute>
+          }
+        />
+        
+        {/* Auth Routes */}
+        <Route
+          path="/auth"
+          element={
+            <WithoutAuth>
+              <AuthPage />
+            </WithoutAuth>
+          }
+        />
+        
+        <Route
+          path="/auth/reset-password"
+          element={
+            <WithoutAuth>
+              <ResetPassword />
+            </WithoutAuth>
+          }
+        />
 
-            {/* Protected Routes */}
-            <Route
-              path="/"
-              element={
-                <PrivateRoute>
-                  <Dashboard />
-                </PrivateRoute>
-              }
-            />
+        {/* Payment Success Route */}
+        <Route 
+          path="/payment/success" 
+          element={
+            <PaymentSuccessRoute>
+              <PaymentSuccess />
+            </PaymentSuccessRoute>
+          } 
+        />
 
-            <Route
-              path="/dashboard"
-              element={
-                <PrivateRoute>
-                  <Dashboard />
-                </PrivateRoute>
-              }
-            />
-            <Route
-              path="/marketplace"
-              element={
-                <PrivateRoute>
-                  <MarketplacePage />
-                </PrivateRoute>
-              }
-            />
+        {/* Protected Routes */}
+        <Route
+          path="/dashboard"
+          element={
+            <WithAuth>
+              <DashboardLayout>
+                <Dashboard />
+              </DashboardLayout>
+            </WithAuth>
+          }
+        />
 
-            <Route
-              path="/settings"
-              element={
-                <PrivateRoute>
-                  <SettingsPage />
-                </PrivateRoute>
-              }
-            />
-            
-            {/* Catch all route - redirect to dashboard */}
-            <Route 
-              path="*" 
-              element={<Navigate to="/dashboard" replace />} 
-            />
-          </Routes>
-        </Router>
-      </ChakraProvider>
-      {process.env.NODE_ENV === 'development' && <ReactQueryDevtools />}
-    </QueryClientProvider>
+        <Route
+          path="/marketplace"
+          element={
+            <WithAuth>
+              <DashboardLayout>
+                <MarketplacePage />
+              </DashboardLayout>
+            </WithAuth>
+          }
+        />
+
+        <Route
+          path="/settings"
+          element={
+            <WithAuth>
+              <DashboardLayout>
+                <SettingsPage />
+              </DashboardLayout>
+            </WithAuth>
+          }
+        />
+
+        {/* Catch all route */}
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </Suspense>
   );
 }
 

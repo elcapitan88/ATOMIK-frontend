@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   Box,
   Button,
@@ -11,11 +11,13 @@ import {
   useToast,
   FormErrorMessage,
 } from '@chakra-ui/react';
-import { useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import authService from '@/services/auth/authService';
-import axiosInstance from '@/services/axiosConfig';
 import { debounce } from 'lodash';
+import logger from '@/utils/logger';
+
+const MotionBox = motion(Box);
 
 const glassEffect = {
   background: "rgba(255, 255, 255, 0.1)",
@@ -26,30 +28,45 @@ const glassEffect = {
 };
 
 const AuthPage = () => {
+  // State management
   const [isLogin, setIsLogin] = useState(true);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [username, setUsername] = useState('');
+  const [formData, setFormData] = useState({
+    email: '',
+    password: '',
+    username: ''
+  });
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
   const [isCheckingUsername, setIsCheckingUsername] = useState(false);
-  
-  const { login } = useAuth();
+
+  // Hooks
+  const location = useLocation();
   const navigate = useNavigate();
   const toast = useToast();
+  const { login, register } = useAuth();
 
-  // Debounced username check
+  // Check URL params for register flag
+  React.useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    if (params.get('register')) {
+      setIsLogin(false);
+    }
+  }, [location]);
+
+  // Username availability check
   const checkUsername = useCallback(
     debounce(async (username) => {
       if (!username || username.length < 3) return;
       
       setIsCheckingUsername(true);
       try {
-        const response = await axiosInstance.get(`/api/v1/auth/check-username/${username}`);
-        if (response.data.exists) {
+        const response = await fetch(`/api/v1/auth/check-username/${username}`);
+        const data = await response.json();
+        
+        if (data.exists) {
           setErrors(prev => ({
             ...prev,
-            username: "This username is already taken"
+            username: "Username already taken"
           }));
         } else {
           setErrors(prev => {
@@ -59,241 +76,188 @@ const AuthPage = () => {
           });
         }
       } catch (error) {
-        console.error('Error checking username:', error);
+        logger.error('Username check error:', error);
       } finally {
         setIsCheckingUsername(false);
       }
     }, 500),
-    [setErrors, setIsCheckingUsername]
+    []
   );
 
-  // Effect to check username availability
-  useEffect(() => {
-    if (!isLogin && username && username.length >= 3) {
-      checkUsername(username);
-    }
-    return () => checkUsername.cancel();
-  }, [username, isLogin, checkUsername]);
-
+  // Form validation
   const validateForm = () => {
     const newErrors = {};
-    if (!email) newErrors.email = 'Email is required';
-    if (!password) newErrors.password = 'Password is required';
-    if (!isLogin && !username) newErrors.username = 'Username is required';
+    if (!formData.email) newErrors.email = 'Email is required';
+    if (!formData.password) newErrors.password = 'Password is required';
+    if (!isLogin && !formData.username) newErrors.username = 'Username is required';
     return newErrors;
   };
 
+  // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const formErrors = validateForm();
     
+    // Validate form
+    const formErrors = validateForm();
     if (Object.keys(formErrors).length > 0) {
       setErrors(formErrors);
       return;
     }
 
     setIsLoading(true);
-    setErrors({});
-
     try {
       if (isLogin) {
-        await authService.login(email, password);
-        login();
-        toast({
-          title: "Login Successful",
-          status: "success",
-          duration: 3000,
-          isClosable: true,
+        const success = await login({
+          email: formData.email,
+          password: formData.password
         });
-        navigate('/dashboard');
+
+        if (!success) {
+          throw new Error('Login failed');
+        }
       } else {
-        try {
-          await authService.register(username, email, password);
-          toast({
-            title: "Registration Successful",
-            description: "Please login with your credentials",
-            status: "success",
-            duration: 3000,
-            isClosable: true,
-          });
-          setIsLogin(true);
-        } catch (error) {
-          if (error.response?.data?.detail) {
-            if (error.response.data.detail.includes("username is already taken")) {
-              setErrors(prev => ({ ...prev, username: "This username is already taken" }));
-            } else if (error.response.data.detail.includes("email already exists")) {
-              setErrors(prev => ({ ...prev, email: "This email is already registered" }));
-            } else {
-              toast({
-                title: "Registration Failed",
-                description: error.response.data.detail,
-                status: "error",
-                duration: 5000,
-                isClosable: true,
-              });
-            }
-          } else {
-            toast({
-              title: "Registration Failed",
-              description: "An unexpected error occurred",
-              status: "error",
-              duration: 5000,
-              isClosable: true,
-            });
-          }
+        const success = await register({
+          email: formData.email,
+          password: formData.password,
+          username: formData.username
+        });
+
+        if (!success) {
+          throw new Error('Registration failed');
         }
       }
     } catch (error) {
       toast({
-        title: "Error",
+        title: isLogin ? 'Login Failed' : 'Registration Failed',
         description: error.message,
-        status: "error",
+        status: 'error',
         duration: 5000,
-        isClosable: true,
       });
     } finally {
       setIsLoading(false);
     }
   };
 
+  // Handle input changes
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+
+    // Clear error when user types
+    if (errors[name]) {
+      setErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[name];
+        return newErrors;
+      });
+    }
+
+    // Check username availability
+    if (name === 'username' && value.length >= 3) {
+      checkUsername(value);
+    }
+  };
+
   return (
-    <Box minHeight="100vh" display="flex" alignItems="center" justifyContent="center" bg="black">
-      <Box
+    <MotionBox
+      minHeight="100vh"
+      display="flex"
+      alignItems="center"
+      justifyContent="center"
+      bg="black"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.3 }}
+    >
+      <MotionBox
         {...glassEffect}
         p={8}
         width="100%"
         maxWidth="400px"
+        initial={{ y: 20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ delay: 0.2, duration: 0.3 }}
       >
         <VStack spacing={4} align="stretch">
           <Heading color="white" textAlign="center">
-            {isLogin ? 'Welcome Back' : 'Create an Account'}
+            {isLogin ? 'Welcome Back' : 'Create Account'}
           </Heading>
-          <form onSubmit={handleSubmit}>
+          
+          <Box as="form" onSubmit={handleSubmit}>
             <VStack spacing={4}>
               {!isLogin && (
                 <FormControl isInvalid={!!errors.username}>
                   <FormLabel color="white">Username</FormLabel>
                   <Input
-                    type="text"
-                    value={username}
-                    onChange={(e) => {
-                      setUsername(e.target.value);
-                      if (errors.username) {
-                        setErrors(prev => {
-                          const newErrors = { ...prev };
-                          delete newErrors.username;
-                          return newErrors;
-                        });
-                      }
-                    }}
+                    name="username"
+                    value={formData.username}
+                    onChange={handleChange}
                     bg="whiteAlpha.200"
                     color="white"
-                    borderColor="whiteAlpha.400"
-                    _hover={{ borderColor: "whiteAlpha.500" }}
-                    _focus={{ borderColor: "blue.300", boxShadow: "0 0 0 1px rgba(66, 153, 225, 0.6)" }}
                     isDisabled={isCheckingUsername}
                   />
                   <FormErrorMessage>{errors.username}</FormErrorMessage>
                 </FormControl>
               )}
+              
               <FormControl isInvalid={!!errors.email}>
                 <FormLabel color="white">Email</FormLabel>
                 <Input
+                  name="email"
                   type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  value={formData.email}
+                  onChange={handleChange}
                   bg="whiteAlpha.200"
                   color="white"
-                  borderColor="whiteAlpha.400"
-                  _hover={{ borderColor: "whiteAlpha.500" }}
-                  _focus={{ borderColor: "blue.300", boxShadow: "0 0 0 1px rgba(66, 153, 225, 0.6)" }}
                 />
                 <FormErrorMessage>{errors.email}</FormErrorMessage>
               </FormControl>
+              
               <FormControl isInvalid={!!errors.password}>
                 <FormLabel color="white">Password</FormLabel>
                 <Input
+                  name="password"
                   type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  value={formData.password}
+                  onChange={handleChange}
                   bg="whiteAlpha.200"
                   color="white"
-                  borderColor="whiteAlpha.400"
-                  _hover={{ borderColor: "whiteAlpha.500" }}
-                  _focus={{ borderColor: "blue.300", boxShadow: "0 0 0 1px rgba(66, 153, 225, 0.6)" }}
                 />
                 <FormErrorMessage>{errors.password}</FormErrorMessage>
               </FormControl>
+              
               <Button
                 type="submit"
                 width="full"
-                bg="transparent"
-                color="white"
-                fontWeight="medium"
-                borderRadius="md"
-                border="1px solid"
-                borderColor="rgba(0, 198, 224, 1)"
-                position="relative"
-                overflow="hidden"
                 isLoading={isLoading || isCheckingUsername}
-                _before={{
-                  content: '""',
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                  bg: 'linear-gradient(90deg, transparent, rgba(0, 198, 224, 1) 20%, rgba(0, 198, 224, 1) 80%, transparent)',
-                  opacity: 0.3,
-                }}
-                _hover={{
-                  _before: {
-                    opacity: 0.5,
-                  }
-                }}
-                _active={{
-                  _before: {
-                    opacity: 0.7,
-                  }
-                }}
+                loadingText={isLogin ? "Logging in..." : "Creating account..."}
+                colorScheme="blue"
               >
-                <Box as="span" position="relative" zIndex={1}>
-                  {isLogin ? 'Login' : 'Register'}
-                </Box>
+                {isLogin ? 'Login' : 'Create Account'}
               </Button>
             </VStack>
-          </form>
-          <VStack spacing={2}>
-            <Text 
-              color="white" 
-              textAlign="center" 
-              cursor="pointer" 
-              onClick={() => {
-                setIsLogin(!isLogin);
-                setErrors({});
-                setUsername('');
-                setEmail('');
-                setPassword('');
-              }}
-            >
-              {isLogin ? "Don't have an account? Register" : "Already have an account? Login"}
-            </Text>
-            {isLogin && (
-              <Text
-                color="blue.300"
-                fontSize="sm"
-                textAlign="center"
-                cursor="pointer"
-                _hover={{ textDecoration: "underline" }}
-                onClick={() => navigate('/auth/reset-password')}
-              >
-                Forgot your password?
-              </Text>
-            )}
-          </VStack>
+          </Box>
+
+          <Text 
+            color="white" 
+            textAlign="center" 
+            cursor="pointer"
+            onClick={() => {
+              setIsLogin(!isLogin);
+              setErrors({});
+              setFormData({ email: '', password: '', username: '' });
+            }}
+          >
+            {isLogin 
+              ? "Don't have an account? Register" 
+              : "Already have an account? Login"}
+          </Text>
         </VStack>
-      </Box>
-    </Box>
+      </MotionBox>
+    </MotionBox>
   );
 };
 

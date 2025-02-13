@@ -86,7 +86,7 @@ const Navbar = () => {
               Sign In
             </Button>
           </RouterLink>
-          <RouterLink to="/auth">
+          <RouterLink to="/auth?register=true">
             <Button
               bg="transparent"
               color="white"
@@ -149,7 +149,7 @@ const Navbar = () => {
                 Sign In
               </Button>
             </RouterLink>
-            <RouterLink to="/auth" style={{ width: '100%' }}>
+            <RouterLink to="/auth?register=true" style={{ width: '100%' }}>
               <Button
                 w="full"
                 bg="transparent"
