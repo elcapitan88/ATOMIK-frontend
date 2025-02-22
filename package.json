@@ -38,7 +38,7 @@
   },
   "scripts": {
     "start": "serve -s build",
-    "build": "set BABEL_ENV=production && set NODE_OPTIONS=--openssl-legacy-provider && set CI=false && craco build",
+    "build": "CI=false && set BABEL_ENV=production && set NODE_OPTIONS=--openssl-legacy-provider && craco build",
     "test": "set NODE_OPTIONS=--openssl-legacy-provider && craco test",
     "eject": "react-scripts eject"
   },
