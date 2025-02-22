@@ -41,12 +41,21 @@ import WebhookModal from '@/components/features/webhooks/WebhookModal';
 import WebhookDetailsModal from '@/components/features/webhooks/WebhookDetailsModal';
 import ShareStrategyModal from '@/components/common/Modal/ShareStrategyModal';
 import DeleteWebhook from '@/components/common/Modal/DeleteWebhook';
+import EnvironmentConfig, { envConfig } from '@/config/environment';
+
+
 
 // URL Display Component
 const WebhookUrl = ({ webhook }) => {
   const { hasCopied, onCopy } = useClipboard(
-    `${webhook.webhook_url}?secret=${webhook.secret_key}`
+    webhook?.token && webhook?.secret_key 
+      ? envConfig.getWebhookUrlWithSecret(webhook.token, webhook.secret_key)
+      : ''
   );
+
+  if (!webhook?.token) {
+    return null;
+  }
 
   return (
     <HStack spacing={2}>
@@ -57,7 +66,7 @@ const WebhookUrl = ({ webhook }) => {
         isTruncated
         maxW="300px"
       >
-        {webhook.webhook_url}
+        {envConfig.getWebhookUrl(webhook.token)}
       </Text>
       <Tooltip
         label={hasCopied ? "Copied!" : "Copy URL with secret"}
@@ -555,5 +564,6 @@ const WebhooksView = ({ onWebhooksChange }) => {
     </Box>
   );
 };
+
 
 export default WebhooksView;

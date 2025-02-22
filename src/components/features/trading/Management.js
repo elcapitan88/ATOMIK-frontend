@@ -23,7 +23,6 @@ import {
     ChevronDown,
     ChevronUp,
     MoreVertical,
-    DollarSign,
     SlidersHorizontal,
     AlertCircle,
     Edit,
@@ -38,6 +37,7 @@ import DeleteAccount from '@/components/common/Modal/DeleteAccount';
 import AccountNicknameModal from '@/components/common/Modal/AccountNicknameModal';
 import logger from '@/utils/logger';
 import axiosInstance from '@/services/axiosConfig';
+import { useFeatureFlag } from 'configcat-react';
 
 
 
@@ -139,6 +139,8 @@ const Management = () => {
     const [sortBy, setSortBy] = useState(null);
     const [accountUpdates, setAccountUpdates] = useState({});
     const [editingAccount, setEditingAccount] = useState(null);
+    const { value: showPnL } = useFeatureFlag('show_pnl', false);
+    const { value: enableExpansion } = useFeatureFlag('enable_expansion', true);
 
     // Hooks
     const toast = useToast();
@@ -562,6 +564,7 @@ const Management = () => {
                     </Flex>
         
                     {/* Balance Group - More Compact */}
+                    {showPnL&&(
                     <Flex align="center" gap={4} flex="3" px={3}> 
                         <VStack spacing={0} align="flex-start">  
                             <Text fontSize="xs" color="whiteAlpha.700" lineHeight="1.2">Balance</Text>
@@ -594,6 +597,7 @@ const Management = () => {
                             </Text>
                         </VStack>
                     </Flex>
+                    )}
         
                     {/* Actions Group */}
                     <Flex align="center" gap={1} flex="0 0 auto"> 
@@ -602,6 +606,7 @@ const Management = () => {
                             onEditName={onEditName}
                             onDelete={onDelete}
                         />
+                        {enableExpansion && (
                         <Box 
                             as="button"
                             onClick={() => onToggleExpand(account.account_id)}
@@ -611,11 +616,12 @@ const Management = () => {
                         >
                             {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />} 
                         </Box>
+                        )}
                     </Flex>
                 </Flex>
         
                 {/* Expanded Section */}
-                {isExpanded && (
+                {enableExpansion && isExpanded && showPnL && (
                     <Box 
                     p={3} 
                     borderTop="1px solid" 

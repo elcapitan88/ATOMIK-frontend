@@ -170,7 +170,7 @@ const AccountSelection = ({ selectedAccounts, onChange }) => {
         >
           {availableAccounts.map(account => (
             <option key={account.account_id} value={account.account_id}>
-              {`${account.name} (${account.environment}) • $${parseFloat(account.balance).toLocaleString()}`}
+              {`${account.name} (${account.environment})`}
             </option>
           ))}
         </Select>

@@ -1,4 +1,3 @@
-// src/components/features/trading/OrderControl/index.js
 import React, { useState, useCallback } from 'react';
 import {
   Box,
@@ -23,14 +22,16 @@ import {
   Ban,
 } from 'lucide-react';
 
+
 import AccountSelection from './AccountSelection';
 import OrderConfirmationModal from './OrderConfirmationModal';
-
+import axios from '@/services/axiosConfig';
 
 // Sample tickers - replace with your actual ticker data source
-const AVAILABLE_TICKERS = ['ES', 'NQ', 'RTY', 'CL', 'GC', 'SI'];
+const AVAILABLE_TICKERS = ['ESH5', 'NQH5', 'RTYH5', 'CLH5', 'GCH5', 'SIH5','BITH5','BTIH5','MESH5', 'MNQH5']
 
 const OrderControl = () => {
+  // State Management
   const toast = useToast();
   const [quantity, setQuantity] = useState(1);
   const [skipConfirmation, setSkipConfirmation] = useState(false);
@@ -46,6 +47,109 @@ const OrderControl = () => {
     onClose: onConfirmationClose
   } = useDisclosure();
 
+  // Regular Order Execution
+  const executeOrder = async (order) => {
+    if (order.type === 'close-all') {
+      await executeCloseAll(order);
+      return;
+    }
+
+    setIsSubmitting(true);
+    setOrderStatus('pending');
+    setPendingOrder(order);
+    
+    try {
+      const response = await axios.post(
+        `/api/v1/brokers/accounts/${order.accounts[0]}/discretionary/orders`,
+        {
+          symbol: order.ticker,
+          side: order.type,
+          type: 'MARKET',
+          quantity: order.quantity,
+          time_in_force: 'GTC'
+        },
+        {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+          }
+        }
+      );
+  
+      setOrderStatus('success');
+      toast({
+        title: `${order.type.toUpperCase()} Order Executed`,
+        description: `Successfully ${order.type === 'buy' ? 'bought' : 'sold'} ${order.quantity} ${order.ticker} contracts`,
+        status: "success",
+        duration: 2000,
+        isClosable: true,
+        position: "top-right",
+      });
+  
+    } catch (error) {
+      setOrderStatus('error');
+      toast({
+        title: "Order Failed",
+        description: error.response?.data?.detail || "Failed to execute order",
+        status: "error",
+        duration: 4000,
+        isClosable: true,
+        position: "top-right",
+      });
+    } finally {
+      setIsSubmitting(false);
+      setTimeout(() => {
+        setOrderStatus(null);
+        setPendingOrder(null);
+      }, 1000);
+    }
+  };
+
+  // Close All Orders Execution
+  const executeCloseAll = async (order) => {
+    setIsSubmitting(true);
+    setOrderStatus('pending');
+
+    try {
+      const response = await axios.post(
+        '/api/v1/brokers/accounts/close-all',
+        { account_ids: order.accounts },
+        {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+          }
+        }
+      );
+
+      setOrderStatus('success');
+      toast({
+        title: "Positions Closed",
+        description: "Successfully closed all positions",
+        status: "success",
+        duration: 2000,
+        isClosable: true,
+        position: "top-right",
+      });
+
+    } catch (error) {
+      setOrderStatus('error');
+      toast({
+        title: "Close All Failed",
+        description: error.response?.data?.detail || "Failed to close positions",
+        status: "error",
+        duration: 4000,
+        isClosable: true,
+        position: "top-right",
+      });
+    } finally {
+      setIsSubmitting(false);
+      setTimeout(() => {
+        setOrderStatus(null);
+        setPendingOrder(null);
+      }, 1000);
+    }
+  };
+
+  // Order Submission Handlers
   const handleOrderSubmit = useCallback(async (orderType) => {
     if (!selectedTicker) {
       toast({
@@ -74,76 +178,73 @@ const OrderControl = () => {
     }
   }, [quantity, selectedTicker, selectedAccounts, skipConfirmation, onConfirmationOpen, toast]);
 
-  const handleCloseAllTrades = async () => {
-    if (!selectedAccounts.length) {
-      toast({
-        title: "No accounts selected",
-        description: "Please select at least one account",
-        status: "warning",
-        duration: 3000,
-        isClosable: true,
-      });
-      return;
-    }
-
-    const order = {
-      type: 'close-all',
-      accounts: selectedAccounts,
-      timestamp: new Date().toISOString()
-    };
-
-    if (!skipConfirmation) {
-      setPendingOrder(order);
-      onConfirmationOpen();
-      return;
-    }
-
-    executeOrder(order);
-  };
-
-  const executeOrder = async (order) => {
-    setIsSubmitting(true);
-    setOrderStatus('pending');
-    setPendingOrder(order);
-    
+  const handleCloseAllTrades = useCallback(async () => {
     try {
-      // Here you would make your API call to execute the order
-      await new Promise(resolve => setTimeout(resolve, 1000));
+        let accountsToClose;
+        setIsSubmitting(true);
+        
+        if (selectedAccounts.length > 0) {
+            accountsToClose = selectedAccounts;
+        } else {
+            // Fetch all connected accounts if none selected
+            const response = await fetch('/api/v1/brokers/accounts', {
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+                }
+            });
+            const data = await response.json();
+            accountsToClose = data.map(account => account.account_id);
+        }
 
-      setOrderStatus('success');
-      const title = order.type === 'buy' ? "Buy Order Executed" : 
-                   order.type === 'sell' ? "Sell Order Executed" : 
-                   "Positions Closed";
-      const description = order.type === 'close-all' ? 
-                         "Successfully closed all positions" :
-                         `Successfully ${order.type === 'buy' ? 'bought' : 'sold'} ${order.quantity} ${order.ticker} contracts`;
+        if (accountsToClose.length === 0) {
+            toast({
+                title: "No Connected Accounts",
+                description: "No trading accounts available to close positions",
+                status: "warning",
+                duration: 3000,
+                isClosable: true,
+            });
+            return;
+        }
 
-      toast({
-        title,
-        description,
-        status: "success",
-        duration: 2000,
-        isClosable: true,
-        position: "top-right",
-      });
+        const response = await fetch('/api/v1/brokers/accounts/close-all', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+            },
+            body: JSON.stringify({ account_ids: accountsToClose })
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const result = await response.json();
+
+        if (result.status === "success") {
+            toast({
+                title: "Positions Closed",
+                description: "Successfully closed all positions",
+                status: "success",
+                duration: 2000,
+                isClosable: true,
+            });
+        }
+
     } catch (error) {
-      setOrderStatus('error');
-      toast({
-        title: "Order Failed",
-        description: error.message || "Failed to execute order",
-        status: "error",
-        duration: 4000,
-        isClosable: true,
-        position: "top-right",
-      });
+        console.error('Error in handleCloseAllTrades:', error);
+        toast({
+            title: "Error",
+            description: "Failed to close positions",
+            status: "error",
+            duration: 4000,
+            isClosable: true,
+        });
     } finally {
-      setIsSubmitting(false);
-      setTimeout(() => {
-        setOrderStatus(null);
-        setPendingOrder(null);
-      }, 1000);
+        setIsSubmitting(false);
     }
-  };
+}, [selectedAccounts, toast]);
 
   return (
     <Box h="full" display="flex" flexDirection="column">
@@ -225,8 +326,6 @@ const OrderControl = () => {
           </NumberInput>
         </HStack>
 
-        
-
         {/* Trading Buttons */}
         <VStack spacing={2} width="full" mt="auto">
           <HStack width="full" spacing={2}>
@@ -288,25 +387,25 @@ const OrderControl = () => {
             leftIcon={orderStatus === 'pending' && pendingOrder?.type === 'close-all' ? null : <Ban size={14} />}
             size="sm"
             onClick={handleCloseAllTrades}
-            isDisabled={!selectedAccounts.length || isSubmitting}
+            isDisabled={isSubmitting} // Remove the selectedAccounts.length check
             isLoading={orderStatus === 'pending' && pendingOrder?.type === 'close-all'}
             loadingText="Closing All..."
             spinnerPlacement="start"
             color="white"
             bgGradient="linear(to-r, #dc2626, #991b1b)"
             _hover={{ 
-              bgGradient: "linear(to-r, #991b1b, #7f1d1d)",
-              transform: "translateY(-1px)",
-              boxShadow: "lg"
+                bgGradient: "linear(to-r, #991b1b, #7f1d1d)",
+                transform: "translateY(-1px)",
+                boxShadow: "lg"
             }}
             _active={{
-              bgGradient: "linear(to-r, #7f1d1d, #450a0a)",
-              transform: "translateY(0)",
-              boxShadow: "md"
+                bgGradient: "linear(to-r, #7f1d1d, #450a0a)",
+                transform: "translateY(0)",
+                boxShadow: "md"
             }}
           >
             Close All Trades
-          </Button>
+        </Button>
         </VStack>
       </VStack>
 

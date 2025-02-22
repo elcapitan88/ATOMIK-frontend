@@ -8,7 +8,7 @@ import {
   Text,
   useToast,
 } from '@chakra-ui/react';
-import WebhooksView from './WebhooksView';
+import WebhooksView from '@/components/features/trading/WebhooksView';  // or whatever the correct path is
 import WebhookModal from '../webhooks/WebhookModal';
 import { webhookApi } from '@/services/api/Webhooks/webhookApi';
 

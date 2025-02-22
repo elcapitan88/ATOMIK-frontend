@@ -1,9 +1,10 @@
 // src/services/api/Webhooks/webhookApi.js
 import axiosInstance from '@/services/axiosConfig';
+import { envConfig } from '@/config/environment';
 
 class WebhookApi {
     constructor() {
-        this.baseUrl = '/api/v1/webhooks';
+        this.baseUrl = envConfig.getApiUrl('/webhooks');
     }
 
     async errorHandler(apiCall) {
@@ -20,7 +21,7 @@ class WebhookApi {
         try {
             console.log('Sending webhook data:', webhookData);
             const response = await axiosInstance.post(
-                `${this.baseUrl}/generate`,
+                `${this.baseUrl}/generate`,  // Now using environment-based URL
                 webhookData,
                 {
                     headers: {

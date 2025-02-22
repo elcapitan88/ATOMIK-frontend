@@ -1,4 +1,3 @@
-// src/components/features/trading/OrderControl/OrderConfirmationModal.js
 import React, { useState, useMemo } from 'react';
 import {
   Modal,
@@ -25,9 +24,6 @@ import {
   ArrowBigUp,
   ArrowBigDown,
   Ban,
-  DollarSign,
-  Percent,
-  Scale,
 } from 'lucide-react';
 
 const OrderConfirmationModal = ({ isOpen, onClose, order, onConfirm }) => {
@@ -98,13 +94,9 @@ const OrderConfirmationModal = ({ isOpen, onClose, order, onConfirm }) => {
     }
   };
 
-  const getRiskLevel = (percentage) => {
-    if (percentage > 20) return { level: 'High', color: 'red' };
-    if (percentage > 10) return { level: 'Medium', color: 'yellow' };
-    return { level: 'Low', color: 'green' };
-  };
-
   if (!order) return null;
+
+  const isCloseAll = order.type === 'close-all';
 
   return (
     <Modal 
@@ -129,7 +121,7 @@ const OrderConfirmationModal = ({ isOpen, onClose, order, onConfirm }) => {
         >
           <HStack spacing={2}>
             <AlertTriangle color="#ED8936" />
-            <Text>Confirm {order.type.replace('-', ' ')}</Text>
+            <Text>Confirm {isCloseAll ? 'Close All Positions' : order.type.toUpperCase()}</Text>
           </HStack>
         </ModalHeader>
         {!isConfirming && <ModalCloseButton />}
@@ -142,112 +134,67 @@ const OrderConfirmationModal = ({ isOpen, onClose, order, onConfirm }) => {
               <HStack>
                 {getOrderIcon()}
                 <Text color={getOrderColor()} textTransform="capitalize" fontWeight="bold">
-                  {order.type.replace('-', ' ')}
+                  {isCloseAll ? 'Close All Positions' : order.type}
                 </Text>
               </HStack>
             </HStack>
 
-            {/* Quantity if not close-all */}
-            {order.type !== 'close-all' && (
-              <HStack justify="space-between">
-                <Text color="whiteAlpha.700">Quantity per Account:</Text>
-                <Text fontWeight="bold">{order.quantity}</Text>
-              </HStack>
+            {/* Order details - show only for regular orders */}
+            {!isCloseAll && (
+              <>
+                <HStack justify="space-between">
+                  <Text color="whiteAlpha.700">Ticker:</Text>
+                  <Text fontWeight="bold">{order.ticker}</Text>
+                </HStack>
+                <HStack justify="space-between">
+                  <Text color="whiteAlpha.700">Quantity:</Text>
+                  <Text fontWeight="bold">{order.quantity}</Text>
+                </HStack>
+              </>
             )}
 
             <Divider borderColor="whiteAlpha.200" />
 
-            {/* Order Preview Section */}
+            {/* Account Selection Info */}
             <Box>
-              <Text color="whiteAlpha.700" mb={2}>Order Distribution:</Text>
+              <Text color="whiteAlpha.700" mb={2}>Selected Accounts:</Text>
               <VStack spacing={2} align="stretch">
-                {order.accounts.map((accountId) => {
-                  const account = accountsData[accountId];
-                  if (!account) return null;
-
-                  const positionValue = order.quantity * 50; // Example contract value
-                  const positionRisk = (positionValue / account.balance) * 100;
-                  const riskLevel = getRiskLevel(positionRisk);
-
-                  return (
-                    <Box
-                      key={accountId}
-                      bg="whiteAlpha.100"
-                      p={3}
-                      borderRadius="md"
-                    >
-                      <VStack align="stretch" spacing={2}>
-                        <HStack justify="space-between">
-                          <Text fontSize="sm" fontWeight="medium">{account.name}</Text>
-                          <Badge colorScheme="blue">
-                            {order.type === 'close-all' ? 'All Positions' : `${order.quantity} contracts`}
-                          </Badge>
-                        </HStack>
-
-                        <HStack spacing={4} justify="space-between">
-                          <HStack spacing={1}>
-                            <DollarSign size={14} />
-                            <Text fontSize="xs" color="whiteAlpha.700">
-                              ${positionValue.toLocaleString()}
-                            </Text>
-                          </HStack>
-
-                          <HStack spacing={1}>
-                            <Percent size={14} />
-                            <Text fontSize="xs" color="whiteAlpha.700">
-                              {positionRisk.toFixed(1)}% of balance
-                            </Text>
-                          </HStack>
-
-                          <Badge 
-                            colorScheme={riskLevel.color}
-                            variant="subtle"
-                          >
-                            {riskLevel.level} Risk
-                          </Badge>
-                        </HStack>
-                      </VStack>
-                    </Box>
-                  );
-                })}
+                {order.accounts.map((accountId) => (
+                  <Box
+                    key={accountId}
+                    bg="whiteAlpha.100"
+                    p={3}
+                    borderRadius="md"
+                  >
+                    <VStack align="stretch" spacing={1}>
+                      <HStack justify="space-between">
+                        <Text fontSize="sm" fontWeight="medium">
+                          {accountsData[accountId]?.name || `Account ${accountId}`}
+                        </Text>
+                        <Badge colorScheme={isCloseAll ? "orange" : "blue"}>
+                          {isCloseAll ? 'All Positions' : `${order.quantity} contracts`}
+                        </Badge>
+                      </HStack>
+                    </VStack>
+                  </Box>
+                ))}
               </VStack>
             </Box>
 
-            {/* High Risk Warning */}
-            {order.accounts.some(accountId => {
-              const account = accountsData[accountId];
-              const positionValue = order.quantity * 50;
-              const positionRisk = (positionValue / account?.balance) * 100;
-              return getRiskLevel(positionRisk).level === 'High';
-            }) && (
-              <Box
-                bg="red.900"
-                p={3}
-                borderRadius="md"
-                borderLeft="4px"
-                borderColor="red.500"
-              >
-                <HStack spacing={2}>
-                  <AlertTriangle size={16} color="#F56565" />
-                  <Text fontSize="sm">
-                    High risk level detected in one or more accounts. Consider reducing position size.
-                  </Text>
-                </HStack>
-              </Box>
-            )}
-
             {/* Warning Message */}
             <Box 
-              bg="orange.900" 
+              bg={isCloseAll ? "orange.900" : "yellow.900"}
               p={3} 
               borderRadius="md" 
               borderLeft="4px" 
-              borderColor="orange.500"
+              borderColor={isCloseAll ? "orange.500" : "yellow.500"}
             >
               <HStack spacing={2}>
-                <AlertTriangle size={16} color="#ED8936" />
+                <AlertTriangle size={16} color={isCloseAll ? "#ED8936" : "#ECC94B"} />
                 <Text fontSize="sm">
-                  This action cannot be undone. Please confirm your order details.
+                  {isCloseAll 
+                    ? "This will close ALL open positions in the selected accounts. This action cannot be undone."
+                    : "Please confirm your order details carefully before proceeding."}
                 </Text>
               </HStack>
             </Box>
@@ -278,13 +225,13 @@ const OrderConfirmationModal = ({ isOpen, onClose, order, onConfirm }) => {
             Cancel
           </Button>
           <Button
-            colorScheme={order.type === 'buy' ? 'green' : order.type === 'sell' ? 'red' : 'orange'}
+            colorScheme={isCloseAll ? "orange" : (order.type === 'buy' ? 'green' : 'red')}
             onClick={handleConfirm}
             isLoading={isConfirming}
             loadingText="Confirming..."
             leftIcon={<CheckCircle2 size={16} />}
           >
-            Confirm {order.type.replace('-', ' ')}
+            {isCloseAll ? 'Close All Positions' : `Confirm ${order.type.toUpperCase()}`}
           </Button>
         </ModalFooter>
       </ModalContent>

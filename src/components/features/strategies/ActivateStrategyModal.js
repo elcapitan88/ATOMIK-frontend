@@ -92,7 +92,7 @@ const ActivateStrategyModal = ({ isOpen, onClose, onSubmit, strategy = null }) =
   const { createStrategy, isCreating, createStrategyError } = useStrategies();
   const toast = useToast();
 
-  const tickers = ['ESZ4', 'NQZ4', 'MNQ24', 'MESZ4']; // Available tickers
+  const tickers = ['ESH5', 'NQH5', 'MNQH5', 'MESH5']; // Available tickers
 
   // Form validation functions
   const validateSingleAccount = () => {

@@ -1,8 +1,11 @@
 import axios from 'axios';
 import logger from '@/utils/logger';
+import { envConfig } from '@/config/environment';
 
 const axiosInstance = axios.create({
-    baseURL: process.env.REACT_APP_API_URL || 'http://localhost:8000',
+    baseURL: process.env.NODE_ENV === 'production' 
+        ? envConfig.apiBaseUrl 
+        : '',
     withCredentials: true,
 });
 

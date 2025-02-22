@@ -8,6 +8,7 @@ import { BrowserRouter } from 'react-router-dom';
 import App from './App';
 import { AuthProvider } from './contexts/AuthContext';
 import theme from './styles/theme';
+import { ConfigCatProvider } from 'configcat-react';
 
 // Import global styles
 import './styles/globals.css';
@@ -89,11 +90,13 @@ root.render(
       <HelmetProvider>
         <QueryClientProvider client={queryClient}>
           <ChakraProvider theme={theme}>
-            <BrowserRouter>
-              <AuthProvider>
-                <App />
-              </AuthProvider>
-            </BrowserRouter>
+            <ConfigCatProvider sdkKey={process.env.REACT_APP_CONFIGCAT_SDK_KEY}>
+              <BrowserRouter>
+                <AuthProvider>
+                  <App />
+                </AuthProvider>
+              </BrowserRouter>
+            </ConfigCatProvider>
           </ChakraProvider>
           {process.env.NODE_ENV === 'development' && <ReactQueryDevtools />}
         </QueryClientProvider>
