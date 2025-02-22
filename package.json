@@ -33,11 +33,12 @@
     "web-vitals": "^2.1.4"
   },
   "devDependencies": {
+    "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
     "@craco/craco": "^7.1.0"
   },
   "scripts": {
     "start": "serve -s build",
-    "build": "set NODE_OPTIONS=--openssl-legacy-provider && craco build",
+    "build": "set NODE_OPTIONS=--openssl-legacy-provider && set CI=false && craco build",
     "test": "set NODE_OPTIONS=--openssl-legacy-provider && craco test",
     "eject": "react-scripts eject"
   },
