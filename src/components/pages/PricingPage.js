@@ -89,7 +89,7 @@ const PricingPage = () => {
           successUrl = `http://localhost:3000/payment/success?session_id={CHECKOUT_SESSION_ID}&email=${encodeURIComponent(registration.email)}`;
         } else {
           // Force production URL regardless of environment variable
-          successUrl = `https://atomiktrading.io/payment/success?session_id={CHECKOUT_SESSION_ID}&email=${encodeURIComponent(registration.email)}`;
+          successUrl = `https://www.atomiktrading.io/payment/success?session_id={CHECKOUT_SESSION_ID}&email=${encodeURIComponent(registration.email)}`;
         }
 
         // Force correct cancel URL based on current hostname
@@ -98,7 +98,7 @@ const PricingPage = () => {
           cancelUrl = 'http://localhost:3000/pricing';
         } else {
           // Force production URL regardless of environment variable
-          cancelUrl = 'https://atomiktrading.io/pricing';
+          cancelUrl = 'https://www.atomiktrading.io/pricing';
         }
 
         // Required configuration
