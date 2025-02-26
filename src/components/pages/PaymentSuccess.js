@@ -21,7 +21,6 @@ import { useNavigate, useSearchParams, Link as RouterLink } from 'react-router-d
 import { useAuth } from '@/contexts/AuthContext';
 import axiosInstance from '@/services/axiosConfig';
 import logger from '@/utils/logger';
-import { logEnvironmentInfo } from '@/utils/urlUtils';
 
 const MotionBox = motion(Box);
 
@@ -47,13 +46,46 @@ const PaymentSuccess = () => {
   const verificationAttempted = useRef(false);
   const redirectTimeout = useRef(null);
 
+  // Detect incorrect URL and redirect if necessary
+  useEffect(() => {
+    const isProduction = window.location.hostname !== 'localhost' && 
+                         window.location.hostname !== '127.0.0.1';
+    
+    const urlContainsLocalhost = window.location.href.includes('localhost');
+    
+    // If we're in production but the URL contains localhost, redirect to production
+    if (isProduction && urlContainsLocalhost) {
+      logger.warning('Detected localhost URL in production environment, redirecting...');
+      
+      // Get all current URL parameters
+      const params = new URLSearchParams(searchParams);
+      
+      // Create the correct production URL
+      const productionUrl = new URL('/payment/success', 'https://atomiktrading.io');
+      
+      // Add all current parameters to the new URL
+      params.forEach((value, key) => {
+        productionUrl.searchParams.append(key, value);
+      });
+      
+      logger.info(`Redirecting to: ${productionUrl.toString()}`);
+      
+      // Redirect to the correct URL
+      window.location.href = productionUrl.toString();
+      return;
+    }
+    
+    // Log environment info
+    logger.info('PaymentSuccess component mounted', {
+      hostname: window.location.hostname,
+      url: window.location.href,
+      isProduction: isProduction,
+      params: Object.fromEntries(searchParams.entries())
+    });
+  }, [searchParams]);
+
   // Setup & Cleanup
   useEffect(() => {
-    // Log environment info immediately for debugging
-    logEnvironmentInfo();
-    logger.info('PaymentSuccess component mounted, URL params:', 
-      Object.fromEntries(searchParams.entries()));
-    
     mounted.current = true;
     
     // Clear any existing timeouts
@@ -63,7 +95,7 @@ const PaymentSuccess = () => {
         clearTimeout(redirectTimeout.current);
       }
     };
-  }, [searchParams]);
+  }, []);
 
   // Handle authentication redirect
   useEffect(() => {
@@ -93,18 +125,25 @@ const PaymentSuccess = () => {
         
         // Get registration data from localStorage
         const pendingRegistrationStr = localStorage.getItem('pendingRegistration');
+        
+        logger.debug('Registration data check:', {
+          hasLocalStorageData: !!pendingRegistrationStr,
+          hasEmailInParams: !!emailFromUrl,
+          localStorage: pendingRegistrationStr ? '[EXISTS]' : '[MISSING]'
+        });
+        
         if (!pendingRegistrationStr && !emailFromUrl) {
           throw new Error('No registration data found');
         }
 
-        // Parse registration data and merge with email from URL if needed
+        // Parse registration data with fallbacks
         let pendingRegistration;
         try {
           pendingRegistration = pendingRegistrationStr 
             ? JSON.parse(pendingRegistrationStr) 
-            : { email: decodeURIComponent(emailFromUrl) };
+            : { email: emailFromUrl ? decodeURIComponent(emailFromUrl) : null };
           
-          // If we have email from URL but not in localStorage, log this situation
+          // If we have email from URL but not in localStorage, use the URL email
           if (emailFromUrl && (!pendingRegistration.email || pendingRegistration.email !== decodeURIComponent(emailFromUrl))) {
             logger.info('Using email from URL instead of localStorage:', emailFromUrl);
             pendingRegistration.email = decodeURIComponent(emailFromUrl);
@@ -130,8 +169,7 @@ const PaymentSuccess = () => {
         // If we don't have password but have email, we might need to prompt user
         if (!pendingRegistration?.password && pendingRegistration?.email) {
           logger.warning('Missing password in registration data. Would need user input in a production scenario');
-          // For now, just use the email as password or a predefined value for demo
-          // In a real app, you'd show a form to collect the password from the user
+          // For now, just use the email as password for demo purposes
           pendingRegistration.password = pendingRegistration.email; // DEMO ONLY
         }
 

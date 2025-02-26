@@ -11,7 +11,6 @@ import {
 import { motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import logger from '@/utils/logger';
-import { getStripeSuccessUrl, getStripeCancelUrl, logEnvironmentInfo } from '@/utils/urlUtils';
 
 const MotionBox = motion(Box);
 
@@ -54,10 +53,16 @@ const PricingPage = () => {
 
   // Initialize Stripe once
   useEffect(() => {
-    const initializeStripe = async () => {
+    const initializeStripe = () => {
       try {
         // Log environment info for debugging
-        logEnvironmentInfo();
+        const isLocalHost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+        logger.info('Initializing Stripe pricing table', {
+          hostname: window.location.hostname,
+          origin: window.location.origin,
+          isLocalHost: isLocalHost,
+          nodeEnv: process.env.NODE_ENV
+        });
         
         // Get registration data
         const registrationData = localStorage.getItem('pendingRegistration');
@@ -78,13 +83,23 @@ const PricingPage = () => {
         // Set up pricing table
         const pricingTable = document.createElement('stripe-pricing-table');
         
-        // Generate the URLs with the centralized utility
-        // Include the email in URL to eliminate dependency on localStorage after redirect
-        const successUrl = getStripeSuccessUrl({
-          session_id: '{CHECKOUT_SESSION_ID}',
-          email: encodeURIComponent(registration.email)
-        });
-        const cancelUrl = getStripeCancelUrl();
+        // Force correct success URL based on current hostname
+        let successUrl;
+        if (isLocalHost) {
+          successUrl = `http://localhost:3000/payment/success?session_id={CHECKOUT_SESSION_ID}&email=${encodeURIComponent(registration.email)}`;
+        } else {
+          // Force production URL regardless of environment variable
+          successUrl = `https://atomiktrading.io/payment/success?session_id={CHECKOUT_SESSION_ID}&email=${encodeURIComponent(registration.email)}`;
+        }
+
+        // Force correct cancel URL based on current hostname
+        let cancelUrl;
+        if (isLocalHost) {
+          cancelUrl = 'http://localhost:3000/pricing';
+        } else {
+          // Force production URL regardless of environment variable
+          cancelUrl = 'https://atomiktrading.io/pricing';
+        }
 
         // Required configuration
         pricingTable.setAttribute('pricing-table-id', process.env.REACT_APP_STRIPE_PRICING_TABLE_ID);
@@ -101,7 +116,9 @@ const PricingPage = () => {
         logger.info('Stripe table initialized with:', {
           email: registration.email,
           successUrl,
-          cancelUrl
+          cancelUrl,
+          tableId: process.env.REACT_APP_STRIPE_PRICING_TABLE_ID,
+          // Don't log the publishable key for security
         });
       } catch (error) {
         logger.error('Pricing table initialization failed:', error);
