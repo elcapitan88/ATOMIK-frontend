@@ -15,6 +15,7 @@
     "axios": "^1.6.7",
     "chakra-ui-steps": "^2.2.0",
     "configcat-react": "^4.8.1",
+    "express": "^4.21.2",
     "framer-motion": "^11.18.2",
     "history": "^5.3.0",
     "jwt-decode": "^4.0.0",
@@ -37,7 +38,8 @@
     "@craco/craco": "^7.1.0"
   },
   "scripts": {
-    "start": "serve -s build",
+    "start": "node server.js",
+    "dev": "craco start",
     "build": "CI=false && set BABEL_ENV=production && set NODE_OPTIONS=--openssl-legacy-provider && craco build",
     "test": "set NODE_OPTIONS=--openssl-legacy-provider && craco test",
     "eject": "react-scripts eject"
