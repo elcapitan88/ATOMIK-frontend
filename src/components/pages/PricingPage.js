@@ -11,6 +11,7 @@ import {
 import { motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import logger from '@/utils/logger';
+import { getStripeSuccessUrl, getStripeCancelUrl, logEnvironmentInfo } from '@/utils/urlUtils';
 
 const MotionBox = motion(Box);
 
@@ -53,8 +54,11 @@ const PricingPage = () => {
 
   // Initialize Stripe once
   useEffect(() => {
-    const initializeStripe = () => {
+    const initializeStripe = async () => {
       try {
+        // Log environment info for debugging
+        logEnvironmentInfo();
+        
         // Get registration data
         const registrationData = localStorage.getItem('pendingRegistration');
         if (!registrationData) {
@@ -73,11 +77,14 @@ const PricingPage = () => {
 
         // Set up pricing table
         const pricingTable = document.createElement('stripe-pricing-table');
-        const baseUrl = window.location.origin.includes('localhost') 
-          ? 'http://localhost:3000' 
-          : 'https://atomiktrading.io';
-        const successUrl = `${baseUrl}/payment/success?session_id={CHECKOUT_SESSION_ID}`;
-        const cancelUrl = `${baseUrl}/pricing`;
+        
+        // Generate the URLs with the centralized utility
+        // Include the email in URL to eliminate dependency on localStorage after redirect
+        const successUrl = getStripeSuccessUrl({
+          session_id: '{CHECKOUT_SESSION_ID}',
+          email: encodeURIComponent(registration.email)
+        });
+        const cancelUrl = getStripeCancelUrl();
 
         // Required configuration
         pricingTable.setAttribute('pricing-table-id', process.env.REACT_APP_STRIPE_PRICING_TABLE_ID);
@@ -90,6 +97,12 @@ const PricingPage = () => {
         container.innerHTML = '';
         container.appendChild(pricingTable);
 
+        // Debug info
+        logger.info('Stripe table initialized with:', {
+          email: registration.email,
+          successUrl,
+          cancelUrl
+        });
       } catch (error) {
         logger.error('Pricing table initialization failed:', error);
         

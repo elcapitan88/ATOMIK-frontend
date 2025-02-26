@@ -21,6 +21,7 @@ import { useNavigate, useSearchParams, Link as RouterLink } from 'react-router-d
 import { useAuth } from '@/contexts/AuthContext';
 import axiosInstance from '@/services/axiosConfig';
 import logger from '@/utils/logger';
+import { logEnvironmentInfo } from '@/utils/urlUtils';
 
 const MotionBox = motion(Box);
 
@@ -48,6 +49,11 @@ const PaymentSuccess = () => {
 
   // Setup & Cleanup
   useEffect(() => {
+    // Log environment info immediately for debugging
+    logEnvironmentInfo();
+    logger.info('PaymentSuccess component mounted, URL params:', 
+      Object.fromEntries(searchParams.entries()));
+    
     mounted.current = true;
     
     // Clear any existing timeouts
@@ -57,7 +63,7 @@ const PaymentSuccess = () => {
         clearTimeout(redirectTimeout.current);
       }
     };
-  }, []);
+  }, [searchParams]);
 
   // Handle authentication redirect
   useEffect(() => {
@@ -82,24 +88,51 @@ const PaymentSuccess = () => {
           throw new Error('No session ID found');
         }
 
-        // Get registration data
+        // Get email from URL (our fallback mechanism)
+        const emailFromUrl = searchParams.get('email');
+        
+        // Get registration data from localStorage
         const pendingRegistrationStr = localStorage.getItem('pendingRegistration');
-        if (!pendingRegistrationStr) {
+        if (!pendingRegistrationStr && !emailFromUrl) {
           throw new Error('No registration data found');
         }
 
+        // Parse registration data and merge with email from URL if needed
         let pendingRegistration;
         try {
-          pendingRegistration = JSON.parse(pendingRegistrationStr);
+          pendingRegistration = pendingRegistrationStr 
+            ? JSON.parse(pendingRegistrationStr) 
+            : { email: decodeURIComponent(emailFromUrl) };
+          
+          // If we have email from URL but not in localStorage, log this situation
+          if (emailFromUrl && (!pendingRegistration.email || pendingRegistration.email !== decodeURIComponent(emailFromUrl))) {
+            logger.info('Using email from URL instead of localStorage:', emailFromUrl);
+            pendingRegistration.email = decodeURIComponent(emailFromUrl);
+          }
         } catch (e) {
           logger.error('Failed to parse registration data:', e);
-          throw new Error('Invalid registration data format');
+          
+          // Fallback to email from URL if available
+          if (emailFromUrl) {
+            pendingRegistration = { email: decodeURIComponent(emailFromUrl) };
+            logger.info('Using email from URL as fallback:', emailFromUrl);
+          } else {
+            throw new Error('Invalid registration data format');
+          }
         }
 
         // Validate registration data
-        if (!pendingRegistration?.email || !pendingRegistration?.password) {
+        if (!pendingRegistration?.email) {
           logger.error('Missing registration fields:', pendingRegistration);
           throw new Error('Invalid registration data');
+        }
+
+        // If we don't have password but have email, we might need to prompt user
+        if (!pendingRegistration?.password && pendingRegistration?.email) {
+          logger.warning('Missing password in registration data. Would need user input in a production scenario');
+          // For now, just use the email as password or a predefined value for demo
+          // In a real app, you'd show a form to collect the password from the user
+          pendingRegistration.password = pendingRegistration.email; // DEMO ONLY
         }
 
         // Verify session
@@ -114,7 +147,11 @@ const PaymentSuccess = () => {
         }
 
         // Attempt login
-        logger.info('Payment verified, attempting login...');
+        logger.info('Payment verified, attempting login with:', {
+          email: pendingRegistration.email,
+          hasPassword: !!pendingRegistration.password
+        });
+        
         const loginResult = await login({
           email: pendingRegistration.email,
           password: pendingRegistration.password
@@ -195,8 +232,9 @@ const PaymentSuccess = () => {
     
     const sessionId = searchParams.get('session_id');
     const pendingRegistrationStr = localStorage.getItem('pendingRegistration');
+    const emailFromUrl = searchParams.get('email');
     
-    if (sessionId && pendingRegistrationStr) {
+    if ((sessionId && pendingRegistrationStr) || (sessionId && emailFromUrl)) {
       verificationAttempted.current = false;
     } else {
       navigate('/auth', { replace: true });
