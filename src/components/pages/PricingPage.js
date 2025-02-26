@@ -73,8 +73,11 @@ const PricingPage = () => {
 
         // Set up pricing table
         const pricingTable = document.createElement('stripe-pricing-table');
-        const successUrl = `${process.env.REACT_APP_STRIPE_SUCCESS_URL}?session_id={CHECKOUT_SESSION_ID}`;
-        const cancelUrl = process.env.REACT_APP_STRIPE_CANCEL_URL || `${window.location.origin}/pricing`;
+        const baseUrl = window.location.origin.includes('localhost') 
+          ? 'http://localhost:3000' 
+          : 'https://atomiktrading.io';
+        const successUrl = `${baseUrl}/payment/success?session_id={CHECKOUT_SESSION_ID}`;
+        const cancelUrl = `${baseUrl}/pricing`;
 
         // Required configuration
         pricingTable.setAttribute('pricing-table-id', process.env.REACT_APP_STRIPE_PRICING_TABLE_ID);
