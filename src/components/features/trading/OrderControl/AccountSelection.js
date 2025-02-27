@@ -31,6 +31,7 @@ const AccountSelection = ({ selectedAccounts, onChange }) => {
       const response = await axios.get('/api/v1/brokers/accounts', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
+      console.log('Accounts API response:', response.data);
       return response.data;
     }
   });
@@ -42,32 +43,49 @@ const AccountSelection = ({ selectedAccounts, onChange }) => {
       const response = await axios.get('/api/v1/strategies/list', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
+      console.log('Strategies API response:', response.data);
       return response.data;
     }
   });
 
   const availableAccounts = React.useMemo(() => {
+    console.log('Filtering accounts:', accounts);
+    
     // Get all accounts used in active single strategies
     const singleStrategyAccounts = strategies
       .filter(s => s.is_active && s.strategy_type === 'single')
-      .map(s => s.account_id);
+      .map(s => String(s.account_id));
+    
+    console.log('Accounts in single strategies:', singleStrategyAccounts);
 
     // Get all accounts used in active multiple/group strategies
     const groupStrategyAccounts = strategies
       .filter(s => s.is_active && s.strategy_type === 'multiple')
       .flatMap(s => [
-        s.leader_account_id,                                    // Leader account
-        ...(s.follower_accounts?.map(f => f.account_id) || []) // Follower accounts
+        String(s.leader_account_id),                                  
+        ...(s.follower_accounts?.map(f => String(f.account_id)) || []) 
       ]);
+    
+    console.log('Accounts in group strategies:', groupStrategyAccounts);
 
     // Combine all accounts in use
     const accountsInUse = [...new Set([...singleStrategyAccounts, ...groupStrategyAccounts])];
+    console.log('All accounts in use:', accountsInUse);
 
-    // Filter available accounts
-    return accounts.filter(account => 
-      !account.is_token_expired && 
-      !accountsInUse.includes(account.account_id)
-    );
+    // Filter valid accounts that aren't in use
+    const validAccounts = accounts.filter(account => {
+      // Convert to string to ensure consistent comparison
+      const accountId = String(account.account_id);
+      const isTokenValid = !account.is_token_expired;
+      const isInUse = accountsInUse.includes(accountId);
+      
+      console.log(`Account ${accountId}: valid token: ${isTokenValid}, in use: ${isInUse}`);
+      
+      return isTokenValid && !isInUse;
+    });
+    
+    console.log('Available accounts after filtering:', validAccounts);
+    return validAccounts;
   }, [accounts, strategies]);
 
   const activeGroupStrategies = React.useMemo(() => {
@@ -198,7 +216,9 @@ const AccountSelection = ({ selectedAccounts, onChange }) => {
 
       {selectionType === 'single' && availableAccounts.length === 0 && (
         <Text fontSize="xs" color="whiteAlpha.600">
-          No available trading accounts
+          {accounts.length > 0 
+            ? "All accounts are either in use or have expired tokens" 
+            : "No available trading accounts"}
         </Text>
       )}
       {selectionType === 'group' && activeGroupStrategies.length === 0 && (
