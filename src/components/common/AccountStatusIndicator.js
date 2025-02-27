@@ -11,9 +11,9 @@ const AccountStatusIndicator = ({ tokenValid, wsStatus }) => {
     const getConnectionState = () => {
         console.log('AccountStatusIndicator state:', { tokenValid, wsStatus });
         if (!tokenValid) return CONNECTION_STATE.DISCONNECTED;
-        if (!wsStatus) return CONNECTION_STATE.TOKEN_VALID;
-        if (wsStatus === 'connecting') return CONNECTION_STATE.WS_CONNECTING;
-        if (wsStatus === 'connected') return CONNECTION_STATE.FULLY_CONNECTED;
+        //if (!wsStatus) return CONNECTION_STATE.TOKEN_VALID;
+        //if (wsStatus === 'connecting') return CONNECTION_STATE.WS_CONNECTING;
+        //if (wsStatus === 'connected') return CONNECTION_STATE.FULLY_CONNECTED;
         return CONNECTION_STATE.TOKEN_VALID;
     };
 
