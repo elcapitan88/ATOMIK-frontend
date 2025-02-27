@@ -272,10 +272,6 @@ const Management = () => {
             isClosable: false,
           });
           
-          // Log request details before sending
-          console.log("Sending PATCH request to:", `/api/v1/brokers/accounts/${accountId}`);
-          console.log("Request payload:", { nickname });
-          
           // Make the API call to update the nickname
           const response = await axiosInstance.patch(`/api/v1/brokers/accounts/${accountId}`, {
             nickname: nickname
@@ -284,7 +280,7 @@ const Management = () => {
           // Log the successful response
           console.log("Nickname update response:", response.data);
           
-          // Update accounts in local state
+          // Update accounts in component's local state
           setAccounts(prev => {
             const updatedAccounts = prev.map(acc => 
               acc.account_id === accountId ? { ...acc, nickname: nickname } : acc
@@ -293,10 +289,14 @@ const Management = () => {
             return updatedAccounts;
           });
           
-          // Also update selectedAccount if it matches
+          // Also update selected account if it matches
           if (selectedAccount && selectedAccount.account_id === accountId) {
             setSelectedAccount(prev => ({ ...prev, nickname: nickname }));
           }
+          
+          // Important: Update the central AccountManager service
+          // This ensures the nickname change persists across the app and survives page refreshes
+          await accountManager.updateAccount(accountId, { nickname: nickname });
           
           // Close loading toast
           if (loadingToastId) {
@@ -312,39 +312,26 @@ const Management = () => {
             isClosable: true,
           });
           
-          // Log final state after update
-          console.log("Nickname update complete");
-          
         } catch (error) {
           // Close loading toast
           if (loadingToastId) {
             toast.close(loadingToastId);
           }
           
-          // Log detailed error information
           console.error("Nickname update error:", error);
-          console.error("Error response:", error.response?.data);
-          console.error("Error status:", error.response?.status);
-          console.error("Error message:", error.message);
           
-          // Extract error message for more specific feedback
-          const errorMessage = error.response?.data?.detail || 
-                               error.message || 
-                               "Failed to update account nickname";
-          
-          // Show error toast
           toast({
             title: "Update Failed",
-            description: errorMessage,
+            description: error.response?.data?.detail || error.message || "Failed to update account nickname",
             status: "error",
             duration: 5000,
             isClosable: true,
           });
           
-          // Optionally, you could reload accounts here to ensure state is in sync
-          fetchAccounts(false);  // Pass false to not show loading spinner
+          // Reload accounts to ensure state is in sync
+          fetchAccounts(false);
         }
-      };
+      }
 
     // Handle account deletion
     const handleAccountDeletion = useCallback(async () => {

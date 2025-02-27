@@ -138,6 +138,42 @@ class AccountManager {
         }
     }
 
+    async updateAccount(accountId, updateData) {
+        try {
+            // Get existing account
+            const existingAccount = this.accounts.get(accountId);
+            if (!existingAccount) {
+                logger.warn(`Attempted to update non-existent account: ${accountId}`);
+                return false;
+            }
+
+            // Create updated account by merging with new data
+            const updatedAccount = { ...existingAccount, ...updateData };
+            
+            // Update in our cache
+            this.accounts.set(accountId, updatedAccount);
+            
+            // Notify subscribers of the update
+            this.accountSubject.next({
+                type: 'update',
+                accountId,
+                account: updatedAccount
+            });
+            
+            // Also notify bulk listeners to ensure all UI components refresh
+            this.accountSubject.next({
+                type: 'bulk',
+                accounts: Array.from(this.accounts.values())
+            });
+            
+            logger.info(`Account ${accountId} updated with:`, updateData);
+            return true;
+        } catch (error) {
+            logger.error(`Error updating account ${accountId}:`, error);
+            return false;
+        }
+    }
+
     // Get single account
     getAccount(accountId) {
         return this.accounts.get(accountId);
