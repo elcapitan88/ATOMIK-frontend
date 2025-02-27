@@ -23,11 +23,12 @@ class TradovateApi extends BaseApi {
         // Process accounts
         const accounts = Array.isArray(response.data) ? response.data : [];
         
-        // Transform the response data
+        // Transform the response data - ADDED nickname field here
         const processedAccounts = accounts.map(acc => ({
             account_id: acc.account_id,
             broker_id: acc.broker_id || 'tradovate',
             name: acc.name || 'Unknown Account',
+            nickname: acc.nickname, 
             environment: acc.environment || 'demo',
             status: acc.status || 'inactive',
             balance: parseFloat(acc.balance || 0).toFixed(2),
