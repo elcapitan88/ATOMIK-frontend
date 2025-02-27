@@ -257,24 +257,94 @@ const Management = () => {
     };
 
     const handleUpdateNickname = async (accountId, nickname) => {
+        console.log("Starting nickname update:", { accountId, nickname });
+        
+        // Track the loading toast ID to close it later
+        let loadingToastId = null;
+        
         try {
-            await axiosInstance.patch(`/api/v1/brokers/accounts/${accountId}`, {
-                name: nickname
-            });
-
-            setAccounts(prev => prev.map(acc => 
-                acc.account_id === accountId ? { ...acc, name: nickname } : acc
-            ));
-
+          // Show loading toast
+          loadingToastId = toast({
+            title: "Updating nickname",
+            description: "Saving your changes...",
+            status: "loading",
+            duration: null,
+            isClosable: false,
+          });
+          
+          // Log request details before sending
+          console.log("Sending PATCH request to:", `/api/v1/brokers/accounts/${accountId}`);
+          console.log("Request payload:", { nickname });
+          
+          // Make the API call to update the nickname
+          const response = await axiosInstance.patch(`/api/v1/brokers/accounts/${accountId}`, {
+            nickname: nickname
+          });
+          
+          // Log the successful response
+          console.log("Nickname update response:", response.data);
+          
+          // Update accounts in local state
+          setAccounts(prev => {
+            const updatedAccounts = prev.map(acc => 
+              acc.account_id === accountId ? { ...acc, nickname: nickname } : acc
+            );
+            console.log("Updated accounts state:", updatedAccounts);
+            return updatedAccounts;
+          });
+          
+          // Also update selectedAccount if it matches
+          if (selectedAccount && selectedAccount.account_id === accountId) {
+            setSelectedAccount(prev => ({ ...prev, nickname: nickname }));
+          }
+          
+          // Close loading toast
+          if (loadingToastId) {
+            toast.close(loadingToastId);
+          }
+          
+          // Show success toast
+          toast({
+            title: "Nickname Updated",
+            description: "Account nickname has been successfully updated",
+            status: "success",
+            duration: 3000,
+            isClosable: true,
+          });
+          
+          // Log final state after update
+          console.log("Nickname update complete");
+          
         } catch (error) {
-            toast({
-                title: "Error",
-                description: "Failed to update account name",
-                status: "error",
-                duration: 3000,
-            });
+          // Close loading toast
+          if (loadingToastId) {
+            toast.close(loadingToastId);
+          }
+          
+          // Log detailed error information
+          console.error("Nickname update error:", error);
+          console.error("Error response:", error.response?.data);
+          console.error("Error status:", error.response?.status);
+          console.error("Error message:", error.message);
+          
+          // Extract error message for more specific feedback
+          const errorMessage = error.response?.data?.detail || 
+                               error.message || 
+                               "Failed to update account nickname";
+          
+          // Show error toast
+          toast({
+            title: "Update Failed",
+            description: errorMessage,
+            status: "error",
+            duration: 5000,
+            isClosable: true,
+          });
+          
+          // Optionally, you could reload accounts here to ensure state is in sync
+          fetchAccounts(false);  // Pass false to not show loading spinner
         }
-    };
+      };
 
     // Handle account deletion
     const handleAccountDeletion = useCallback(async () => {
@@ -555,7 +625,7 @@ const Management = () => {
                         />
                         <VStack spacing={0} align="flex-start"> 
                             <Text fontWeight="bold" fontSize="sm" lineHeight="1.2">
-                                {account.name}
+                            {account.nickname ? account.nickname : account.name}
                             </Text>
                             <Text fontSize="xs" color="whiteAlpha.700" lineHeight="1.2">
                                 {account.broker_id} • {account.environment}
