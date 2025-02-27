@@ -8,19 +8,19 @@ import {
 } from '@/utils/constants/brokers';
 
 const AccountStatusIndicator = ({ tokenValid, wsStatus }) => {
+    // Simplified function that only checks if token is valid
+    // WebSocket status checks temporarily disabled as requested
     const getConnectionState = () => {
         console.log('AccountStatusIndicator state:', { tokenValid, wsStatus });
         if (!tokenValid) return CONNECTION_STATE.DISCONNECTED;
-        //if (!wsStatus) return CONNECTION_STATE.TOKEN_VALID;
-        //if (wsStatus === 'connecting') return CONNECTION_STATE.WS_CONNECTING;
-        //if (wsStatus === 'connected') return CONNECTION_STATE.FULLY_CONNECTED;
+        // WebSocket connection checks are temporarily disabled
         return CONNECTION_STATE.TOKEN_VALID;
     };
 
     const state = getConnectionState();
     const color = CONNECTION_STATE_COLORS[state];
     const message = CONNECTION_STATE_MESSAGES[state];
-    console.log('Connection state:', state); 
+    console.log('Connection state:', { state, color, message }); 
 
     return (
         <Tooltip label={message}>
