@@ -13,7 +13,8 @@ import {
 } from '@chakra-ui/react';
 
 const AccountNicknameModal = ({ isOpen, onClose, account, onSave }) => {
-  const [nickname, setNickname] = useState(account?.name || '');
+  // Use nickname as primary, fallback to name if nickname isn't set
+  const [nickname, setNickname] = useState(account?.nickname || account?.name || '');
 
   const handleSave = () => {
     onSave(account.account_id, nickname);
@@ -36,7 +37,7 @@ const AccountNicknameModal = ({ isOpen, onClose, account, onSave }) => {
           pb={4}
           color="white"
         >
-          Edit Account Name
+          Edit Account Nickname
         </ModalHeader>
         <ModalCloseButton color="white" />
         
