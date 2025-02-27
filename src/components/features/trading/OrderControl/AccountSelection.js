@@ -1,6 +1,6 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
-import axios from 'axios';
+import axios from '@/services/axiosConfig';  // Use your configured axios instance
 import {
   Box,
   VStack,
@@ -12,10 +12,10 @@ import {
   Spinner,
 } from '@chakra-ui/react';
 import { User as UserIcon, Users as UsersIcon } from 'lucide-react';
+import logger from '@/utils/logger';
 
 const AccountSelection = ({ selectedAccounts, onChange }) => {
   const [selectionType, setSelectionType] = React.useState('single');
-  // Add state to track selected group ID
   const [selectedGroupId, setSelectedGroupId] = React.useState('');
 
   // Reset selections when switching types
@@ -24,67 +24,107 @@ const AccountSelection = ({ selectedAccounts, onChange }) => {
     setSelectedGroupId('');
   }, [selectionType, onChange]);
 
-  const { data: accounts = [], isLoading: accountsLoading } = useQuery({
+  // Query for accounts with proper endpoint
+  const { data: accounts = [], isLoading: accountsLoading, error: accountsError } = useQuery({
     queryKey: ['activeAccounts'],
     queryFn: async () => {
-      const token = localStorage.getItem('access_token');
-      const response = await axios.get('/api/v1/brokers/accounts', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      console.log('Accounts API response:', response.data);
-      return response.data;
-    }
+      try {
+        const response = await axios.get('/api/v1/brokers/accounts');
+        logger.info('Accounts API response:', response.data);
+        return response.data || [];
+      } catch (error) {
+        logger.error('Failed to fetch accounts:', error);
+        
+        // Try fallback endpoint if the main endpoint fails
+        if (error.response?.status === 404) {
+          try {
+            logger.info('Trying fallback accounts endpoint...');
+            const fallbackResponse = await axios.get('/api/tradovate/fetch-accounts/');
+            logger.info('Fallback accounts response:', fallbackResponse.data);
+            return fallbackResponse.data || [];
+          } catch (fallbackError) {
+            logger.error('Fallback accounts endpoint also failed:', fallbackError);
+          }
+        }
+        
+        throw error;
+      }
+    },
+    staleTime: 30000 // Cache for 30 seconds
   });
 
-  const { data: strategies = [], isLoading: strategiesLoading } = useQuery({
+  // Query for strategies with proper endpoint
+  const { data: strategies = [], isLoading: strategiesLoading, error: strategiesError } = useQuery({
     queryKey: ['strategies'],
     queryFn: async () => {
-      const token = localStorage.getItem('access_token');
-      const response = await axios.get('/api/v1/strategies/list', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      console.log('Strategies API response:', response.data);
-      return response.data;
-    }
+      try {
+        const response = await axios.get('/api/v1/strategies/list');
+        logger.info('Strategies API response:', response.data);
+        return response.data || [];
+      } catch (error) {
+        logger.error('Failed to fetch strategies:', error);
+        throw error;
+      }
+    },
+    staleTime: 30000 // Cache for 30 seconds
   });
 
   const availableAccounts = React.useMemo(() => {
-    console.log('Filtering accounts:', accounts);
+    logger.info('Starting account filtering process...');
+    logger.info(`Total accounts: ${accounts.length}`, accounts);
+    logger.info(`Total strategies: ${strategies.length}`, strategies);
     
-    // Get all accounts used in active single strategies
+    if (!accounts.length) {
+      logger.warn('No accounts to filter!');
+      return [];
+    }
+    
+    // Get all accounts used in active single strategies - convert all to strings
     const singleStrategyAccounts = strategies
       .filter(s => s.is_active && s.strategy_type === 'single')
       .map(s => String(s.account_id));
     
-    console.log('Accounts in single strategies:', singleStrategyAccounts);
+    logger.info('Accounts in single strategies:', singleStrategyAccounts);
 
-    // Get all accounts used in active multiple/group strategies
+    // Get all accounts used in active multiple/group strategies - convert all to strings
     const groupStrategyAccounts = strategies
       .filter(s => s.is_active && s.strategy_type === 'multiple')
-      .flatMap(s => [
-        String(s.leader_account_id),                                  
-        ...(s.follower_accounts?.map(f => String(f.account_id)) || []) 
-      ]);
+      .flatMap(s => {
+        const leaderAccount = s.leader_account_id ? String(s.leader_account_id) : null;
+        const followerAccounts = s.follower_accounts ? 
+          s.follower_accounts.map(f => String(f.account_id)).filter(Boolean) : [];
+          
+        return [leaderAccount, ...followerAccounts].filter(Boolean);
+      });
     
-    console.log('Accounts in group strategies:', groupStrategyAccounts);
+    logger.info('Accounts in group strategies:', groupStrategyAccounts);
 
     // Combine all accounts in use
     const accountsInUse = [...new Set([...singleStrategyAccounts, ...groupStrategyAccounts])];
-    console.log('All accounts in use:', accountsInUse);
+    logger.info('All accounts in use:', accountsInUse);
 
-    // Filter valid accounts that aren't in use
+    // Filter valid accounts - ensure all IDs are strings for comparison
     const validAccounts = accounts.filter(account => {
-      // Convert to string to ensure consistent comparison
+      // Skip accounts without an ID
+      if (!account || !account.account_id) {
+        logger.warn('Account missing ID:', account);
+        return false;
+      }
+      
+      // Convert to string for consistent comparison
       const accountId = String(account.account_id);
-      const isTokenValid = !account.is_token_expired;
+      const isTokenValid = account.is_token_expired === false; // Must explicitly check for false
       const isInUse = accountsInUse.includes(accountId);
       
-      console.log(`Account ${accountId}: valid token: ${isTokenValid}, in use: ${isInUse}`);
+      logger.info(
+        `Account ${accountId}: valid token: ${isTokenValid}, in use: ${isInUse}, status: ${account.status}`
+      );
       
-      return isTokenValid && !isInUse;
+      // Only return accounts with valid tokens that aren't in use
+      return isTokenValid && !isInUse && account.status === 'active';
     });
     
-    console.log('Available accounts after filtering:', validAccounts);
+    logger.info(`Available accounts after filtering: ${validAccounts.length}`, validAccounts);
     return validAccounts;
   }, [accounts, strategies]);
 
@@ -96,11 +136,12 @@ const AccountSelection = ({ selectedAccounts, onChange }) => {
   }, [strategies]);
 
   const handleAccountChange = (value) => {
+    logger.info('Account selected:', value);
     onChange([value]);
   };
 
   const handleGroupStrategyChange = (groupId) => {
-    setSelectedGroupId(groupId); // Update selected group ID
+    setSelectedGroupId(groupId);
     
     const strategy = activeGroupStrategies.find(s => s.id === Number(groupId));
     if (strategy) {
@@ -108,19 +149,32 @@ const AccountSelection = ({ selectedAccounts, onChange }) => {
       const groupAccounts = [
         strategy.leader_account_id,
         ...(strategy.follower_accounts?.map(f => f.account_id) || [])
-      ];
+      ].filter(Boolean).map(String);
+      
+      logger.info('Group accounts selected:', groupAccounts);
       onChange(groupAccounts);
     } else {
-      onChange([]); // Clear selection if no group found
+      onChange([]);
     }
   };
 
   const isLoading = accountsLoading || strategiesLoading;
+  const hasErrors = accountsError || strategiesError;
 
+  // Show loading state
   if (isLoading) {
     return (
       <Box width="full" textAlign="center" py={2}>
         <Spinner size="sm" color="blue.400" />
+      </Box>
+    );
+  }
+
+  // Show error state if needed
+  if (hasErrors && !accounts.length) {
+    return (
+      <Box width="full" textAlign="center" py={2} color="red.400">
+        <Text fontSize="xs">Error loading accounts</Text>
       </Box>
     );
   }
@@ -188,7 +242,7 @@ const AccountSelection = ({ selectedAccounts, onChange }) => {
         >
           {availableAccounts.map(account => (
             <option key={account.account_id} value={account.account_id}>
-              {`${account.name} (${account.environment})`}
+              {`${account.name || account.account_id} (${account.environment || 'unknown'})`}
             </option>
           ))}
         </Select>
@@ -208,22 +262,24 @@ const AccountSelection = ({ selectedAccounts, onChange }) => {
         >
           {activeGroupStrategies.map(group => (
             <option key={group.id} value={group.id}>
-              {`${group.group_name} (${group.ticker})`}
+              {`${group.group_name || 'Unnamed Group'} (${group.ticker || 'No Ticker'})`}
             </option>
           ))}
         </Select>
       )}
 
-      {selectionType === 'single' && availableAccounts.length === 0 && (
+      {selectionType === 'single' && (
         <Text fontSize="xs" color="whiteAlpha.600">
-          {accounts.length > 0 
-            ? "All accounts are either in use or have expired tokens" 
-            : "No available trading accounts"}
+          {accounts.length === 0 ? "No accounts available" : 
+           availableAccounts.length === 0 ? "All accounts are either in use or have expired tokens" : 
+           `${availableAccounts.length} account(s) available`}
         </Text>
       )}
-      {selectionType === 'group' && activeGroupStrategies.length === 0 && (
+      
+      {selectionType === 'group' && (
         <Text fontSize="xs" color="whiteAlpha.600">
-          No active group strategies
+          {activeGroupStrategies.length === 0 ? "No active group strategies" : 
+           `${activeGroupStrategies.length} group(s) available`}
         </Text>
       )}
     </VStack>
