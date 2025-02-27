@@ -113,7 +113,8 @@ class AccountManager {
             'status',
             'balance',
             'is_token_expired',
-            'active'
+            'active',
+            'nickname'
         ];
 
         return significantFields.some(field => 
