@@ -344,30 +344,6 @@ const SupportModal = ({ isOpen, onClose }) => {
               </Text>
             </FormControl>
 
-            {/* Critical Issue Checkbox */}
-            <FormControl>
-              <Flex 
-                alignItems="center" 
-                borderRadius="md"
-                border="1px solid"
-                borderColor="red.300"
-                p={3}
-                bg="rgba(255, 0, 0, 0.05)"
-              >
-                <Checkbox
-                  name="isCritical"
-                  isChecked={formData.isCritical}
-                  onChange={handleChange}
-                  mr={3}
-                  colorScheme="red"
-                />
-                <Box>
-                  <Text fontWeight="500">This issue is preventing me from using the service</Text>
-                  <Text fontSize="xs" color="whiteAlpha.700">Check this only if the issue is blocking your workflow</Text>
-                </Box>
-              </Flex>
-            </FormControl>
-
             {/* Screen Recording Link */}
             <FormControl isInvalid={!!errors.screenRecordingUrl}>
               <FormLabel>
@@ -409,6 +385,30 @@ const SupportModal = ({ isOpen, onClose }) => {
               {errors.screenRecordingUrl && (
                 <FormErrorMessage>{errors.screenRecordingUrl}</FormErrorMessage>
               )}
+            </FormControl>
+
+            {/* Critical Issue Checkbox */}
+            <FormControl>
+              <Flex 
+                alignItems="center" 
+                borderRadius="md"
+                border="1px solid"
+                borderColor="red.300"
+                p={3}
+                bg="rgba(255, 0, 0, 0.05)"
+              >
+                <Checkbox
+                  name="isCritical"
+                  isChecked={formData.isCritical}
+                  onChange={handleChange}
+                  mr={3}
+                  colorScheme="red"
+                />
+                <Box>
+                  <Text fontWeight="500">This issue is preventing me from using the service</Text>
+                  <Text fontSize="xs" color="whiteAlpha.700">Check this only if the issue is blocking your workflow</Text>
+                </Box>
+              </Flex>
             </FormControl>
 
             {/* Action Buttons */}
