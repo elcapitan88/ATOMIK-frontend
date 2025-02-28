@@ -1,4 +1,4 @@
-// src/components/modals/SupportModal.js
+// src/components/common/Modal/SupportModal.js
 import React, { useState } from 'react';
 import {
   Modal,
@@ -20,8 +20,12 @@ import {
   FormErrorMessage,
   useToast,
   Checkbox,
+  HStack,
+  Link,
+  InputGroup,
+  InputLeftAddon,
 } from '@chakra-ui/react';
-import { Upload, AlertCircle } from 'lucide-react';
+import { Upload, Link as LinkIcon, Video } from 'lucide-react';
 import axiosInstance from '@/services/axiosConfig';
 import logger from '@/utils/logger';
 
@@ -39,7 +43,8 @@ const SupportModal = ({ isOpen, onClose }) => {
     subject: '',
     description: '',
     isCritical: false,
-    screenshot: null
+    screenshot: null,
+    screenRecordingUrl: ''
   });
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -66,7 +71,23 @@ const SupportModal = ({ isOpen, onClose }) => {
     const newErrors = {};
     if (!formData.subject.trim()) newErrors.subject = 'Subject is required';
     if (!formData.description.trim()) newErrors.description = 'Description is required';
+    
+    // Validate screen recording URL if provided
+    if (formData.screenRecordingUrl && !isValidUrl(formData.screenRecordingUrl)) {
+      newErrors.screenRecordingUrl = 'Please enter a valid URL';
+    }
+    
     return newErrors;
+  };
+
+  // Check if string is a valid URL
+  const isValidUrl = (string) => {
+    try {
+      new URL(string);
+      return true;
+    } catch (_) {
+      return false;
+    }
   };
 
   // Handle input changes
@@ -117,9 +138,15 @@ const SupportModal = ({ isOpen, onClose }) => {
       subject: '',
       description: '',
       isCritical: false,
-      screenshot: null
+      screenshot: null,
+      screenRecordingUrl: ''
     });
     setErrors({});
+  };
+
+  // Open Loom in a new window
+  const openLoomRecorder = () => {
+    window.open('https://www.loom.com/record', '_blank');
   };
 
   // Handle form submission
@@ -144,6 +171,12 @@ const SupportModal = ({ isOpen, onClose }) => {
       formDataToSend.append('description', formData.description);
       formDataToSend.append('priority', priority);
       
+      // Add screen recording URL to description if provided
+      if (formData.screenRecordingUrl) {
+        const enhancedDescription = `${formData.description}\n\nScreen Recording: ${formData.screenRecordingUrl}`;
+        formDataToSend.set('description', enhancedDescription);
+      }
+      
       if (formData.screenshot) {
         formDataToSend.append('file', formData.screenshot);
       }
@@ -160,7 +193,8 @@ const SupportModal = ({ isOpen, onClose }) => {
         subject: formData.subject,
         priority: priority,
         isCritical: formData.isCritical,
-        hasScreenshot: !!formData.screenshot
+        hasScreenshot: !!formData.screenshot,
+        hasScreenRecording: !!formData.screenRecordingUrl
       });
       
       toast({
@@ -306,9 +340,57 @@ const SupportModal = ({ isOpen, onClose }) => {
               </Flex>
             </FormControl>
 
+            {/* Screen Recording Link */}
+            <FormControl isInvalid={!!errors.screenRecordingUrl}>
+              <FormLabel>
+                <Flex alignItems="center">
+                  <Video size={16} style={{ marginRight: '8px' }} />
+                  Screen Recording (highly recommended)
+                </Flex>
+              </FormLabel>
+              <InputGroup size="md" mb={2}>
+                <Input
+                  name="screenRecordingUrl"
+                  placeholder="Paste your Loom or Vimeo link here"
+                  value={formData.screenRecordingUrl}
+                  onChange={handleChange}
+                  bg="whiteAlpha.100"
+                  borderColor="whiteAlpha.300"
+                  _hover={{ borderColor: "whiteAlpha.400" }}
+                  _focus={{ 
+                    borderColor: "rgba(0, 198, 224, 0.6)",
+                    boxShadow: "0 0 0 1px rgba(0, 198, 224, 0.6)"
+                  }}
+                />
+              </InputGroup>
+              <Flex justify="space-between" align="center">
+                <Text fontSize="xs" color="whiteAlpha.700">
+                  A short screen recording helps us understand your issue much faster
+                </Text>
+                <Button 
+                  size="xs" 
+                  leftIcon={<LinkIcon size={12} />} 
+                  onClick={openLoomRecorder}
+                  variant="outline"
+                  borderColor="whiteAlpha.400"
+                  _hover={{ bg: "whiteAlpha.100" }}
+                >
+                  Create Loom
+                </Button>
+              </Flex>
+              {errors.screenRecordingUrl && (
+                <FormErrorMessage>{errors.screenRecordingUrl}</FormErrorMessage>
+              )}
+            </FormControl>
+
             {/* Screenshot Upload */}
             <FormControl>
-              <FormLabel>Attach Screenshot (optional)</FormLabel>
+              <FormLabel>
+                <Flex alignItems="center">
+                  <Upload size={16} style={{ marginRight: '8px' }} />
+                  Attach Screenshot (optional)
+                </Flex>
+              </FormLabel>
               <Box
                 as="label"
                 display="flex"
