@@ -185,34 +185,30 @@ const SupportModal = ({ isOpen, onClose }) => {
       const formDataToSend = new FormData();
       formDataToSend.append('issue_type', formData.issueType);
       formDataToSend.append('subject', formData.subject);
-      formDataToSend.append('description', formData.description);
-      formDataToSend.append('priority', priority);
       
-      // Add screen recording URL to description if provided
+      // Include screen recording URL in description if provided
+      let finalDescription = formData.description;
       if (formData.screenRecordingUrl) {
-        const enhancedDescription = `${formData.description}\n\nScreen Recording: ${formData.screenRecordingUrl}`;
-        formDataToSend.set('description', enhancedDescription);
+        finalDescription += `\n\nScreen Recording: ${formData.screenRecordingUrl}`;
       }
+      formDataToSend.append('description', finalDescription);
+      
+      formDataToSend.append('priority', priority);
       
       // Add pasted image if available
       if (formData.pastedImage) {
-        formDataToSend.append('file', formData.pastedImage, 'pasted_image.png');
+        formDataToSend.append('screenshot', formData.pastedImage, 'screenshot.png');
       }
       
-      // In a real implementation, you'd send this to your API
-      // For now, we'll simulate a successful API call
-      // await axiosInstance.post('/api/v1/support/tickets', formDataToSend);
-      
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // Send to backend API
+      const response = await axiosInstance.post('/api/v1/support/tickets', formDataToSend);
       
       logger.info('Support ticket submitted:', {
+        ticketId: response.data.id,
+        hubspotTicketId: response.data.hubspot_ticket_id,
         issueType: formData.issueType,
-        subject: formData.subject,
         priority: priority,
-        isCritical: formData.isCritical,
-        hasScreenRecording: !!formData.screenRecordingUrl,
-        hasPastedImage: !!formData.pastedImage
+        hasScreenshot: !!formData.pastedImage
       });
       
       toast({
@@ -228,9 +224,16 @@ const SupportModal = ({ isOpen, onClose }) => {
     } catch (error) {
       logger.error('Error submitting support ticket:', error);
       
+      let errorMessage = "Could not submit your ticket. Please try again.";
+      if (error.response?.data?.detail) {
+        errorMessage = error.response.data.detail;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
       toast({
         title: "Submission Failed",
-        description: error.message || "Could not submit your ticket. Please try again.",
+        description: errorMessage,
         status: "error",
         duration: 5000,
         isClosable: true,
