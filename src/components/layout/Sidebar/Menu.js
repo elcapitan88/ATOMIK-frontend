@@ -25,7 +25,7 @@ import {
   Store
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import SupportModal from '../modals/SupportModal';
+import SupportModal from '../../common/Modal/SupportModal';
 
 const MenuItem = memo(({ icon: Icon, item, isSelected, onClick }) => (
   <Flex
