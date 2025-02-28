@@ -19,25 +19,17 @@ import {
   FormLabel,
   FormErrorMessage,
   useToast,
-  HStack,
-  Badge,
+  Checkbox,
 } from '@chakra-ui/react';
 import { Upload, AlertCircle } from 'lucide-react';
 import axiosInstance from '@/services/axiosConfig';
 import logger from '@/utils/logger';
 
 const ISSUE_TYPES = [
-  { value: 'bug', label: 'Bug Report' },
+  { value: 'bug', label: 'Something isn\'t working correctly' },
   { value: 'feature', label: 'Feature Request' },
   { value: 'question', label: 'Question' },
   { value: 'account', label: 'Account Issue' }
-];
-
-const PRIORITY_LEVELS = [
-  { value: 'low', label: 'Low', color: 'gray.400' },
-  { value: 'medium', label: 'Medium', color: 'blue.400' },
-  { value: 'high', label: 'High', color: 'orange.400' },
-  { value: 'critical', label: 'Critical', color: 'red.400' }
 ];
 
 const SupportModal = ({ isOpen, onClose }) => {
@@ -46,12 +38,28 @@ const SupportModal = ({ isOpen, onClose }) => {
     issueType: 'question',
     subject: '',
     description: '',
-    priority: 'medium',
+    isCritical: false,
     screenshot: null
   });
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const toast = useToast();
+
+  // Determine priority based on issue type and critical flag
+  const determinePriority = (issueType, isCritical) => {
+    if (isCritical) return 'critical';
+    
+    switch (issueType) {
+      case 'bug':
+        return 'high';
+      case 'account':
+        return 'medium';
+      case 'feature':
+      case 'question':
+      default:
+        return 'low';
+    }
+  };
 
   // Validation function
   const validateForm = () => {
@@ -63,11 +71,19 @@ const SupportModal = ({ isOpen, onClose }) => {
 
   // Handle input changes
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    const { name, value, type, checked } = e.target;
+    
+    if (type === 'checkbox') {
+      setFormData(prev => ({
+        ...prev,
+        [name]: checked
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        [name]: value
+      }));
+    }
   };
 
   // Handle file upload
@@ -100,7 +116,7 @@ const SupportModal = ({ isOpen, onClose }) => {
       issueType: 'question',
       subject: '',
       description: '',
-      priority: 'medium',
+      isCritical: false,
       screenshot: null
     });
     setErrors({});
@@ -118,12 +134,15 @@ const SupportModal = ({ isOpen, onClose }) => {
     setIsSubmitting(true);
     
     try {
+      // Determine priority based on issue type and critical flag
+      const priority = determinePriority(formData.issueType, formData.isCritical);
+      
       // Create FormData object for file upload
       const formDataToSend = new FormData();
       formDataToSend.append('issue_type', formData.issueType);
       formDataToSend.append('subject', formData.subject);
       formDataToSend.append('description', formData.description);
-      formDataToSend.append('priority', formData.priority);
+      formDataToSend.append('priority', priority);
       
       if (formData.screenshot) {
         formDataToSend.append('file', formData.screenshot);
@@ -139,6 +158,8 @@ const SupportModal = ({ isOpen, onClose }) => {
       logger.info('Support ticket submitted:', {
         issueType: formData.issueType,
         subject: formData.subject,
+        priority: priority,
+        isCritical: formData.isCritical,
         hasScreenshot: !!formData.screenshot
       });
       
@@ -167,12 +188,6 @@ const SupportModal = ({ isOpen, onClose }) => {
     }
   };
 
-  // Get priority badge color
-  const getPriorityColor = (priority) => {
-    const found = PRIORITY_LEVELS.find(p => p.value === priority);
-    return found ? found.color : 'gray.400';
-  };
-
   return (
     <Modal 
       isOpen={isOpen} 
@@ -198,7 +213,7 @@ const SupportModal = ({ isOpen, onClose }) => {
           <VStack spacing={6}>
             {/* Issue Type */}
             <FormControl isRequired>
-              <FormLabel>Issue Type</FormLabel>
+              <FormLabel>What can we help you with?</FormLabel>
               <Select
                 name="issueType"
                 value={formData.issueType}
@@ -267,38 +282,28 @@ const SupportModal = ({ isOpen, onClose }) => {
               )}
             </FormControl>
 
-            {/* Priority */}
+            {/* Critical Issue Checkbox */}
             <FormControl>
-              <FormLabel>Priority</FormLabel>
-              <HStack spacing={4} mb={2}>
-                {PRIORITY_LEVELS.map(priority => (
-                  <Box 
-                    key={priority.value}
-                    as="button"
-                    py={2}
-                    px={3}
-                    borderRadius="md"
-                    bg={formData.priority === priority.value ? "whiteAlpha.200" : "transparent"}
-                    border="1px solid"
-                    borderColor={formData.priority === priority.value ? priority.color : "whiteAlpha.300"}
-                    onClick={() => setFormData(prev => ({ ...prev, priority: priority.value }))}
-                    _hover={{ bg: "whiteAlpha.100" }}
-                    transition="all 0.2s"
-                  >
-                    <HStack>
-                      <Badge 
-                        bg={`${priority.color}`} 
-                        opacity={formData.priority === priority.value ? 1 : 0.5}
-                        w="8px" 
-                        h="8px" 
-                        borderRadius="full" 
-                        p={0}
-                      />
-                      <Text fontSize="sm">{priority.label}</Text>
-                    </HStack>
-                  </Box>
-                ))}
-              </HStack>
+              <Flex 
+                alignItems="center" 
+                borderRadius="md"
+                border="1px solid"
+                borderColor="red.300"
+                p={3}
+                bg="rgba(255, 0, 0, 0.05)"
+              >
+                <Checkbox
+                  name="isCritical"
+                  isChecked={formData.isCritical}
+                  onChange={handleChange}
+                  mr={3}
+                  colorScheme="red"
+                />
+                <Box>
+                  <Text fontWeight="500">This issue is preventing me from using the service</Text>
+                  <Text fontSize="xs" color="whiteAlpha.700">Check this only if the issue is blocking your workflow</Text>
+                </Box>
+              </Flex>
             </FormControl>
 
             {/* Screenshot Upload */}
