@@ -1,5 +1,5 @@
 // src/components/common/Modal/SupportModal.js
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   Modal,
   ModalOverlay,
@@ -20,12 +20,8 @@ import {
   FormErrorMessage,
   useToast,
   Checkbox,
-  HStack,
-  Link,
-  InputGroup,
-  InputLeftAddon,
 } from '@chakra-ui/react';
-import { Upload, Link as LinkIcon, Video } from 'lucide-react';
+import { Link as LinkIcon, Video } from 'lucide-react';
 import axiosInstance from '@/services/axiosConfig';
 import logger from '@/utils/logger';
 
@@ -43,12 +39,13 @@ const SupportModal = ({ isOpen, onClose }) => {
     subject: '',
     description: '',
     isCritical: false,
-    screenshot: null,
-    screenRecordingUrl: ''
+    screenRecordingUrl: '',
+    pastedImage: null
   });
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const toast = useToast();
+  const textareaRef = useRef(null);
 
   // Determine priority based on issue type and critical flag
   const determinePriority = (issueType, isCritical) => {
@@ -107,27 +104,47 @@ const SupportModal = ({ isOpen, onClose }) => {
     }
   };
 
-  // Handle file upload
-  const handleFileChange = (e) => {
-    if (e.target.files.length > 0) {
-      const file = e.target.files[0];
-      
-      // Check file size (limit to 5MB)
-      if (file.size > 5 * 1024 * 1024) {
+  // Handle paste event in description textarea
+  const handlePaste = (e) => {
+    const clipboardData = e.clipboardData;
+    if (!clipboardData) return;
+
+    // Check if there are any image items in the clipboard
+    const items = clipboardData.items;
+    for (let i = 0; i < items.length; i++) {
+      if (items[i].type.indexOf("image") !== -1) {
+        // Get the image from clipboard as a file
+        const blob = items[i].getAsFile();
+        
+        // Check file size (limit to 5MB)
+        if (blob.size > 5 * 1024 * 1024) {
+          toast({
+            title: "Image too large",
+            description: "Maximum image size is 5MB",
+            status: "error",
+            duration: 3000,
+            isClosable: true,
+          });
+          return;
+        }
+        
+        // Store the pasted image
+        setFormData(prev => ({
+          ...prev,
+          pastedImage: blob
+        }));
+        
+        // Show a success message
         toast({
-          title: "File too large",
-          description: "Maximum file size is 5MB",
-          status: "error",
-          duration: 3000,
+          title: "Image pasted",
+          description: "Image has been attached to your ticket",
+          status: "success",
+          duration: 2000,
           isClosable: true,
         });
-        return;
+        
+        break;
       }
-      
-      setFormData(prev => ({
-        ...prev,
-        screenshot: file
-      }));
     }
   };
 
@@ -138,8 +155,8 @@ const SupportModal = ({ isOpen, onClose }) => {
       subject: '',
       description: '',
       isCritical: false,
-      screenshot: null,
-      screenRecordingUrl: ''
+      screenRecordingUrl: '',
+      pastedImage: null
     });
     setErrors({});
   };
@@ -177,8 +194,9 @@ const SupportModal = ({ isOpen, onClose }) => {
         formDataToSend.set('description', enhancedDescription);
       }
       
-      if (formData.screenshot) {
-        formDataToSend.append('file', formData.screenshot);
+      // Add pasted image if available
+      if (formData.pastedImage) {
+        formDataToSend.append('file', formData.pastedImage, 'pasted_image.png');
       }
       
       // In a real implementation, you'd send this to your API
@@ -193,8 +211,8 @@ const SupportModal = ({ isOpen, onClose }) => {
         subject: formData.subject,
         priority: priority,
         isCritical: formData.isCritical,
-        hasScreenshot: !!formData.screenshot,
-        hasScreenRecording: !!formData.screenRecordingUrl
+        hasScreenRecording: !!formData.screenRecordingUrl,
+        hasPastedImage: !!formData.pastedImage
       });
       
       toast({
@@ -298,10 +316,12 @@ const SupportModal = ({ isOpen, onClose }) => {
             <FormControl isRequired isInvalid={!!errors.description}>
               <FormLabel>Description</FormLabel>
               <Textarea
+                ref={textareaRef}
                 name="description"
-                placeholder="Please provide details about your issue"
+                placeholder="Please provide details about your issue (you can paste screenshots directly here)"
                 value={formData.description}
                 onChange={handleChange}
+                onPaste={handlePaste}
                 bg="whiteAlpha.100"
                 borderColor="whiteAlpha.300"
                 _hover={{ borderColor: "whiteAlpha.400" }}
@@ -314,6 +334,14 @@ const SupportModal = ({ isOpen, onClose }) => {
               {errors.description && (
                 <FormErrorMessage>{errors.description}</FormErrorMessage>
               )}
+              {formData.pastedImage && (
+                <Text fontSize="xs" color="green.300" mt={1}>
+                  ✓ Screenshot attached ({Math.round(formData.pastedImage.size / 1024)} KB)
+                </Text>
+              )}
+              <Text fontSize="xs" color="whiteAlpha.700" mt={1}>
+                Tip: You can paste screenshots directly using Ctrl+V/Cmd+V
+              </Text>
             </FormControl>
 
             {/* Critical Issue Checkbox */}
@@ -348,30 +376,30 @@ const SupportModal = ({ isOpen, onClose }) => {
                   Screen Recording (highly recommended)
                 </Flex>
               </FormLabel>
-              <InputGroup size="md" mb={2}>
-                <Input
-                  name="screenRecordingUrl"
-                  placeholder="Paste your Loom or Vimeo link here"
-                  value={formData.screenRecordingUrl}
-                  onChange={handleChange}
-                  bg="whiteAlpha.100"
-                  borderColor="whiteAlpha.300"
-                  _hover={{ borderColor: "whiteAlpha.400" }}
-                  _focus={{ 
-                    borderColor: "rgba(0, 198, 224, 0.6)",
-                    boxShadow: "0 0 0 1px rgba(0, 198, 224, 0.6)"
-                  }}
-                />
-              </InputGroup>
+              <Input
+                name="screenRecordingUrl"
+                placeholder="Paste your Loom or Vimeo link here"
+                value={formData.screenRecordingUrl}
+                onChange={handleChange}
+                bg="whiteAlpha.100"
+                borderColor="whiteAlpha.300"
+                _hover={{ borderColor: "whiteAlpha.400" }}
+                _focus={{ 
+                  borderColor: "rgba(0, 198, 224, 0.6)",
+                  boxShadow: "0 0 0 1px rgba(0, 198, 224, 0.6)"
+                }}
+                mb={2}
+              />
               <Flex justify="space-between" align="center">
                 <Text fontSize="xs" color="whiteAlpha.700">
                   A short screen recording helps us understand your issue much faster
                 </Text>
                 <Button 
                   size="xs" 
-                  leftIcon={<LinkIcon size={12} />} 
+                  leftIcon={<LinkIcon size={12} color="white" />} 
                   onClick={openLoomRecorder}
                   variant="outline"
+                  color="white"
                   borderColor="whiteAlpha.400"
                   _hover={{ bg: "whiteAlpha.100" }}
                 >
@@ -381,42 +409,6 @@ const SupportModal = ({ isOpen, onClose }) => {
               {errors.screenRecordingUrl && (
                 <FormErrorMessage>{errors.screenRecordingUrl}</FormErrorMessage>
               )}
-            </FormControl>
-
-            {/* Screenshot Upload */}
-            <FormControl>
-              <FormLabel>
-                <Flex alignItems="center">
-                  <Upload size={16} style={{ marginRight: '8px' }} />
-                  Attach Screenshot (optional)
-                </Flex>
-              </FormLabel>
-              <Box
-                as="label"
-                display="flex"
-                alignItems="center"
-                justifyContent="center"
-                border="1px dashed"
-                borderColor="whiteAlpha.400"
-                borderRadius="md"
-                py={4}
-                cursor="pointer"
-                transition="all 0.2s"
-                _hover={{ bg: "whiteAlpha.100" }}
-              >
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleFileChange}
-                  style={{ display: 'none' }}
-                />
-                <Flex direction="column" align="center">
-                  <Upload size={24} />
-                  <Text mt={2} fontSize="sm">
-                    {formData.screenshot ? formData.screenshot.name : "Click to upload (max 5MB)"}
-                  </Text>
-                </Flex>
-              </Box>
             </FormControl>
 
             {/* Action Buttons */}
