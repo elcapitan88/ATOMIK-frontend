@@ -17,6 +17,14 @@ export const AuthProvider = ({ children }) => {
   const navigate = useNavigate();
   const toast = useToast();
 
+  // NEW FUNCTION: Add user profile update method
+  const updateUserProfile = (updates) => {
+    setUser(prevUser => ({
+      ...prevUser,
+      ...updates
+    }));
+  };
+
   React.useEffect(() => {
     const checkRegistration = () => {
       try {
@@ -37,11 +45,18 @@ export const AuthProvider = ({ children }) => {
           checkRegistration();
           return;
         }
-
+    
+        console.log("Initializing auth with token:", token.substring(0, 10) + "...");
         const response = await axiosInstance.get('/api/v1/auth/verify');
+        console.log("Verify response data:", response.data); // Debug log
+    
         if (response.data.valid) {
-          setUser(response.data.user);
+          const userData = response.data.user;
+          console.log("User data from verify:", userData); // Debug log
+          
+          setUser(userData);
           setIsAuthenticated(true);
+          console.log("Auth initialized with user:", userData); // Debug log
         } else {
           handleLogout();
         }
@@ -74,6 +89,12 @@ export const AuthProvider = ({ children }) => {
       // Set auth data
       localStorage.setItem('access_token', access_token);
       axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${access_token}`;
+      
+      // UPDATED: Ensure consistent field naming for user data
+      if (user && user.full_name) {
+        user.fullName = user.full_name;
+      }
+      
       setUser(user);
       setIsAuthenticated(true);
   
@@ -172,7 +193,8 @@ export const AuthProvider = ({ children }) => {
     login: handleLogin,
     logout: handleLogout,
     register: handleRegistration,
-    checkPendingRegistration
+    checkPendingRegistration,
+    updateUserProfile  // ADDED: New method to update user profile
   };
 
   return (

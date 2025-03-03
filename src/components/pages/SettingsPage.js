@@ -447,7 +447,8 @@ const PasswordChangeModal = ({ isOpen, onClose }) => {
 };
 
 const SettingsPage = () => {
-  const { user } = useAuth(); // Access user from auth context
+  // Update this line to include updateUserProfile
+  const { user, updateUserProfile } = useAuth();
   const [selectedSection, setSelectedSection] = useState('profile');
   const [isLoadingStripePortal, setIsLoadingStripePortal] = useState(false);
   const [stripePortalUrl, setStripePortalUrl] = useState('');
@@ -563,16 +564,19 @@ const SettingsPage = () => {
 
   // Load user data and Stripe portal URL
   useEffect(() => {
+    console.log("SettingsPage useEffect - Current user:", user);
     // Set initial personal name if available
     if (user?.full_name) {
+      console.log("Using user.full_name:", user.full_name);
       setPersonalName(user.full_name);
       setOriginalName(user.full_name);
-    } else if (user?.fullName) { 
-      // Backward compatibility with frontend naming
+    } else if (user?.fullName) {
+      console.log("Using user.fullName:", user.fullName);
       setPersonalName(user.fullName);
       setOriginalName(user.fullName);
     } else {
-      setPersonalName('John Doe'); // Default name if no user data
+      console.log("No name found in user object, using default");
+      setPersonalName('John Doe');
       setOriginalName('John Doe');
     }
     
@@ -627,9 +631,18 @@ const SettingsPage = () => {
       setOriginalName(newName);
       setIsEditingName(false);
       
-      // Update user context if needed
+      // Update user context with new name
       if (user) {
-        user.fullName = newName; // Keep frontend naming consistent
+        console.log("Updating user profile with:", {
+          full_name: newName.trim(),
+          fullName: newName.trim()
+        });
+        // Use the updateUserProfile method to properly update the context
+        updateUserProfile({
+          full_name: newName.trim(),
+          fullName: newName.trim() // Include both versions for compatibility
+        });
+        console.log("User after update:", user);
       }
       
       toast({
