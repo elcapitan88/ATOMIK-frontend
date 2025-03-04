@@ -7,10 +7,13 @@ import {
   useToast,
   Spinner,
   Container,
+  Flex,
+  Center,
 } from '@chakra-ui/react';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import logger from '@/utils/logger';
+import { ShieldCheck, Lock, CreditCard } from 'lucide-react';
 
 const MotionBox = motion(Box);
 
@@ -154,7 +157,7 @@ const PricingPage = () => {
       animate="animate"
       variants={pageVariants}
     >
-      <Container maxW="7xl">
+      <Container maxW="100%" px={0}>
         <VStack spacing={8}>
           {/* Header */}
           <VStack spacing={4}>
@@ -176,47 +179,101 @@ const PricingPage = () => {
             </Text>
           </VStack>
           
-          {/* Pricing Table */}
-          <Box 
-            id="pricing-table-container"
-            w="full" 
-            maxW="1200px"
-            position="relative"
-            backdropFilter="blur(10px)"
-            bg="whiteAlpha.50"
-            borderRadius="xl"
-            overflow="hidden"
-            minH="500px"
-            display="flex"
-            justifyContent="center"
-            alignItems="center"
-          >
+          {/* Direct Pricing Table Container */}
+          <div id="pricing-table-container" style={{width: '100%', minHeight: '500px', position: 'relative'}}>
             <Spinner 
               size="xl" 
-              color="blue.400" 
+              color="#00c6e0" 
               thickness="4px"
               position="absolute"
+              left="50%"
+              top="50%"
+              transform="translate(-50%, -50%)"
               zIndex={0}
             />
-          </Box>
+          </div>
 
-          {/* Footer */}
-          <VStack spacing={2} mt={4}>
-            <Text
-              fontSize="sm"
-              color="whiteAlpha.700"
-              textAlign="center"
-            >
-              Secure payments powered by Stripe
-            </Text>
-            <Text
-              fontSize="sm"
-              color="whiteAlpha.600"
-              textAlign="center"
-            >
-              SSL encrypted payment
-            </Text>
-          </VStack>
+          {/* Security Badges */}
+          <Box 
+            mt={8} 
+            py={4} 
+            px={8} 
+            borderRadius="xl"
+            maxW="3xl"
+            mx="auto"
+            w="full"
+          >
+            <VStack spacing={5}>
+              <Text
+                fontSize="lg"
+                fontWeight="medium"
+                color="white"
+                textAlign="center"
+              >
+                Your Security Is Our Priority
+              </Text>
+              
+              <Flex 
+                w="full" 
+                justify="space-around" 
+                direction={{ base: 'column', sm: 'row' }} 
+                align="center"
+                wrap="wrap"
+                gap={6}
+              >
+                <VStack spacing={2}>
+                  <Center 
+                    w={12} 
+                    h={12} 
+                    borderRadius="full" 
+                    bg="rgba(0, 0, 0, 0.4)" 
+                    color="#00c6e0"
+                    border="1px solid rgba(0, 198, 224, 0.3)"
+                    boxShadow="0 0 15px rgba(0, 198, 224, 0.1)"
+                  >
+                    <Lock size={22} />
+                  </Center>
+                  <Text color="whiteAlpha.900" fontSize="sm" fontWeight="medium" textAlign="center">
+                    256-bit SSL Encryption
+                  </Text>
+                </VStack>
+                
+                <VStack spacing={2}>
+                  <Center 
+                    w={12} 
+                    h={12} 
+                    borderRadius="full" 
+                    bg="rgba(0, 0, 0, 0.4)" 
+                    color="#00c6e0"
+                    border="1px solid rgba(0, 198, 224, 0.3)"
+                    boxShadow="0 0 15px rgba(0, 198, 224, 0.1)"
+                  >
+                    <ShieldCheck size={22} />
+                  </Center>
+                  <Text color="whiteAlpha.900" fontSize="sm" fontWeight="medium" textAlign="center">
+                    PCI DSS Compliant
+                  </Text>
+                </VStack>
+                
+                <VStack spacing={2}>
+                  <Center 
+                    w={12} 
+                    h={12} 
+                    borderRadius="full" 
+                    bg="rgba(0, 0, 0, 0.4)" 
+                    color="#00c6e0"
+                    border="1px solid rgba(0, 198, 224, 0.3)"
+                    boxShadow="0 0 15px rgba(0, 198, 224, 0.1)"
+                  >
+                    <CreditCard size={22} />
+                  </Center>
+                  <Text color="whiteAlpha.900" fontSize="sm" fontWeight="medium" textAlign="center">
+                    Secure Payment Processing
+                  </Text>
+                </VStack>
+              </Flex>
+            </VStack>
+          </Box>
         </VStack>
       </Container>
     </MotionBox>
