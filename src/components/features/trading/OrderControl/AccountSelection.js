@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import axios from '@/services/axiosConfig';  // Use your configured axios instance
+import axios from '@/services/axiosConfig';
 import {
   Box,
   VStack,
@@ -15,21 +15,9 @@ import { User as UserIcon, Users as UsersIcon } from 'lucide-react';
 import logger from '@/utils/logger';
 
 const AccountSelection = ({ selectedAccounts, onChange }) => {
-  const [selectionType, setSelectionType] = React.useState('single');
-  const [selectedGroupId, setSelectedGroupId] = React.useState('');
-
-  // Reset selections when switching types
-  React.useEffect(() => {
-    // Only reset selections, not on initial mount
-    if (selectionType) {
-      if (selectionType === 'single') {
-        setSelectedGroupId('');
-      }
-      
-      // Call onChange with empty array to reset parent component state
-      onChange([], selectionType);
-    }
-  }, [selectionType, onChange]);
+  const [selectionType, setSelectionType] = useState('single');
+  const [selectedGroupId, setSelectedGroupId] = useState('');
+  const [selectedAccountId, setSelectedAccountId] = useState('');
 
   // Query for accounts with proper endpoint
   const { data: accounts = [], isLoading: accountsLoading, error: accountsError } = useQuery({
@@ -83,68 +71,97 @@ const AccountSelection = ({ selectedAccounts, onChange }) => {
     staleTime: 30000 // Cache for 30 seconds
   });
 
-  const availableAccounts = React.useMemo(() => {
+  // Reset selections when switching types
+  useEffect(() => {
+    if (selectionType === 'single') {
+      setSelectedGroupId('');
+      setSelectedAccountId('');
+      onChange([], 'single');
+    } else if (selectionType === 'group') {
+      setSelectedAccountId('');
+      setSelectedGroupId('');
+      onChange([], 'group');
+    }
+  }, [selectionType, onChange]);
+
+  // Effect to handle pre-selected accounts passed from parent
+  useEffect(() => {
+    if (selectedAccounts && selectedAccounts.length > 0 && accounts.length > 0) {
+      const accountId = selectedAccounts[0];
+      setSelectedAccountId(accountId);
+    }
+  }, [selectedAccounts, accounts]);
+
+  const availableAccounts = useMemo(() => {
     logger.info('Starting account filtering process...');
-    logger.info(`Total accounts: ${accounts.length}`, accounts);
-    logger.info(`Total strategies: ${strategies.length}`, strategies);
+    logger.info(`Total accounts: ${accounts.length}`);
+    logger.info(`Total strategies: ${strategies.length}`);
     
-    if (!accounts.length) {
+    if (!accounts || accounts.length === 0) {
       logger.warn('No accounts to filter!');
       return [];
     }
     
-    // Get all accounts used in active single strategies - convert all to strings
-    const singleStrategyAccounts = strategies
-      .filter(s => s.is_active && s.strategy_type === 'single')
-      .map(s => String(s.account_id));
+    // Make sure all account IDs are strings for consistent comparison
+    const accountsWithStringIds = accounts.map(account => ({
+      ...account,
+      account_id: String(account.account_id)
+    }));
     
-    logger.info('Accounts in single strategies:', singleStrategyAccounts);
-
-    // Get all accounts used in active multiple/group strategies - convert all to strings
-    const groupStrategyAccounts = strategies
-      .filter(s => s.is_active && s.strategy_type === 'multiple')
-      .flatMap(s => {
-        const leaderAccount = s.leader_account_id ? String(s.leader_account_id) : null;
-        const followerAccounts = s.follower_accounts ? 
-          s.follower_accounts.map(f => String(f.account_id)).filter(Boolean) : [];
-          
-        return [leaderAccount, ...followerAccounts].filter(Boolean);
+    // Get all accounts used in active strategies - convert all to strings
+    const accountsInUse = new Set();
+    
+    // Add accounts from single strategies
+    strategies
+      .filter(s => s && s.is_active && s.strategy_type === 'single' && s.account_id)
+      .forEach(s => {
+        accountsInUse.add(String(s.account_id));
       });
     
-    logger.info('Accounts in group strategies:', groupStrategyAccounts);
-
-    // Combine all accounts in use
-    const accountsInUse = [...new Set([...singleStrategyAccounts, ...groupStrategyAccounts])];
-    logger.info('All accounts in use:', accountsInUse);
-
-    // Filter valid accounts - ensure all IDs are strings for comparison
-    const validAccounts = accounts.filter(account => {
-      // Skip accounts without an ID
+    // Add accounts from multiple/group strategies
+    strategies
+      .filter(s => s && s.is_active && s.strategy_type === 'multiple')
+      .forEach(s => {
+        // Add leader account
+        if (s.leader_account_id) {
+          accountsInUse.add(String(s.leader_account_id));
+        }
+        
+        // Add follower accounts
+        if (s.follower_accounts && Array.isArray(s.follower_accounts)) {
+          s.follower_accounts.forEach(f => {
+            if (f && f.account_id) {
+              accountsInUse.add(String(f.account_id));
+            }
+          });
+        }
+      });
+    
+    logger.info(`Found ${accountsInUse.size} accounts in use by active strategies`);
+    
+    // Filter available accounts
+    const validAccounts = accountsWithStringIds.filter(account => {
       if (!account || !account.account_id) {
-        logger.warn('Account missing ID:', account);
         return false;
       }
       
-      // Convert to string for consistent comparison
-      const accountId = String(account.account_id);
-      const isTokenValid = account.is_token_expired === false; // Must explicitly check for false
-      const isInUse = accountsInUse.includes(accountId);
+      const isTokenValid = account.is_token_expired === false;
+      const isInUse = accountsInUse.has(account.account_id);
+      const isActive = account.status === 'active';
       
-      logger.info(
-        `Account ${accountId}: valid token: ${isTokenValid}, in use: ${isInUse}, status: ${account.status}`
+      logger.debug(
+        `Account ${account.account_id}: valid token=${isTokenValid}, in use=${isInUse}, active=${isActive}`
       );
       
-      // Only return accounts with valid tokens that aren't in use
-      return isTokenValid && !isInUse && account.status === 'active';
+      return isTokenValid && !isInUse && isActive;
     });
     
-    logger.info(`Available accounts after filtering: ${validAccounts.length}`, validAccounts);
+    logger.info(`Available accounts after filtering: ${validAccounts.length}`);
     return validAccounts;
   }, [accounts, strategies]);
 
-  const activeGroupStrategies = React.useMemo(() => {
+  const activeGroupStrategies = useMemo(() => {
     if (!strategies || !Array.isArray(strategies)) {
-      logger.warn('No valid strategies array available');
       return [];
     }
     
@@ -152,52 +169,58 @@ const AccountSelection = ({ selectedAccounts, onChange }) => {
       s && s.is_active && s.strategy_type === 'multiple'
     );
     
-    logger.info(`Found ${groupStrategies.length} active group strategies`);
-    
-    // Make sure each strategy has the expected fields with fallbacks for essential fields
     return groupStrategies.map(strategy => ({
       ...strategy,
       id: strategy.id || 0,
       ticker: strategy.ticker || 'Unknown',
       group_name: strategy.group_name || 'Unnamed Group',
-      leader_account_id: strategy.leader_account_id || null,
+      leader_account_id: strategy.leader_account_id ? String(strategy.leader_account_id) : null,
       leader_quantity: strategy.leader_quantity || 1,
-      follower_accounts: strategy.follower_accounts || []
+      follower_accounts: Array.isArray(strategy.follower_accounts) ? 
+        strategy.follower_accounts.map(f => ({
+          ...f,
+          account_id: f.account_id ? String(f.account_id) : ''
+        })) : []
     }));
   }, [strategies]);
 
   const handleAccountChange = (value) => {
     logger.info('Account selected:', value);
-    onChange([value], 'single');
+    setSelectedAccountId(value);
+    
+    if (value) {
+      onChange([value], 'single');
+    } else {
+      onChange([], 'single');
+    }
   };
 
   const handleGroupStrategyChange = (groupId) => {
-    console.log('Group selected:', groupId); // Debug log
+    logger.info('Group selected:', groupId);
     setSelectedGroupId(groupId);
     
-    // Convert groupId to number for comparison since strategy.id is numeric
-    const strategyId = parseInt(groupId, 10);
-    console.log('Looking for strategy with ID:', strategyId);
-    console.log('Available strategies:', activeGroupStrategies);
+    if (!groupId) {
+      onChange([], 'group');
+      return;
+    }
     
-    // Find the matching strategy with proper type handling
-    const strategy = activeGroupStrategies.find(s => s.id === strategyId);
-    console.log('Found strategy:', strategy);
+    // Find the matching strategy
+    const numericId = parseInt(groupId, 10);
+    const strategy = activeGroupStrategies.find(s => s.id === numericId);
     
     if (strategy) {
-      // Ensure leader and follower account IDs are converted to strings and are non-empty
-      const leaderAccountId = strategy.leader_account_id ? String(strategy.leader_account_id) : '';
+      // Ensure all account IDs are strings
+      const leaderAccountId = strategy.leader_account_id || '';
       const followerAccountIds = (strategy.follower_accounts || [])
-        .map(f => f.account_id ? String(f.account_id) : '')
-        .filter(id => id !== '');
-        
-      // Create the final accounts array, filtering out any empty strings
-      const groupAccounts = [leaderAccountId, ...followerAccountIds].filter(id => id !== '');
+        .map(f => String(f.account_id))
+        .filter(id => id);
       
-      logger.info('Group accounts selected:', groupAccounts);
+      // Create the accounts array with leader first, then followers
+      const groupAccounts = [leaderAccountId, ...followerAccountIds].filter(Boolean);
       
-      // Only proceed if we have at least one valid account
       if (groupAccounts.length > 0) {
+        logger.info('Group accounts selected:', groupAccounts);
+        
         onChange(
           groupAccounts, 
           'group', 
@@ -205,17 +228,17 @@ const AccountSelection = ({ selectedAccounts, onChange }) => {
             id: strategy.id,
             ticker: strategy.ticker, 
             groupName: strategy.group_name,
-            leaderAccountId: strategy.leader_account_id,
+            leaderAccountId: leaderAccountId,
             leaderQuantity: strategy.leader_quantity,
             followerAccounts: strategy.follower_accounts
           }
         );
       } else {
-        console.warn('No valid accounts found in the selected group strategy');
+        logger.warn('No valid accounts found in the selected group strategy');
         onChange([], 'group');
       }
     } else {
-      console.warn('No strategy found with ID:', groupId);
+      logger.warn(`No strategy found with ID: ${groupId}`);
       onChange([], 'group');
     }
   };
@@ -290,7 +313,7 @@ const AccountSelection = ({ selectedAccounts, onChange }) => {
 
       {selectionType === 'single' ? (
         <Select
-          value={selectedAccounts[0] || ''}
+          value={selectedAccountId}
           onChange={(e) => handleAccountChange(e.target.value)}
           placeholder="Select Account"
           bg="whiteAlpha.50"
@@ -323,7 +346,6 @@ const AccountSelection = ({ selectedAccounts, onChange }) => {
           isDisabled={activeGroupStrategies.length === 0}
         >
           {activeGroupStrategies.map(group => (
-            // Make sure we convert the ID to string for select option values
             <option key={group.id} value={String(group.id)}>
               {`${group.group_name || 'Unnamed Group'} (${group.ticker || 'No Ticker'})`}
             </option>

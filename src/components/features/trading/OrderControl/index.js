@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   Box,
   VStack,
@@ -26,6 +26,7 @@ import {
 import AccountSelection from './AccountSelection';
 import OrderConfirmationModal from './OrderConfirmationModal';
 import axios from '@/services/axiosConfig';
+import logger from '@/utils/logger';
 
 // Sample tickers - replace with your actual ticker data source
 const AVAILABLE_TICKERS = ['ESH5', 'NQH5', 'RTYH5', 'CLH5', 'GCH5', 'SIH5','BITH5','BTIH5','MESH5', 'MNQH5']
@@ -41,7 +42,7 @@ const OrderControl = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [pendingOrder, setPendingOrder] = useState(null);
   
-  // New states for handling group selection
+  // Group selection states
   const [selectionType, setSelectionType] = useState('single');
   const [selectedGroupInfo, setSelectedGroupInfo] = useState(null);
 
@@ -51,21 +52,53 @@ const OrderControl = () => {
     onClose: onConfirmationClose
   } = useDisclosure();
 
+  // Debug log the current state for troubleshooting
+  useEffect(() => {
+    logger.debug('OrderControl state update:', {
+      selectionType, 
+      selectedAccounts, 
+      selectedTicker, 
+      quantity,
+      selectedGroupInfo: selectedGroupInfo ? { 
+        id: selectedGroupInfo.id,
+        ticker: selectedGroupInfo.ticker,
+        accountsCount: selectedAccounts.length
+      } : null,
+      isTradingDisabled: isTradingDisabled()
+    });
+  }, [selectionType, selectedAccounts, selectedTicker, quantity, selectedGroupInfo]);
+
   // Handle account selection change
   const handleAccountSelectionChange = (accounts, type, groupInfo = null) => {
-    console.log('Selection changed:', { accounts, type, groupInfo });
-    setSelectedAccounts(accounts);
-    setSelectionType(type);
-    setSelectedGroupInfo(groupInfo);
+    logger.info('Account selection changed:', { 
+      accounts, 
+      type, 
+      hasGroupInfo: !!groupInfo 
+    });
     
-    // If a group is selected, automatically set the ticker from group
+    // Ensure accounts is always an array
+    const validAccounts = Array.isArray(accounts) ? accounts : [];
+    
+    setSelectedAccounts(validAccounts);
+    setSelectionType(type);
+    
+    // Set ticker from group strategy info if available
     if (type === 'group' && groupInfo?.ticker) {
       setSelectedTicker(groupInfo.ticker);
+      setSelectedGroupInfo(groupInfo);
+    } else if (type === 'single') {
+      // Clear group info when switching to single mode
+      setSelectedGroupInfo(null);
     }
   };
 
   // Regular Order Execution
   const executeOrder = async (order) => {
+    if (!order) {
+      logger.error('Attempted to execute order with no order data');
+      return;
+    }
+    
     if (order.type === 'close-all') {
       await executeCloseAll(order);
       return;
@@ -77,20 +110,19 @@ const OrderControl = () => {
     
     try {
       // Check if this is a group order with group info
-      if (order.groupInfo && order.groupInfo.id) {
+      if (order.isGroupOrder && order.groupInfo && order.groupInfo.id) {
+        logger.info(`Executing group strategy order: ${order.type} for strategy ID ${order.groupInfo.id}`);
+        
         // Execute as a group strategy
         await axios.post(
           `/api/v1/strategies/${order.groupInfo.id}/execute`,
           {
             action: order.type  // 'buy' or 'sell'
-          },
-          {
-            headers: {
-              'Authorization': `Bearer ${localStorage.getItem('access_token')}`
-            }
           }
         );
-      } else {
+      } else if (order.accounts && order.accounts[0]) {
+        logger.info(`Executing single account order: ${order.type} for account ${order.accounts[0]}`);
+        
         // Original single account order logic
         await axios.post(
           `/api/v1/brokers/accounts/${order.accounts[0]}/discretionary/orders`,
@@ -100,13 +132,10 @@ const OrderControl = () => {
             type: 'MARKET',
             quantity: order.quantity,
             time_in_force: 'GTC'
-          },
-          {
-            headers: {
-              'Authorization': `Bearer ${localStorage.getItem('access_token')}`
-            }
           }
         );
+      } else {
+        throw new Error('Invalid order configuration');
       }
     
       setOrderStatus('success');
@@ -122,6 +151,7 @@ const OrderControl = () => {
       });
     
     } catch (error) {
+      logger.error('Order execution failed:', error);
       setOrderStatus('error');
       toast({
         title: "Order Failed",
@@ -142,18 +172,26 @@ const OrderControl = () => {
 
   // Close All Orders Execution
   const executeCloseAll = async (order) => {
+    if (!order || !order.accounts || order.accounts.length === 0) {
+      logger.error('Attempted to close positions with no accounts specified');
+      toast({
+        title: "Close All Failed",
+        description: "No accounts specified for closing positions",
+        status: "error",
+        duration: 4000,
+        isClosable: true,
+      });
+      return;
+    }
+    
     setIsSubmitting(true);
     setOrderStatus('pending');
 
     try {
+      logger.info(`Closing positions for accounts: ${order.accounts.join(', ')}`);
       const response = await axios.post(
         '/api/v1/brokers/accounts/close-all',
-        { account_ids: order.accounts },
-        {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('access_token')}`
-          }
-        }
+        { account_ids: order.accounts }
       );
 
       setOrderStatus('success');
@@ -167,6 +205,7 @@ const OrderControl = () => {
       });
 
     } catch (error) {
+      logger.error('Close all positions failed:', error);
       setOrderStatus('error');
       toast({
         title: "Close All Failed",
@@ -186,19 +225,30 @@ const OrderControl = () => {
   };
 
   // Order Submission Handlers
-  const handleOrderSubmit = useCallback(async (orderType) => {
+  const handleOrderSubmit = useCallback((orderType) => {
     // For group selection, use the group's ticker
-    const orderTicker = selectionType === 'group' ? 
-      selectedGroupInfo?.ticker : selectedTicker;
+    const orderTicker = selectionType === 'group' && selectedGroupInfo ? 
+      selectedGroupInfo.ticker : selectedTicker;
       
     // For quantity, use either the group's specified quantity or the input quantity
-    const orderQuantity = selectionType === 'group' ? 
-      (selectedGroupInfo?.quantity || quantity) : quantity;
+    const orderQuantity = selectionType === 'group' && selectedGroupInfo?.leaderQuantity ? 
+      selectedGroupInfo.leaderQuantity : quantity;
     
     if (!orderTicker) {
       toast({
         title: "No ticker selected",
         description: "Please select a ticker first",
+        status: "warning",
+        duration: 3000,
+        isClosable: true,
+      });
+      return;
+    }
+    
+    if (!selectedAccounts || selectedAccounts.length === 0) {
+      toast({
+        title: "No account selected",
+        description: "Please select an account or group first",
         status: "warning",
         duration: 3000,
         isClosable: true,
@@ -220,90 +270,64 @@ const OrderControl = () => {
       order.groupInfo = selectedGroupInfo;
     }
 
+    logger.info('Preparing order:', order);
+
     if (skipConfirmation) {
       executeOrder(order);
     } else {
       setPendingOrder(order);
       onConfirmationOpen();
     }
-  }, [quantity, selectedTicker, selectedAccounts, skipConfirmation, onConfirmationOpen, toast, selectionType, selectedGroupInfo]);
+  }, [
+    quantity, 
+    selectedTicker, 
+    selectedAccounts, 
+    skipConfirmation, 
+    onConfirmationOpen, 
+    toast, 
+    selectionType, 
+    selectedGroupInfo
+  ]);
 
   const handleCloseAllTrades = useCallback(async () => {
-    try {
-        let accountsToClose;
-        setIsSubmitting(true);
-        
-        if (selectedAccounts.length > 0) {
-            accountsToClose = selectedAccounts;
-        } else {
-            // Fetch all connected accounts if none selected
-            const response = await fetch('/api/v1/brokers/accounts', {
-                headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('access_token')}`
-                }
-            });
-            const data = await response.json();
-            accountsToClose = data.map(account => account.account_id);
-        }
-
-        if (accountsToClose.length === 0) {
-            toast({
-                title: "No Connected Accounts",
-                description: "No trading accounts available to close positions",
-                status: "warning",
-                duration: 3000,
-                isClosable: true,
-            });
-            return;
-        }
-
-        const response = await fetch('/api/v1/brokers/accounts/close-all', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('access_token')}`
-            },
-            body: JSON.stringify({ account_ids: accountsToClose })
-        });
-
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const result = await response.json();
-
-        if (result.status === "success") {
-            toast({
-                title: "Positions Closed",
-                description: "Successfully closed all positions",
-                status: "success",
-                duration: 2000,
-                isClosable: true,
-            });
-        }
-
-    } catch (error) {
-        console.error('Error in handleCloseAllTrades:', error);
-        toast({
-            title: "Error",
-            description: "Failed to close positions",
-            status: "error",
-            duration: 4000,
-            isClosable: true,
-        });
-    } finally {
-        setIsSubmitting(false);
+    if (!selectedAccounts || selectedAccounts.length === 0) {
+      toast({
+        title: "No Accounts Selected",
+        description: "Please select at least one account to close positions",
+        status: "warning",
+        duration: 3000,
+        isClosable: true,
+      });
+      return;
     }
-}, [selectedAccounts, toast]);
+
+    const order = {
+      type: 'close-all',
+      accounts: selectedAccounts,
+      timestamp: new Date().toISOString()
+    };
+
+    if (skipConfirmation) {
+      executeCloseAll(order);
+    } else {
+      setPendingOrder(order);
+      onConfirmationOpen();
+    }
+  }, [selectedAccounts, skipConfirmation, onConfirmationOpen, toast]);
 
   // Determine if buy/sell buttons should be enabled
   const isTradingDisabled = () => {
     if (isSubmitting) return true;
     
+    // No accounts selected
+    if (!selectedAccounts || selectedAccounts.length === 0) return true;
+    
     if (selectionType === 'single') {
-      return !selectedAccounts.length || !selectedTicker || quantity <= 0;
+      // For single account selection, need account, ticker and quantity
+      return !selectedTicker || quantity <= 0;
     } else if (selectionType === 'group') {
-      return !selectedAccounts.length || !selectedGroupInfo || !selectedGroupInfo.ticker;
+      // For group selection, need group info with ticker
+      return !selectedGroupInfo || !selectedGroupInfo.ticker;
     }
     
     return true;
@@ -422,9 +446,9 @@ const OrderControl = () => {
           </Text>
         )}
 
-        {selectionType === 'group' && selectedAccounts.length === 0 && selectedGroupInfo && (
+        {selectionType === 'group' && selectedAccounts.length === 0 && (
           <Text fontSize="xs" color="red.300">
-            The selected group has no valid accounts
+            Please select a valid group strategy
           </Text>
         )}
 
@@ -489,7 +513,7 @@ const OrderControl = () => {
             leftIcon={orderStatus === 'pending' && pendingOrder?.type === 'close-all' ? null : <Ban size={14} />}
             size="sm"
             onClick={handleCloseAllTrades}
-            isDisabled={isSubmitting} // Remove the selectedAccounts.length check
+            isDisabled={isSubmitting || selectedAccounts.length === 0} 
             isLoading={orderStatus === 'pending' && pendingOrder?.type === 'close-all'}
             loadingText="Closing All..."
             spinnerPlacement="start"
