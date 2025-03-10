@@ -185,28 +185,35 @@ const AccountSelection = ({ selectedAccounts, onChange }) => {
     console.log('Found strategy:', strategy);
     
     if (strategy) {
-      // Get all accounts associated with this group
-      const groupAccounts = [
-        strategy.leader_account_id,
-        ...(strategy.follower_accounts?.map(f => f.account_id) || [])
-      ].filter(Boolean).map(String);
+      // Ensure leader and follower account IDs are converted to strings and are non-empty
+      const leaderAccountId = strategy.leader_account_id ? String(strategy.leader_account_id) : '';
+      const followerAccountIds = (strategy.follower_accounts || [])
+        .map(f => f.account_id ? String(f.account_id) : '')
+        .filter(id => id !== '');
+        
+      // Create the final accounts array, filtering out any empty strings
+      const groupAccounts = [leaderAccountId, ...followerAccountIds].filter(id => id !== '');
       
       logger.info('Group accounts selected:', groupAccounts);
       
-      // Pass both the accounts and group info including ticker
-      onChange(
-        groupAccounts, 
-        'group', 
-        {
-          id: strategy.id,
-          ticker: strategy.ticker, 
-          groupName: strategy.group_name,
-          // Include any other relevant group data
-          leaderAccountId: strategy.leader_account_id,
-          leaderQuantity: strategy.leader_quantity,
-          followerAccounts: strategy.follower_accounts
-        }
-      );
+      // Only proceed if we have at least one valid account
+      if (groupAccounts.length > 0) {
+        onChange(
+          groupAccounts, 
+          'group', 
+          {
+            id: strategy.id,
+            ticker: strategy.ticker, 
+            groupName: strategy.group_name,
+            leaderAccountId: strategy.leader_account_id,
+            leaderQuantity: strategy.leader_quantity,
+            followerAccounts: strategy.follower_accounts
+          }
+        );
+      } else {
+        console.warn('No valid accounts found in the selected group strategy');
+        onChange([], 'group');
+      }
     } else {
       console.warn('No strategy found with ID:', groupId);
       onChange([], 'group');

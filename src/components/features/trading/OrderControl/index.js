@@ -53,6 +53,7 @@ const OrderControl = () => {
 
   // Handle account selection change
   const handleAccountSelectionChange = (accounts, type, groupInfo = null) => {
+    console.log('Selection changed:', { accounts, type, groupInfo });
     setSelectedAccounts(accounts);
     setSelectionType(type);
     setSelectedGroupInfo(groupInfo);
@@ -213,6 +214,12 @@ const OrderControl = () => {
       timestamp: new Date().toISOString()
     };
 
+    // Add group info if this is a group order
+    if (selectionType === 'group' && selectedGroupInfo) {
+      order.isGroupOrder = true;
+      order.groupInfo = selectedGroupInfo;
+    }
+
     if (skipConfirmation) {
       executeOrder(order);
     } else {
@@ -288,6 +295,19 @@ const OrderControl = () => {
         setIsSubmitting(false);
     }
 }, [selectedAccounts, toast]);
+
+  // Determine if buy/sell buttons should be enabled
+  const isTradingDisabled = () => {
+    if (isSubmitting) return true;
+    
+    if (selectionType === 'single') {
+      return !selectedAccounts.length || !selectedTicker || quantity <= 0;
+    } else if (selectionType === 'group') {
+      return !selectedAccounts.length || !selectedGroupInfo || !selectedGroupInfo.ticker;
+    }
+    
+    return true;
+  };
 
   return (
     <Box h="full" display="flex" flexDirection="column">
@@ -395,6 +415,19 @@ const OrderControl = () => {
           </Box>
         )}
 
+        {/* Required fields validation messages */}
+        {selectionType === 'single' && selectedAccounts.length > 0 && !selectedTicker && (
+          <Text fontSize="xs" color="red.300">
+            Please select a ticker to continue
+          </Text>
+        )}
+
+        {selectionType === 'group' && selectedAccounts.length === 0 && selectedGroupInfo && (
+          <Text fontSize="xs" color="red.300">
+            The selected group has no valid accounts
+          </Text>
+        )}
+
         {/* Trading Buttons */}
         <VStack spacing={2} width="full" mt="auto">
           <HStack width="full" spacing={2}>
@@ -403,7 +436,7 @@ const OrderControl = () => {
               h="40px"
               leftIcon={orderStatus === 'pending' && pendingOrder?.type === 'buy' ? null : <ArrowBigUp />}
               onClick={() => handleOrderSubmit('buy')}
-              isDisabled={!selectedAccounts.length || isSubmitting}
+              isDisabled={isTradingDisabled()}
               isLoading={orderStatus === 'pending' && pendingOrder?.type === 'buy'}
               loadingText="Buying..."
               spinnerPlacement="start"
@@ -428,7 +461,7 @@ const OrderControl = () => {
               h="40px"
               leftIcon={orderStatus === 'pending' && pendingOrder?.type === 'sell' ? null : <ArrowBigDown />}
               onClick={() => handleOrderSubmit('sell')}
-              isDisabled={!selectedAccounts.length || isSubmitting}
+              isDisabled={isTradingDisabled()}
               isLoading={orderStatus === 'pending' && pendingOrder?.type === 'sell'}
               loadingText="Selling..."
               spinnerPlacement="start"
