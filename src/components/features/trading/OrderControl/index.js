@@ -382,18 +382,22 @@ const OrderControl = () => {
               isLoading={orderStatus === 'pending' && pendingOrder?.type === 'buy'}
               loadingText="Buying..."
               spinnerPlacement="start"
-              color="white"
-              bgGradient="linear(to-r, #22c55e, #16a34a)"
+              color={isTradingDisabled() ? "whiteAlpha.500" : "green.400"}
+              bg="gray.800"
+              border="1px solid"
+              borderColor={isTradingDisabled() ? "whiteAlpha.200" : "green.500"}
+              boxShadow={isTradingDisabled() ? "none" : "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.1)"}
               _hover={{ 
-                bgGradient: "linear(to-r, #16a34a, #15803d)",
-                transform: "translateY(-1px)",
-                boxShadow: "lg"
+                bg: "gray.700",
+                transform: isTradingDisabled() ? "none" : "translateY(-1px)",
+                boxShadow: isTradingDisabled() ? "none" : "0 6px 10px -1px rgba(0, 0, 0, 0.1), 0 4px 6px -1px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.1)"
               }}
               _active={{
-                bgGradient: "linear(to-r, #15803d, #166534)",
+                bg: "gray.900",
                 transform: "translateY(0)",
-                boxShadow: "md"
+                boxShadow: "inset 0 2px 4px rgba(0, 0, 0, 0.3)"
               }}
+              transition="all 0.2s"
             >
               Buy
             </Button>
@@ -407,18 +411,22 @@ const OrderControl = () => {
               isLoading={orderStatus === 'pending' && pendingOrder?.type === 'sell'}
               loadingText="Selling..."
               spinnerPlacement="start"
-              color="white"
-              bgGradient="linear(to-r, #ef4444, #dc2626)"
+              color={isTradingDisabled() ? "whiteAlpha.500" : "red.400"}
+              bg="gray.800"
+              border="1px solid"
+              borderColor={isTradingDisabled() ? "whiteAlpha.200" : "red.500"}
+              boxShadow={isTradingDisabled() ? "none" : "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.1)"}
               _hover={{ 
-                bgGradient: "linear(to-r, #dc2626, #b91c1c)",
-                transform: "translateY(-1px)",
-                boxShadow: "lg"
+                bg: "gray.700",
+                transform: isTradingDisabled() ? "none" : "translateY(-1px)",
+                boxShadow: isTradingDisabled() ? "none" : "0 6px 10px -1px rgba(0, 0, 0, 0.1), 0 4px 6px -1px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.1)"
               }}
               _active={{
-                bgGradient: "linear(to-r, #b91c1c, #991b1b)",
+                bg: "gray.900",
                 transform: "translateY(0)",
-                boxShadow: "md"
+                boxShadow: "inset 0 2px 4px rgba(0, 0, 0, 0.3)"
               }}
+              transition="all 0.2s"
             >
               Sell
             </Button>
@@ -435,18 +443,23 @@ const OrderControl = () => {
             isLoading={orderStatus === 'pending' && pendingOrder?.type === 'close-all'}
             loadingText="Closing All..."
             spinnerPlacement="start"
-            color="white"
-            bgGradient="linear(to-r, #dc2626, #991b1b)"
+            color={isSubmitting || selectedAccounts.length === 0 ? "whiteAlpha.500" : "red.400"}
+            bg="transparent"
+            border="1px solid"
+            borderColor={isSubmitting || selectedAccounts.length === 0 ? "whiteAlpha.200" : "red.500"}
+            bgGradient={isSubmitting || selectedAccounts.length === 0 ? "none" : "linear(to-r, rgba(220, 38, 38, 0.1), rgba(153, 27, 27, 0.1))"}
+            boxShadow={isSubmitting || selectedAccounts.length === 0 ? "none" : "0 2px 4px -1px rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.05)"}
             _hover={{ 
-                bgGradient: "linear(to-r, #991b1b, #7f1d1d)",
-                transform: "translateY(-1px)",
-                boxShadow: "lg"
+              bgGradient: isSubmitting || selectedAccounts.length === 0 ? "none" : "linear(to-r, rgba(220, 38, 38, 0.15), rgba(153, 27, 27, 0.15))",
+              transform: isSubmitting || selectedAccounts.length === 0 ? "none" : "translateY(-1px)",
+              boxShadow: isSubmitting || selectedAccounts.length === 0 ? "none" : "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)"
             }}
             _active={{
-                bgGradient: "linear(to-r, #7f1d1d, #450a0a)",
-                transform: "translateY(0)",
-                boxShadow: "md"
+              bgGradient: "linear(to-r, rgba(220, 38, 38, 0.2), rgba(153, 27, 27, 0.2))",
+              transform: "translateY(0)",
+              boxShadow: "inset 0 1px 2px rgba(0, 0, 0, 0.2)"
             }}
+            transition="all 0.2s"
           >
             Close All Trades
           </Button>
