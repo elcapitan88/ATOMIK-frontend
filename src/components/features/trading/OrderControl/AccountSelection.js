@@ -20,8 +20,15 @@ const AccountSelection = ({ selectedAccounts, onChange }) => {
 
   // Reset selections when switching types
   React.useEffect(() => {
-    onChange([], selectionType);
-    setSelectedGroupId('');
+    // Only reset selections, not on initial mount
+    if (selectionType) {
+      if (selectionType === 'single') {
+        setSelectedGroupId('');
+      }
+      
+      // Call onChange with empty array to reset parent component state
+      onChange([], selectionType);
+    }
   }, [selectionType, onChange]);
 
   // Query for accounts with proper endpoint
@@ -60,6 +67,13 @@ const AccountSelection = ({ selectedAccounts, onChange }) => {
       try {
         const response = await axios.get('/api/v1/strategies/list');
         logger.info('Strategies API response:', response.data);
+        
+        // Validate response structure
+        if (!Array.isArray(response.data)) {
+          logger.error('Invalid strategies response format:', response.data);
+          return [];
+        }
+        
         return response.data || [];
       } catch (error) {
         logger.error('Failed to fetch strategies:', error);
@@ -129,10 +143,27 @@ const AccountSelection = ({ selectedAccounts, onChange }) => {
   }, [accounts, strategies]);
 
   const activeGroupStrategies = React.useMemo(() => {
-    return strategies.filter(s => 
-      s.is_active && 
-      s.strategy_type === 'multiple'
+    if (!strategies || !Array.isArray(strategies)) {
+      logger.warn('No valid strategies array available');
+      return [];
+    }
+    
+    const groupStrategies = strategies.filter(s => 
+      s && s.is_active && s.strategy_type === 'multiple'
     );
+    
+    logger.info(`Found ${groupStrategies.length} active group strategies`);
+    
+    // Make sure each strategy has the expected fields with fallbacks for essential fields
+    return groupStrategies.map(strategy => ({
+      ...strategy,
+      id: strategy.id || 0,
+      ticker: strategy.ticker || 'Unknown',
+      group_name: strategy.group_name || 'Unnamed Group',
+      leader_account_id: strategy.leader_account_id || null,
+      leader_quantity: strategy.leader_quantity || 1,
+      follower_accounts: strategy.follower_accounts || []
+    }));
   }, [strategies]);
 
   const handleAccountChange = (value) => {
@@ -141,9 +172,18 @@ const AccountSelection = ({ selectedAccounts, onChange }) => {
   };
 
   const handleGroupStrategyChange = (groupId) => {
+    console.log('Group selected:', groupId); // Debug log
     setSelectedGroupId(groupId);
     
-    const strategy = activeGroupStrategies.find(s => s.id === Number(groupId));
+    // Convert groupId to number for comparison since strategy.id is numeric
+    const strategyId = parseInt(groupId, 10);
+    console.log('Looking for strategy with ID:', strategyId);
+    console.log('Available strategies:', activeGroupStrategies);
+    
+    // Find the matching strategy with proper type handling
+    const strategy = activeGroupStrategies.find(s => s.id === strategyId);
+    console.log('Found strategy:', strategy);
+    
     if (strategy) {
       // Get all accounts associated with this group
       const groupAccounts = [
@@ -163,12 +203,12 @@ const AccountSelection = ({ selectedAccounts, onChange }) => {
           groupName: strategy.group_name,
           // Include any other relevant group data
           leaderAccountId: strategy.leader_account_id,
-          // Can add quantities if needed for order calculations
           leaderQuantity: strategy.leader_quantity,
           followerAccounts: strategy.follower_accounts
         }
       );
     } else {
+      console.warn('No strategy found with ID:', groupId);
       onChange([], 'group');
     }
   };
@@ -276,7 +316,8 @@ const AccountSelection = ({ selectedAccounts, onChange }) => {
           isDisabled={activeGroupStrategies.length === 0}
         >
           {activeGroupStrategies.map(group => (
-            <option key={group.id} value={group.id}>
+            // Make sure we convert the ID to string for select option values
+            <option key={group.id} value={String(group.id)}>
               {`${group.group_name || 'Unnamed Group'} (${group.ticker || 'No Ticker'})`}
             </option>
           ))}
