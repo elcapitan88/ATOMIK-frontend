@@ -14,7 +14,7 @@ import {
 import { User as UserIcon, Users as UsersIcon } from 'lucide-react';
 import logger from '@/utils/logger';
 
-const AccountSelection = ({ selectedAccounts, onChange }) => {
+const AccountSelection = ({ selectedAccounts = [], onChange }) => {
   const [selectionType, setSelectionType] = useState('single');
   const [selectedGroupId, setSelectedGroupId] = useState('');
   const [selectedAccountId, setSelectedAccountId] = useState('');
@@ -88,9 +88,11 @@ const AccountSelection = ({ selectedAccounts, onChange }) => {
   useEffect(() => {
     if (selectedAccounts && selectedAccounts.length > 0 && accounts.length > 0) {
       const accountId = selectedAccounts[0];
-      setSelectedAccountId(accountId);
+      if (selectionType === 'single') {
+        setSelectedAccountId(accountId);
+      }
     }
-  }, [selectedAccounts, accounts]);
+  }, [selectedAccounts, accounts, selectionType]);
 
   const availableAccounts = useMemo(() => {
     logger.info('Starting account filtering process...');

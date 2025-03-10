@@ -120,7 +120,7 @@ const OrderControl = () => {
             action: order.type  // 'buy' or 'sell'
           }
         );
-      } else if (order.accounts && order.accounts[0]) {
+      } else if (order.accounts && order.accounts.length > 0) {
         logger.info(`Executing single account order: ${order.type} for account ${order.accounts[0]}`);
         
         // Original single account order logic
@@ -189,7 +189,7 @@ const OrderControl = () => {
 
     try {
       logger.info(`Closing positions for accounts: ${order.accounts.join(', ')}`);
-      const response = await axios.post(
+      await axios.post(
         '/api/v1/brokers/accounts/close-all',
         { account_ids: order.accounts }
       );
