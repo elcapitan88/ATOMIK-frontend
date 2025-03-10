@@ -14,6 +14,7 @@ import {
   Tooltip,
   useToast,
   Select,
+  Text,
 } from '@chakra-ui/react';
 import { 
   ArrowBigUp, 
@@ -21,7 +22,6 @@ import {
   ArrowBigDown, 
   Ban,
 } from 'lucide-react';
-
 
 import AccountSelection from './AccountSelection';
 import OrderConfirmationModal from './OrderConfirmationModal';
@@ -40,12 +40,28 @@ const OrderControl = () => {
   const [orderStatus, setOrderStatus] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [pendingOrder, setPendingOrder] = useState(null);
+  
+  // New states for handling group selection
+  const [selectionType, setSelectionType] = useState('single');
+  const [selectedGroupInfo, setSelectedGroupInfo] = useState(null);
 
   const {
     isOpen: isConfirmationOpen,
     onOpen: onConfirmationOpen,
     onClose: onConfirmationClose
   } = useDisclosure();
+
+  // Handle account selection change
+  const handleAccountSelectionChange = (accounts, type, groupInfo = null) => {
+    setSelectedAccounts(accounts);
+    setSelectionType(type);
+    setSelectedGroupInfo(groupInfo);
+    
+    // If a group is selected, automatically set the ticker from group
+    if (type === 'group' && groupInfo?.ticker) {
+      setSelectedTicker(groupInfo.ticker);
+    }
+  };
 
   // Regular Order Execution
   const executeOrder = async (order) => {
@@ -151,7 +167,15 @@ const OrderControl = () => {
 
   // Order Submission Handlers
   const handleOrderSubmit = useCallback(async (orderType) => {
-    if (!selectedTicker) {
+    // For group selection, use the group's ticker
+    const orderTicker = selectionType === 'group' ? 
+      selectedGroupInfo?.ticker : selectedTicker;
+      
+    // For quantity, use either the group's specified quantity or the input quantity
+    const orderQuantity = selectionType === 'group' ? 
+      (selectedGroupInfo?.quantity || quantity) : quantity;
+    
+    if (!orderTicker) {
       toast({
         title: "No ticker selected",
         description: "Please select a ticker first",
@@ -164,8 +188,8 @@ const OrderControl = () => {
 
     const order = {
       type: orderType,
-      quantity,
-      ticker: selectedTicker,
+      quantity: orderQuantity,
+      ticker: orderTicker,
       accounts: selectedAccounts,
       timestamp: new Date().toISOString()
     };
@@ -176,7 +200,7 @@ const OrderControl = () => {
       setPendingOrder(order);
       onConfirmationOpen();
     }
-  }, [quantity, selectedTicker, selectedAccounts, skipConfirmation, onConfirmationOpen, toast]);
+  }, [quantity, selectedTicker, selectedAccounts, skipConfirmation, onConfirmationOpen, toast, selectionType, selectedGroupInfo]);
 
   const handleCloseAllTrades = useCallback(async () => {
     try {
@@ -254,7 +278,7 @@ const OrderControl = () => {
           <Box flex={1}>
             <AccountSelection
               selectedAccounts={selectedAccounts}
-              onChange={setSelectedAccounts}
+              onChange={handleAccountSelectionChange}
             />
           </Box>
           <Tooltip
@@ -282,49 +306,75 @@ const OrderControl = () => {
 
       {/* Main Trading Controls */}
       <VStack p={3} spacing={3} flex="1">
-        {/* Inputs Row */}
-        <HStack width="full" spacing={2}>
-          <Select
-            value={selectedTicker}
-            onChange={(e) => setSelectedTicker(e.target.value)}
-            placeholder="Select Ticker"
-            size="sm"
-            bg="whiteAlpha.50"
-            borderColor="whiteAlpha.200"
-            flex="1.5"
-            _hover={{ borderColor: "whiteAlpha.300" }}
-            _focus={{ 
-              borderColor: "rgba(0, 198, 224, 0.6)",
-              boxShadow: "0 0 0 1px rgba(0, 198, 224, 0.6)"
-            }}
-          >
-            {AVAILABLE_TICKERS.map(ticker => (
-              <option key={ticker} value={ticker}>{ticker}</option>
-            ))}
-          </Select>
+        {/* Only show inputs row for single account selection */}
+        {selectionType === 'single' && (
+          <HStack width="full" spacing={2}>
+            <Select
+              value={selectedTicker}
+              onChange={(e) => setSelectedTicker(e.target.value)}
+              placeholder="Select Ticker"
+              size="sm"
+              bg="whiteAlpha.50"
+              borderColor="whiteAlpha.200"
+              flex="1.5"
+              _hover={{ borderColor: "whiteAlpha.300" }}
+              _focus={{ 
+                borderColor: "rgba(0, 198, 224, 0.6)",
+                boxShadow: "0 0 0 1px rgba(0, 198, 224, 0.6)"
+              }}
+            >
+              {AVAILABLE_TICKERS.map(ticker => (
+                <option key={ticker} value={ticker}>{ticker}</option>
+              ))}
+            </Select>
 
-          <NumberInput 
-            value={quantity} 
-            onChange={(value) => setQuantity(Number(value))}
-            min={1}
-            max={100}
-            size="sm"
-            bg="whiteAlpha.50"
-            borderColor="whiteAlpha.200"
-            flex="1"
-            _hover={{ borderColor: "whiteAlpha.300" }}
-            _focus={{ 
-              borderColor: "rgba(0, 198, 224, 0.6)",
-              boxShadow: "0 0 0 1px rgba(0, 198, 224, 0.6)"
-            }}
+            <NumberInput 
+              value={quantity} 
+              onChange={(value) => setQuantity(Number(value))}
+              min={1}
+              max={100}
+              size="sm"
+              bg="whiteAlpha.50"
+              borderColor="whiteAlpha.200"
+              flex="1"
+              _hover={{ borderColor: "whiteAlpha.300" }}
+              _focus={{ 
+                borderColor: "rgba(0, 198, 224, 0.6)",
+                boxShadow: "0 0 0 1px rgba(0, 198, 224, 0.6)"
+              }}
+            >
+              <NumberInputField />
+              <NumberInputStepper>
+                <NumberIncrementStepper />
+                <NumberDecrementStepper />
+              </NumberInputStepper>
+            </NumberInput>
+          </HStack>
+        )}
+        
+        {/* Display selected group info when a group is selected */}
+        {selectionType === 'group' && selectedGroupInfo && (
+          <Box 
+            width="full" 
+            p={3} 
+            bg="whiteAlpha.100" 
+            borderRadius="md"
           >
-            <NumberInputField />
-            <NumberInputStepper>
-              <NumberIncrementStepper />
-              <NumberDecrementStepper />
-            </NumberInputStepper>
-          </NumberInput>
-        </HStack>
+            <Text fontSize="sm" fontWeight="medium" mb={1}>Selected Strategy Group</Text>
+            <HStack spacing={4}>
+              <Box>
+                <Text fontSize="xs" color="whiteAlpha.700">Ticker</Text>
+                <Text fontWeight="bold">{selectedGroupInfo.ticker}</Text>
+              </Box>
+              {selectedGroupInfo.groupName && (
+                <Box>
+                  <Text fontSize="xs" color="whiteAlpha.700">Group</Text>
+                  <Text fontWeight="bold">{selectedGroupInfo.groupName}</Text>
+                </Box>
+              )}
+            </HStack>
+          </Box>
+        )}
 
         {/* Trading Buttons */}
         <VStack spacing={2} width="full" mt="auto">
