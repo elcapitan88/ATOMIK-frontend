@@ -20,7 +20,7 @@ const AccountSelection = ({ selectedAccounts, onChange }) => {
 
   // Reset selections when switching types
   React.useEffect(() => {
-    onChange([]);
+    onChange([], selectionType);
     setSelectedGroupId('');
   }, [selectionType, onChange]);
 
@@ -137,7 +137,7 @@ const AccountSelection = ({ selectedAccounts, onChange }) => {
 
   const handleAccountChange = (value) => {
     logger.info('Account selected:', value);
-    onChange([value]);
+    onChange([value], 'single');
   };
 
   const handleGroupStrategyChange = (groupId) => {
@@ -152,9 +152,24 @@ const AccountSelection = ({ selectedAccounts, onChange }) => {
       ].filter(Boolean).map(String);
       
       logger.info('Group accounts selected:', groupAccounts);
-      onChange(groupAccounts);
+      
+      // Pass both the accounts and group info including ticker
+      onChange(
+        groupAccounts, 
+        'group', 
+        {
+          id: strategy.id,
+          ticker: strategy.ticker, 
+          groupName: strategy.group_name,
+          // Include any other relevant group data
+          leaderAccountId: strategy.leader_account_id,
+          // Can add quantities if needed for order calculations
+          leaderQuantity: strategy.leader_quantity,
+          followerAccounts: strategy.follower_accounts
+        }
+      );
     } else {
-      onChange([]);
+      onChange([], 'group');
     }
   };
 

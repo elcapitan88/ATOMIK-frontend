@@ -69,38 +69,57 @@ const OrderControl = () => {
       await executeCloseAll(order);
       return;
     }
-
+  
     setIsSubmitting(true);
     setOrderStatus('pending');
     setPendingOrder(order);
     
     try {
-      const response = await axios.post(
-        `/api/v1/brokers/accounts/${order.accounts[0]}/discretionary/orders`,
-        {
-          symbol: order.ticker,
-          side: order.type,
-          type: 'MARKET',
-          quantity: order.quantity,
-          time_in_force: 'GTC'
-        },
-        {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+      // Check if this is a group order with group info
+      if (order.groupInfo && order.groupInfo.id) {
+        // Execute as a group strategy
+        await axios.post(
+          `/api/v1/strategies/${order.groupInfo.id}/execute`,
+          {
+            action: order.type  // 'buy' or 'sell'
+          },
+          {
+            headers: {
+              'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+            }
           }
-        }
-      );
-  
+        );
+      } else {
+        // Original single account order logic
+        await axios.post(
+          `/api/v1/brokers/accounts/${order.accounts[0]}/discretionary/orders`,
+          {
+            symbol: order.ticker,
+            side: order.type,
+            type: 'MARKET',
+            quantity: order.quantity,
+            time_in_force: 'GTC'
+          },
+          {
+            headers: {
+              'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+            }
+          }
+        );
+      }
+    
       setOrderStatus('success');
       toast({
         title: `${order.type.toUpperCase()} Order Executed`,
-        description: `Successfully ${order.type === 'buy' ? 'bought' : 'sold'} ${order.quantity} ${order.ticker} contracts`,
+        description: order.groupInfo ? 
+          `Successfully executed group ${order.type.toUpperCase()} for ${order.ticker}` : 
+          `Successfully ${order.type === 'buy' ? 'bought' : 'sold'} ${order.quantity} ${order.ticker} contracts`,
         status: "success",
         duration: 2000,
         isClosable: true,
         position: "top-right",
       });
-  
+    
     } catch (error) {
       setOrderStatus('error');
       toast({

@@ -24,6 +24,7 @@ import {
   ArrowBigUp,
   ArrowBigDown,
   Ban,
+  Users,
 } from 'lucide-react';
 
 const OrderConfirmationModal = ({ isOpen, onClose, order, onConfirm }) => {
@@ -97,6 +98,7 @@ const OrderConfirmationModal = ({ isOpen, onClose, order, onConfirm }) => {
   if (!order) return null;
 
   const isCloseAll = order.type === 'close-all';
+  const isGroupOrder = order.isGroupOrder || order.groupInfo;
 
   return (
     <Modal 
@@ -121,7 +123,11 @@ const OrderConfirmationModal = ({ isOpen, onClose, order, onConfirm }) => {
         >
           <HStack spacing={2}>
             <AlertTriangle color="#ED8936" />
-            <Text>Confirm {isCloseAll ? 'Close All Positions' : order.type.toUpperCase()}</Text>
+            <Text>
+              {isCloseAll ? 'Confirm Close All Positions' : 
+               isGroupOrder ? `Confirm Group ${order.type.toUpperCase()}` : 
+               `Confirm ${order.type.toUpperCase()}`}
+            </Text>
           </HStack>
         </ModalHeader>
         {!isConfirming && <ModalCloseButton />}
@@ -139,17 +145,32 @@ const OrderConfirmationModal = ({ isOpen, onClose, order, onConfirm }) => {
               </HStack>
             </HStack>
 
-            {/* Order details - show only for regular orders */}
+            {/* Order details - show for regular and group orders */}
             {!isCloseAll && (
               <>
                 <HStack justify="space-between">
                   <Text color="whiteAlpha.700">Ticker:</Text>
                   <Text fontWeight="bold">{order.ticker}</Text>
                 </HStack>
-                <HStack justify="space-between">
-                  <Text color="whiteAlpha.700">Quantity:</Text>
-                  <Text fontWeight="bold">{order.quantity}</Text>
-                </HStack>
+                
+                {/* Only show single quantity for non-group orders */}
+                {!isGroupOrder && (
+                  <HStack justify="space-between">
+                    <Text color="whiteAlpha.700">Quantity:</Text>
+                    <Text fontWeight="bold">{order.quantity}</Text>
+                  </HStack>
+                )}
+                
+                {/* Show group info if available */}
+                {isGroupOrder && order.groupInfo && (
+                  <HStack justify="space-between">
+                    <Text color="whiteAlpha.700">Strategy Group:</Text>
+                    <HStack>
+                      <Users size={16} />
+                      <Text fontWeight="bold">{order.groupInfo.groupName || 'Group Strategy'}</Text>
+                    </HStack>
+                  </HStack>
+                )}
               </>
             )}
 
@@ -157,43 +178,101 @@ const OrderConfirmationModal = ({ isOpen, onClose, order, onConfirm }) => {
 
             {/* Account Selection Info */}
             <Box>
-              <Text color="whiteAlpha.700" mb={2}>Selected Accounts:</Text>
+              <Text color="whiteAlpha.700" mb={2}>
+                {isGroupOrder ? 'Group Accounts:' : 'Selected Accounts:'}
+              </Text>
               <VStack spacing={2} align="stretch">
-                {order.accounts.map((accountId) => (
-                  <Box
-                    key={accountId}
-                    bg="whiteAlpha.100"
-                    p={3}
-                    borderRadius="md"
-                  >
-                    <VStack align="stretch" spacing={1}>
-                      <HStack justify="space-between">
-                        <Text fontSize="sm" fontWeight="medium">
-                          {accountsData[accountId]?.name || `Account ${accountId}`}
-                        </Text>
-                        <Badge colorScheme={isCloseAll ? "orange" : "blue"}>
-                          {isCloseAll ? 'All Positions' : `${order.quantity} contracts`}
-                        </Badge>
-                      </HStack>
-                    </VStack>
-                  </Box>
-                ))}
+                {/* For group orders, we need to show different quantities for each account */}
+                {isGroupOrder && order.groupInfo ? (
+                  <>
+                    {/* Display leader account first */}
+                    {order.groupInfo.leaderAccountId && (
+                      <Box
+                        key={order.groupInfo.leaderAccountId}
+                        bg="whiteAlpha.200"
+                        p={3}
+                        borderRadius="md"
+                      >
+                        <VStack align="stretch" spacing={1}>
+                          <HStack justify="space-between">
+                            <HStack>
+                              <Text fontSize="sm" fontWeight="medium">
+                                {accountsData[order.groupInfo.leaderAccountId]?.name || `Account ${order.groupInfo.leaderAccountId}`}
+                              </Text>
+                              <Badge colorScheme="purple">Leader</Badge>
+                            </HStack>
+                            <Badge colorScheme={isCloseAll ? "orange" : "blue"}>
+                              {isCloseAll ? 'All Positions' : `${order.groupInfo.leaderQuantity || order.quantity} contracts`}
+                            </Badge>
+                          </HStack>
+                        </VStack>
+                      </Box>
+                    )}
+                    
+                    {/* Display follower accounts */}
+                    {order.groupInfo.followerAccounts && order.groupInfo.followerAccounts.map((follower, index) => (
+                      <Box
+                        key={follower.account_id}
+                        bg="whiteAlpha.100"
+                        p={3}
+                        borderRadius="md"
+                      >
+                        <VStack align="stretch" spacing={1}>
+                          <HStack justify="space-between">
+                            <HStack>
+                              <Text fontSize="sm" fontWeight="medium">
+                                {accountsData[follower.account_id]?.name || `Account ${follower.account_id}`}
+                              </Text>
+                              <Badge colorScheme="cyan">Follower</Badge>
+                            </HStack>
+                            <Badge colorScheme={isCloseAll ? "orange" : "blue"}>
+                              {isCloseAll ? 'All Positions' : `${follower.quantity} contracts`}
+                            </Badge>
+                          </HStack>
+                        </VStack>
+                      </Box>
+                    ))}
+                  </>
+                ) : (
+                  // Regular account display for non-group orders
+                  order.accounts.map((accountId) => (
+                    <Box
+                      key={accountId}
+                      bg="whiteAlpha.100"
+                      p={3}
+                      borderRadius="md"
+                    >
+                      <VStack align="stretch" spacing={1}>
+                        <HStack justify="space-between">
+                          <Text fontSize="sm" fontWeight="medium">
+                            {accountsData[accountId]?.name || `Account ${accountId}`}
+                          </Text>
+                          <Badge colorScheme={isCloseAll ? "orange" : "blue"}>
+                            {isCloseAll ? 'All Positions' : `${order.quantity} contracts`}
+                          </Badge>
+                        </HStack>
+                      </VStack>
+                    </Box>
+                  ))
+                )}
               </VStack>
             </Box>
 
             {/* Warning Message */}
             <Box 
-              bg={isCloseAll ? "orange.900" : "yellow.900"}
+              bg={isCloseAll ? "orange.900" : isGroupOrder ? "purple.900" : "yellow.900"}
               p={3} 
               borderRadius="md" 
               borderLeft="4px" 
-              borderColor={isCloseAll ? "orange.500" : "yellow.500"}
+              borderColor={isCloseAll ? "orange.500" : isGroupOrder ? "purple.500" : "yellow.500"}
             >
               <HStack spacing={2}>
-                <AlertTriangle size={16} color={isCloseAll ? "#ED8936" : "#ECC94B"} />
+                <AlertTriangle size={16} color={isCloseAll ? "#ED8936" : isGroupOrder ? "#D6BCFA" : "#ECC94B"} />
                 <Text fontSize="sm">
                   {isCloseAll 
                     ? "This will close ALL open positions in the selected accounts. This action cannot be undone."
+                    : isGroupOrder
+                    ? "This will execute orders for all accounts in the group strategy using predefined quantities."
                     : "Please confirm your order details carefully before proceeding."}
                 </Text>
               </HStack>
@@ -225,13 +304,15 @@ const OrderConfirmationModal = ({ isOpen, onClose, order, onConfirm }) => {
             Cancel
           </Button>
           <Button
-            colorScheme={isCloseAll ? "orange" : (order.type === 'buy' ? 'green' : 'red')}
+            colorScheme={isCloseAll ? "orange" : isGroupOrder ? "purple" : (order.type === 'buy' ? 'green' : 'red')}
             onClick={handleConfirm}
             isLoading={isConfirming}
             loadingText="Confirming..."
             leftIcon={<CheckCircle2 size={16} />}
           >
-            {isCloseAll ? 'Close All Positions' : `Confirm ${order.type.toUpperCase()}`}
+            {isCloseAll ? 'Close All Positions' : 
+             isGroupOrder ? `Execute Group ${order.type.toUpperCase()}` :
+             `Confirm ${order.type.toUpperCase()}`}
           </Button>
         </ModalFooter>
       </ModalContent>
