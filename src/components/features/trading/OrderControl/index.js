@@ -384,8 +384,6 @@ const OrderControl = () => {
               spinnerPlacement="start"
               color={isTradingDisabled() ? "whiteAlpha.500" : "green.400"}
               bg="gray.800"
-              border="1px solid"
-              borderColor={isTradingDisabled() ? "whiteAlpha.200" : "green.500"}
               boxShadow={isTradingDisabled() ? "none" : "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.1)"}
               _hover={{ 
                 bg: "gray.700",
@@ -413,8 +411,6 @@ const OrderControl = () => {
               spinnerPlacement="start"
               color={isTradingDisabled() ? "whiteAlpha.500" : "red.400"}
               bg="gray.800"
-              border="1px solid"
-              borderColor={isTradingDisabled() ? "whiteAlpha.200" : "red.500"}
               boxShadow={isTradingDisabled() ? "none" : "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.1)"}
               _hover={{ 
                 bg: "gray.700",
@@ -443,10 +439,8 @@ const OrderControl = () => {
             isLoading={orderStatus === 'pending' && pendingOrder?.type === 'close-all'}
             loadingText="Closing All..."
             spinnerPlacement="start"
-            color={isSubmitting || selectedAccounts.length === 0 ? "whiteAlpha.500" : "red.400"}
+            color="white"
             bg="transparent"
-            border="1px solid"
-            borderColor={isSubmitting || selectedAccounts.length === 0 ? "whiteAlpha.200" : "red.500"}
             bgGradient={isSubmitting || selectedAccounts.length === 0 ? "none" : "linear(to-r, rgba(220, 38, 38, 0.1), rgba(153, 27, 27, 0.1))"}
             boxShadow={isSubmitting || selectedAccounts.length === 0 ? "none" : "0 2px 4px -1px rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.05)"}
             _hover={{ 
