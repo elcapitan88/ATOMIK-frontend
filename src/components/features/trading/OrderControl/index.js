@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   Box,
   VStack,
@@ -32,126 +32,102 @@ import logger from '@/utils/logger';
 const AVAILABLE_TICKERS = ['ESH5', 'NQH5', 'RTYH5', 'CLH5', 'GCH5', 'SIH5','BITH5','BTIH5','MESH5', 'MNQH5']
 
 const OrderControl = () => {
-  // State Management
   const toast = useToast();
-  const [quantity, setQuantity] = useState(1);
-  const [skipConfirmation, setSkipConfirmation] = useState(false);
-  const [selectedAccounts, setSelectedAccounts] = useState([]);
-  const [selectedTicker, setSelectedTicker] = useState('');
-  const [orderStatus, setOrderStatus] = useState(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [pendingOrder, setPendingOrder] = useState(null);
-  
-  // Group selection states
-  const [selectionType, setSelectionType] = useState('single');
-  const [selectedGroupInfo, setSelectedGroupInfo] = useState(null);
-
   const {
     isOpen: isConfirmationOpen,
     onOpen: onConfirmationOpen,
     onClose: onConfirmationClose
   } = useDisclosure();
 
-  // Debug log the current state for troubleshooting
-  useEffect(() => {
-    logger.debug('OrderControl state update:', {
-      selectionType, 
-      selectedAccounts, 
-      selectedTicker, 
-      quantity,
-      selectedGroupInfo: selectedGroupInfo ? { 
-        id: selectedGroupInfo.id,
-        ticker: selectedGroupInfo.ticker,
-        accountsCount: selectedAccounts.length
-      } : null,
-      isTradingDisabled: isTradingDisabled()
-    });
-  }, [selectionType, selectedAccounts, selectedTicker, quantity, selectedGroupInfo]);
+  // Core state
+  const [quantity, setQuantity] = useState(1);
+  const [skipConfirmation, setSkipConfirmation] = useState(false);
+  const [selectedTicker, setSelectedTicker] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // Selection state
+  const [selectionMode, setSelectionMode] = useState('single');
+  const [selectedAccounts, setSelectedAccounts] = useState([]);
+  const [groupInfo, setGroupInfo] = useState(null);
+  
+  // Order state
+  const [pendingOrder, setPendingOrder] = useState(null);
+  const [orderStatus, setOrderStatus] = useState(null);
 
-  // Handle account selection change
-  const handleAccountSelectionChange = (accounts, type, groupInfo = null) => {
-    logger.info('Account selection changed:', { 
-      accounts, 
-      type, 
-      hasGroupInfo: !!groupInfo 
-    });
+  // Handle account selection change from AccountSelection component
+  const handleAccountSelectionChange = (accounts, type, selectedGroupInfo = null) => {
+    logger.info(`Account selection changed: accounts=${JSON.stringify(accounts)}, type=${type}, hasGroupInfo=${!!selectedGroupInfo}`);
     
-    // Ensure accounts is always an array
-    const validAccounts = Array.isArray(accounts) ? accounts : [];
+    setSelectedAccounts(accounts || []);
+    setSelectionMode(type);
     
-    setSelectedAccounts(validAccounts);
-    setSelectionType(type);
-    
-    // Set ticker from group strategy info if available
-    if (type === 'group' && groupInfo?.ticker) {
-      setSelectedTicker(groupInfo.ticker);
-      setSelectedGroupInfo(groupInfo);
+    // If group info is provided and this is a group selection, update the ticker
+    if (type === 'group' && selectedGroupInfo?.ticker) {
+      setGroupInfo(selectedGroupInfo);
+      setSelectedTicker(selectedGroupInfo.ticker);
     } else if (type === 'single') {
-      // Clear group info when switching to single mode
-      setSelectedGroupInfo(null);
+      // When switching to single, clear group info
+      setGroupInfo(null);
     }
   };
 
-  // Regular Order Execution
+  // Execute order
   const executeOrder = async (order) => {
-    if (!order) {
-      logger.error('Attempted to execute order with no order data');
-      return;
-    }
+    if (!order) return;
     
-    if (order.type === 'close-all') {
-      await executeCloseAll(order);
-      return;
-    }
-  
     setIsSubmitting(true);
     setOrderStatus('pending');
-    setPendingOrder(order);
     
     try {
-      // Check if this is a group order with group info
-      if (order.isGroupOrder && order.groupInfo && order.groupInfo.id) {
-        logger.info(`Executing group strategy order: ${order.type} for strategy ID ${order.groupInfo.id}`);
+      if (order.type === 'close-all') {
+        // Execute close all positions
+        await axios.post('/api/v1/brokers/accounts/close-all', { 
+          account_ids: order.accounts 
+        });
         
-        // Execute as a group strategy
-        await axios.post(
-          `/api/v1/strategies/${order.groupInfo.id}/execute`,
-          {
-            action: order.type  // 'buy' or 'sell'
-          }
-        );
-      } else if (order.accounts && order.accounts.length > 0) {
-        logger.info(`Executing single account order: ${order.type} for account ${order.accounts[0]}`);
+        toast({
+          title: "Positions Closed",
+          description: "Successfully closed all positions",
+          status: "success",
+          duration: 2000,
+          isClosable: true,
+        });
+      } else if (order.isGroupOrder && order.groupInfo?.id) {
+        // Execute group strategy order
+        await axios.post(`/api/v1/strategies/${order.groupInfo.id}/execute`, {
+          action: order.type
+        });
         
-        // Original single account order logic
-        await axios.post(
-          `/api/v1/brokers/accounts/${order.accounts[0]}/discretionary/orders`,
-          {
-            symbol: order.ticker,
-            side: order.type,
-            type: 'MARKET',
-            quantity: order.quantity,
-            time_in_force: 'GTC'
-          }
-        );
-      } else {
-        throw new Error('Invalid order configuration');
+        toast({
+          title: `Group ${order.type.toUpperCase()} Executed`,
+          description: `Successfully executed ${order.type} for group ${order.groupInfo.groupName}`,
+          status: "success",
+          duration: 2000,
+          isClosable: true,
+        });
+      } else if (order.accounts?.[0]) {
+        // Execute single account order
+        await axios.post(`/api/v1/brokers/accounts/${order.accounts[0]}/discretionary/orders`, {
+          symbol: order.ticker,
+          side: order.type,
+          type: 'MARKET',
+          quantity: order.quantity,
+          time_in_force: 'GTC'
+        });
+        
+        toast({
+          title: `Order ${order.type.toUpperCase()} Executed`,
+          description: `Successfully placed ${order.type} order for ${order.quantity} ${order.ticker}`,
+          status: "success",
+          duration: 2000,
+          isClosable: true,
+        });
       }
-    
+      
       setOrderStatus('success');
-      toast({
-        title: `${order.type.toUpperCase()} Order Executed`,
-        description: order.groupInfo ? 
-          `Successfully executed group ${order.type.toUpperCase()} for ${order.ticker}` : 
-          `Successfully ${order.type === 'buy' ? 'bought' : 'sold'} ${order.quantity} ${order.ticker} contracts`,
-        status: "success",
-        duration: 2000,
-        isClosable: true,
-        position: "top-right",
-      });
-    
     } catch (error) {
       logger.error('Order execution failed:', error);
+      
       setOrderStatus('error');
       toast({
         title: "Order Failed",
@@ -159,10 +135,11 @@ const OrderControl = () => {
         status: "error",
         duration: 4000,
         isClosable: true,
-        position: "top-right",
       });
     } finally {
       setIsSubmitting(false);
+      
+      // Reset order status after a delay
       setTimeout(() => {
         setOrderStatus(null);
         setPendingOrder(null);
@@ -170,73 +147,27 @@ const OrderControl = () => {
     }
   };
 
-  // Close All Orders Execution
-  const executeCloseAll = async (order) => {
-    if (!order || !order.accounts || order.accounts.length === 0) {
-      logger.error('Attempted to close positions with no accounts specified');
+  // Handle order submission (buy/sell)
+  const handleOrderSubmit = useCallback((orderType) => {
+    // Validation
+    if (selectedAccounts.length === 0) {
       toast({
-        title: "Close All Failed",
-        description: "No accounts specified for closing positions",
-        status: "error",
-        duration: 4000,
+        title: "No Account Selected",
+        description: "Please select an account or group first",
+        status: "warning",
+        duration: 3000,
         isClosable: true,
       });
       return;
     }
     
-    setIsSubmitting(true);
-    setOrderStatus('pending');
-
-    try {
-      logger.info(`Closing positions for accounts: ${order.accounts.join(', ')}`);
-      await axios.post(
-        '/api/v1/brokers/accounts/close-all',
-        { account_ids: order.accounts }
-      );
-
-      setOrderStatus('success');
-      toast({
-        title: "Positions Closed",
-        description: "Successfully closed all positions",
-        status: "success",
-        duration: 2000,
-        isClosable: true,
-        position: "top-right",
-      });
-
-    } catch (error) {
-      logger.error('Close all positions failed:', error);
-      setOrderStatus('error');
-      toast({
-        title: "Close All Failed",
-        description: error.response?.data?.detail || "Failed to close positions",
-        status: "error",
-        duration: 4000,
-        isClosable: true,
-        position: "top-right",
-      });
-    } finally {
-      setIsSubmitting(false);
-      setTimeout(() => {
-        setOrderStatus(null);
-        setPendingOrder(null);
-      }, 1000);
-    }
-  };
-
-  // Order Submission Handlers
-  const handleOrderSubmit = useCallback((orderType) => {
-    // For group selection, use the group's ticker
-    const orderTicker = selectionType === 'group' && selectedGroupInfo ? 
-      selectedGroupInfo.ticker : selectedTicker;
+    // For group selection, use group ticker; otherwise use selected ticker
+    const orderTicker = selectionMode === 'group' && groupInfo ? 
+      groupInfo.ticker : selectedTicker;
       
-    // For quantity, use either the group's specified quantity or the input quantity
-    const orderQuantity = selectionType === 'group' && selectedGroupInfo?.leaderQuantity ? 
-      selectedGroupInfo.leaderQuantity : quantity;
-    
     if (!orderTicker) {
       toast({
-        title: "No ticker selected",
+        title: "No Ticker Selected",
         description: "Please select a ticker first",
         status: "warning",
         duration: 3000,
@@ -245,33 +176,27 @@ const OrderControl = () => {
       return;
     }
     
-    if (!selectedAccounts || selectedAccounts.length === 0) {
-      toast({
-        title: "No account selected",
-        description: "Please select an account or group first",
-        status: "warning",
-        duration: 3000,
-        isClosable: true,
-      });
-      return;
-    }
-
+    // For group, use leader quantity; otherwise use input quantity
+    const orderQuantity = selectionMode === 'group' && groupInfo ? 
+      groupInfo.leaderQuantity : quantity;
+    
+    // Create order
     const order = {
       type: orderType,
-      quantity: orderQuantity,
       ticker: orderTicker,
+      quantity: orderQuantity,
       accounts: selectedAccounts,
       timestamp: new Date().toISOString()
     };
-
-    // Add group info if this is a group order
-    if (selectionType === 'group' && selectedGroupInfo) {
+    
+    // Add group info if applicable
+    if (selectionMode === 'group' && groupInfo) {
       order.isGroupOrder = true;
-      order.groupInfo = selectedGroupInfo;
+      order.groupInfo = groupInfo;
     }
-
-    logger.info('Preparing order:', order);
-
+    
+    logger.info(`Preparing ${orderType} order:`, order);
+    
     if (skipConfirmation) {
       executeOrder(order);
     } else {
@@ -279,18 +204,19 @@ const OrderControl = () => {
       onConfirmationOpen();
     }
   }, [
-    quantity, 
-    selectedTicker, 
     selectedAccounts, 
+    selectionMode, 
+    groupInfo, 
+    selectedTicker, 
+    quantity, 
     skipConfirmation, 
-    onConfirmationOpen, 
     toast, 
-    selectionType, 
-    selectedGroupInfo
+    onConfirmationOpen
   ]);
 
-  const handleCloseAllTrades = useCallback(async () => {
-    if (!selectedAccounts || selectedAccounts.length === 0) {
+  // Handle close all positions
+  const handleCloseAll = useCallback(() => {
+    if (selectedAccounts.length === 0) {
       toast({
         title: "No Accounts Selected",
         description: "Please select at least one account to close positions",
@@ -300,37 +226,35 @@ const OrderControl = () => {
       });
       return;
     }
-
+    
     const order = {
       type: 'close-all',
       accounts: selectedAccounts,
       timestamp: new Date().toISOString()
     };
-
+    
     if (skipConfirmation) {
-      executeCloseAll(order);
+      executeOrder(order);
     } else {
       setPendingOrder(order);
       onConfirmationOpen();
     }
-  }, [selectedAccounts, skipConfirmation, onConfirmationOpen, toast]);
+  }, [selectedAccounts, skipConfirmation, toast, onConfirmationOpen]);
 
-  // Determine if buy/sell buttons should be enabled
+  // Check if trading buttons should be disabled
   const isTradingDisabled = () => {
     if (isSubmitting) return true;
     
-    // No accounts selected
-    if (!selectedAccounts || selectedAccounts.length === 0) return true;
+    // We need accounts
+    if (selectedAccounts.length === 0) return true;
     
-    if (selectionType === 'single') {
-      // For single account selection, need account, ticker and quantity
+    if (selectionMode === 'single') {
+      // Single mode needs ticker and quantity
       return !selectedTicker || quantity <= 0;
-    } else if (selectionType === 'group') {
-      // For group selection, need group info with ticker
-      return !selectedGroupInfo || !selectedGroupInfo.ticker;
+    } else {
+      // Group mode needs group info with ticker
+      return !groupInfo || !groupInfo.ticker;
     }
-    
-    return true;
   };
 
   return (
@@ -369,8 +293,8 @@ const OrderControl = () => {
 
       {/* Main Trading Controls */}
       <VStack p={3} spacing={3} flex="1">
-        {/* Only show inputs row for single account selection */}
-        {selectionType === 'single' && (
+        {/* Only show inputs for single account selection */}
+        {selectionMode === 'single' && (
           <HStack width="full" spacing={2}>
             <Select
               value={selectedTicker}
@@ -415,8 +339,8 @@ const OrderControl = () => {
           </HStack>
         )}
         
-        {/* Display selected group info when a group is selected */}
-        {selectionType === 'group' && selectedGroupInfo && (
+        {/* Display group info for group selection */}
+        {selectionMode === 'group' && groupInfo && (
           <Box 
             width="full" 
             p={3} 
@@ -427,28 +351,22 @@ const OrderControl = () => {
             <HStack spacing={4}>
               <Box>
                 <Text fontSize="xs" color="whiteAlpha.700">Ticker</Text>
-                <Text fontWeight="bold">{selectedGroupInfo.ticker}</Text>
+                <Text fontWeight="bold">{groupInfo.ticker}</Text>
               </Box>
-              {selectedGroupInfo.groupName && (
+              {groupInfo.groupName && (
                 <Box>
                   <Text fontSize="xs" color="whiteAlpha.700">Group</Text>
-                  <Text fontWeight="bold">{selectedGroupInfo.groupName}</Text>
+                  <Text fontWeight="bold">{groupInfo.groupName}</Text>
                 </Box>
               )}
             </HStack>
           </Box>
         )}
 
-        {/* Required fields validation messages */}
-        {selectionType === 'single' && selectedAccounts.length > 0 && !selectedTicker && (
+        {/* Validation messages */}
+        {selectionMode === 'single' && selectedAccounts.length > 0 && !selectedTicker && (
           <Text fontSize="xs" color="red.300">
             Please select a ticker to continue
-          </Text>
-        )}
-
-        {selectionType === 'group' && selectedAccounts.length === 0 && (
-          <Text fontSize="xs" color="red.300">
-            Please select a valid group strategy
           </Text>
         )}
 
@@ -512,7 +430,7 @@ const OrderControl = () => {
             h="32px"
             leftIcon={orderStatus === 'pending' && pendingOrder?.type === 'close-all' ? null : <Ban size={14} />}
             size="sm"
-            onClick={handleCloseAllTrades}
+            onClick={handleCloseAll}
             isDisabled={isSubmitting || selectedAccounts.length === 0} 
             isLoading={orderStatus === 'pending' && pendingOrder?.type === 'close-all'}
             loadingText="Closing All..."
@@ -531,7 +449,7 @@ const OrderControl = () => {
             }}
           >
             Close All Trades
-        </Button>
+          </Button>
         </VStack>
       </VStack>
 
