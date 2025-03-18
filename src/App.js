@@ -78,27 +78,12 @@ const PaymentSuccessRoute = React.memo(({ children }) => {
   return children;
 });
 
-// Pricing route guard
+// Modified PricingRoute - Make pricing page publicly accessible
 const PricingRoute = React.memo(({ children }) => {
-  const { isAuthenticated, isLoading } = useAuth();
-  const location = useLocation();
-  
-  // Check if coming from auth page
-  const searchParams = new URLSearchParams(location.search);
-  const isFromAuth = searchParams.get('source') === 'auth';
-  const isRegister = searchParams.get('register') === 'true';
-  
-  // Check for pending registration
-  const hasPendingRegistration = localStorage.getItem('pendingRegistration');
-  
-  // Allow access if user meets any of the conditions
-  if (!isAuthenticated && !hasPendingRegistration && !isFromAuth && !isRegister) {
-    return <Navigate to="/auth" replace />;
-  }
-
+  // Simply return children without any conditional checks
+  // This makes the pricing page accessible to everyone
   return children;
 });
-
 
 function App() {
   const { isAuthenticated, setAuthenticatedState } = useAuth();
@@ -133,7 +118,7 @@ function App() {
         {/* Public Routes */}
         <Route path="/" element={<Homepage />} />
         
-        {/* Pricing Route */}
+        {/* Pricing Route - Now publicly accessible */}
         <Route
           path="/pricing"
           element={
