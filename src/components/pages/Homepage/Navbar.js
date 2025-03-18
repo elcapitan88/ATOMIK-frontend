@@ -86,7 +86,7 @@ const Navbar = () => {
               Sign In
             </Button>
           </RouterLink>
-          <RouterLink to="/auth?register=true">
+          <RouterLink to="/pricing">
             <Button
               bg="transparent"
               color="white"
