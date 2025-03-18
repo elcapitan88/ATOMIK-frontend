@@ -149,7 +149,7 @@ const Navbar = () => {
                 Sign In
               </Button>
             </RouterLink>
-            <RouterLink to="/auth?register=true" style={{ width: '100%' }}>
+            <RouterLink to="/pricing" style={{ width: '100%' }}>
               <Button
                 w="full"
                 bg="transparent"
