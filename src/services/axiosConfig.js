@@ -61,31 +61,53 @@ axiosInstance.interceptors.response.use(
         if (error.response?.status === 401 && !originalRequest._retry) {
             originalRequest._retry = true;
             try {
-                logger.info('Attempting token refresh');
-                const refreshResponse = await axios.post(
-                    '/api/v1/auth/refresh-token',
-                    {},
-                    {
-                        headers: {
-                            'Authorization': `Bearer ${localStorage.getItem('access_token')}`
-                        }
-                    }
-                );
-
-                if (refreshResponse.data.access_token) {
-                    logger.info('Token refresh successful');
-                    localStorage.setItem('access_token', refreshResponse.data.access_token);
-                    axiosInstance.defaults.headers.common['Authorization'] = 
-                        `Bearer ${refreshResponse.data.access_token}`;
-                    return axiosInstance(originalRequest);
+                // Skip token refresh for checkout-related paths
+                if (originalRequest.url.includes('subscriptions/create') || 
+                    originalRequest.url.includes('checkout')) {
+                  // For checkout flows, just fail gracefully
+                  localStorage.removeItem('access_token');
+                  if (!originalRequest.url.includes('guest-checkout')) {
+                    window.location.href = '/auth';
+                  }
+                  return Promise.reject(error);
                 }
-            } catch (refreshError) {
+                
+                // For all other paths, attempt token refresh
+                logger.info('Attempting token refresh');
+                
+                // Check if you have a refresh-token endpoint
+                // If not, use this fallback approach
+                localStorage.removeItem('access_token');
+                window.location.href = '/auth';
+                return Promise.reject(error);
+                
+                // If you do have a refresh-token endpoint, uncomment this:
+                /*
+                const refreshResponse = await axios.post(
+                  '/api/v1/auth/refresh-token',
+                  {},
+                  {
+                    headers: {
+                      'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+                    }
+                  }
+                );
+                
+                if (refreshResponse.data.access_token) {
+                  logger.info('Token refresh successful');
+                  localStorage.setItem('access_token', refreshResponse.data.access_token);
+                  axiosInstance.defaults.headers.common['Authorization'] = 
+                    `Bearer ${refreshResponse.data.access_token}`;
+                  return axiosInstance(originalRequest);
+                }
+                */
+              } catch (refreshError) {
                 logger.error('Token refresh failed:', refreshError);
                 // Clear auth state and redirect to login
                 localStorage.removeItem('access_token');
                 window.location.href = '/auth';
                 return Promise.reject(refreshError);
-            }
+              }
         }
 
         // Handle other errors

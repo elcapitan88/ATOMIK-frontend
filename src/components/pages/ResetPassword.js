@@ -1,5 +1,4 @@
-// src/components/pages/ResetPassword.js
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Button,
@@ -11,161 +10,464 @@ import {
   Text,
   useToast,
   FormErrorMessage,
+  InputGroup,
+  InputRightElement,
+  Container,
+  Alert,
+  AlertIcon,
+  AlertTitle,
+  AlertDescription,
+  Spinner,
 } from '@chakra-ui/react';
-import { useNavigate } from 'react-router-dom';
-import authService from '@/services/auth/authService';
+import { motion } from 'framer-motion';
+import { Link as RouterLink, useLocation, useNavigate } from 'react-router-dom';
+import { Eye, EyeOff, Check, AlertCircle } from 'lucide-react';
+import axiosInstance from '@/services/axiosConfig';
+import logger from '@/utils/logger';
 
+// Motion components
+const MotionBox = motion(Box);
+
+// Animation variants
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1,
+    }
+  }
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.5,
+      ease: "easeOut"
+    }
+  }
+};
+
+// Glass effect styling
 const glassEffect = {
-  background: "rgba(255, 255, 255, 0.1)",
+  background: "rgba(0, 0, 0, 0.5)",
   backdropFilter: "blur(10px)",
   boxShadow: "0 8px 32px 0 rgba(0, 198, 224, 0.37)",
-  border: "1px solid rgba(255, 255, 255, 0.18)",
+  border: "1px solid rgba(255, 255, 255, 0.1)",
   borderRadius: "xl",
 };
 
 const ResetPassword = () => {
-  const [email, setEmail] = useState('');
+  // State
+  const [formData, setFormData] = useState({
+    password: '',
+    confirmPassword: ''
+  });
+  const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [isSubmitted, setIsSubmitted] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [token, setToken] = useState('');
+  const [status, setStatus] = useState('idle'); // idle, validating, success, error
+  const [errorMessage, setErrorMessage] = useState('');
   
+  // Hooks
+  const location = useLocation();
   const navigate = useNavigate();
   const toast = useToast();
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!email) {
-      setError('Email is required');
+  
+  // Extract token from URL and validate on component mount
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search);
+    const tokenFromUrl = searchParams.get('token');
+    
+    if (!tokenFromUrl) {
+      setStatus('error');
+      setErrorMessage('No reset token provided. Please request a new password reset link.');
       return;
     }
+    
+    setToken(tokenFromUrl);
+    setStatus('validating');
+    
+    // Validate token function
+    const validateToken = async () => {
+      try {
+        // Basic token format validation (optional security measure)
+        if (!/^[A-Za-z0-9_-]+$/.test(tokenFromUrl) || tokenFromUrl.length < 20) {
+          throw new Error('Invalid token format');
+        }
+        
+        // For better UX, we'll skip a separate validation call and
+        // just show the form, trusting the actual reset endpoint
+        // to validate the token when submitted
+        setStatus('idle');
+        
+        // If you want to add an actual validation endpoint, uncomment this:
+        /*
+        await axiosInstance.post('/api/v1/auth/validate-token', {
+          token: tokenFromUrl
+        });
+        setStatus('idle');
+        */
+      } catch (error) {
+        logger.error('Token validation error:', error);
+        setStatus('error');
+        setErrorMessage(
+          error.response?.data?.detail || 
+          'Invalid or expired reset token. Please request a new password reset link.'
+        );
+      }
+    };
+    
+    validateToken();
+  }, [location]);
 
+  // Form validation
+  const validateForm = () => {
+    const newErrors = {};
+    
+    if (!formData.password) {
+      newErrors.password = 'New password is required';
+    } else if (formData.password.length < 6) {
+      newErrors.password = 'Password must be at least 6 characters';
+    }
+    
+    if (formData.password !== formData.confirmPassword) {
+      newErrors.confirmPassword = "Passwords don't match";
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  // Handle form submission
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    // Validate form
+    if (!validateForm()) return;
+    
     setIsLoading(true);
-    setError('');
-
+    
     try {
-      await authService.requestPasswordReset(email);
-      setIsSubmitted(true);
-      toast({
-        title: "Reset Link Sent",
-        description: "Check your email for password reset instructions",
-        status: "success",
-        duration: 5000,
-        isClosable: true,
+      // Call API to reset password
+      const response = await axiosInstance.post('/api/v1/auth/reset-password', {
+        token: token,
+        new_password: formData.password
       });
+      
+      // Handle success
+      setStatus('success');
+      
+      // Redirect to login after a delay
+      setTimeout(() => {
+        navigate('/auth', { replace: true });
+      }, 3000);
+      
+      logger.info('Password reset successful');
     } catch (error) {
-      setError(error.message);
-      toast({
-        title: "Error",
-        description: error.message,
-        status: "error",
-        duration: 5000,
-        isClosable: true,
-      });
+      // Handle error
+      logger.error('Password reset error:', error);
+      
+      setStatus('error');
+      setErrorMessage(
+        error.response?.data?.detail || 
+        error.message || 
+        'Failed to reset password. Please try again or request a new reset link.'
+      );
     } finally {
       setIsLoading(false);
     }
   };
 
-  return (
-    <Box minHeight="100vh" display="flex" alignItems="center" justifyContent="center" bg="black">
-      <Box
-        {...glassEffect}
-        p={8}
-        width="100%"
-        maxWidth="400px"
+  // Handle input changes
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+
+    // Clear error when user types
+    if (errors[name]) {
+      setErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[name];
+        return newErrors;
+      });
+    }
+    
+    // Special validation for confirm password
+    if (name === 'password' || name === 'confirmPassword') {
+      if (
+        (name === 'password' && formData.confirmPassword && value !== formData.confirmPassword) ||
+        (name === 'confirmPassword' && value !== formData.password)
+      ) {
+        setErrors(prev => ({ ...prev, confirmPassword: "Passwords don't match" }));
+      } else if (formData.confirmPassword || name === 'confirmPassword') {
+        setErrors(prev => {
+          const newErrors = { ...prev };
+          delete newErrors.confirmPassword;
+          return newErrors;
+        });
+      }
+    }
+  };
+  
+  // Toggle password visibility
+  const togglePasswordVisibility = () => setShowPassword(!showPassword);
+
+  // Success view
+  if (status === 'success') {
+    return (
+      <MotionBox 
+        minH="100vh" 
+        bg="black" 
+        py={16} 
+        px={4}
+        initial="hidden"
+        animate="visible"
+        variants={containerVariants}
+        overflow="hidden"
+        position="relative"
       >
-        <VStack spacing={6} align="stretch">
-          <Heading color="white" textAlign="center" size="lg">
-            Reset Password
-          </Heading>
-          
-          {!isSubmitted ? (
-            <>
-              <Text color="whiteAlpha.800" fontSize="sm" textAlign="center">
-                Enter your email address and we'll send you instructions to reset your password.
+        <Container maxW="lg" centerContent>
+          <MotionBox variants={itemVariants} {...glassEffect} p={8} width="100%" maxW="450px" mt={12}>
+            <VStack spacing={6} align="center">
+              <Check size={60} color="#48BB78" />
+              <Heading color="white" textAlign="center">Password Reset Successful</Heading>
+              <Text color="whiteAlpha.800" textAlign="center">
+                Your password has been updated successfully. You will be redirected to the login page.
               </Text>
-              
-              <form onSubmit={handleSubmit}>
-                <VStack spacing={4}>
-                  <FormControl isInvalid={!!error}>
-                    <FormLabel color="white">Email Address</FormLabel>
-                    <Input
-                      type="email"
-                      value={email}
-                      onChange={(e) => {
-                        setEmail(e.target.value);
-                        setError('');
-                      }}
-                      bg="whiteAlpha.200"
-                      color="white"
-                      borderColor="whiteAlpha.400"
-                      _hover={{ borderColor: "whiteAlpha.500" }}
-                      _focus={{ borderColor: "blue.300", boxShadow: "0 0 0 1px rgba(66, 153, 225, 0.6)" }}
-                    />
-                    <FormErrorMessage>{error}</FormErrorMessage>
-                  </FormControl>
-                  
-                  <Button
-                    type="submit"
-                    width="full"
-                    bg="transparent"
-                    color="white"
-                    fontWeight="medium"
-                    borderRadius="md"
-                    border="1px solid"
-                    borderColor="rgba(0, 198, 224, 1)"
-                    position="relative"
-                    overflow="hidden"
-                    isLoading={isLoading}
-                    _before={{
-                      content: '""',
-                      position: 'absolute',
-                      top: 0,
-                      left: 0,
-                      right: 0,
-                      bottom: 0,
-                      bg: 'linear-gradient(90deg, transparent, rgba(0, 198, 224, 1) 20%, rgba(0, 198, 224, 1) 80%, transparent)',
-                      opacity: 0.3,
-                    }}
-                    _hover={{
-                      _before: {
-                        opacity: 0.5,
-                      }
-                    }}
-                    _active={{
-                      _before: {
-                        opacity: 0.7,
-                      }
-                    }}
-                  >
-                    Send Reset Link
-                  </Button>
-                </VStack>
-              </form>
-            </>
-          ) : (
-            <VStack spacing={4}>
-              <Text color="green.400" textAlign="center">
-                If an account exists with this email, you will receive password reset instructions shortly.
-              </Text>
-              <Text color="whiteAlpha.800" fontSize="sm" textAlign="center">
-                Don't forget to check your spam folder.
-              </Text>
+              <Button
+                as={RouterLink}
+                to="/auth"
+                colorScheme="blue"
+                width="full"
+                mt={4}
+              >
+                Go to Login
+              </Button>
             </VStack>
-          )}
-          
-          <Text 
-            color="white" 
-            textAlign="center" 
-            cursor="pointer" 
-            fontSize="sm"
-            onClick={() => navigate('/auth')}
-          >
-            Back to Login
-          </Text>
+          </MotionBox>
+        </Container>
+      </MotionBox>
+    );
+  }
+  
+  // Error view
+  if (status === 'error') {
+    return (
+      <MotionBox 
+        minH="100vh" 
+        bg="black" 
+        py={16} 
+        px={4}
+        initial="hidden"
+        animate="visible"
+        variants={containerVariants}
+        overflow="hidden"
+        position="relative"
+      >
+        <Container maxW="lg" centerContent>
+          <MotionBox variants={itemVariants} {...glassEffect} p={8} width="100%" maxW="450px" mt={12}>
+            <VStack spacing={6} align="center">
+              <AlertCircle size={60} color="#FC8181" />
+              <Heading color="white" textAlign="center">Reset Error</Heading>
+              <Text color="whiteAlpha.800" textAlign="center">
+                {errorMessage}
+              </Text>
+              <Button
+                as={RouterLink}
+                to="/auth"
+                colorScheme="blue"
+                width="full"
+                mt={4}
+              >
+                Back to Login
+              </Button>
+            </VStack>
+          </MotionBox>
+        </Container>
+      </MotionBox>
+    );
+  }
+  
+  // Loading view
+  if (status === 'validating') {
+    return (
+      <MotionBox 
+        minH="100vh" 
+        bg="black" 
+        py={16} 
+        px={4}
+        display="flex"
+        alignItems="center"
+        justifyContent="center"
+      >
+        <VStack spacing={4}>
+          <Spinner size="xl" color="blue.500" />
+          <Text color="white">Validating reset token...</Text>
         </VStack>
-      </Box>
-    </Box>
+      </MotionBox>
+    );
+  }
+
+  // Form view
+  return (
+    <MotionBox 
+      minH="100vh" 
+      bg="black" 
+      py={16} 
+      px={4}
+      initial="hidden"
+      animate="visible"
+      variants={containerVariants}
+      overflow="hidden"
+      position="relative"
+    >
+      {/* Background decorative elements */}
+      <Box
+        position="absolute"
+        top="10%"
+        left="5%"
+        width="30%"
+        height="30%"
+        bgGradient="radial(circle, rgba(0,198,224,0.15) 0%, rgba(0,0,0,0) 70%)"
+        filter="blur(50px)"
+        zIndex={0}
+      />
+      
+      <Box
+        position="absolute"
+        bottom="20%"
+        right="10%"
+        width="40%"
+        height="40%"
+        bgGradient="radial(circle, rgba(153,50,204,0.1) 0%, rgba(0,0,0,0) 70%)"
+        filter="blur(60px)"
+        zIndex={0}
+      />
+      
+      <Container maxW="lg" centerContent position="relative" zIndex={1}>
+        <MotionBox variants={itemVariants}>
+          <Heading 
+            fontSize={{ base: "2xl", md: "3xl" }}
+            fontWeight="bold"
+            color="white"
+            textAlign="center"
+            mb={6}
+          >
+            Reset Your Password
+          </Heading>
+        </MotionBox>
+        
+        <MotionBox 
+          variants={itemVariants}
+          {...glassEffect}
+          p={8}
+          width="100%"
+          maxW="450px"
+          mb={8}
+        >
+          <Box as="form" onSubmit={handleSubmit}>
+            <VStack spacing={6}>
+              <FormControl isRequired isInvalid={!!errors.password}>
+                <FormLabel color="white">New Password</FormLabel>
+                <InputGroup>
+                  <Input
+                    name="password"
+                    type={showPassword ? "text" : "password"}
+                    placeholder="Enter your new password"
+                    value={formData.password}
+                    onChange={handleChange}
+                    bg="whiteAlpha.100"
+                    color="white"
+                    border="1px solid"
+                    borderColor="whiteAlpha.300"
+                    _hover={{ borderColor: "#00C6E0" }}
+                    _focus={{ borderColor: "#00C6E0", boxShadow: "0 0 0 1px #00C6E0" }}
+                  />
+                  <InputRightElement>
+                    <Box 
+                      as="button" 
+                      type="button" 
+                      onClick={togglePasswordVisibility} 
+                      color="whiteAlpha.600"
+                    >
+                      {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </Box>
+                  </InputRightElement>
+                </InputGroup>
+                <FormErrorMessage>{errors.password}</FormErrorMessage>
+              </FormControl>
+              
+              <FormControl isRequired isInvalid={!!errors.confirmPassword}>
+                <FormLabel color="white">Confirm Password</FormLabel>
+                <Input
+                  name="confirmPassword"
+                  type="password"
+                  placeholder="Confirm your new password"
+                  value={formData.confirmPassword}
+                  onChange={handleChange}
+                  bg="whiteAlpha.100"
+                  color="white"
+                  border="1px solid"
+                  borderColor="whiteAlpha.300"
+                  _hover={{ borderColor: "#00C6E0" }}
+                  _focus={{ borderColor: "#00C6E0", boxShadow: "0 0 0 1px #00C6E0" }}
+                />
+                <FormErrorMessage>{errors.confirmPassword}</FormErrorMessage>
+              </FormControl>
+              
+              <Button
+                type="submit"
+                width="full"
+                mt={4}
+                bg="#00C6E0"
+                color="black"
+                _hover={{
+                  bg: "cyan.400",
+                  transform: 'translateY(-2px)',
+                  boxShadow: 'lg'
+                }}
+                size="lg"
+                isLoading={isLoading}
+                loadingText="Resetting Password..."
+              >
+                Reset Password
+              </Button>
+              
+              <Button
+                as={RouterLink}
+                to="/auth"
+                variant="ghost"
+                width="full"
+                color="whiteAlpha.800"
+                _hover={{ bg: "whiteAlpha.100" }}
+              >
+                Back to Login
+              </Button>
+            </VStack>
+          </Box>
+        </MotionBox>
+        
+        <MotionBox variants={itemVariants}>
+          <Alert status="info" variant="left-accent" borderRadius="md" bg="rgba(0, 0, 0, 0.5)" maxW="md">
+            <AlertIcon />
+            <VStack align="start" spacing={1}>
+              <AlertTitle color="white">Security Tip</AlertTitle>
+              <AlertDescription color="whiteAlpha.800" fontSize="sm">
+                Create a strong password that you don't use for other websites.
+              </AlertDescription>
+            </VStack>
+          </Alert>
+        </MotionBox>
+      </Container>
+    </MotionBox>
   );
 };
 

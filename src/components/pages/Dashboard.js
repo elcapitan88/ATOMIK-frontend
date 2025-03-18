@@ -1,4 +1,4 @@
-import React, { useState, lazy, Suspense, useEffect } from 'react';
+import React, { useState, lazy, Suspense, useEffect, useRef } from 'react';
 import { 
     Box, 
     Flex, 
@@ -96,10 +96,104 @@ const Dashboard = () => {
         activeAccountId: null
     });
 
+    // Cache reference
+    const dataCache = useRef({
+        accounts: null,
+        strategies: null,
+        webhooks: null,
+        subscribedWebhooks: null
+    });
+
     // Hooks
     const navigate = useNavigate();
     const { isAuthenticated } = useAuth();
     const toast = useToast();
+    
+    // Set up API request interception for caching
+    useEffect(() => {
+        // Store original fetch
+        const originalFetch = window.fetch;
+        
+        // Replace fetch with our caching version
+        window.fetch = async (...args) => {
+            const [resource, config] = args;
+            let url = resource;
+            
+            // Handle Request objects
+            if (resource instanceof Request) {
+                url = resource.url;
+            }
+            
+            // Check if this is one of our API endpoints with cached data
+            if (typeof url === 'string') {
+                // Accounts endpoint
+                if (url.includes('/api/v1/brokers/accounts') && dataCache.current.accounts) {
+                    logger.debug('Using cached accounts data');
+                    return new Response(JSON.stringify(dataCache.current.accounts), {
+                        headers: { 'Content-Type': 'application/json' },
+                        status: 200
+                    });
+                }
+                
+                // Strategies endpoint
+                if (url.includes('/api/v1/strategies/list') && dataCache.current.strategies) {
+                    logger.debug('Using cached strategies data');
+                    return new Response(JSON.stringify(dataCache.current.strategies), {
+                        headers: { 'Content-Type': 'application/json' },
+                        status: 200
+                    });
+                }
+                
+                // Webhooks endpoint
+                if (url.includes('/api/v1/webhooks/list') && dataCache.current.webhooks) {
+                    logger.debug('Using cached webhooks data');
+                    return new Response(JSON.stringify(dataCache.current.webhooks), {
+                        headers: { 'Content-Type': 'application/json' },
+                        status: 200
+                    });
+                }
+                
+                // Subscribed webhooks endpoint
+                if (url.includes('/api/v1/webhooks/subscribed') && dataCache.current.subscribedWebhooks) {
+                    logger.debug('Using cached subscribed webhooks data');
+                    return new Response(JSON.stringify(dataCache.current.subscribedWebhooks), {
+                        headers: { 'Content-Type': 'application/json' },
+                        status: 200
+                    });
+                }
+            }
+            
+            // For all other requests, use original fetch
+            const response = await originalFetch(...args);
+            
+            // Cache the response if it's one of our dashboard endpoints
+            if (response.ok && typeof url === 'string') {
+                try {
+                    const responseClone = response.clone();
+                    const data = await responseClone.json();
+                    
+                    if (url.includes('/api/v1/brokers/accounts')) {
+                        dataCache.current.accounts = data;
+                    } else if (url.includes('/api/v1/strategies/list')) {
+                        dataCache.current.strategies = data;
+                    } else if (url.includes('/api/v1/webhooks/list')) {
+                        dataCache.current.webhooks = data;
+                    } else if (url.includes('/api/v1/webhooks/subscribed')) {
+                        dataCache.current.subscribedWebhooks = data;
+                    }
+                } catch (e) {
+                    logger.error('Error caching response:', e);
+                }
+            }
+            
+            return response;
+        };
+        
+        // Cleanup function to restore original fetch
+        return () => {
+            window.fetch = originalFetch;
+        };
+    }, []);
 
     // Initial data loading
     useEffect(() => {
@@ -108,11 +202,16 @@ const Dashboard = () => {
                 setIsLoading(true);
                 setError(null);
 
+                // Use our regular API calls - the intercepted fetch will handle caching
                 const [accountsResponse, strategiesResponse] = await Promise.all([
                     axiosInstance.get('/api/v1/brokers/accounts'),
                     axiosInstance.get('/api/v1/strategies/list')
                 ]);
 
+                // Store data both in component state and in our cache
+                dataCache.current.accounts = accountsResponse.data;
+                dataCache.current.strategies = strategiesResponse.data;
+                
                 setDashboardData({
                     accounts: accountsResponse.data,
                     strategies: strategiesResponse.data,

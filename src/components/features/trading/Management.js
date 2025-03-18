@@ -34,6 +34,7 @@ import AccountStatusIndicator from '@/components/common/AccountStatusIndicator';
 import BrokerSelectionModal from '@/components/common/Modal/BrokerSelectionModal';
 import BrokerEnvironmentModal from '@/components/common/Modal/BrokerEnvironmentModal';
 import DeleteAccount from '@/components/common/Modal/DeleteAccount';
+import IBLoginModal from '@/components/common/Modal/IBLoginModal';
 import AccountNicknameModal from '@/components/common/Modal/AccountNicknameModal';
 import logger from '@/utils/logger';
 import axiosInstance from '@/services/axiosConfig';
@@ -168,6 +169,12 @@ const Management = () => {
         isOpen: isNicknameModalOpen,
         onOpen: openNicknameModal,
         onClose: closeNicknameModal
+    } = useDisclosure();
+
+    const {
+        isOpen: isIBLoginOpen,
+        onOpen: onIBLoginOpen,
+        onClose: onIBLoginClose
     } = useDisclosure();
 
     // Handlers
@@ -368,10 +375,19 @@ const Management = () => {
         
         setSelectedBroker(broker);
         onBrokerSelectClose();
-        setTimeout(() => {
-            onEnvironmentOpen();
-        }, 0);
-    }, [onBrokerSelectClose, onEnvironmentOpen]);
+        
+        if (broker.id === 'interactivebrokers') {
+            // For Interactive Brokers, open the login modal
+            setTimeout(() => {
+                onIBLoginOpen();
+            }, 0);
+        } else {
+            // For other brokers like Tradovate, continue with the existing flow
+            setTimeout(() => {
+                onEnvironmentOpen();
+            }, 0);
+        }
+    }, [onBrokerSelectClose, onEnvironmentOpen, onIBLoginOpen]);
 
     // Toggle account expansion
     const toggleAccountExpansion = useCallback((accountId) => {
@@ -385,6 +401,45 @@ const Management = () => {
             return newSet;
         });
     }, []);
+
+    const handleIBConnect = async (connectionData) => {
+        try {
+            setIsLoading(true);
+            
+            // Make API call to connect IB account
+            const response = await axiosInstance.post('/api/v1/brokers/interactivebrokers/connect', {
+                environment: connectionData.environment,
+                credentials: connectionData.credentials
+            });
+            
+            if (response.data) {
+                toast({
+                    title: "Success",
+                    description: "Interactive Brokers account connected successfully",
+                    status: "success",
+                    duration: 3000,
+                    isClosable: true,
+                });
+                
+                // Close the modal
+                onIBLoginClose();
+                
+                // Refresh accounts list
+                await fetchAccounts();
+            }
+        } catch (error) {
+            console.error('Error connecting IB account:', error);
+            toast({
+                title: "Connection Error",
+                description: error.response?.data?.detail || error.message || "Failed to connect to Interactive Brokers",
+                status: "error",
+                duration: 5000,
+                isClosable: true,
+            });
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     // Sort accounts based on current sortBy value
     const sortedAccounts = useMemo(() => {
@@ -818,6 +873,11 @@ const Management = () => {
                 isOpen={isBrokerSelectOpen}
                 onClose={onBrokerSelectClose}
                 onBrokerSelect={handleBrokerSelect}
+            />
+            <IBLoginModal
+                isOpen={isIBLoginOpen}
+                onClose={onIBLoginClose}
+                onConnect={handleIBConnect}
             />
 
             {selectedBroker && (

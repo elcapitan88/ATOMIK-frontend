@@ -1,4 +1,4 @@
-import React, { Suspense } from 'react';
+import React, { Suspense, useEffect } from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Box, Spinner } from '@chakra-ui/react';
 import { useAuth } from '@/contexts/AuthContext';
@@ -31,13 +31,19 @@ const LoadingSpinner = () => (
 const WithAuth = React.memo(({ children }) => {
   const { isAuthenticated, isLoading } = useAuth();
   const location = useLocation();
+  
+  // REPLACE the auth check with this:
+  // Add this line to check for an in-progress redirect
+  const isAuthRedirectInProgress = sessionStorage.getItem('auth_redirect_in_progress');
+  const hasToken = localStorage.getItem('access_token');
 
   if (isLoading) {
-      return <LoadingSpinner />;
+    return <LoadingSpinner />;
   }
 
-  if (!isAuthenticated) {
-      return <Navigate to="/auth" state={{ from: location }} replace />;
+  // Critical change: check for token and redirect flag before bouncing to auth
+  if (!isAuthenticated && !isAuthRedirectInProgress && !hasToken) {
+    return <Navigate to="/auth" state={{ from: location }} replace />;
   }
 
   return children;
@@ -57,14 +63,15 @@ const WithoutAuth = React.memo(({ children }) => {
 // Special route for payment success page
 const PaymentSuccessRoute = React.memo(({ children }) => {
   const { isLoading } = useAuth();
+  const isAuthRedirectInProgress = sessionStorage.getItem('auth_redirect_in_progress');
 
   if (isLoading) {
     return <LoadingSpinner />;
   }
 
-  // Check for pending registration
+  // Updated: Check for EITHER pending registration OR auth redirect in progress
   const hasPendingRegistration = localStorage.getItem('pendingRegistration');
-  if (!hasPendingRegistration) {
+  if (!hasPendingRegistration && !isAuthRedirectInProgress) {
     return <Navigate to="/auth" replace />;
   }
 
@@ -74,21 +81,52 @@ const PaymentSuccessRoute = React.memo(({ children }) => {
 // Pricing route guard
 const PricingRoute = React.memo(({ children }) => {
   const { isAuthenticated, isLoading } = useAuth();
-
-  if (isLoading) {
-    return <LoadingSpinner />;
-  }
-
-  // Allow access if user is authenticated or has pending registration
+  const location = useLocation();
+  
+  // Check if coming from auth page
+  const searchParams = new URLSearchParams(location.search);
+  const isFromAuth = searchParams.get('source') === 'auth';
+  const isRegister = searchParams.get('register') === 'true';
+  
+  // Check for pending registration
   const hasPendingRegistration = localStorage.getItem('pendingRegistration');
-  if (!isAuthenticated && !hasPendingRegistration) {
+  
+  // Allow access if user meets any of the conditions
+  if (!isAuthenticated && !hasPendingRegistration && !isFromAuth && !isRegister) {
     return <Navigate to="/auth" replace />;
   }
 
   return children;
 });
 
+
 function App() {
+  const { isAuthenticated, setAuthenticatedState } = useAuth();
+  
+  // Add the new useEffect right here, before the return statement
+  useEffect(() => {
+    // Check for stored credentials on app load
+    const token = localStorage.getItem('access_token');
+    const storedUserData = localStorage.getItem('user_data');
+    
+    if (token && storedUserData && !isAuthenticated) {
+      try {
+        // Parse user data
+        const userData = JSON.parse(storedUserData);
+        
+        // Set auth state directly via context
+        setAuthenticatedState(userData, token);
+        
+        // Clean up stored user data
+        localStorage.removeItem('user_data');
+        
+        console.log('Restored authentication state from localStorage');
+      } catch (error) {
+        console.error('Failed to restore auth state:', error);
+      }
+    }
+  }, [isAuthenticated, setAuthenticatedState]);
+  
   return (
     <Suspense fallback={<LoadingSpinner />}>
       <Routes>

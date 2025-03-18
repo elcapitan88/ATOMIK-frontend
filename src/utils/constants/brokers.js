@@ -47,6 +47,7 @@ export const BROKER_FEATURES = {
 };
 
 export const BROKERS = {
+  
   tradovate: {
     id: 'tradovate',
     name: 'Tradovate',
@@ -81,7 +82,48 @@ export const BROKERS = {
       tokenUrl: 'https://trader.tradovate.com/oauth/token',
       scope: 'trading'
     }
-  }
+  },
+
+
+  interactivebrokers: {
+    id: 'interactivebrokers',
+    name: 'IB',
+    description: 'Interactive Brokers',
+    logo: '/logos/ib.png',
+    connectionMethod: CONNECTION_METHODS.OAUTH,
+    environments: [ENVIRONMENTS.DEMO, ENVIRONMENTS.LIVE, ENVIRONMENTS.PAPER],
+    features: {
+      supportsWebSocket: true,
+      supportedOrderTypes: [
+        BROKER_FEATURES.ORDER_TYPES.MARKET,
+        BROKER_FEATURES.ORDER_TYPES.LIMIT,
+        BROKER_FEATURES.ORDER_TYPES.STOP,
+        BROKER_FEATURES.ORDER_TYPES.STOP_LIMIT
+      ],
+      realTimeData: true,
+      multipleAccounts: true,
+      supportedAssets: ['STOCKS', 'OPTIONS', 'FUTURES', 'FOREX', 'BONDS', 'FUNDS']
+    },
+    endpoints: {
+      demo: {
+        base: 'https://api.demo.interactivebrokers.com/v1',
+        websocket: 'wss://api.demo.interactivebrokers.com/v1/ws'
+      },
+      live: {
+        base: 'https://api.interactivebrokers.com/v1',
+        websocket: 'wss://api.interactivebrokers.com/v1/ws'
+      },
+      paper: {
+        base: 'https://api.paper.interactivebrokers.com/v1',
+        websocket: 'wss://api.paper.interactivebrokers.com/v1/ws'
+      }
+    },
+    oauth: {
+      authUrl: 'https://www.interactivebrokers.com/oauth/authorize',
+      tokenUrl: 'https://www.interactivebrokers.com/oauth/token',
+      scope: 'trading'
+    }
+  },
 };
 
 // Helper functions
