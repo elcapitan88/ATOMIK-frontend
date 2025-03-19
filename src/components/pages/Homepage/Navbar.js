@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Flex, Button, IconButton, useDisclosure, VStack, HStack, Text, Link } from '@chakra-ui/react';
+import { Box, Flex, Button, IconButton, useDisclosure, VStack, HStack, Text, Link, Image } from '@chakra-ui/react';
 import { Menu, X } from 'lucide-react';
 import { Link as RouterLink } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -47,15 +47,16 @@ const Navbar = () => {
       >
         {/* Logo */}
         <RouterLink to="/">
-          <Text 
-            fontSize="xl" 
-            fontWeight="bold" 
-            color="white"
-            _hover={{ color: "rgba(0, 198, 224, 1)" }}
-            transition="color 0.2s"
-          >
-            AtomikTrading
-          </Text>
+          <Image
+            src="/logos/atomik-logo.svg" 
+            alt="AtomikTrading Logo"
+            height="36px"
+            maxWidth="180px"
+            objectFit="contain"
+            transition="transform 0.2s"
+            _hover={{ transform: "scale(1.05)" }}
+            fallback={<Text fontSize="xl" fontWeight="bold" color="white">AtomikTrading</Text>}
+          />
         </RouterLink>
 
         {/* Desktop Navigation */}

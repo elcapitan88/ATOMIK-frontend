@@ -41,14 +41,12 @@ const Footer = () => {
   ];
 
   const companyLinks = [
-    { label: 'About Us', href: '/about' },
-    { label: 'Careers', href: '/careers' },
-    { label: 'Contact', href: '/contact' },
+    { label: 'Contact', href:`mailto:${encodeURIComponent('support@atomiktrading.io')}?subject=${encodeURIComponent('[AtomikTrading Support]')}`},
     { label: 'Partners', href: '/partners' },
   ];
 
   const legalLinks = [
-    { label: 'Privacy Policy', href: 'https://atomiktrading.io/docs/legal/privacy-policy' },
+    { label: 'Privacy Policy', href: 'https://docs.atomiktrading.io/docs/legal/privacy-policy' },
     { label: 'Terms of Service', href: 'https://atomiktrading.io/docs/legal/terms-of-service' },
     { label: 'Cookie Policy', href: 'https://atomiktrading.io/docs/legal/cookie-policy' },
     { label: 'Data Protection', href: '/data-protection' },
@@ -160,13 +158,31 @@ const Footer = () => {
           {/* Bottom Bar */}
           <Stack
             direction={{ base: 'column', md: 'row' }}
-            justify="space-between"
+            justify={{ base: 'center', md: 'space-between' }}
             align="center"
-            spacing={4}
+            spacing={{ base: 4, md: 0 }}
           >
             <Text color="whiteAlpha.600" fontSize="sm">
               © {new Date().getFullYear()} AtomikTrading. All rights reserved.
             </Text>
+
+            {/* BetterStack Status Badge */}
+            <Box 
+              display="flex" 
+              justifyContent="center"
+              mx={{ base: 0, md: 4 }}
+              my={{ base: 4, md: 0 }}
+            >
+              <iframe 
+                src="https://status.atomiktrading.io/badge?theme=dark" 
+                width="250" 
+                height="30" 
+                frameBorder="0" 
+                scrolling="no" 
+                style={{ colorScheme: 'normal' }}
+                title="Service Status"
+              />
+            </Box>
 
             <HStack spacing={4}>
               {socialLinks.map((social) => (

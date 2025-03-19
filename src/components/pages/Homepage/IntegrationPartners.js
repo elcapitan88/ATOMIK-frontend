@@ -102,7 +102,7 @@ const IntegrationPartners = () => {
             border="1px dashed rgba(0, 198, 224, 0.3)"
           >
             <Text color="whiteAlpha.800" fontSize="sm" textAlign="center">
-              Morecoming soon! We're continuously expanding our integration partners.
+              More coming soon! We're continuously expanding our integration partners.
             </Text>
           </Box>
         </VStack>
