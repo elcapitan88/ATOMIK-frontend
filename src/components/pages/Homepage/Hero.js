@@ -1,8 +1,25 @@
 import React from 'react';
-import { Box, Container, Heading, Text, Button, Stack, VStack } from '@chakra-ui/react';
+import { Box, Container, Heading, Text, Button, Stack, VStack, Flex } from '@chakra-ui/react';
 import { motion } from 'framer-motion';
 import { Link as RouterLink } from 'react-router-dom';
 import ParticleBackground from './ParticleBackground';
+import { ArrowRight } from 'lucide-react';
+
+// Import animation components with correct paths
+import DemoController from './DemoAnimation/DemoController';
+import BrowserMockup from './DemoAnimation/BrowserMockup';
+import BrokerConnect from './DemoAnimation/steps/BrokerConnect';
+import WebhookCreation from './DemoAnimation/steps/WebhookCreation';
+import LiveTrading from './DemoAnimation/steps/LiveTrading';
+
+// Note: StrategyConfig.py needs to be renamed to StrategyConfig.js
+// For now, let's use a placeholder component
+const StrategyConfig = () => (
+  <Flex direction="column" h="100%" justify="center" align="center">
+    <Text color="white" fontWeight="bold" fontSize="lg">Strategy Configuration</Text>
+    <Text color="whiteAlpha.700" fontSize="sm">Configure your trading strategies</Text>
+  </Flex>
+);
 
 const MotionBox = motion(Box);
 
@@ -16,17 +33,6 @@ const Hero = () => {
       bg="black"
       overflow="hidden"
     >
-      {/* Gradient Background */}
-      {/* <Box
-        position="absolute"
-        top="0"
-        left="0"
-        right="0"
-        bottom="0"
-        bg="linear-gradient(45deg, rgba(0,0,0,0.95) 0%, rgba(0,198,224,0.1) 100%)"
-        pointerEvents="none"
-      /> */}
-
       {/* Particle Effect */}
       <ParticleBackground />
 
@@ -118,6 +124,7 @@ const Hero = () => {
                   px={8}
                   as="a"
                   href="#how-to-use"
+                  rightIcon={<ArrowRight size={16} />}
                 >
                   Learn More
                 </Button>
@@ -125,7 +132,7 @@ const Hero = () => {
             </MotionBox>
           </VStack>
 
-          {/* Right Side - Placeholder for image/animation */}
+          {/* Right Side - Interactive Browser Demo */}
           <MotionBox
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -133,19 +140,15 @@ const Hero = () => {
             w={{ base: 'full', lg: '50%' }}
             display={{ base: 'none', lg: 'block' }}
           >
-            <Box
-              w="full"
-              h="500px"
-              bg="rgba(255,255,255,0.1)"
-              borderRadius="2xl"
-              position="relative"
-              overflow="hidden"
-              boxShadow="0 8px 32px 0 rgba(0, 198, 224, 0.37)"
-              backdropFilter="blur(10px)"
-              border="1px solid rgba(255,255,255,0.18)"
-            >
-              {/* You can add a trading chart or platform preview here */}
-            </Box>
+            {/* Animation Controller wrapper for the browser mockup */}
+            <DemoController initialStep={0} autoPlay={true} stepDuration={8000}>
+              <BrowserMockup>
+                <BrokerConnect />
+                <WebhookCreation />
+                <StrategyConfig />
+                <LiveTrading />
+              </BrowserMockup>
+            </DemoController>
           </MotionBox>
         </Stack>
       </Container>
