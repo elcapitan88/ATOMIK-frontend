@@ -28,11 +28,11 @@ const PartnerLogo = ({ name }) => (
 const IntegrationPartners = () => {
   const partners = [
     { name: 'Tradovate' },
-    { name: 'TradeStation' }, // Future integration
-    { name: 'Interactive Brokers' }, // Future integration
-    { name: 'TD Ameritrade' }, // Future integration
-    { name: 'E*TRADE' }, // Future integration
-    { name: 'Robinhood' }, // Future integration
+    { name: 'NinjaTrader' }, // Future integration
+    { name: 'Interactive Brokers**' }, // Future integration
+    { name: 'TopStep' }, // Future integration
+    { name: 'TakeProfit' }, // Future integration
+    { name: 'Coinbase**' }, // Future integration
   ];
 
   return (
@@ -62,14 +62,14 @@ const IntegrationPartners = () => {
               color="white"
               fontWeight="bold"
             >
-              Supported
+              Integration
               <Text
                 as="span"
                 bgGradient="linear(to-r, rgba(0,198,224,1), rgba(0,198,224,0.6))"
                 bgClip="text"
                 px={2}
               >
-                Brokers
+                Partners
               </Text>
             </Heading>
             <Text color="whiteAlpha.800" fontSize="lg">
@@ -102,7 +102,7 @@ const IntegrationPartners = () => {
             border="1px dashed rgba(0, 198, 224, 0.3)"
           >
             <Text color="whiteAlpha.800" fontSize="sm" textAlign="center">
-              More brokers coming soon! We're continuously expanding our integration partners.
+              Morecoming soon! We're continuously expanding our integration partners.
             </Text>
           </Box>
         </VStack>

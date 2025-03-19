@@ -1,34 +1,71 @@
 import React from 'react';
-import { Box, Container, Heading, Text, VStack, HStack, Icon, Divider, SimpleGrid } from '@chakra-ui/react';
-import { ArrowRight, Webhook, Link, Zap, Binary } from 'lucide-react';
+import { Box, Container, Heading, Text, VStack, HStack, Flex, Circle, useBreakpointValue } from '@chakra-ui/react';
 import { motion } from 'framer-motion';
 
 const MotionBox = motion(Box);
+const MotionFlex = motion(Flex);
 
-const StepCard = ({ icon, title, description, isLast }) => (
-  <VStack align="stretch" spacing={0} position="relative">
-    <MotionBox
-      whileHover={{ y: -5 }}
+const StepCard = ({ title, description, number }) => (
+  <MotionFlex
+    whileHover={{ y: -5 }}
+    direction="column"
+    position="relative"
+    zIndex={2}
+    h="full"
+  >
+    {/* Card content */}
+    <Box
       p={6}
+      pt={8}
       bg="rgba(255, 255, 255, 0.1)"
       backdropFilter="blur(10px)"
       borderRadius="xl"
       border="1px solid rgba(255, 255, 255, 0.18)"
       transition="all 0.3s"
       role="group"
-      position="relative"
-      zIndex={2}
+      h="full"
+      boxShadow="0 8px 32px 0 rgba(0, 0, 0, 0.2)"
+      _hover={{
+        boxShadow: "0 8px 32px 0 rgba(0, 198, 224, 0.1)",
+        borderColor: "rgba(0, 198, 224, 0.3)"
+      }}
     >
-      <VStack spacing={4} align="flex-start">
+      <VStack spacing={4} align="flex-start" h="full">
         <Box
-          p={2}
-          bg="rgba(0, 198, 224, 0.1)"
-          borderRadius="lg"
+          display="flex"
+          alignItems="center"
+          justifyContent="center"
+          w="36px"
+          h="36px"
+          fontSize="lg"
+          fontWeight="bold"
           color="rgba(0, 198, 224, 1)"
-          _groupHover={{ bg: 'rgba(0, 198, 224, 0.2)' }}
-          transition="all 0.3s"
+          position="relative"
+          _before={{
+            content: '""',
+            position: 'absolute',
+            inset: '0',
+            borderRadius: 'full',
+            padding: '1px',
+            background: 'linear-gradient(to right, rgba(0, 198, 224, 1), rgba(0, 198, 224, 0.6))',
+            WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
+            WebkitMaskComposite: 'xor',
+            maskComposite: 'exclude',
+            boxShadow: '0 0 20px 2px rgba(0, 198, 224, 0.3)',
+            opacity: 0.9,
+          }}
+          _after={{
+            content: '""',
+            position: 'absolute',
+            inset: '-2px',
+            borderRadius: 'full',
+            background: 'transparent',
+            boxShadow: '0 0 10px 2px rgba(0, 198, 224, 0.15)',
+            filter: 'blur(3px)',
+            opacity: 0.6,
+          }}
         >
-          <Icon as={icon} boxSize={6} />
+          {number}
         </Box>
         <Heading size="md" color="white">
           {title}
@@ -37,47 +74,48 @@ const StepCard = ({ icon, title, description, isLast }) => (
           {description}
         </Text>
       </VStack>
-    </MotionBox>
-    
-    {!isLast && (
-      <HStack 
-        position="absolute" 
-        right="-30px" 
-        top="50%" 
-        transform="translateY(-50%)"
-        zIndex={1}
-        spacing={1}
-        display={{ base: 'none', md: 'flex' }}
-      >
-        <Icon as={ArrowRight} boxSize={5} color="rgba(0, 198, 224, 0.6)" />
-      </HStack>
-    )}
-  </VStack>
+    </Box>
+  </MotionFlex>
 );
+
+const ProcessPath = () => {
+  const display = useBreakpointValue({ base: 'none', lg: 'block' });
+  
+  return (
+    <Box 
+      position="absolute" 
+      top="50%" 
+      left="0"
+      right="0"
+      height="2px"
+      bg="rgba(0, 198, 224, 0.3)"
+      transform="translateY(-50%)"
+      display={display}
+    />
+  );
+};
 
 const HowToUse = () => {
   const steps = [
     {
-      icon: Webhook,
-      title: 'Create Webhook',
-      description: 'Generate a unique webhook URL for your trading strategy. Each webhook is secured with a secret key.',
+      title: 'Create or Subscribe',
+      description: 'Generate custom signals or subscribe to proven strategies. All webhooks are secured with enterprise-grade encryption.',
     },
     {
-      icon: Link,
       title: 'Connect Broker',
-      description: 'Link your preferred broker account. We handle the authentication and maintain secure connections.',
+      description: 'Link your preferred broker account seamlessly. We handle authentication and maintain secure connections.',
     },
     {
-      icon: Binary,
       title: 'Configure Strategy',
-      description: 'Set up your trading parameters, risk management rules, and automation preferences.',
+      description: 'Set up your trading parameters, risk management rules, and customize automation preferences.',
     },
     {
-      icon: Zap,
       title: 'Start Trading',
-      description: 'Your strategy is now live! Receive real-time notifications and monitor performance from your dashboard.',
+      description: 'Your strategy is now live! Monitor performance and receive real-time notifications from your dashboard.',
     },
   ];
+
+  const columns = useBreakpointValue({ base: 1, md: 2, lg: 4 });
 
   return (
     <Box
@@ -99,7 +137,8 @@ const HowToUse = () => {
       />
 
       <Container maxW="7xl" px={{ base: 4, md: 8 }}>
-        <VStack spacing={12}>
+        <VStack spacing={16}>
+          {/* Section Title */}
           <VStack spacing={4} textAlign="center" maxW="800px">
             <Heading
               as="h2"
@@ -122,36 +161,39 @@ const HowToUse = () => {
             </Text>
           </VStack>
 
-          <Box w="full">
-            <SimpleGrid
-              columns={{ base: 1, md: 4 }}
-              spacing={{ base: 8, md: 12 }}
-              w="full"
+          {/* Process Flow */}
+          <Box w="full" position="relative">
+            {/* Connecting Line */}
+            <ProcessPath />
+            
+            {/* Step Cards */}
+            <Flex 
+              direction={{ base: 'column', md: columns === 2 ? 'row' : 'column', lg: 'row' }}
+              wrap={{ md: columns === 2 ? 'wrap' : 'nowrap', lg: 'nowrap' }}
+              justify="space-between"
+              align="stretch"
+              gap={{ base: 10, md: 6, lg: 4 }}
+              position="relative"
             >
               {steps.map((step, index) => (
-                <MotionBox
-                  key={step.title}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: index * 0.1 }}
+                <Box 
+                  key={step.title} 
+                  flex="1" 
+                  position="relative"
+                  pb={columns === 2 && index < 2 ? { md: 10, lg: 0 } : 0}
                 >
-                  <StepCard {...step} isLast={index === steps.length - 1} />
-                </MotionBox>
+                  <MotionBox
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, delay: index * 0.1 }}
+                    h="full"
+                  >
+                    <StepCard {...step} number={index + 1} />
+                  </MotionBox>
+                </Box>
               ))}
-            </SimpleGrid>
+            </Flex>
           </Box>
-
-          {/* Mobile Step Indicators */}
-          <VStack spacing={4} display={{ base: 'flex', md: 'none' }}>
-            {steps.map((_, index) => (
-              <Box
-                key={index}
-                h="20px"
-                w="2px"
-                bg={index === steps.length - 1 ? 'transparent' : 'rgba(0, 198, 224, 0.6)'}
-              />
-            ))}
-          </VStack>
         </VStack>
       </Container>
     </Box>
