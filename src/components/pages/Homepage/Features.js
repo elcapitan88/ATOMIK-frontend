@@ -56,7 +56,7 @@ const Features = () => {
     },
     {
       icon: LineChart,
-      title: 'Advanced Analytics',
+      title: 'Advanced Analytics*',
       description: 'Track your strategy performance with detailed analytics. Monitor success rates, profit/loss, and other key metrics.',
     },
     {
