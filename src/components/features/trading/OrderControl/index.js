@@ -27,9 +27,8 @@ import AccountSelection from './AccountSelection';
 import OrderConfirmationModal from './OrderConfirmationModal';
 import axios from '@/services/axiosConfig';
 import logger from '@/utils/logger';
-
-// Sample tickers - replace with your actual ticker data source
-const AVAILABLE_TICKERS = ['ESH5', 'NQH5', 'RTYH5', 'CLH5', 'GCH5', 'SIH5','BITH5','BTIH5','MESH5', 'MNQH5']
+// Import the ticker utilities
+import { getDisplayTickers, getContractTicker } from '@/utils/formatting/tickerUtils';
 
 const OrderControl = () => {
   const toast = useToast();
@@ -38,6 +37,9 @@ const OrderControl = () => {
     onOpen: onConfirmationOpen,
     onClose: onConfirmationClose
   } = useDisclosure();
+
+  // Get the display tickers from our utility
+  const AVAILABLE_TICKERS = getDisplayTickers();
 
   // Core state
   const [quantity, setQuantity] = useState(1);
@@ -106,9 +108,11 @@ const OrderControl = () => {
           isClosable: true,
         });
       } else if (order.accounts?.[0]) {
-        // Execute single account order
+        // Execute single account order - Use contract ticker format
+        const contractTicker = getContractTicker(order.ticker);
+        
         await axios.post(`/api/v1/brokers/accounts/${order.accounts[0]}/discretionary/orders`, {
-          symbol: order.ticker,
+          symbol: contractTicker, // Use full contract specification
           side: order.type,
           type: 'MARKET',
           quantity: order.quantity,

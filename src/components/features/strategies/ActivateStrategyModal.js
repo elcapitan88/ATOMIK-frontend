@@ -27,6 +27,7 @@ import { Plus, Minus } from 'lucide-react';
 import axiosInstance from '@/services/axiosConfig';
 import { useStrategies } from '@/hooks/useStrategies';
 import { webhookApi } from '@/services/api/Webhooks/webhookApi';
+import { getDisplayTickers, getContractTicker } from '@/utils/formatting/tickerUtils';
 
 // Styles configuration
 const glassEffect = {
@@ -92,7 +93,7 @@ const ActivateStrategyModal = ({ isOpen, onClose, onSubmit, strategy = null }) =
   const { createStrategy, isCreating, createStrategyError } = useStrategies();
   const toast = useToast();
 
-  const tickers = ['ESM5', 'NQM5', 'MNQM5', 'MESM5']; // Available tickers
+  const displayTickers = getDisplayTickers();
 
   // Form validation functions
   const validateSingleAccount = () => {
@@ -283,14 +284,14 @@ const ActivateStrategyModal = ({ isOpen, onClose, onSubmit, strategy = null }) =
         ? {
             strategy_type: 'single',
             webhook_id: formData.singleAccount.webhookId,
-            ticker: formData.singleAccount.ticker,
+            ticker: getContractTicker(formData.singleAccount.ticker),
             account_id: formData.singleAccount.accountId,
             quantity: Number(formData.singleAccount.quantity)
           }
         : {
             strategy_type: 'multiple',
             webhook_id: formData.multipleAccount.webhookId,
-            ticker: formData.multipleAccount.ticker,
+            ticker: getContractTicker(formData.multipleAccount.ticker),
             leader_account_id: formData.multipleAccount.leaderAccountId,
             leader_quantity: Number(formData.multipleAccount.leaderQuantity),
             group_name: formData.multipleAccount.groupName,
@@ -435,7 +436,7 @@ const ActivateStrategyModal = ({ isOpen, onClose, onSubmit, strategy = null }) =
                     }))}
                     placeholder="Select Ticker"
                   >
-                    {tickers.map(ticker => (
+                    {displayTickers.map(ticker => (
                       <option key={ticker} value={ticker}>{ticker}</option>
                     ))}
                   </Select>
@@ -468,7 +469,7 @@ const ActivateStrategyModal = ({ isOpen, onClose, onSubmit, strategy = null }) =
                   }))}
                   placeholder="Select Ticker"
                 >
-                  {tickers.map(ticker => (
+                  {displayTickers.map(ticker => (
                     <option key={ticker} value={ticker}>{ticker}</option>
                   ))}
                 </Select>
