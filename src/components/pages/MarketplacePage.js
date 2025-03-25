@@ -343,7 +343,7 @@ const MarketplacePage = () => {
         {/* Subscribed Strategies Section */}
         {subscribedStrategiesArray.length > 0 && (
           <Box mb={8}>
-            <HStack mb={4} align="center">
+            <HStack mb={4} align="center" justify="center" width="100%">
               <BookMarked size={20} color="white" />
               <Text fontSize="xl" fontWeight="bold" color="white">
                 Your Subscribed Strategies
