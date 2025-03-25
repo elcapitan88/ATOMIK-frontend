@@ -232,22 +232,33 @@ const MarketplacePage = () => {
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.3 }}
+      justify="center" 
+      width="100%"
+      minHeight="260px" // Maintain consistent height
     >
       <AnimatePresence mode="wait">
-        {strategies.map((strategy) => (
-          <MotionBox
-            key={strategy.token}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.3 }}
-          >
-            <StrategyCard
-              strategy={strategy}
-              onSubscriptionChange={handleSubscriptionChange}
-            />
-          </MotionBox>
-        ))}
+        {strategies.length > 0 ? (
+          strategies.map((strategy) => (
+            <MotionBox
+              key={strategy.token}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.3 }}
+            >
+              <StrategyCard
+                strategy={strategy}
+                onSubscriptionChange={handleSubscriptionChange}
+              />
+            </MotionBox>
+          ))
+        ) : (
+          <Flex align="center" justify="center" height="260px">
+            <Text color="whiteAlpha.600" fontSize="md">
+              No strategies available for this category
+            </Text>
+          </Flex>
+        )}
       </AnimatePresence>
     </MotionFlex>
   );
@@ -255,7 +266,7 @@ const MarketplacePage = () => {
   // Search bar component
   const SearchBar = () => (
     <InputGroup
-      maxW="300px"
+      maxW={{ base: "100%", sm: "350px", md: "450px" }}
       transition="all 0.3s"
       transform={searchFocused ? 'translateY(-2px)' : 'none'}
       boxShadow={searchFocused ? '0 4px 12px rgba(0, 198, 224, 0.15)' : 'none'}
@@ -357,16 +368,14 @@ const MarketplacePage = () => {
             category.id
           );
 
-          if (
-            (selectedCategory !== 'all' && category.id !== selectedCategory) ||
-            (searchQuery && filteredStrategies.length === 0)
-          ) {
+          // Skip categories not matching filter when a specific category is selected
+          if (selectedCategory !== 'all' && category.id !== selectedCategory) {
             return null;
           }
 
           return (
             <Box key={category.id}>
-              <HStack mb={4} align="center">
+              <HStack mb={4} align="center" justify="center" width="100%">
                 <category.icon size={20} color="white" />
                 <Text fontSize="xl" fontWeight="bold" color="white">
                   {category.title}
@@ -381,7 +390,7 @@ const MarketplacePage = () => {
                 </Badge>
               </HStack>
 
-              <Text color="whiteAlpha.700" fontSize="sm" mb={4}>
+              <Text color="whiteAlpha.700" fontSize="sm" mb={4} textAlign="center" width="100%">
                 {category.description}
               </Text>
 
