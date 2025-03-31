@@ -2,10 +2,50 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#000000" />
+    
+    <!-- Favicon and App Icons -->
+    <link rel="icon" href="%PUBLIC_URL%/logos/favicon.ico" />
+    <link rel="icon" type="image/png" sizes="32x32" href="%PUBLIC_URL%/logos/Atomik-favicon.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="%PUBLIC_URL%/logos/Atomik-favicon.png" />
+    <link rel="apple-touch-icon" href="%PUBLIC_URL%/logos/Atomik-favicon.png" />
+    <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
+    
+    <!-- Preconnect for Performance -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Primary Meta Tags -->
+    <title>Atomik Trading - Professional Automated Trading Platform</title>
+    <meta name="title" content="Atomik Trading - Professional Automated Trading Platform">
+    <meta name="description" content="Atomik Trading: Professional webhook-based trading platform for copy trading and automated strategies. Designed for prop traders and funded accounts with real-time execution and advanced analytics." />
+    <meta name="keywords" content="trading platform, automated trading, webhook trading, copy trading, prop trading, funded traders, atomik trading, algorithmic trading" />
+    <link rel="canonical" href="https://atomiktrading.io/" />
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://atomiktrading.com/" />
+    <meta property="og:title" content="Atomik Trading - Professional Automated Trading Platform" />
+    <meta property="og:description" content="Professional webhook-based platform for copy trading and automated strategies. Designed for prop traders and funded accounts with real-time execution." />
+    <meta property="og:image" content="%PUBLIC_URL%/logos/og-image.png" />
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image" />
+    <meta property="twitter:url" content="https://atomiktrading.com/" />
+    <meta property="twitter:title" content="Atomik Trading - Professional Automated Trading Platform" />
+    <meta property="twitter:description" content="Professional webhook-based platform for copy trading and automated strategies. Designed for prop traders and funded accounts." />
+    <meta property="twitter:image" content="%PUBLIC_URL%/logos/og-image.png" />
+
+    <!-- Google Analytics (GA4) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-XJMNQ4F6PJ"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-XJMNQ4F6PJ');
+    </script>
 
     <!-- During development, use a more permissive CSP -->
     <meta http-equiv="Content-Security-Policy" content="
@@ -17,14 +57,23 @@
       style-src * 'unsafe-inline';
     ">
 
-
-    <meta
-      name="description"
-      content="Automate your trading with Atomik Trading - Professional webhook-based trading platform"
-    />
-    <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
-    <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
-    <title>Atomik Trading</title>
+    <!-- Structured Data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "Atomik Trading",
+      "applicationCategory": "FinanceApplication",
+      "description": "Professional webhook-based trading platform for copy trading and automated strategies. Specially designed for prop traders and funded accounts.",
+      "operatingSystem": "Web",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD"
+      },
+      "featureList": "Copy Trading, Webhook Integration, Prop Trading Support, Funded Account Management"
+    }
+    </script>
   </head>
   <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>
