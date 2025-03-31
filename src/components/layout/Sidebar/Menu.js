@@ -1,4 +1,4 @@
-import React, { useState, memo, useEffect } from 'react';
+import React, { useState, memo, useEffect, useRef } from 'react';
 import {
   Box,
   VStack,
@@ -11,6 +11,8 @@ import {
   PopoverBody,
   useToast,
   useDisclosure,
+  IconButton,
+  Tooltip,
 } from '@chakra-ui/react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
@@ -22,38 +24,52 @@ import {
   User,
   LayoutDashboard,
   Wand2,
-  Store
+  Store,
+  Menu as MenuIcon,
+  ChevronLeft
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import SupportModal from '../../common/Modal/SupportModal';
 
-const MenuItem = memo(({ icon: Icon, item, isSelected, onClick }) => (
-  <Flex
-    py={2}
-    px={3}
-    bg={isSelected ? 'whiteAlpha.200' : 'transparent'}
-    borderRadius="md"
-    onClick={() => onClick(item)}
-    cursor="pointer"
-    transition="all 0.2s"
-    _hover={{
-      bg: isSelected ? 'whiteAlpha.200' : 'whiteAlpha.100'
-    }}
-    align="center"
-    gap={3}
-  >
-    {Icon && <Icon size={16} color="white" />}
-    <Text color="white" fontSize="sm">{item}</Text>
-  </Flex>
+const MenuItem = memo(({ icon: Icon, item, isSelected, onClick, isExpanded }) => (
+  <Tooltip label={!isExpanded ? item : ""} placement="right" hasArrow isDisabled={isExpanded}>
+    <Flex
+      py={2}
+      px={3}
+      bg={isSelected ? 'rgba(0, 198, 224, 0.1)' : 'transparent'}
+      borderLeft="2px solid"
+      borderColor={isSelected ? "#00C6E0" : "transparent"}
+      borderRadius="md"
+      onClick={(e) => {
+        e.stopPropagation(); // Prevent menu toggle
+        onClick(item);
+      }}
+      cursor="pointer"
+      transition="all 0.2s"
+      _hover={{
+        bg: 'rgba(0, 198, 224, 0.05)',
+        borderColor: isSelected ? "#00C6E0" : "rgba(0, 198, 224, 0.3)"
+      }}
+      align="center"
+      gap={3}
+      mb={2}
+      justify={isExpanded ? "flex-start" : "center"}
+      data-nav-item="true" // Add a data attribute to identify nav items
+    >
+      {Icon && <Icon size={16} color="#00C6E0" />}
+      {isExpanded && <Text color="white" fontSize="sm">{item}</Text>}
+    </Flex>
+  </Tooltip>
 ));
 
 MenuItem.displayName = 'MenuItem';
 
 const Menu = ({ onSelectItem }) => {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isMenuExpanded, setIsMenuExpanded] = useState(false);
   const [selectedItem, setSelectedItem] = useState('Dashboard');
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const { isOpen: isSupportOpen, onOpen: onSupportOpen, onClose: onSupportClose } = useDisclosure();
+  const menuRef = useRef(null);
   
   const navigate = useNavigate();
   const location = useLocation();
@@ -79,6 +95,29 @@ const Menu = ({ onSelectItem }) => {
     }
   ];
 
+  const toggleMenu = (e) => {
+    // Only toggle if clicking the menu background (not on a menu item or user profile)
+    if (e) {
+      // Get the element that was actually clicked
+      const clickedElement = e.target;
+      
+      // Check if the click was on or inside an element with certain data attributes
+      // that should not trigger the toggle
+      const isNavItem = clickedElement.closest('[data-nav-item="true"]');
+      const isUserMenu = clickedElement.closest('[data-user-menu="true"]');
+      const isToggleButton = clickedElement.closest('[data-toggle-button="true"]');
+      
+      // If clicked on a menu item or user menu, don't toggle
+      if (isNavItem || isUserMenu) {
+        return;
+      }
+      
+      // If it's a toggle button click, let the handler complete without return
+    }
+    
+    setIsMenuExpanded(!isMenuExpanded);
+  };
+
   const handleItemClick = (item) => {
     const menuItem = menuItems.find(i => i.name === item);
     if (menuItem) {
@@ -86,11 +125,6 @@ const Menu = ({ onSelectItem }) => {
       if (onSelectItem) onSelectItem(item);
       navigate(menuItem.path);
     }
-  };
-
-  const handleMouseLeave = () => {
-    setIsMenuOpen(false);
-    setIsUserMenuOpen(false);
   };
 
   // Update selected item based on current location
@@ -128,6 +162,19 @@ const Menu = ({ onSelectItem }) => {
     onSupportOpen();
   };
 
+  const handleUserMenuClick = (e) => {
+    e.stopPropagation(); // Prevent menu toggle
+    setIsUserMenuOpen(!isUserMenuOpen);
+  };
+
+  // Function to handle opening Help Center - fixed to not rely on event parameter
+  const openHelpCenter = () => {
+    // Open help center URL in a new tab
+    window.open('https://docs.atomiktrading.io', '_blank');
+    // Close the user menu after clicking
+    setIsUserMenuOpen(false);
+  };
+
   return (
     <>
       <Flex
@@ -135,29 +182,43 @@ const Menu = ({ onSelectItem }) => {
         left={0}
         top={0}
         h="100vh"
-        w={isMenuOpen || isUserMenuOpen ? "56" : "16"}
+        w={isMenuExpanded ? "200px" : "64px"}
         transition="all 0.3s ease-in-out"
-        borderRightRadius="2xl"
-        overflow="visible"
+        borderRightRadius="lg"
         flexDirection="column"
         zIndex={1000}
-        bg={isMenuOpen || isUserMenuOpen ? "rgba(255, 255, 255, 0.1)" : "transparent"}
-        backdropFilter={isMenuOpen || isUserMenuOpen ? "blur(10px)" : "none"}
-        borderRight={(isMenuOpen || isUserMenuOpen) ? "1px solid rgba(255, 255, 255, 0.18)" : "none"}
-        onMouseEnter={() => setIsMenuOpen(true)}
-        onMouseLeave={handleMouseLeave}
+        bg="rgba(0, 0, 0, 0.75)"
+        backdropFilter="blur(10px)"
+        boxShadow="0 0 20px rgba(0, 198, 224, 0.15)"
+        border="1px solid rgba(255, 255, 255, 0.1)"
         role="navigation"
         aria-label="Main Navigation"
+        px={3}
+        py={4}
+        onClick={toggleMenu}
+        ref={menuRef}
+        cursor="pointer"
       >
-        <VStack 
-          spacing={3} 
-          align="stretch" 
-          mt={6} 
-          p={3}
-          opacity={isMenuOpen ? 1 : 0}
-          transition="opacity 0.3s ease-in-out"
-          visibility={isMenuOpen ? "visible" : "hidden"}
-        >
+        {/* Menu toggle button - visible but functionality handled by container */}
+        <Flex justify="flex-end" mb={6}>
+          <IconButton
+            aria-label={isMenuExpanded ? "Collapse menu" : "Expand menu"}
+            icon={isMenuExpanded ? <ChevronLeft size={16} /> : <MenuIcon size={16} />}
+            variant="ghost"
+            color="#00C6E0"
+            _hover={{ bg: "rgba(0, 198, 224, 0.1)" }}
+            // We'll keep the onClick handler here for UX clarity, but it's redundant
+            onClick={(e) => {
+              e.stopPropagation();
+              toggleMenu();
+            }}
+            size="sm"
+            data-toggle-button="true"
+          />
+        </Flex>
+
+        {/* Menu Items */}
+        <VStack spacing={1} align="stretch" mt={2}>
           {menuItems.map(({ name, icon }) => (
             <MenuItem
               key={name}
@@ -165,12 +226,14 @@ const Menu = ({ onSelectItem }) => {
               item={name}
               isSelected={selectedItem === name}
               onClick={handleItemClick}
+              isExpanded={isMenuExpanded}
             />
           ))}
         </VStack>
 
+        {/* User Profile Section */}
         {isAuthenticated && (
-          <Box position="absolute" bottom="32px" width="100%" px={3}>
+          <Box mt="auto" width="100%" px={1}>
             <Popover 
               placement="top-start" 
               isLazy 
@@ -184,45 +247,45 @@ const Menu = ({ onSelectItem }) => {
                   borderRadius="md"
                   cursor="pointer"
                   align="center"
-                  bg={isMenuOpen || isUserMenuOpen ? "whiteAlpha.100" : "transparent"}
-                  _hover={{ bg: isMenuOpen || isUserMenuOpen ? "whiteAlpha.200" : "transparent" }}
-                  border={isMenuOpen || isUserMenuOpen ? "1px solid" : "none"}
-                  borderColor="whiteAlpha.200"
-                  onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+                  bg="rgba(0, 0, 0, 0.4)"
+                  _hover={{ bg: "rgba(0, 0, 0, 0.6)" }}
+                  // No border here
+                  onClick={handleUserMenuClick}
                   height="48px"
                   position="relative"
                   role="button"
                   aria-label="User Menu"
+                  justify={isMenuExpanded ? "space-between" : "center"}
+                  data-user-menu="true"
                 >
-                  <Flex
-                    w="32px"
-                    h="32px"
-                    borderRadius="full"
-                    bg="rgba(0, 198, 224, 0.2)"
-                    border="2px solid rgba(0, 198, 224, 0.5)"
-                    align="center"
-                    justify="center"
-                    flexShrink={0}
-                  >
-                    <User size={16} color="rgba(0, 198, 224, 1)" />
+                  <Flex align="center">
+                    <Flex
+                      w="32px"
+                      h="32px"
+                      borderRadius="full"
+                      bg="rgba(0, 198, 224, 0.2)"
+                      border="2px solid rgba(0, 198, 224, 0.5)"
+                      align="center"
+                      justify="center"
+                      flexShrink={0}
+                    >
+                      <User size={16} color="rgba(0, 198, 224, 1)" />
+                    </Flex>
+                    
+                    {isMenuExpanded && (
+                      <Box ml={3} maxW="100px">
+                        <Text fontSize="xs" color="white" noOfLines={1}>
+                          {user?.username || 'User'}
+                        </Text>
+                      </Box>
+                    )}
                   </Flex>
-                  <Box 
-                    ml={3} 
-                    flex={1}
-                    opacity={isMenuOpen || isUserMenuOpen ? 1 : 0}
-                    transition="opacity 0.3s ease-in-out"
-                    display={isMenuOpen || isUserMenuOpen ? "block" : "none"}
-                  >
-                    <Text fontSize="xs" color="white">
-                      {user?.username || 'Loading...'}
-                    </Text>
-                  </Box>
-                  {(isMenuOpen || isUserMenuOpen) && (
+                  
+                  {isMenuExpanded && (
                     <ChevronDown 
                       size={16} 
                       color="white" 
                       style={{ 
-                        marginLeft: '8px',
                         opacity: 0.6,
                         transform: isUserMenuOpen ? 'rotate(180deg)' : 'rotate(0deg)',
                         transition: 'transform 0.3s ease'
@@ -233,12 +296,13 @@ const Menu = ({ onSelectItem }) => {
               </PopoverTrigger>
 
               <PopoverContent
-                bg="rgba(255, 255, 255, 0.1)"
-                borderColor="rgba(255, 255, 255, 0.18)"
+                bg="rgba(0, 0, 0, 0.8)"
+                borderColor="rgba(255, 255, 255, 0.1)"
                 backdropFilter="blur(10px)"
-                boxShadow="0 8px 32px 0 rgba(0, 198, 224, 0.37)"
+                boxShadow="0 8px 32px 0 rgba(0, 198, 224, 0.2)"
                 _focus={{ boxShadow: "none" }}
                 width="200px"
+                onClick={(e) => e.stopPropagation()} // Prevent menu toggle
               >
                 <PopoverHeader borderBottomWidth="1px" borderColor="whiteAlpha.200" p={3}>
                   <Text 
@@ -251,11 +315,31 @@ const Menu = ({ onSelectItem }) => {
                 </PopoverHeader>
                 <PopoverBody p={2}>
                   <VStack spacing={1} align="stretch">
-                    <MenuItem icon={Settings} item="Settings" onClick={() => navigate('/settings')} />
-                    <MenuItem icon={HelpCircle} item="Help Center" onClick={() => {}} />
-                    <MenuItem icon={LifeBuoy} item="Get Support" onClick={handleSupportClick} />
+                    <MenuItem 
+                      icon={Settings} 
+                      item="Settings" 
+                      onClick={() => navigate('/settings')} 
+                      isExpanded={true}
+                    />
+                    <MenuItem 
+                      icon={HelpCircle} 
+                      item="Help Center" 
+                      onClick={openHelpCenter} 
+                      isExpanded={true}
+                    />
+                    <MenuItem 
+                      icon={LifeBuoy} 
+                      item="Get Support" 
+                      onClick={handleSupportClick} 
+                      isExpanded={true}
+                    />
                     <Box my={2} h="1px" bg="whiteAlpha.200" />
-                    <MenuItem icon={LogOut} item="Log Out" onClick={handleLogout} />
+                    <MenuItem 
+                      icon={LogOut} 
+                      item="Log Out" 
+                      onClick={handleLogout} 
+                      isExpanded={true}
+                    />
                   </VStack>
                 </PopoverBody>
               </PopoverContent>
