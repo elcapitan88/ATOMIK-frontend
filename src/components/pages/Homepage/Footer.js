@@ -47,8 +47,8 @@ const Footer = () => {
 
   const legalLinks = [
     { label: 'Privacy Policy', href: 'https://docs.atomiktrading.io/docs/legal/privacy-policy' },
-    { label: 'Terms of Service', href: 'https://atomiktrading.io/docs/legal/terms-of-service' },
-    { label: 'Cookie Policy', href: 'https://atomiktrading.io/docs/legal/cookie-policy' },
+    { label: 'Terms of Service', href: 'https://docs.atomiktrading.io/docs/legal/terms-of-service' },
+    { label: 'Cookie Policy', href: 'https://docs.atomiktrading.io/docs/legal/cookie-policy' },
     { label: 'Data Protection', href: '/data-protection' },
   ];
 
