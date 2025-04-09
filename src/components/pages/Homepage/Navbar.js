@@ -51,6 +51,7 @@ const Navbar = () => {
             src="/logos/atomik-logo.svg" 
             alt="AtomikTrading Logo"
             height="36px"
+            width="180px"
             maxWidth="180px"
             objectFit="contain"
             transition="transform 0.2s"

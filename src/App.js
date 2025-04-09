@@ -1,17 +1,19 @@
-import React, { Suspense, useEffect } from 'react';
+import React, { Suspense, useEffect, lazy } from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Box, Spinner } from '@chakra-ui/react';
 import { useAuth } from '@/contexts/AuthContext';
 
 // Import components
 import Homepage from './components/pages/Homepage/Homepage';
-import PaymentSuccess from './components/pages/PaymentSuccess';
-import Dashboard from './components/pages/Dashboard';
-import AuthPage from './components/pages/AuthPage';
-import ResetPassword from './components/pages/ResetPassword';
-import SettingsPage from './components/pages/SettingsPage';
-import MarketplacePage from './components/pages/MarketplacePage';
-import PricingPage from './components/pages/PricingPage';
+
+// Lazy load non-homepage routes
+const PaymentSuccess = lazy(() => import('./components/pages/PaymentSuccess'));
+const Dashboard = lazy(() => import('./components/pages/Dashboard'));
+const AuthPage = lazy(() => import('./components/pages/AuthPage'));
+const ResetPassword = lazy(() => import('./components/pages/ResetPassword'));
+const SettingsPage = lazy(() => import('./components/pages/SettingsPage'));
+const MarketplacePage = lazy(() => import('./components/pages/MarketplacePage'));
+const PricingPage = lazy(() => import('./components/pages/PricingPage'));
 
 // Layout wrapper for authenticated routes
 const DashboardLayout = ({ children }) => (
