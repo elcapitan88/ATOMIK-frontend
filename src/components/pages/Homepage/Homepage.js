@@ -77,7 +77,7 @@ const Homepage = () => {
         
         {/* Twitter */}
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content="AutoTrade - Professional Trading Automation Platform" />
+        <meta name="twitter:title" content="Atomik Trading - Professional Trading Automation Platform" />
         <meta name="twitter:description" content="Professional-grade webhook-based trading automation platform. Connect your favorite broker and automate your trading strategies with ease." />
         
         {/* Additional SEO tags */}
