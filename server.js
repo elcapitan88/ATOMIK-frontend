@@ -10,17 +10,26 @@ app.use((req, res, next) => {
   next();
 });
 
-// Serve static files with caching disabled for HTML (important for SPAs)
+// Serve static files with improved caching strategy
 app.use(express.static(path.join(__dirname, 'build'), {
   etag: true,
   lastModified: true,
-  setHeaders: (res, path) => {
-    if (path.endsWith('.html')) {
-      // No cache for HTML files
+  setHeaders: (res, filePath) => {
+    // HTML files: no cache for HTML to ensure fresh content
+    if (filePath.endsWith('.html')) {
       res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-    } else {
-      // Cache for everything else
-      res.setHeader('Cache-Control', 'max-age=31536000');
+    } 
+    // JavaScript and CSS files: long-term caching with versioning in filename
+    else if (filePath.match(/\.(js|css)$/)) {
+      res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+    }
+    // Images, fonts, and other media: aggressive caching
+    else if (filePath.match(/\.(jpg|jpeg|png|gif|ico|svg|webp|avif|woff|woff2|ttf|otf|eot)$/)) {
+      res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+    }
+    // Everything else: moderate caching
+    else {
+      res.setHeader('Cache-Control', 'public, max-age=604800');
     }
   }
 }));
