@@ -16,17 +16,6 @@ const Hero = () => {
       bg="black"
       overflow="hidden"
     >
-      {/* Gradient Background */}
-      {/* <Box
-        position="absolute"
-        top="0"
-        left="0"
-        right="0"
-        bottom="0"
-        bg="linear-gradient(45deg, rgba(0,0,0,0.95) 0%, rgba(0,198,224,0.1) 100%)"
-        pointerEvents="none"
-      /> */}
-
       {/* Particle Effect */}
       <ParticleBackground />
 
@@ -68,19 +57,16 @@ const Hero = () => {
               </Heading>
             </MotionBox>
 
-            <MotionBox
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.2 }}
+            {/* Optimized LCP element - direct rendering without animation delay */}
+            <Text
+              fontSize={{ base: 'lg', md: 'xl' }}
+              color="whiteAlpha.900"
+              maxW="600px"
+              display="block"
+              id="hero-description"
             >
-              <Text
-                fontSize={{ base: 'lg', md: 'xl' }}
-                color="whiteAlpha.900"
-                maxW="600px"
-              >
-                Connect your favorite broker, set up webhooks, and automate your trading strategies with enterprise-grade reliability. Start trading smarter today.
-              </Text>
-            </MotionBox>
+              Connect your favorite broker, set up webhooks, and automate your trading strategies with enterprise-grade reliability. Start trading smarter today.
+            </Text>
 
             <MotionBox
               initial={{ opacity: 0, y: 20 }}
