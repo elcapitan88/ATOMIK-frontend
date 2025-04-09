@@ -9,52 +9,43 @@ module.exports = {
       '@hooks': path.resolve(__dirname, 'src/hooks'),
       '@services': path.resolve(__dirname, 'src/services'),
     },
-    configure: (webpackConfig, { env, paths }) => {
-      // Optimize bundle for modern browsers
-      if (env === 'production') {
-        // Target ES2017 features for modern browsers
-        webpackConfig.module.rules[1].oneOf.forEach(rule => {
+    configure: (webpackConfig) => {
+      // Only modify in production mode
+      if (process.env.NODE_ENV === 'production') {
+        // Find babel-loader more safely
+        const loaders = webpackConfig.module.rules.find(rule => rule.oneOf)?.oneOf || [];
+        
+        // Update babel-loader config if found
+        loaders.forEach(rule => {
           if (rule.loader && rule.loader.includes('babel-loader') && rule.options) {
-            // Update preset-env options
-            rule.options.presets.forEach(preset => {
-              if (Array.isArray(preset) && preset[0] && preset[0].includes('preset-env')) {
-                // Modern browser targets
-                preset[1].targets = {
-                  esmodules: true
-                };
-                // Disable unnecessary polyfills
-                preset[1].useBuiltIns = 'usage';
-                preset[1].corejs = 3;
-              }
-            });
+            // Find preset-env
+            const presetEnv = rule.options.presets?.find(
+              preset => Array.isArray(preset) && preset[0]?.includes('preset-env')
+            );
+            
+            // Update its configuration if found
+            if (presetEnv && Array.isArray(presetEnv)) {
+              presetEnv[1] = {
+                ...presetEnv[1],
+                targets: { esmodules: true },
+                useBuiltIns: 'usage',
+                corejs: 3
+              };
+            }
           }
         });
         
-        // Optimize chunks
+        // Optimize chunk splitting
         webpackConfig.optimization.splitChunks = {
           chunks: 'all',
+          maxInitialRequests: 30,
+          maxAsyncRequests: 30,
           minSize: 20000,
           maxSize: 244000,
-          minChunks: 1,
-          maxAsyncRequests: 30,
-          maxInitialRequests: 30,
-          automaticNameDelimiter: '~',
-          cacheGroups: {
-            vendors: {
-              test: /[\\/]node_modules[\\/]/,
-              priority: -10,
-              reuseExistingChunk: true,
-            },
-            default: {
-              minChunks: 2,
-              priority: -20,
-              reuseExistingChunk: true,
-            },
-          },
         };
       }
       
       return webpackConfig;
-    },
+    }
   }
 };
