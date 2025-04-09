@@ -64,9 +64,10 @@ const Hero = () => {
               maxW="600px"
               display="block"
               id="hero-description"
-            >
-              Connect your favorite broker, set up webhooks, and automate your trading strategies with enterprise-grade reliability. Start trading smarter today.
-            </Text>
+              // Add these properties:
+              fontWeight="medium" 
+              dangerouslySetInnerHTML={{ __html: "Connect your favorite broker, set up webhooks, and automate your trading strategies with enterprise-grade reliability. Start trading smarter today." }}
+            />
 
             <MotionBox
               initial={{ opacity: 0, y: 20 }}
