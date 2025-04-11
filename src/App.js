@@ -14,6 +14,8 @@ const ResetPassword = lazy(() => import('./components/pages/ResetPassword'));
 const SettingsPage = lazy(() => import('./components/pages/SettingsPage'));
 const MarketplacePage = lazy(() => import('./components/pages/MarketplacePage'));
 const PricingPage = lazy(() => import('./components/pages/PricingPage'));
+const StrategyBuilderPage = lazy(() => import('./components/pages/Builder/StrategyBuilderPage'));
+const LandingPage = lazy(() => import('./components/pages/landing/LandingPage'));
 
 // Layout wrapper for authenticated routes
 const DashboardLayout = ({ children }) => (
@@ -119,6 +121,8 @@ function App() {
       <Routes>
         {/* Public Routes */}
         <Route path="/" element={<Homepage />} />
+
+        <Route path="/start" element={<LandingPage />} />
         
         {/* Pricing Route - Now publicly accessible */}
         <Route
@@ -177,6 +181,16 @@ function App() {
             <WithAuth>
               <DashboardLayout>
                 <MarketplacePage />
+              </DashboardLayout>
+            </WithAuth>
+          }
+        />
+        <Route
+          path="/strategy-builder"
+          element={
+            <WithAuth>
+              <DashboardLayout>
+                <StrategyBuilderPage />
               </DashboardLayout>
             </WithAuth>
           }
