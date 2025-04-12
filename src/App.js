@@ -185,7 +185,7 @@ function App() {
             </WithAuth>
           }
         />
-        <Route
+        {/* <Route
           path="/strategy-builder"
           element={
             <WithAuth>
@@ -194,7 +194,7 @@ function App() {
               </DashboardLayout>
             </WithAuth>
           }
-        />
+        /> */}
 
         <Route
           path="/settings"
