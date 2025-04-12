@@ -14,7 +14,7 @@ const ResetPassword = lazy(() => import('./components/pages/ResetPassword'));
 const SettingsPage = lazy(() => import('./components/pages/SettingsPage'));
 const MarketplacePage = lazy(() => import('./components/pages/MarketplacePage'));
 const PricingPage = lazy(() => import('./components/pages/PricingPage'));
-const StrategyBuilderPage = lazy(() => import('./components/pages/Builder/StrategyBuilderPage'));
+//const StrategyBuilderPage = lazy(() => import('./components/pages/Builder/StrategyBuilderPage'));
 const LandingPage = lazy(() => import('./components/pages/landing/LandingPage'));
 
 // Layout wrapper for authenticated routes
