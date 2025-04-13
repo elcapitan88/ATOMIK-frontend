@@ -1,14 +1,15 @@
 import React from 'react';
-import { Box, Container, SimpleGrid, Heading, Text, VStack, Image } from '@chakra-ui/react';
+import { Box, Container, SimpleGrid, Heading, Text, VStack, Image, Flex } from '@chakra-ui/react';
 import { motion } from 'framer-motion';
 
 const MotionBox = motion(Box);
+const MotionFlex = motion(Flex);
 
 const PartnerLogo = ({ name }) => (
   <MotionBox
     whileHover={{ scale: 1.05 }}
     transition="all 0.3s"
-    p={8}
+    p={{ base: 4, md: 8 }}
     bg="rgba(255, 255, 255, 0.1)"
     backdropFilter="blur(10px)"
     borderRadius="xl"
@@ -16,10 +17,15 @@ const PartnerLogo = ({ name }) => (
     display="flex"
     alignItems="center"
     justifyContent="center"
-    height="100px"
+    height={{ base: "80px", md: "100px" }}
   >
     {/* Replace with actual broker logos */}
-    <Text color="white" fontSize="xl" fontWeight="bold">
+    <Text 
+      color="white" 
+      fontSize={{ base: "md", md: "xl" }} 
+      fontWeight="bold"
+      textAlign="center"
+    >
       {name}
     </Text>
   </MotionBox>
@@ -37,7 +43,7 @@ const IntegrationPartners = () => {
 
   return (
     <Box
-      py={20}
+      py={{ base: 12, md: 20 }}
       bg="black"
       position="relative"
       overflow="hidden"
@@ -54,11 +60,11 @@ const IntegrationPartners = () => {
       />
 
       <Container maxW="7xl" px={{ base: 4, md: 8 }}>
-        <VStack spacing={12}>
+        <VStack spacing={{ base: 8, md: 12 }}>
           <VStack spacing={4} textAlign="center" maxW="800px">
             <Heading
               as="h2"
-              size="2xl"
+              size={{ base: "xl", md: "2xl" }}
               color="white"
               fontWeight="bold"
             >
@@ -72,14 +78,19 @@ const IntegrationPartners = () => {
                 Partners
               </Text>
             </Heading>
-            <Text color="whiteAlpha.800" fontSize="lg">
+            <Text 
+              color="whiteAlpha.800" 
+              fontSize={{ base: "md", md: "lg" }}
+              px={{ base: 2, md: 0 }}
+            >
               Seamlessly connect with leading trading platforms and expand your trading capabilities
             </Text>
           </VStack>
 
+          {/* Mobile-optimized grid */}
           <SimpleGrid
-            columns={{ base: 2, md: 3 }}
-            spacing={8}
+            columns={{ base: 1, sm: 2, md: 3 }}
+            spacing={{ base: 4, md: 8 }}
             w="full"
           >
             {partners.map((partner, index) => (
@@ -94,17 +105,31 @@ const IntegrationPartners = () => {
             ))}
           </SimpleGrid>
 
-          <Box
-            mt={8}
-            p={6}
+          {/* Coming Soon Box */}
+          <MotionFlex
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.6 }}
+            mt={{ base: 4, md: 8 }}
+            p={{ base: 4, md: 6 }}
             bg="rgba(255, 255, 255, 0.05)"
             borderRadius="xl"
             border="1px dashed rgba(0, 198, 224, 0.3)"
+            direction="column"
+            align="center"
+            justify="center"
+            w="full"
+            maxW={{ base: "full", md: "md" }}
+            mx="auto"
           >
-            <Text color="whiteAlpha.800" fontSize="sm" textAlign="center">
+            <Text 
+              color="whiteAlpha.800" 
+              fontSize={{ base: "xs", md: "sm" }}
+              textAlign="center"
+            >
               More coming soon! We're continuously expanding our integration partners.
             </Text>
-          </Box>
+          </MotionFlex>
         </VStack>
       </Container>
     </Box>

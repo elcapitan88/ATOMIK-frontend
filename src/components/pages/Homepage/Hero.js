@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, Container, Heading, Text, Button, Stack, VStack } from '@chakra-ui/react';
+import { Box, Container, Heading, Text, Button, Stack, VStack, Image } from '@chakra-ui/react';
 import { motion } from 'framer-motion';
 import { Link as RouterLink } from 'react-router-dom';
 import ParticleBackground from './ParticleBackground';
@@ -16,15 +16,41 @@ const Hero = () => {
       bg="black"
       overflow="hidden"
     >
-      {/* Particle Effect */}
+      {/* Particle Effect Background */}
       <ParticleBackground />
+      
+      {/* Background Gradient Elements */}
+      <Box
+        position="absolute"
+        top="15%"
+        left="5%"
+        width="30%"
+        height="30%"
+        bgGradient="radial(circle, rgba(0,198,224,0.15) 0%, rgba(0,0,0,0) 70%)"
+        filter="blur(50px)"
+        zIndex={0}
+        pointerEvents="none"
+      />
+      
+      <Box
+        position="absolute"
+        bottom="10%"
+        right="5%"
+        width="40%"
+        height="40%"
+        bgGradient="radial(circle, rgba(0,198,224,0.05) 0%, rgba(0,0,0,0) 70%)"
+        filter="blur(60px)"
+        zIndex={0}
+        pointerEvents="none"
+      />
 
-      <Container maxW="7xl" position="relative" px={{ base: 4, md: 8 }}>
+      <Container maxW="7xl" position="relative" px={{ base: 4, md: 8 }} zIndex={1}>
         <Stack
           direction={{ base: 'column', lg: 'row' }}
-          spacing={{ base: 8, lg: 20 }}
+          spacing={{ base: 12, lg: 8 }}
           align="center"
           justify="space-between"
+          py={{ base: 12, md: 16 }}
         >
           {/* Content - Left Side */}
           <VStack
@@ -57,17 +83,21 @@ const Hero = () => {
               </Heading>
             </MotionBox>
 
-            {/* Optimized LCP element - direct rendering without animation delay */}
-            <Text
-              fontSize={{ base: 'lg', md: 'xl' }}
-              color="whiteAlpha.900"
-              maxW="600px"
-              display="block"
-              id="hero-description"
-              // Add these properties:
-              fontWeight="medium" 
-              dangerouslySetInnerHTML={{ __html: "Connect your favorite broker, set up webhooks, and automate your trading strategies with enterprise-grade reliability. Start trading smarter today." }}
-            />
+            {/* Description Text */}
+            <MotionBox
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.2 }}
+            >
+              <Text
+                fontSize={{ base: 'lg', md: 'xl' }}
+                color="whiteAlpha.900"
+                maxW="600px"
+                fontWeight="medium"
+              >
+                Connect your favorite broker, set up webhooks, and automate your trading strategies with enterprise-grade reliability. Start trading smarter today.
+              </Text>
+            </MotionBox>
 
             <MotionBox
               initial={{ opacity: 0, y: 20 }}
@@ -87,6 +117,8 @@ const Hero = () => {
                     color="white"
                     _hover={{
                       bg: 'rgba(0, 198, 224, 0.8)',
+                      transform: 'translateY(-2px)',
+                      boxShadow: '0 4px 12px rgba(0, 198, 224, 0.25)'
                     }}
                     px={8}
                   >
@@ -112,26 +144,43 @@ const Hero = () => {
             </MotionBox>
           </VStack>
 
-          {/* Right Side - Placeholder for image/animation */}
+          {/* Right Side - Dashboard Image */}
           <MotionBox
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 1 }}
             w={{ base: 'full', lg: '50%' }}
-            display={{ base: 'none', lg: 'block' }}
+            display={{ base: 'block', lg: 'block' }}
           >
             <Box
-              w="full"
-              h="500px"
-              bg="rgba(255,255,255,0.1)"
-              borderRadius="2xl"
+              width="100%"
+              maxW={{ base: "100%", md: "700px", lg: "600px" }}
+              mx="auto"
               position="relative"
+              borderRadius="2xl"
               overflow="hidden"
               boxShadow="0 8px 32px 0 rgba(0, 198, 224, 0.37)"
-              backdropFilter="blur(10px)"
               border="1px solid rgba(255,255,255,0.18)"
+              bg="rgba(0,0,0,0.2)"
+              // This maintains 16:9 aspect ratio
+              _before={{
+                content: '""',
+                display: 'block',
+                paddingTop: '53.25%' // 16:9 Aspect Ratio
+              }}
             >
-              {/* You can add a trading chart or platform preview here */}
+              {/* Dashboard Image */}
+              <Image
+                src="/images/dashboard.png"
+                alt="Atomik Trading Dashboard"
+                position="absolute"
+                top="0"
+                left="0"
+                width="100%"
+                height="100%"
+                objectFit="cover"
+                objectPosition="center"
+              />
             </Box>
           </MotionBox>
         </Stack>

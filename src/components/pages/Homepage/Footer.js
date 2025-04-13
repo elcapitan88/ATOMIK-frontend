@@ -8,6 +8,9 @@ import {
   VStack,
   HStack,
   Icon,
+  Divider,
+  Flex,
+  Image
 } from '@chakra-ui/react';
 import { Link as RouterLink } from 'react-router-dom';
 import { Mail, Youtube } from 'lucide-react';
@@ -32,24 +35,59 @@ const TikTokIcon = ({ size = 24, ...props }) => (
   </Icon>
 );
 
+// A simple footer link component
+const FooterLink = ({ label, href }) => (
+  <Box
+    as="a"
+    href={href}
+    color="whiteAlpha.800"
+    _hover={{ color: "rgba(0, 198, 224, 1)" }}
+    fontSize={{ base: "xs", md: "sm" }}
+    transition="color 0.2s"
+    py={{ base: 1, md: 1.5 }}
+  >
+    {label}
+  </Box>
+);
+
 const Footer = () => {
-  const productLinks = [
-    { label: 'Features', href: '#features' },
-    { label: 'Security', href: '#security' },
-    { label: 'Pricing', href: '#pricing' },
-    { label: 'Resources', href: '#resources' },
-  ];
-
-  const companyLinks = [
-    { label: 'Contact', href:`mailto:${encodeURIComponent('support@atomiktrading.io')}?subject=${encodeURIComponent('[AtomikTrading Support]')}`},
-    { label: 'Partners', href: '/partners' },
-  ];
-
-  const legalLinks = [
-    { label: 'Privacy Policy', href: 'https://docs.atomiktrading.io/docs/legal/privacy-policy' },
-    { label: 'Terms of Service', href: 'https://docs.atomiktrading.io/docs/legal/terms-of-service' },
-    { label: 'Cookie Policy', href: 'https://docs.atomiktrading.io/docs/legal/cookie-policy' },
-    { label: 'Data Protection', href: '/data-protection' },
+  // Organize all links into a single array for mobile
+  const allLinks = [
+    { 
+      label: "Features", 
+      href: "#features", 
+      group: "Product" 
+    },
+    { 
+      label: "Security", 
+      href: "#security", 
+      group: "Product" 
+    },
+    { 
+      label: "Pricing", 
+      href: "#pricing", 
+      group: "Product" 
+    },
+    { 
+      label: "Contact", 
+      href: `mailto:${encodeURIComponent('support@atomiktrading.io')}?subject=${encodeURIComponent('[AtomikTrading Support]')}`,
+      group: "Company"
+    },
+    { 
+      label: "Partners", 
+      href: "/partners", 
+      group: "Company" 
+    },
+    { 
+      label: "Privacy Policy", 
+      href: "https://docs.atomiktrading.io/docs/legal/privacy-policy", 
+      group: "Legal" 
+    },
+    { 
+      label: "Terms of Service", 
+      href: "https://docs.atomiktrading.io/docs/legal/terms-of-service", 
+      group: "Legal" 
+    }
   ];
 
   const socialLinks = [
@@ -67,7 +105,6 @@ const Footer = () => {
       borderTop="1px solid"
       borderColor="whiteAlpha.200"
       position="relative"
-      overflow="hidden"
     >
       {/* Background Gradient */}
       <Box
@@ -80,111 +117,34 @@ const Footer = () => {
         pointerEvents="none"
       />
 
-      <Container maxW="7xl" py={16} px={{ base: 4, md: 8 }} position="relative">
-        <SimpleGrid
-          templateColumns={{ base: '1fr', md: '2fr 1fr 1fr 1fr' }}
-          spacing={8}
-          mb={12}
+      <Container maxW="7xl" py={{ base: 10, md: 16 }} px={{ base: 4, md: 8 }}>
+        {/* Main Footer Content */}
+        <Flex 
+          direction={{ base: "column", md: "row" }}
+          justify="space-between"
+          mb={{ base: 8, md: 12 }}
         >
           {/* Company Info */}
-          <VStack align="flex-start" spacing={6}>
+          <Box 
+            mb={{ base: 8, md: 0 }} 
+            maxW={{ base: "full", md: "350px" }}
+            textAlign={{ base: "center", md: "left" }}
+          >
             <RouterLink to="/">
-              <Text fontSize="2xl" fontWeight="bold">
+              <Text fontSize="2xl" fontWeight="bold" mb={3}>
                 AtomikTrading
               </Text>
             </RouterLink>
-            <Text color="whiteAlpha.800">
+            <Text color="whiteAlpha.800" mb={4} fontSize={{ base: "sm", md: "md" }}>
               Professional-grade webhook-based trading automation platform. Connect your favorite broker and automate your trading strategies with ease.
             </Text>
-          </VStack>
-
-          {/* Product Links */}
-          <VStack align="flex-start" spacing={4}>
-            <Text fontWeight="medium" fontSize="lg">Product</Text>
-            {productLinks.map((link) => (
-              <Box
-                key={link.label}
-                as="a"
-                href={link.href}
-                color="whiteAlpha.800"
-                _hover={{ color: "rgba(0, 198, 224, 1)" }}
-                fontSize="sm"
-              >
-                {link.label}
-              </Box>
-            ))}
-          </VStack>
-
-          {/* Company Links */}
-          <VStack align="flex-start" spacing={4}>
-            <Text fontWeight="medium" fontSize="lg">Company</Text>
-            {companyLinks.map((link) => (
-              <Box
-                key={link.label}
-                as="a"
-                href={link.href}
-                color="whiteAlpha.800"
-                _hover={{ color: "rgba(0, 198, 224, 1)" }}
-                fontSize="sm"
-              >
-                {link.label}
-              </Box>
-            ))}
-          </VStack>
-
-          {/* Legal Links */}
-          <VStack align="flex-start" spacing={4}>
-            <Text fontWeight="medium" fontSize="lg">Legal</Text>
-            {legalLinks.map((link) => (
-              <Box
-                key={link.label}
-                as="a"
-                href={link.href}
-                color="whiteAlpha.800"
-                _hover={{ color: "rgba(0, 198, 224, 1)" }}
-                fontSize="sm"
-              >
-                {link.label}
-              </Box>
-            ))}
-          </VStack>
-        </SimpleGrid>
-
-        <Box 
-          borderTop="1px solid" 
-          borderColor="whiteAlpha.200" 
-          pt={8}
-        >
-          {/* Bottom Bar */}
-          <Stack
-            direction={{ base: 'column', md: 'row' }}
-            justify={{ base: 'center', md: 'space-between' }}
-            align="center"
-            spacing={{ base: 4, md: 0 }}
-          >
-            <Text color="whiteAlpha.600" fontSize="sm">
-              © {new Date().getFullYear()} AtomikTrading. All rights reserved.
-            </Text>
-
-            {/* BetterStack Status Badge */}
-            <Box 
-              display="flex" 
-              justifyContent="center"
-              mx={{ base: 0, md: 4 }}
-              my={{ base: 4, md: 0 }}
+            
+            {/* Social Links */}
+            <HStack 
+              spacing={4} 
+              mb={{ base: 2, md: 0 }}
+              justify={{ base: "center", md: "flex-start" }}
             >
-              <iframe 
-                src="https://status.atomiktrading.io/badge?theme=dark" 
-                width="250" 
-                height="30" 
-                frameBorder="0" 
-                scrolling="no" 
-                style={{ colorScheme: 'normal' }}
-                title="Service Status"
-              />
-            </Box>
-
-            <HStack spacing={4}>
               {socialLinks.map((social) => (
                 <Box
                   key={social.label}
@@ -194,14 +154,102 @@ const Footer = () => {
                   rel="noopener noreferrer"
                   color="whiteAlpha.800"
                   _hover={{ color: "rgba(0, 198, 224, 1)" }}
-                  transition="color 0.2s"
                 >
                   <Icon as={social.icon} boxSize={5} />
                 </Box>
               ))}
             </HStack>
-          </Stack>
-        </Box>
+          </Box>
+
+          {/* Desktop Footer Links */}
+          <SimpleGrid 
+            display={{ base: 'none', md: 'grid' }}
+            columns={3} 
+            spacing={12}
+          >
+            {/* Product Links */}
+            <VStack align="flex-start" spacing={3}>
+              <Text fontWeight="medium" fontSize="md" mb={1}>
+                Product
+              </Text>
+              {allLinks.filter(link => link.group === "Product").map(link => (
+                <FooterLink key={link.label} {...link} />
+              ))}
+            </VStack>
+
+            {/* Company Links */}
+            <VStack align="flex-start" spacing={3}>
+              <Text fontWeight="medium" fontSize="md" mb={1}>
+                Company
+              </Text>
+              {allLinks.filter(link => link.group === "Company").map(link => (
+                <FooterLink key={link.label} {...link} />
+              ))}
+            </VStack>
+
+            {/* Legal Links */}
+            <VStack align="flex-start" spacing={3}>
+              <Text fontWeight="medium" fontSize="md" mb={1}>
+                Legal
+              </Text>
+              {allLinks.filter(link => link.group === "Legal").map(link => (
+                <FooterLink key={link.label} {...link} />
+              ))}
+            </VStack>
+          </SimpleGrid>
+
+          {/* Mobile Footer Links - Simple 2-column grid without collapsible sections */}
+          <SimpleGrid 
+            display={{ base: 'grid', md: 'none' }}
+            columns={2} 
+            spacing={3}
+            w="full"
+            justifyItems="center"
+            textAlign="center"
+          >
+            {allLinks.map(link => (
+              <FooterLink key={link.label} {...link} />
+            ))}
+          </SimpleGrid>
+        </Flex>
+
+        {/* Divider */}
+        <Divider borderColor="whiteAlpha.200" mb={6} />
+
+        {/* Bottom Bar - Simple layout with status badge */}
+        <Flex
+          direction={{ base: 'column', sm: 'row' }}
+          justify="space-between"
+          align={{ base: 'center', sm: 'center' }}
+          wrap="wrap"
+          gap={4}
+        >
+          <Text 
+            color="whiteAlpha.600" 
+            fontSize="xs" 
+            textAlign={{ base: 'center', sm: 'left' }}
+            order={{ base: 2, sm: 1 }}
+          >
+            © {new Date().getFullYear()} AtomikTrading. All rights reserved.
+          </Text>
+
+          {/* Status Badge - Hidden on very small screens */}
+          <Box 
+            order={{ base: 1, sm: 2 }}
+            maxW={{ base: "200px", sm: "250px" }}
+            h="30px"
+            overflow="hidden"
+          >
+            <iframe 
+              src="https://status.atomiktrading.io/badge?theme=dark" 
+              width="100%" 
+              height="30" 
+              frameBorder="0" 
+              scrolling="no" 
+              title="Service Status"
+            />
+          </Box>
+        </Flex>
       </Container>
     </Box>
   );
