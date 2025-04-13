@@ -8,7 +8,8 @@ import {
     useToast, 
     Alert,
     AlertIcon,
-    Button
+    Button,
+    useBreakpointValue
 } from '@chakra-ui/react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -108,6 +109,9 @@ const Dashboard = () => {
     const navigate = useNavigate();
     const { isAuthenticated } = useAuth();
     const toast = useToast();
+    
+    // Responsive breakpoints
+    const isMobile = useBreakpointValue({ base: true, md: false });
     
     // Set up API request interception for caching
     useEffect(() => {
@@ -272,17 +276,29 @@ const Dashboard = () => {
             case 'Dashboard':
                 return (
                     <ErrorBoundary>
-                        <Flex position="relative" h="full" p={4} zIndex={2} gap={4}>
+                        <Flex 
+                            position="relative" 
+                            h="full" 
+                            p={4} 
+                            zIndex={2} 
+                            gap={4}
+                            direction={{ base: "column", lg: "row" }}
+                        >
                             {/* Left Column */}
-                            <Flex flexDirection="column" flex={7}>
+                            <Flex 
+                                flexDirection="column" 
+                                flex={{ base: "1", lg: 7 }}
+                                width="100%"
+                            >
                                 {/* Chart container */}
                                 <Box 
-                                    h="50%" 
-                                    maxH="50%" 
-                                    flex="0 0 50%" 
+                                    h={{ base: "300px", md: "50%" }} 
+                                    maxH={{ base: "none", md: "50%" }} 
+                                    flex={{ base: "0 0 auto", md: "0 0 50%" }} 
                                     bg="whiteAlpha.100" 
                                     borderRadius="xl" 
                                     overflow="hidden"
+                                    mb={{ base: 4, md: 0 }}
                                 >
                                     <ErrorBoundary>
                                         <Suspense fallback={<LoadingSpinner />}>
@@ -292,9 +308,20 @@ const Dashboard = () => {
                                 </Box>
                                 
                                 {/* Bottom section */}
-                                <Flex mt={4} gap={4} flex="1" minH="0">
+                                <Flex 
+                                    mt={4} 
+                                    gap={4} 
+                                    flex="1" 
+                                    minH="0"
+                                    direction={{ base: "column", xl: "row" }}
+                                >
                                     {/* TradesTable container */}
-                                    <Box flex={1} borderRadius="xl" overflow="hidden">
+                                    <Box 
+                                        flex="1" 
+                                        borderRadius="xl" 
+                                        overflow="hidden"
+                                        mb={{ base: 4, xl: 0 }}
+                                    >
                                         <ErrorBoundary>
                                             <Suspense fallback={<LoadingSpinner />}>
                                                 <TradesTable 
@@ -306,7 +333,11 @@ const Dashboard = () => {
                                     </Box>
                                     
                                     {/* OrderControl container */}
-                                    <Box flex="0 0 400px" bg="whiteAlpha.100" borderRadius="xl">
+                                    <Box 
+                                        flex={{ base: "1", xl: "0 0 400px" }} 
+                                        bg="whiteAlpha.100" 
+                                        borderRadius="xl"
+                                    >
                                         <ErrorBoundary>
                                             <Suspense fallback={<LoadingSpinner />}>
                                                 <OrderControl 
@@ -320,7 +351,12 @@ const Dashboard = () => {
                             </Flex>
                             
                             {/* Right Column */}
-                            <Flex flex={3} flexDirection="column" gap={4}>
+                            <Flex 
+                                flex={{ base: "1", lg: 3 }} 
+                                flexDirection="column" 
+                                gap={4}
+                                mt={{ base: 4, lg: 0 }}
+                            >
                                 {/* Management Section */}
                                 <Box flex="0 0 auto">
                                     <ErrorBoundary>
@@ -334,7 +370,7 @@ const Dashboard = () => {
                                 </Box>
                                 
                                 {/* Strategy Groups Section */}
-                                <Box flex={1}>
+                                <Box flex="1">
                                     <ErrorBoundary>
                                         <Suspense fallback={<LoadingSpinner />}>
                                             <StrategyGroups 
@@ -386,13 +422,30 @@ const Dashboard = () => {
     };
 
     return (
-        <Flex minH="100vh" bg="background" color="text.primary" fontFamily="body">
+        <Flex 
+            minH="100vh" 
+            bg="background" 
+            color="text.primary" 
+            fontFamily="body"
+            flexDirection="column"
+        >
             <ErrorBoundary>
                 <Menu onSelectItem={setSelectedItem} />
             </ErrorBoundary>
             
-            <Box flexGrow={1} ml={16}>
-                <Box h="100vh" w="full" p={6} overflow="hidden" position="relative">
+            <Box 
+                flexGrow={1} 
+                ml={{ base: 0, md: 16 }}
+                mt={{ base: 0, md: 0 }}
+                mb={{ base: "70px", md: 0 }} // Add bottom margin for mobile to account for bottom nav
+            >
+                <Box 
+                    h={{ base: "auto", md: "100vh" }} 
+                    w="full" 
+                    p={{ base: 3, md: 6 }} 
+                    overflow="auto" 
+                    position="relative"
+                >
                     {/* Background Effects */}
                     <Box 
                         position="absolute" 
