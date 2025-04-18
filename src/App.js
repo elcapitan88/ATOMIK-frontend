@@ -16,7 +16,7 @@ const MarketplacePage = lazy(() => import('./components/pages/MarketplacePage'))
 const PricingPage = lazy(() => import('./components/pages/PricingPage'));
 //const StrategyBuilderPage = lazy(() => import('./components/pages/Builder/StrategyBuilderPage'));
 const LandingPage = lazy(() => import('./components/pages/landing/LandingPage'));
-const AdminDashboard = lazy(() => import('./components/pages/Admin/AdminDashboard').then(module => ({ default: module.default })));
+//const AdminDashboard = lazy(() => import('./components/pages/Admin/AdminDashboard').then(module => ({ default: module.default })));
 const OverviewPage = lazy(() => import('./components/pages/Admin/Overview/OverviewPage').then(module => ({ default: module.default })));
 const UsersPage = lazy(() => import('./components/pages/Admin/Users/UsersPage').then(module => ({ default: module.default })));
 const WebhooksMonitorPage = lazy(() => import('./components/pages/Admin/Webhooks/WebhooksMonitorPage'));
@@ -234,7 +234,7 @@ function App() {
         />
 
         {/* Admin Dashboard Routes - Development Mode */}
-        <Route path="/admin" element={<AdminDashboard />}>
+        {/* <Route path="/admin" element={<AdminDashboard />}>
           <Route index element={<Navigate to="/admin/overview" replace />} />
           <Route path="overview" element={<OverviewPage />} />
           <Route path="users" element={<UsersPage />} />
@@ -242,7 +242,7 @@ function App() {
           <Route path="analytics" element={<AnalyticsPage />} />
           <Route path="roles" element={<RolesPage />} />
           <Route path="settings" element={<AdminSettingsPage />} />
-        </Route>
+        </Route> */}
 
         {/* Catch all route */}
         <Route path="*" element={<Navigate to="/" replace />} />
