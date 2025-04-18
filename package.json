@@ -16,7 +16,7 @@
     "chakra-ui-steps": "^2.2.0",
     "configcat-react": "^4.8.1",
     "express": "^4.21.2",
-    "framer-motion": "^11.18.2",
+    "framer-motion": "^12.6.3",
     "history": "^5.3.0",
     "jwt-decode": "^4.0.0",
     "lightweight-charts": "^4.2.1",
@@ -25,6 +25,7 @@
     "react": "^18.2.0",
     "react-countup": "^6.5.3",
     "react-dom": "^18.2.0",
+    "react-gtm-module": "^2.0.11",
     "react-helmet-async": "^2.0.5",
     "react-router-dom": "^6.22.2",
     "react-scripts": "5.0.1",
@@ -54,23 +55,22 @@
     ]
   },
   "browserslist": {
-  "production": [
-    ">0.2%",
-    "not dead",
-    "not op_mini all"
-  ],
-  "modern": [
-    "last 2 Chrome versions",
-    "last 2 Firefox versions",
-    "last 2 Safari versions",
-    "last 2 Edge versions"
-  ],
-  "development": [
-    "last 1 chrome version",
-    "last 1 firefox version",
-    "last 1 safari version"
-  ]
-},
-  
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "modern": [
+      "last 2 Chrome versions",
+      "last 2 Firefox versions",
+      "last 2 Safari versions",
+      "last 2 Edge versions"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  },
   "proxy": "http://localhost:8000"
 }

@@ -47,6 +47,38 @@ const PaymentSuccess = () => {
   const verificationAttempted = useRef(false);
   const redirectTimeout = useRef(null);
 
+  useEffect(() => {
+    // Track successful subscription conversion
+    if (window.dataLayer) {
+      // Push conversion event to dataLayer
+      window.dataLayer.push({
+        event: 'subscription_complete',
+        ecommerce: {
+          purchase: {
+            actionField: {
+              id: new Date().getTime().toString(), // Generate transaction ID if you don't have one
+              revenue: localStorage.getItem('subscriptionValue') || '0',
+              tax: '0',
+              shipping: '0'
+            },
+            products: [{
+              name: localStorage.getItem('selectedPlan') || 'Subscription',
+              id: localStorage.getItem('planId') || 'default_plan',
+              price: localStorage.getItem('subscriptionValue') || '0',
+              variant: localStorage.getItem('planInterval') || 'monthly',
+              quantity: 1
+            }]
+          }
+        }
+      });
+    }
+    
+    // Clean up localStorage items if needed
+    localStorage.removeItem('pendingRegistration');
+    // Other cleanup as needed
+  }, []);
+  
+
   // Setup & Cleanup
   useEffect(() => {
     mounted.current = true;

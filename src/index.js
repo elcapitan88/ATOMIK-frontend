@@ -5,6 +5,7 @@ import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { ChakraProvider } from '@chakra-ui/react';
 import { HelmetProvider } from 'react-helmet-async';
 import { BrowserRouter } from 'react-router-dom';
+import TagManager from 'react-gtm-module'; // Added GTM import
 import App from './App';
 import { AuthProvider } from './contexts/AuthContext';
 import theme from './styles/theme';
@@ -12,6 +13,17 @@ import { ConfigCatProvider } from 'configcat-react';
 
 // Import global styles
 import './styles/globals.css';
+
+// Initialize Google Tag Manager - replace GTM-XXXXXX with your actual GTM ID
+const tagManagerArgs = {
+  gtmId: 'GTM-KF3PNRZG', // You'll get this ID when creating your GTM account
+  dataLayerName: 'dataLayer',
+  events: {
+    pageView: true // Send initial pageview
+  }
+}
+
+TagManager.initialize(tagManagerArgs);
 
 // Create QueryClient
 const queryClient = new QueryClient({

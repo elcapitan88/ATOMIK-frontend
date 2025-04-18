@@ -1,6 +1,6 @@
 import React, { Suspense, useEffect, lazy } from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
-import { Box, Spinner } from '@chakra-ui/react';
+import { Box, Spinner, Text } from '@chakra-ui/react';
 import { useAuth } from '@/contexts/AuthContext';
 
 // Import components
@@ -16,6 +16,32 @@ const MarketplacePage = lazy(() => import('./components/pages/MarketplacePage'))
 const PricingPage = lazy(() => import('./components/pages/PricingPage'));
 //const StrategyBuilderPage = lazy(() => import('./components/pages/Builder/StrategyBuilderPage'));
 const LandingPage = lazy(() => import('./components/pages/landing/LandingPage'));
+const AdminDashboard = lazy(() => import('./components/pages/Admin/AdminDashboard').then(module => ({ default: module.default })));
+const OverviewPage = lazy(() => import('./components/pages/Admin/Overview/OverviewPage').then(module => ({ default: module.default })));
+const UsersPage = lazy(() => import('./components/pages/Admin/Users/UsersPage').then(module => ({ default: module.default })));
+const WebhooksMonitorPage = lazy(() => import('./components/pages/Admin/Webhooks/WebhooksMonitorPage'));
+const AnalyticsPage = lazy(() => import('./components/pages/Admin/Analytics/AnalyticsPage'));
+const RolesPage = lazy(() => import('./components/pages/Admin/Roles/RolesPage'));
+const AdminSettingsPage = lazy(() => import('./components/pages/Admin/Settings/AdminSettingsPage'));
+
+const RouteTracker = () => {
+  const location = useLocation();
+  
+  useEffect(() => {
+    // Push to dataLayer whenever route changes
+    if (window.dataLayer) {
+      window.dataLayer.push({
+        event: 'pageview',
+        page: {
+          path: location.pathname,
+          title: document.title || location.pathname.replace(/\//g, '') || 'Home'
+        }
+      });
+    }
+  }, [location]);
+  
+  return null; // This component doesn't render anything
+};
 
 // Layout wrapper for authenticated routes
 const DashboardLayout = ({ children }) => (
@@ -206,6 +232,17 @@ function App() {
             </WithAuth>
           }
         />
+
+        {/* Admin Dashboard Routes - Development Mode */}
+        <Route path="/admin" element={<AdminDashboard />}>
+          <Route index element={<Navigate to="/admin/overview" replace />} />
+          <Route path="overview" element={<OverviewPage />} />
+          <Route path="users" element={<UsersPage />} />
+          <Route path="webhooks" element={<WebhooksMonitorPage />} />
+          <Route path="analytics" element={<AnalyticsPage />} />
+          <Route path="roles" element={<RolesPage />} />
+          <Route path="settings" element={<AdminSettingsPage />} />
+        </Route>
 
         {/* Catch all route */}
         <Route path="*" element={<Navigate to="/" replace />} />
