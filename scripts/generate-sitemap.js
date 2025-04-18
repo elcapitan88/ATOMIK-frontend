@@ -34,3 +34,8 @@ async function generateSitemap() {
 }
 
 generateSitemap();
+
+console.log('\n--- After deployment, remember to: ---');
+console.log('1. Submit your sitemap to Google Search Console');
+console.log('2. Ensure robots.txt references your sitemap');
+console.log('3. Verify the sitemap is accessible at', `${SITE_URL}/sitemap.xml`);
