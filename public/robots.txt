@@ -7,12 +7,12 @@ Disallow: /dashboard/
 Disallow: /settings/
 Disallow: /auth/
 Disallow: /payment/
+Disallow: /marketplace/
 Disallow: /api/
 
 # Allow important pages to be crawled
 Allow: /pricing
-Allow: /features
-Allow: /marketplace
+Allow: /start
 
 # Sitemap
 Sitemap: https://www.atomiktrading.io/sitemap.xml
