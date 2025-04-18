@@ -17,12 +17,12 @@ const PricingPage = lazy(() => import('./components/pages/PricingPage'));
 //const StrategyBuilderPage = lazy(() => import('./components/pages/Builder/StrategyBuilderPage'));
 const LandingPage = lazy(() => import('./components/pages/landing/LandingPage'));
 //const AdminDashboard = lazy(() => import('./components/pages/Admin/AdminDashboard').then(module => ({ default: module.default })));
-const OverviewPage = lazy(() => import('./components/pages/Admin/Overview/OverviewPage').then(module => ({ default: module.default })));
-const UsersPage = lazy(() => import('./components/pages/Admin/Users/UsersPage').then(module => ({ default: module.default })));
-const WebhooksMonitorPage = lazy(() => import('./components/pages/Admin/Webhooks/WebhooksMonitorPage'));
-const AnalyticsPage = lazy(() => import('./components/pages/Admin/Analytics/AnalyticsPage'));
-const RolesPage = lazy(() => import('./components/pages/Admin/Roles/RolesPage'));
-const AdminSettingsPage = lazy(() => import('./components/pages/Admin/Settings/AdminSettingsPage'));
+// const OverviewPage = lazy(() => import('./components/pages/Admin/Overview/OverviewPage').then(module => ({ default: module.default })));
+// const UsersPage = lazy(() => import('./components/pages/Admin/Users/UsersPage').then(module => ({ default: module.default })));
+// const WebhooksMonitorPage = lazy(() => import('./components/pages/Admin/Webhooks/WebhooksMonitorPage'));
+// const AnalyticsPage = lazy(() => import('./components/pages/Admin/Analytics/AnalyticsPage'));
+// const RolesPage = lazy(() => import('./components/pages/Admin/Roles/RolesPage'));
+// const AdminSettingsPage = lazy(() => import('./components/pages/Admin/Settings/AdminSettingsPage'));
 
 const RouteTracker = () => {
   const location = useLocation();
