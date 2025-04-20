@@ -188,6 +188,8 @@ function App() {
             </PaymentSuccessRoute>
           } 
         />
+        <Route path="/docs/*" element={null} />
+        <Route path="/docs/blog/*" element={null} />
 
         {/* Protected Routes */}
         <Route
