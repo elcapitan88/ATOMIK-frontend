@@ -200,8 +200,8 @@ function App() {
         />
         
         {/* Docs Routes - Updated to use DocsHandler */}
-        <Route path="/docs/*" element={<DocsHandler />} />
-        <Route path="/docs/blog/*" element={<DocsHandler />} />
+        {/* <Route path="/docs/*" element={<DocsHandler />} />
+        <Route path="/docs/blog/*" element={<DocsHandler />} /> */}
 
         {/* Protected Routes */}
         <Route
