@@ -41,11 +41,25 @@ const PaymentSuccess = () => {
   const [searchParams] = useSearchParams();
   const toast = useToast();
   const location = useLocation();
+  const registrationDataRef = useRef(null);
   
   // Refs for cleanup and state tracking
   const mounted = useRef(true);
   const verificationAttempted = useRef(false);
   const redirectTimeout = useRef(null);
+
+  useEffect(() => {
+    // Immediately cache registration data from localStorage when component mounts
+    const pendingData = localStorage.getItem('pendingRegistration');
+    if (pendingData) {
+      try {
+        registrationDataRef.current = JSON.parse(pendingData);
+        console.log('Cached registration data on component mount');
+      } catch (e) {
+        console.error('Failed to parse and cache registration data:', e);
+      }
+    }
+  }, []);
 
   useEffect(() => {
     // Track successful subscription conversion
@@ -107,6 +121,12 @@ const PaymentSuccess = () => {
   // Handle starter plan registration
   useEffect(() => {
     const processStarterRegistration = async () => {
+      console.log('DEBUG: Processing starter registration:', {
+        hasRefData: !!registrationDataRef.current,
+        pendingInLocalStorage: !!localStorage.getItem('pendingRegistration'),
+        processingFlag: !!localStorage.getItem('processing_registration')
+      });
+      
       // Get parameters from URL
       const plan = searchParams.get('plan');
       const email = searchParams.get('email');
@@ -120,26 +140,40 @@ const PaymentSuccess = () => {
         try {
           logger.info(`Processing starter plan registration for: ${decodeURIComponent(email)}`);
           
-          // Get registration data from localStorage
-          const pendingRegistrationStr = localStorage.getItem('pendingRegistration');
+          // Get password - prioritize the cached ref data
           let password;
+          let userData = {};
           
-          if (pendingRegistrationStr) {
-            try {
-              const regData = JSON.parse(pendingRegistrationStr);
-              password = regData.password;
-              logger.info('Successfully retrieved password from localStorage');
-            } catch (e) {
-              logger.error('Error parsing registration data:', e);
+          // 1. Try the ref first (most reliable since we cached it on mount)
+          if (registrationDataRef.current && registrationDataRef.current.password) {
+            password = registrationDataRef.current.password;
+            userData = registrationDataRef.current;
+            console.log('DEBUG: Using cached ref registration data with password length:', password.length);
+            logger.info('Retrieved password from cached ref data');
+          }
+          
+          // 2. If no ref data, try localStorage as fallback
+          if (!password) {
+            const pendingRegistrationStr = localStorage.getItem('pendingRegistration');
+            if (pendingRegistrationStr) {
+              try {
+                userData = JSON.parse(pendingRegistrationStr);
+                password = userData.password;
+                console.log('DEBUG: Using localStorage registration data with password length:', password?.length);
+                logger.info('Retrieved password from localStorage');
+              } catch (e) {
+                logger.error('Error parsing registration data from localStorage:', e);
+              }
             }
           }
           
+          // Validation and error handling
           if (!password) {
             logger.error('No password found in registration data');
             throw new Error('Registration data is incomplete');
           }
           
-          // Prepare registration data from URL parameters
+          // Prepare registration data from URL parameters + password
           const registrationData = {
             email: decodeURIComponent(email),
             username: username ? decodeURIComponent(username) : undefined,
@@ -169,9 +203,10 @@ const PaymentSuccess = () => {
               setAuthenticatedState(regResponse.data.user, regResponse.data.access_token);
             }
             
-            // Clean up registration data
+            // IMPORTANT: Only clear data after successful registration
             localStorage.removeItem('pendingRegistration');
             localStorage.removeItem('processing_registration');
+            registrationDataRef.current = null; // Also clear the ref
             
             // Set success status and prepare for redirect
             setStatus('success');
@@ -192,6 +227,8 @@ const PaymentSuccess = () => {
         } catch (error) {
           // Always clean up the redirect flag on error
           sessionStorage.removeItem('auth_redirect_in_progress');
+          
+          // Don't clear registration data on error to allow retries
           
           logger.error('Registration process error:', error);
           setStatus('error');
@@ -245,6 +282,11 @@ const PaymentSuccess = () => {
         
         // Get registration data from localStorage
         const pendingRegistrationStr = localStorage.getItem('pendingRegistration');
+
+        console.log('DEBUG: Retrieved registration data from localStorage:', {
+          hasData: !!pendingRegistrationStr,
+          rawData: pendingRegistrationStr
+        });
         
         logger.debug('Registration data check:', {
           hasLocalStorageData: !!pendingRegistrationStr,

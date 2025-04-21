@@ -955,6 +955,13 @@ const PricingPage = () => {
         password: formData.password,
         timestamp: Date.now()
       }));
+
+      console.log('DEBUG: Stored registration data in localStorage', {
+        email: formData.email,
+        username: formData.username,
+        hasPassword: !!formData.password,
+        timestamp: Date.now()
+      });
       
       // Handle plan-specific flows
       if (selectedPlan.tier === 'starter') {
