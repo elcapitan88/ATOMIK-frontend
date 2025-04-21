@@ -200,13 +200,13 @@ function App() {
         />
         
         {/* Docs Routes - Updated to use DocsHandler */}
-        {/* <Route path="/docs/*" element={<DocsHandler />} />
-        <Route path="/docs/blog/*" element={<DocsHandler />} /> */}
+        <Route path="/docs/*" element={null} />
+        <Route path="/blog/*" element={null} />
 
-        <Route path="/docs/*" element={<div style={{padding: '2rem', textAlign: 'center'}}>
+        {/* <Route path="/docs/*" element={<div style={{padding: '2rem', textAlign: 'center'}}>
           <h2>Docs Route Reached in React App</h2>
           <p>If you're seeing this, the worker isn't intercepting the request.</p>
-        </div>} />
+        </div>} /> */}
 
         {/* Protected Routes */}
         <Route
