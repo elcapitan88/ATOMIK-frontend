@@ -203,6 +203,11 @@ function App() {
         {/* <Route path="/docs/*" element={<DocsHandler />} />
         <Route path="/docs/blog/*" element={<DocsHandler />} /> */}
 
+        <Route path="/docs/*" element={<div style={{padding: '2rem', textAlign: 'center'}}>
+          <h2>Docs Route Reached in React App</h2>
+          <p>If you're seeing this, the worker isn't intercepting the request.</p>
+        </div>} />
+
         {/* Protected Routes */}
         <Route
           path="/dashboard"
