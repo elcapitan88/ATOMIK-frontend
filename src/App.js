@@ -57,6 +57,16 @@ const LoadingSpinner = () => (
   </Box>
 );
 
+// NEW: Docs Handler Component
+const DocsHandler = () => {
+  useEffect(() => {
+    // Redirect to the Railway app directly
+    window.location.href = "https://atomik-docs-production.up.railway.app" + window.location.pathname;
+  }, []);
+  
+  return <LoadingSpinner />;
+};
+
 // Route guard for authenticated routes
 const WithAuth = React.memo(({ children }) => {
   const { isAuthenticated, isLoading } = useAuth();
@@ -189,6 +199,10 @@ function App() {
           } 
         />
         
+        {/* Docs Routes - Updated to use DocsHandler */}
+        <Route path="/docs/*" element={<DocsHandler />} />
+        <Route path="/docs/blog/*" element={<DocsHandler />} />
+
         {/* Protected Routes */}
         <Route
           path="/dashboard"
