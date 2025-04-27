@@ -154,10 +154,11 @@ function App() {
   
   return (
     <Suspense fallback={<LoadingSpinner />}>
+      <RouteTracker />
       <Routes>
         {/* Public Routes */}
         <Route path="/" element={<Homepage />} />
-
+  
         <Route path="/start" element={<LandingPage />} />
         
         {/* Pricing Route - Now publicly accessible */}
@@ -188,7 +189,7 @@ function App() {
             </WithoutAuth>
           }
         />
-
+  
         {/* Payment Success Route */}
         <Route 
           path="/payment/success" 
@@ -202,12 +203,7 @@ function App() {
         {/* Docs Routes - Updated to use DocsHandler */}
         <Route path="/docs/*" element={null} />
         <Route path="/blog/*" element={null} />
-
-        {/* <Route path="/docs/*" element={<div style={{padding: '2rem', textAlign: 'center'}}>
-          <h2>Docs Route Reached in React App</h2>
-          <p>If you're seeing this, the worker isn't intercepting the request.</p>
-        </div>} /> */}
-
+  
         {/* Protected Routes */}
         <Route
           path="/dashboard"
@@ -219,7 +215,7 @@ function App() {
             </WithAuth>
           }
         />
-
+  
         <Route
           path="/marketplace"
           element={
@@ -230,17 +226,7 @@ function App() {
             </WithAuth>
           }
         />
-        {/* <Route
-          path="/strategy-builder"
-          element={
-            <WithAuth>
-              <DashboardLayout>
-                <StrategyBuilderPage />
-              </DashboardLayout>
-            </WithAuth>
-          }
-        /> */}
-
+  
         <Route
           path="/settings"
           element={
@@ -251,18 +237,7 @@ function App() {
             </WithAuth>
           }
         />
-
-        {/* Admin Dashboard Routes - Development Mode */}
-        {/* <Route path="/admin" element={<AdminDashboard />}>
-          <Route index element={<Navigate to="/admin/overview" replace />} />
-          <Route path="overview" element={<OverviewPage />} />
-          <Route path="users" element={<UsersPage />} />
-          <Route path="webhooks" element={<WebhooksMonitorPage />} />
-          <Route path="analytics" element={<AnalyticsPage />} />
-          <Route path="roles" element={<RolesPage />} />
-          <Route path="settings" element={<AdminSettingsPage />} />
-        </Route> */}
-
+  
         {/* Catch all route */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
