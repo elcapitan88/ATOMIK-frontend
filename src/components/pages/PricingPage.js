@@ -106,30 +106,8 @@ const get_price_id = (tier, interval) => {
 
 // Pricing data
 const pricingData = {
-  starter: {
-    name: "Starter",
-    description: "Perfect for beginners exploring algorithmic trading",
-    monthlyPrice: 0,
-    yearlyPrice: 0,
-    lifetimePrice: 0,
-    features: [
-      { text: "1 connected trading account", available: true },
-      { text: "1 active webhooks", available: true },
-      { text: "Basic webhook integrations", available: true },
-      { text: "Manual trade execution", available: true },
-      { text: "Funded Account Connectivity", available: true },
-      { text: "Strategy marketplace access", available: true },
-      { text: "Advanced position management", available: false },
-      { text: "Trade history & analytics", available: false },
-      { text: "Priority support", available: false },
-      { text: "Custom strategies", available: false }
-    ],
-    ctaText: "Get Started Free",
-    popular: false,
-    color: "gray.500"
-  },
-  pro: {
-    name: "Pro",
+  pro: { // Internal ID 'pro' is now marketed as "Starter"
+    name: "Starter", // New marketing name (was "Pro")
     description: "For serious traders seeking automation and reliability",
     monthlyPrice: 49,
     yearlyPrice: 468, // $39/month billed annually
@@ -146,12 +124,13 @@ const pricingData = {
       { text: "Priority support", available: false },
       { text: "Custom strategy building", available: false }
     ],
-    ctaText: "Upgrade to Pro",
+    ctaText: "Start Free Trial",
     popular: true,
-    color: "#00C6E0"
+    color: "#00C6E0",
+    trial: "14-day free trial"
   },
-  elite: {
-    name: "Elite",
+  elite: { // Internal ID 'elite' is now marketed as "Pro"
+    name: "Pro", // New marketing name (was "Elite")
     description: "For professional traders and institutions",
     monthlyPrice: 89,
     yearlyPrice: 828, // $69/month billed annually
@@ -168,9 +147,10 @@ const pricingData = {
       { text: "Priority technical support", available: true },
       { text: "Custom strategy development", available: true }
     ],
-    ctaText: "Upgrade to Elite",
+    ctaText: "Start Free Trial",
     popular: false,
-    color: "#9932CC" // Purple that complements the cyan
+    color: "#9932CC", // Purple that complements the cyan
+    trial: "14-day free trial"
   }
 };
 
@@ -195,46 +175,47 @@ const PricingToggle = ({ selectedInterval, onChange }) => {
   };
 
   return (
-    <HStack spacing={0} borderRadius="full" border="1px solid" borderColor="whiteAlpha.200" overflow="hidden" my={8}>
-      <Button 
-        size="md" 
-        variant="ghost" 
-        px={6}
-        borderRight="1px solid"
-        borderColor="whiteAlpha.200"
-        borderRadius="none"
-        {...(selectedInterval === 'monthly' ? activeButtonStyles : inactiveButtonStyles)}
-        onClick={() => onChange('monthly')}
-      >
-        Monthly
-      </Button>
-      <Button 
-        size="md" 
-        variant="ghost" 
-        px={6}
-        borderRight="1px solid"
-        borderColor="whiteAlpha.200"
-        borderRadius="none"
-        {...(selectedInterval === 'yearly' ? activeButtonStyles : inactiveButtonStyles)}
-        onClick={() => onChange('yearly')}
-      >
-        Yearly <Badge ml={2} colorScheme="green" variant="solid" fontSize="xs">Save 20%</Badge>
-      </Button>
-      <Button 
-        size="md" 
-        variant="ghost" 
-        px={6}
-        borderRadius="none"
-        {...(selectedInterval === 'lifetime' ? activeButtonStyles : inactiveButtonStyles)}
-        onClick={() => onChange('lifetime')}
-      >
-        Lifetime <Badge ml={2} colorScheme="purple" variant="solid" fontSize="xs">Best Value</Badge>
-      </Button>
-    </HStack>
+    <HStack spacing={0} borderRadius="full" border="1px solid" borderColor="whiteAlpha.200" overflow="hidden" my={4}>  
+  <Button 
+    size="sm"  
+    variant="ghost" 
+    px={4}  
+    borderRight="1px solid"
+    borderColor="whiteAlpha.200"
+    borderRadius="none"
+    {...(selectedInterval === 'monthly' ? activeButtonStyles : inactiveButtonStyles)}
+    onClick={() => onChange('monthly')}
+  >
+    Monthly
+  </Button>
+  <Button 
+    size="sm"  
+    variant="ghost" 
+    px={4}  
+    borderRight="1px solid"
+    borderColor="whiteAlpha.200"
+    borderRadius="none"
+    {...(selectedInterval === 'yearly' ? activeButtonStyles : inactiveButtonStyles)}
+    onClick={() => onChange('yearly')}
+  >
+    Yearly <Badge ml={1} colorScheme="green" variant="solid" fontSize="2xs">Save 20%</Badge>  
+  </Button>
+  <Button 
+    size="sm"  
+    variant="ghost" 
+    px={4}  
+    borderRadius="none"
+    {...(selectedInterval === 'lifetime' ? activeButtonStyles : inactiveButtonStyles)}
+    onClick={() => onChange('lifetime')}
+  >
+    Lifetime <Badge ml={1} colorScheme="purple" variant="solid" fontSize="2xs">Best Value</Badge> 
+  </Button>
+</HStack>
   );
 };
 
 // Price card component
+// Update PriceCard component to display trial information
 const PriceCard = ({ tier, billingInterval, onClick, isPopular }) => {
   const tierKey = tier.toLowerCase();
   const pricingTier = pricingData[tierKey];
@@ -250,6 +231,9 @@ const PriceCard = ({ tier, billingInterval, onClick, isPopular }) => {
 
   const cardBorderColor = isPopular ? pricingTier.color : 'whiteAlpha.200';
   const popularBadgeVisibility = isPopular ? 'visible' : 'hidden';
+  
+  // Show trial info only for subscription plans (not lifetime)
+  const showTrialInfo = billingInterval !== 'lifetime' && pricingTier.trial;
   
   const hoverAnimation = {
     rest: { 
@@ -286,13 +270,13 @@ const PriceCard = ({ tier, billingInterval, onClick, isPopular }) => {
       {/* Popular badge */}
       <Badge
         position="absolute"
-        top={4}
-        right={4}
+        top={2}  // Reduced from top={4}
+        right={2}  // Reduced from right={4}
         colorScheme="cyan"
         variant="solid"
         borderRadius="full"
-        px={3}
-        py={1}
+        px={2}  // Reduced from px={3}
+        py={0.5}  // Reduced from py={1}
         visibility={popularBadgeVisibility}
         fontSize="xs"
         fontWeight="bold"
@@ -301,45 +285,53 @@ const PriceCard = ({ tier, billingInterval, onClick, isPopular }) => {
         MOST POPULAR
       </Badge>
 
-      <VStack spacing={6} height="100%" p={6}>
+      <VStack spacing={3} height="100%" p={4}>  {/* Reduced from spacing={6} p={6} */}
         {/* Tier name and description */}
-        <VStack spacing={2} align="center" mb={2}>
-          <Heading size="lg" fontWeight="bold" color="white">
+        <VStack spacing={1} align="center" mb={1}>  {/* Reduced from spacing={2} mb={2} */}
+          <Heading size="md" fontWeight="bold" color="white">  {/* Changed from size="lg" */}
             {pricingTier.name}
           </Heading>
-          <Text color="whiteAlpha.700" textAlign="center" fontSize="sm">
+          <Text color="whiteAlpha.700" textAlign="center" fontSize="xs">  {/* Changed from fontSize="sm" */}
             {pricingTier.description}
           </Text>
         </VStack>
 
-        {/* Price */}
-        <Box my={4} textAlign="center">
+        {/* Price - more compact layout */}
+        <Box my={2} textAlign="center">  {/* Reduced from my={4} */}
           <Flex align="flex-start" justify="center">
-            <Text fontSize="sm" color="whiteAlpha.700" mt={2} mr={1}>$</Text>
-            <Text fontSize="5xl" fontWeight="bold" color="white" lineHeight="1">
+            <Text fontSize="xs" color="whiteAlpha.700" mt={2} mr={0.5}>$</Text>  {/* Changed from fontSize="sm" mr={1} */}
+            <Text fontSize="4xl" fontWeight="bold" color="white" lineHeight="1">  {/* Changed from fontSize="5xl" */}
               {billingInterval === 'lifetime' ? price : Math.round(price / (billingInterval === 'yearly' ? 12 : 1))}
             </Text>
             {billingInterval !== 'lifetime' && (
-              <Text fontSize="sm" color="whiteAlpha.700" alignSelf="flex-end" mb={2} ml={1}>
+              <Text fontSize="xs" color="whiteAlpha.700" alignSelf="flex-end" mb={1.5} ml={0.5}>
                 /mo
               </Text>
             )}
           </Flex>
           
           {billingInterval === 'yearly' && (
-            <Text fontSize="sm" color="#00C6E0" mt={1}>
+            <Text fontSize="xs" color="#00C6E0" mt={0.5}>  {/* Changed from fontSize="sm" mt={1} */}
               Save ${monthlySavings}/mo
             </Text>
           )}
           
           {billingInterval === 'lifetime' && (
-            <Text fontSize="sm" color="#9932CC" mt={1}>
+            <Text fontSize="xs" color="#9932CC" mt={0.5}>  {/* Changed from fontSize="sm" mt={1} */}
               One-time payment
             </Text>
           )}
           
+          {showTrialInfo && (
+            <Box mt={1}>  {/* Reduced from mt={2} */}
+              <Badge colorScheme="green" p={0.5} borderRadius="md" fontSize="2xs">  {/* Added fontSize="2xs" */}
+                {pricingTier.trial}
+              </Badge>
+            </Box>
+          )}
+          
           {billingInterval !== 'lifetime' && (
-            <Text fontSize="xs" color="whiteAlpha.600" mt={1}>
+            <Text fontSize="2xs" color="whiteAlpha.600" mt={0.5}>  {/* Changed from fontSize="xs" mt={1} */}
               {billingInterval === 'yearly' ? 'Billed annually' : 'Billed monthly'}
             </Text>
           )}
@@ -347,18 +339,19 @@ const PriceCard = ({ tier, billingInterval, onClick, isPopular }) => {
 
         <Divider borderColor="whiteAlpha.200" />
 
-        {/* Features */}
-        <VStack spacing={3} align="stretch" flex="1">
-          <List spacing={3} styleType="none" flex="1">
+        {/* Features - more compact list */}
+        <VStack spacing={1} align="stretch" flex="1" mt={0}>  {/* Changed from spacing={3} */}
+          <List spacing={1} styleType="none" flex="1">  {/* Changed from spacing={3} */}
             {pricingTier.features.map((feature, index) => (
               <ListItem key={index} display="flex" alignItems="flex-start">
                 <ListIcon 
                   as={feature.available ? Check : X} 
                   color={feature.available ? (isPopular ? pricingTier.color : 'green.400') : 'gray.500'} 
-                  mt="3px"
+                  mt="2px"  /* Reduced from mt="3px" */
+                  boxSize={3}  /* Added boxSize to make icons smaller */
                 />
                 <Text
-                  fontSize="sm"
+                  fontSize="xs"  /* Changed from fontSize="sm" */
                   color={feature.available ? 'white' : 'whiteAlpha.500'}
                 >
                   {feature.text}
@@ -370,7 +363,7 @@ const PriceCard = ({ tier, billingInterval, onClick, isPopular }) => {
           {/* CTA Button */}
           <Button
             mt="auto"
-            size="lg"
+            size="md"  /* Changed from size="lg" */
             width="full"
             bg={isPopular ? pricingTier.color : 'whiteAlpha.200'}
             color={isPopular ? 'black' : 'white'}
@@ -380,7 +373,7 @@ const PriceCard = ({ tier, billingInterval, onClick, isPopular }) => {
               boxShadow: 'lg'
             }}
             onClick={() => onClick(tierKey, billingInterval)}
-            rightIcon={<ArrowRight size={16} />}
+            rightIcon={<ArrowRight size={14} />}  /* Reduced from size={16} */
           >
             {pricingTier.ctaText}
           </Button>
@@ -824,8 +817,8 @@ const FAQ = () => {
       answer: "Currently, we support Tradovate with plans to add more brokers in the near future. Our platform is designed to be broker-agnostic, making it easy to scale with additional brokers."
     },
     {
-      question: "Can I try before I buy?",
-      answer: "Absolutely! Our Starter plan is completely free and gives you access to core features. You can upgrade anytime when you need more advanced capabilities."
+      question: "What is the 14-day free trial?",
+      answer: "All our plans include a 14-day free trial that gives you full access to all features. You can cancel anytime during the trial period without being charged."
     },
     {
       question: "How secure is my trading account?",
@@ -905,7 +898,13 @@ const PricingPage = () => {
   const componentMounted = useRef(true);
   
   // Responsive adjustments
-  const pricingColumns = useBreakpointValue({ base: 1, md: 2, lg: 3 });
+  const pricingColumns = useBreakpointValue({ base: 1, md: 2, lg: 2 });
+
+  const containerSpacing = useBreakpointValue({ 
+    base: { py: 4, px: 2 },  // On mobile, use minimal padding
+    md: { py: 6, px: 4 },    // On tablets, slightly more padding
+    lg: { py: 8, px: 4 }     // On desktop, use more vertical padding
+  });
   
   // Check for authentication on mount
   useEffect(() => {
@@ -1018,11 +1017,12 @@ const PricingPage = () => {
   };
   
   return (
+    // Replace your existing MotionBox container with this one
     <MotionBox 
       minH="100vh" 
       bg="black" 
-      py={16} 
-      px={4}
+      py={containerSpacing.py}
+      px={containerSpacing.px}
       initial="hidden"
       animate="visible"
       variants={containerVariants}
@@ -1053,14 +1053,14 @@ const PricingPage = () => {
       />
       
       <Container maxW="container.xl" position="relative" zIndex={1}>
-        <VStack spacing={8} mb={16}>
+        <VStack spacing={4} mb={8}>
           <MotionBox variants={itemVariants}>
             <Heading 
-              fontSize={{ base: "3xl", md: "4xl", lg: "5xl" }}
+              fontSize={{ base: "2xl", md: "3xl", lg: "4xl" }}
               fontWeight="bold"
               color="white"
               textAlign="center"
-              mb={3}
+              mb={2}
             >
               Pricing Plans for Every <Text as="span" color="#00C6E0">Trader</Text>
             </Heading>
@@ -1068,7 +1068,7 @@ const PricingPage = () => {
           
           <MotionBox variants={itemVariants} maxW="container.md" textAlign="center">
             <Text
-              fontSize={{ base: "md", md: "lg" }}
+              fontSize={{ base: "sm", md: "md" }}
               color="whiteAlpha.800"
             >
               Choose the perfect plan to automate your trading strategy with precision and reliability.
@@ -1085,35 +1085,32 @@ const PricingPage = () => {
           </MotionBox>
         </VStack>
         
-        {/* Pricing Cards */}
-        <SimpleGrid columns={pricingColumns} spacing={8} mb={16}>
-          <MotionBox variants={itemVariants}>
-            <PriceCard 
-              tier="Starter" 
-              billingInterval={selectedInterval} 
-              onClick={handleSelectPlan}
-              isPopular={false}
-            />
-          </MotionBox>
-          
-          <MotionBox variants={itemVariants}>
-            <PriceCard 
-              tier="Pro" 
-              billingInterval={selectedInterval} 
-              onClick={handleSelectPlan}
-              isPopular={true}
-            />
-          </MotionBox>
-          
-          <MotionBox variants={itemVariants}>
-            <PriceCard 
-              tier="Elite" 
-              billingInterval={selectedInterval} 
-              onClick={handleSelectPlan}
-              isPopular={false}
-            />
-          </MotionBox>
-        </SimpleGrid>
+        {/* Pricing Cards - now with only 2 tiers */}
+        <SimpleGrid 
+        columns={pricingColumns > 2 ? 2 : pricingColumns} 
+        spacing={{ base: 4, md: 6 }}  /* Reduce spacing on smaller screens */
+        mb={8}  /* Reduced from mb={16} */
+        maxW="container.lg"
+        mx="auto"
+      >
+        <MotionBox variants={itemVariants}>
+          <PriceCard 
+            tier="pro"
+            billingInterval={selectedInterval} 
+            onClick={handleSelectPlan}
+            isPopular={true}
+          />
+        </MotionBox>
+        
+        <MotionBox variants={itemVariants}>
+          <PriceCard 
+            tier="elite"
+            billingInterval={selectedInterval} 
+            onClick={handleSelectPlan}
+            isPopular={false}
+          />
+        </MotionBox>
+      </SimpleGrid>
         
         {/* Feature Highlights */}
         <FeatureHighlights />
