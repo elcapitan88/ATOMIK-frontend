@@ -15,6 +15,7 @@ import {
   useToast,
   Select,
   Text,
+  Flex,
 } from '@chakra-ui/react';
 import { 
   ArrowBigUp, 
@@ -265,7 +266,13 @@ const OrderControl = () => {
     <Box h="full" display="flex" flexDirection="column">
       {/* Header Section */}
       <Box p={3} borderBottom="1px solid" borderColor="whiteAlpha.200">
-        <HStack width="full" spacing={2}>
+        <Flex 
+          width="full" 
+          spacing={2} 
+          direction={{ base: "column", sm: "row" }}
+          align={{ base: "stretch", sm: "center" }}
+          gap={2}
+        >
           <Box flex={1}>
             <AccountSelection
               selectedAccounts={selectedAccounts}
@@ -280,7 +287,7 @@ const OrderControl = () => {
             placement="top"
             hasArrow
           >
-            <HStack spacing={2}>
+            <HStack spacing={2} justify={{ base: "flex-end", sm: "flex-start" }}>
               {skipConfirmation && (
                 <AlertTriangle size={12} color="#ED8936" />
               )}
@@ -292,14 +299,19 @@ const OrderControl = () => {
               />
             </HStack>
           </Tooltip>
-        </HStack>
+        </Flex>
       </Box>
 
       {/* Main Trading Controls */}
       <VStack p={3} spacing={3} flex="1">
         {/* Only show inputs for single account selection */}
         {selectionMode === 'single' && (
-          <HStack width="full" spacing={2}>
+          <Flex 
+            width="full" 
+            spacing={2} 
+            direction={{ base: "column", sm: "row" }}
+            gap={2}
+          >
             <Select
               value={selectedTicker}
               onChange={(e) => setSelectedTicker(e.target.value)}
@@ -307,7 +319,8 @@ const OrderControl = () => {
               size="sm"
               bg="whiteAlpha.50"
               borderColor="whiteAlpha.200"
-              flex="1.5"
+              flex={{ base: "1", sm: "1.5" }}
+              mb={{ base: 2, sm: 0 }}
               _hover={{ borderColor: "whiteAlpha.300" }}
               _focus={{ 
                 borderColor: "rgba(0, 198, 224, 0.6)",
@@ -340,7 +353,7 @@ const OrderControl = () => {
                 <NumberDecrementStepper />
               </NumberInputStepper>
             </NumberInput>
-          </HStack>
+          </Flex>
         )}
         
         {/* Display group info for group selection */}
@@ -352,7 +365,7 @@ const OrderControl = () => {
             borderRadius="md"
           >
             <Text fontSize="sm" fontWeight="medium" mb={1}>Selected Strategy Group</Text>
-            <HStack spacing={4}>
+            <HStack spacing={4} flexWrap="wrap">
               <Box>
                 <Text fontSize="xs" color="whiteAlpha.700">Ticker</Text>
                 <Text fontWeight="bold">{groupInfo.ticker}</Text>
@@ -379,7 +392,7 @@ const OrderControl = () => {
           <HStack width="full" spacing={2}>
             <Button
               flex={1}
-              h="40px"
+              h={{ base: "48px", md: "40px" }} // Taller buttons on mobile for better touch
               leftIcon={orderStatus === 'pending' && pendingOrder?.type === 'buy' ? null : <ArrowBigUp />}
               onClick={() => handleOrderSubmit('buy')}
               isDisabled={isTradingDisabled()}
@@ -406,7 +419,7 @@ const OrderControl = () => {
 
             <Button
               flex={1}
-              h="40px"
+              h={{ base: "48px", md: "40px" }} // Taller buttons on mobile for better touch
               leftIcon={orderStatus === 'pending' && pendingOrder?.type === 'sell' ? null : <ArrowBigDown />}
               onClick={() => handleOrderSubmit('sell')}
               isDisabled={isTradingDisabled()}
@@ -435,7 +448,7 @@ const OrderControl = () => {
           {/* Close All Trades Button */}
           <Button
             width="full"
-            h="32px"
+            h={{ base: "40px", md: "32px" }}
             leftIcon={orderStatus === 'pending' && pendingOrder?.type === 'close-all' ? null : <Ban size={14} />}
             size="sm"
             onClick={handleCloseAll}
