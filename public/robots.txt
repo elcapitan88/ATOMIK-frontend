@@ -1,0 +1,18 @@
+# robots.txt for Atomik Trading
+# https://www.atomiktrading.io/
+
+User-agent: *
+Allow: /
+Disallow: /dashboard/
+Disallow: /settings/
+Disallow: /auth/
+Disallow: /payment/
+Disallow: /marketplace/
+Disallow: /api/
+
+# Allow important pages to be crawled
+Allow: /pricing
+Allow: /start
+
+# Sitemap
+Sitemap: https://www.atomiktrading.io/sitemap.xml
