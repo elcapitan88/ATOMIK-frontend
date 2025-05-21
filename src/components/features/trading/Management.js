@@ -34,7 +34,7 @@ import BrokerSelectionModal from '@/components/common/Modal/BrokerSelectionModal
 import BrokerEnvironmentModal from '@/components/common/Modal/BrokerEnvironmentModal';
 import DeleteAccount from '@/components/common/Modal/DeleteAccount';
 import IBLoginModal from '@/components/common/Modal/IBLoginModal';
-import { webSocketManager } from '@/services/websocket-proxy';
+import webSocketManager from '@/services/websocket/webSocketManager';
 import AccountNicknameModal from '@/components/common/Modal/AccountNicknameModal';
 import logger from '@/utils/logger';
 import axiosInstance from '@/services/axiosConfig';
