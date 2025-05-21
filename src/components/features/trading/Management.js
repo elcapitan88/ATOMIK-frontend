@@ -29,7 +29,6 @@ import {
 } from 'lucide-react';
 
 import accountManager from '@/services/account/AccountManager';
-import webSocketManager from '@/services/websocket/webSocketManager';
 import AccountStatusIndicator from '@/components/common/AccountStatusIndicator';
 import BrokerSelectionModal from '@/components/common/Modal/BrokerSelectionModal';
 import BrokerEnvironmentModal from '@/components/common/Modal/BrokerEnvironmentModal';
