@@ -110,7 +110,7 @@ const Hero = () => {
                 w="full"
                 justify={{ base: 'center', lg: 'flex-start' }}
               >
-                <RouterLink to="/auth">
+                <RouterLink to="/pricing">
                   <Button
                     size="lg"
                     bg="rgba(0, 198, 224, 1)"
@@ -122,7 +122,7 @@ const Hero = () => {
                     }}
                     px={8}
                   >
-                    Get Started Free
+                    Try Free for 14 Days
                   </Button>
                 </RouterLink>
                 <Button
