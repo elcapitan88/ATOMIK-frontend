@@ -936,8 +936,6 @@ const PricingPage = () => {
   
   // Handle registration submission
   const handleRegistrationSubmit = async (formData) => {
-
-
     if (!selectedPlan) return;
     if (isSubmitting || isTransitioning) {
       return; // Prevent duplicate submissions
@@ -947,53 +945,26 @@ const PricingPage = () => {
       setIsSubmitting(true);
       logger.info(`Processing registration for ${formData.email} with ${selectedPlan.tier} plan`);
       
-      // Store registration data for use after payment/redirect
-      localStorage.setItem('pendingRegistration', JSON.stringify({
+      // NEW: Call prepare-registration endpoint
+      const response = await axiosInstance.post('/api/v1/auth/prepare-registration', {
         email: formData.email,
         username: formData.username,
         password: formData.password,
-        timestamp: Date.now()
-      }));
-
-      console.log('DEBUG: Stored registration data in localStorage', {
-        email: formData.email,
-        username: formData.username,
-        hasPassword: !!formData.password,
-        timestamp: Date.now()
+        plan: selectedPlan.tier,
+        interval: selectedPlan.interval
       });
       
-      // Handle plan-specific flows
-      if (selectedPlan.tier === 'starter') {
-        // For Starter plan: Process registration directly
+      if (response.data?.checkout_url) {
+        logger.info(`Registration prepared, redirecting to Stripe`);
         setIsTransitioning(true);
-        localStorage.setItem('processing_registration', 'true');
         
-        // Create URL with parameters for PaymentSuccess component
-        const params = new URLSearchParams({
-          plan: 'starter',
-          email: encodeURIComponent(formData.email),
-          username: encodeURIComponent(formData.username || ''),
-          timestamp: Date.now()
-        });
+        // Store session token temporarily (just for PaymentSuccess fallback)
+        sessionStorage.setItem('registration_session_token', response.data.session_token);
         
-        // Navigate to payment success page which will complete the registration
-        navigate(`/payment/success?${params.toString()}`);
-        
+        // Redirect to Stripe
+        window.location.href = response.data.checkout_url;
       } else {
-        // For paid plans: Use the guest-checkout endpoint that doesn't require authentication
-        const response = await axiosInstance.post('/api/v1/subscriptions/create-guest-checkout', {
-          plan: selectedPlan.tier,
-          interval: selectedPlan.interval,
-          email: formData.email,
-          username: formData.username || ''
-        });
-        
-        if (response.data?.url) {
-          logger.info(`Created guest checkout session for ${selectedPlan.tier}/${selectedPlan.interval}, redirecting to Stripe`);
-          window.location.href = response.data.url;
-        } else {
-          throw new Error("No checkout URL returned from server");
-        }
+        throw new Error("No checkout URL returned from server");
       }
       
     } catch (error) {

@@ -254,273 +254,126 @@ const PaymentSuccess = () => {
   }, [searchParams, navigate, toast, setAuthenticatedState]);
 
   // Main verification logic
-  useEffect(() => {
-    const verifyPaymentAndLogin = async () => {
-      if (verificationAttempted.current) return;
-      
-      // Skip if already processing starter plan registration
-      const plan = searchParams.get('plan');
-      if (plan === 'starter') return;
-      
-      // Skip if processing_registration flag is set
-      const isProcessingRegistration = localStorage.getItem('processing_registration');
-      if (isProcessingRegistration) return;
-      
-      verificationAttempted.current = true;
-      
-      try {
-        logger.info('Starting payment verification...');
-        
-        // Get session ID from URL parameters
-        const sessionId = searchParams.get('session_id');
-        if (!sessionId) {
-          throw new Error('No session ID found');
-        }
-        
-        // Fallback email from URL if available
-        const emailFromUrl = searchParams.get('email');
-        
-        // Get registration data from localStorage
-        const pendingRegistrationStr = localStorage.getItem('pendingRegistration');
+  // In PaymentSuccess.js, replace the main useEffect for verification with this:
 
-        console.log('DEBUG: Retrieved registration data from localStorage:', {
-          hasData: !!pendingRegistrationStr,
-          rawData: pendingRegistrationStr
-        });
-        
-        logger.debug('Registration data check:', {
-          hasLocalStorageData: !!pendingRegistrationStr,
-          hasEmailInParams: !!emailFromUrl,
-        });
-        
-        if (!pendingRegistrationStr && !emailFromUrl) {
-          throw new Error('No registration data found');
-        }
-        
-        // Parse registration data with fallbacks
-        let pendingRegistration;
-        try {
-          pendingRegistration = pendingRegistrationStr 
-            ? JSON.parse(pendingRegistrationStr) 
-            : { email: emailFromUrl ? decodeURIComponent(emailFromUrl) : null };
-          
-          // Use email from URL if available and different from localStorage
-          if (emailFromUrl && (!pendingRegistration.email || pendingRegistration.email !== decodeURIComponent(emailFromUrl))) {
-            logger.info('Using email from URL instead of localStorage:', emailFromUrl);
-            pendingRegistration.email = decodeURIComponent(emailFromUrl);
-          }
-        } catch (e) {
-          logger.error('Failed to parse registration data:', e);
-          
-          // Fallback to email from URL if available
-          if (emailFromUrl) {
-            pendingRegistration = { email: decodeURIComponent(emailFromUrl) };
-            logger.info('Using email from URL as fallback:', emailFromUrl);
-          } else {
-            throw new Error('Invalid registration data format');
-          }
-        }
-        
-        // Validate registration data
-        if (!pendingRegistration?.email) {
-          logger.error('Missing email in registration data');
-          throw new Error('Invalid registration data');
-        }
-        
-        // Verify session with retries
-        logger.info('Verifying session:', sessionId);
-        let verifyResponse;
-        let retryAttempt = 0;
-        
-        while (retryAttempt < 3) {
-          try {
-            verifyResponse = await axiosInstance.get(`/api/v1/subscriptions/verify-session/${sessionId}`);
-            break; // Exit loop if successful
-          } catch (err) {
-            retryAttempt++;
-            if (retryAttempt >= 3) throw err;
-            logger.warn(`Session verification failed (attempt ${retryAttempt}/3), retrying...`);
-            await new Promise(resolve => setTimeout(resolve, 1000));
-          }
-        }
-        
-        if (!verifyResponse || !verifyResponse.data.valid) {
-          logger.error('Session verification failed:', verifyResponse?.data);
-          throw new Error(verifyResponse?.data?.reason || 'Payment verification failed');
-        }
-        
-        logger.info('Payment verified successfully, proceeding with registration');
-        
-        // Extract plan information from session verification
-        const sessionMetadata = verifyResponse.data.metadata || {};
-        const planTier = sessionMetadata.tier;
+useEffect(() => {
+  const verifyPaymentAndLogin = async () => {
+    if (verificationAttempted.current || isAuthenticated) return;
+    verificationAttempted.current = true;
     
-        // Validate that we have a plan tier
-        if (!planTier) {
-          logger.error('No plan tier found in session metadata', { 
-            sessionId: sessionId,
-            metadata: sessionMetadata 
-          });
-          throw new Error('No plan tier found in session. Unable to complete registration.');
-        }
-    
-        const interval = sessionMetadata.interval;
-        if (!interval) {
-          logger.error('No interval found in session metadata', { 
-            sessionId: sessionId,
-            planTier: planTier
-          });
-          throw new Error('No billing interval found in session. Unable to complete registration.');
-        }
-    
-        const isLifetime = interval === 'lifetime';
-        const customerId = verifyResponse.data.customer_id;
+    try {
+      logger.info('Starting payment verification...');
+      
+      // Get session ID from URL
+      const sessionId = searchParams.get('session_id');
+      const sessionToken = searchParams.get('session_token');
+      
+      if (!sessionId) {
+        throw new Error('No session ID found');
+      }
+      
+      // Step 1: Verify the payment session
+      logger.info('Verifying session:', sessionId);
+      const verifyResponse = await axiosInstance.get(`/api/v1/subscriptions/verify-session/${sessionId}`);
+      
+      if (!verifyResponse.data.valid) {
+        throw new Error(verifyResponse.data.reason || 'Payment verification failed');
+      }
+      
+      // Step 2: Check if user already exists (webhook might have created it)
+      if (verifyResponse.data.user_exists) {
+        logger.info('User account already exists, attempting login');
         
-        // Note: For subscription plans, the subscription_id might not be available yet 
-        // This is okay - our webhook will catch it later
-        const subscriptionId = verifyResponse.data.subscription_id;
-    
-        // Log subscription info
-        logger.info('Subscription information:', {
-          planTier,
-          interval,
-          isLifetime,
-          hasCustomerId: !!customerId,
-          hasSubscriptionId: !!subscriptionId
-        });
-    
-        // Make registration request with plan information
-        const registerResponse = await axiosInstance.post('/api/v1/auth/register', {
-          email: pendingRegistration.email,
-          username: pendingRegistration.username || pendingRegistration.email.split('@')[0],
-          password: pendingRegistration.password,
-          plan: {
-            tier: planTier,
-            interval: interval,
-            is_lifetime: isLifetime,
-            stripe_customer_id: customerId,
-            stripe_subscription_id: subscriptionId
-          }
-        });
-    
-        if (registerResponse.data?.access_token) {
-          logger.info(`Registration successful for ${planTier} plan`);
-          
-          // Store token and set authorization header
-          localStorage.setItem('access_token', registerResponse.data.access_token);
-          axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${registerResponse.data.access_token}`;
-          
-          // Set auth directly if available
-          if (registerResponse.data.user) {
-            // Create a single session flag to indicate we're in a redirect flow
-            sessionStorage.setItem('auth_redirect_in_progress', 'true');
-            
-            // Use the provided auth context method to set authentication state
-            const success = setAuthenticatedState(registerResponse.data.user, registerResponse.data.access_token);
-            logger.info(`Auth state set success: ${success}`);
-          }
-          
-          // Update component state
-          setStatus('success');
-          
-          // Clean up
-          localStorage.removeItem('pendingRegistration');
-          
-          // Show success message
-          toast({
-            title: `Welcome to Atomik Trading ${planTier} Plan!`,
-            description: 'Your account is ready. Redirecting to dashboard...',
-            status: 'success',
-            duration: 5000,
+        // Get session token from URL or sessionStorage
+        const token = sessionToken || sessionStorage.getItem('registration_session_token');
+        
+        if (token) {
+          // Try to get credentials and login
+          const credResponse = await axiosInstance.post('/api/v1/auth/get-credentials-by-token', {
+            session_token: token
           });
           
-          // Use a slightly longer delay to ensure authentication state is fully set
-          redirectTimeout.current = setTimeout(() => {
-            if (mounted.current) {
-              // Remove the redirect flag right before navigation
-              sessionStorage.removeItem('auth_redirect_in_progress');
-              
-              // Force a hard reload of dashboard to ensure auth state is fresh
-              window.location.href = '/dashboard';
-            }
-          }, 1500); // Increased from 1000ms to 1500ms
-          
-          return;
-        }
-        
-        // If we get here, registration wasn't successful, try login as fallback
-        logger.info('Attempting login fallback with:', {
-          email: pendingRegistration.email,
-          hasPassword: !!pendingRegistration.password
-        });
-        
-        const loginResponse = await login({
-          email: pendingRegistration.email,
-          password: pendingRegistration.password
-        });
-        
-        if (!loginResponse.success) {
-          throw new Error(loginResponse.error || 'Login failed');
-        }
-        
-        // Success - update state and schedule redirect
-        if (mounted.current) {
-          setStatus('success');
-          localStorage.removeItem('pendingRegistration');
-          
-          toast({
-            title: 'Welcome to Atomik Trading!',
-            description: 'Your account has been upgraded.',
-            status: 'success',
-            duration: 5000,
-          });
-          
-          // Schedule redirect with animation delay
-          redirectTimeout.current = setTimeout(() => {
-            if (mounted.current) {
-              navigate('/dashboard', { replace: true });
-            }
-          }, AUTO_REDIRECT_DELAY);
-        }
-      } catch (error) {
-        logger.error('Payment verification error:', error);
-        
-        if (mounted.current) {
-          // Check if we should retry
-          if (retryCount < MAX_RETRIES) {
-            setRetryCount(prev => prev + 1);
-            setIsRetrying(true);
-            setError(`Verification failed. Retrying... (${retryCount + 1}/${MAX_RETRIES})`);
-            
-            // Schedule retry
-            setTimeout(() => {
-              if (mounted.current) {
-                setIsRetrying(false);
-                verificationAttempted.current = false;
-                verifyPaymentAndLogin();
-              }
-            }, RETRY_DELAY);
-          } else {
-            setStatus('error');
-            setError(error.response?.data?.detail || error.message || 'Payment verification failed');
-            
-            toast({
-              title: 'Setup Failed',
-              description: error.response?.data?.detail || error.message || 'Unable to verify your payment',
-              status: 'error',
-              duration: 8000,
-              isClosable: true,
+          if (credResponse.data) {
+            const loginResponse = await login({
+              email: credResponse.data.email,
+              password: credResponse.data.temp_password
             });
+            
+            if (loginResponse.success) {
+              setStatus('success');
+              sessionStorage.removeItem('registration_session_token');
+              
+              toast({
+                title: 'Welcome to Atomik Trading!',
+                description: 'Your account is ready. Redirecting to dashboard...',
+                status: 'success',
+                duration: 5000,
+              });
+              
+              redirectTimeout.current = setTimeout(() => {
+                if (mounted.current) {
+                  navigate('/dashboard', { replace: true });
+                }
+              }, AUTO_REDIRECT_DELAY);
+              return;
+            }
           }
+        }
+        
+        // If we can't auto-login, redirect to login page
+        setStatus('success');
+        toast({
+          title: 'Payment Successful!',
+          description: 'Your account is ready. Please login with your credentials.',
+          status: 'success',
+          duration: 8000,
+        });
+        
+        setTimeout(() => {
+          navigate('/auth', { replace: true });
+        }, 3000);
+        
+      } else {
+        // Account doesn't exist - this means webhook hasn't processed yet
+        logger.warn('Account not created by webhook, waiting...');
+        
+        // Retry after a delay
+        if (retryCount < MAX_RETRIES) {
+          setRetryCount(prev => prev + 1);
+          setIsRetrying(true);
+          setError(`Account setup in progress... (${retryCount + 1}/${MAX_RETRIES})`);
+          
+          setTimeout(() => {
+            if (mounted.current) {
+              setIsRetrying(false);
+              verificationAttempted.current = false;
+            }
+          }, RETRY_DELAY);
+        } else {
+          throw new Error('Account creation is taking longer than expected. Please contact support.');
         }
       }
-    };
-    
-    // Start verification if not authenticated and not already processing starter plan
-    if (!isAuthenticated && !searchParams.get('plan')) {
-      verifyPaymentAndLogin();
+      
+    } catch (error) {
+      logger.error('Payment verification error:', error);
+      
+      if (mounted.current) {
+        setStatus('error');
+        setError(error.message || 'Payment verification failed');
+        
+        toast({
+          title: 'Setup Error',
+          description: error.message || 'Unable to complete setup',
+          status: 'error',
+          duration: 8000,
+          isClosable: true,
+        });
+      }
     }
-  }, [isAuthenticated, navigate, searchParams, login, retryCount, toast, setAuthenticatedState]);
+  };
+  
+  verifyPaymentAndLogin();
+}, [isAuthenticated, navigate, searchParams, login, retryCount, toast]);
 
   // Manual retry handler
   const handleRetry = () => {
