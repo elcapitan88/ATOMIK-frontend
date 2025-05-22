@@ -7,31 +7,21 @@ import {
   VStack, 
   HStack, 
   Badge, 
-  Icon, 
   Switch,
   Divider,
-  IconButton,
-  useToast
+  IconButton
 } from '@chakra-ui/react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Zap, 
-  BarChart2, 
-  Users, 
-  Settings, 
-  MoreVertical,
-  Check
-} from 'lucide-react';
+import { Zap, Users, MoreVertical, Check } from 'lucide-react';
 import { useDemoAnimation } from '../DemoController';
 
 const StrategyConfig = () => {
   // Get animation state from context
-  const { isAnimating, animationProgress, simulateClick } = useDemoAnimation();
+  const { isAnimating } = useDemoAnimation();
   
   // Local state
   const [strategies, setStrategies] = useState([]);
   const [activeStrategy, setActiveStrategy] = useState(null);
-  const toast = useToast();
   
   // Reset and coordinate animations when this step becomes active
   useEffect(() => {
@@ -72,29 +62,6 @@ const StrategyConfig = () => {
             s.id === 'strategy1' ? { ...s, isActive: true } : s
           )
         );
-        
-        // Show success toast
-        toast({
-          title: "Strategy Activated",
-          description: "ESH5 strategy is now active",
-          status: "success",
-          duration: 3000,
-          isClosable: true,
-          position: "top",
-          render: (props) => (
-            <Box
-              p={3}
-              bg="rgba(56, 161, 105, 0.9)"
-              borderRadius="md"
-              color="white"
-            >
-              <HStack>
-                <Check size={18} />
-                <Text fontWeight="medium">Strategy Activated</Text>
-              </HStack>
-            </Box>
-          )
-        });
       }, 3000);
       
       return () => {
@@ -102,7 +69,7 @@ const StrategyConfig = () => {
         clearTimeout(timer2);
       };
     }
-  }, [isAnimating, toast]);
+  }, [isAnimating]);
   
   return (
     <Flex direction="column" h="100%" p={2}>
@@ -215,7 +182,7 @@ const StrategyItem = ({ strategy, isHighlighted, onToggle }) => {
             borderRadius="md"
             color={strategy.isActive ? "rgba(0, 198, 224, 1)" : "white"}
           >
-            <Icon as={strategy.type === 'single' ? Zap : Users} boxSize={4} />
+            <Zap size={16} />
           </Box>
           
           <VStack spacing={0} align="flex-start">

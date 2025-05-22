@@ -14,26 +14,6 @@ import { ConfigCatProvider } from 'configcat-react';
 // Import global styles
 import './styles/globals.css';
 
-console.log('Setting up localStorage debug wrapper');
-const originalSetItem = localStorage.setItem;
-localStorage.setItem = function(key, value) {
-  console.log(`[localStorage.setItem] Key: "${key}", Value:`, value);
-  if (key === 'pendingRegistration') {
-    console.log('IMPORTANT: pendingRegistration being set');
-    console.trace(); // This shows the call stack
-  }
-  return originalSetItem.apply(this, arguments);
-};
-
-const originalGetItem = localStorage.getItem;
-localStorage.getItem = function(key) {
-  const value = originalGetItem.call(this, key);
-  if (key === 'pendingRegistration') {
-    console.log(`[localStorage.getItem] Key: "${key}", Value:`, value);
-  }
-  return value;
-};
-
 // Initialize Google Tag Manager - replace GTM-XXXXXX with your actual GTM ID
 const tagManagerArgs = {
   gtmId: 'GTM-KF3PNRZG', // You'll get this ID when creating your GTM account

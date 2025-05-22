@@ -1,30 +1,48 @@
-import { useRef, useEffect, useState, useCallback, useMemo } from 'react';
-import React from 'react';
+// src/components/features/trading/Management.js
+import { useRef } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
-    Box, VStack, Text, Flex, HStack, Spinner, useToast,
-    useDisclosure, IconButton, Menu, MenuButton, 
-    MenuList, MenuItem, Button,
+    Box,
+    VStack,
+    Text,
+    Flex,
+    HStack,
+    Spinner,
+    useToast,
+    useDisclosure,
+    Tooltip,
+    IconButton,
+    Menu,
+    MenuButton,
+    MenuList,
+    MenuItem,
+    Button,
 } from '@chakra-ui/react';
 import {
-    Trash2, ChevronDown, ChevronUp, MoreVertical,
-    SlidersHorizontal, AlertCircle, Edit,
+    Trash2,
+    ChevronDown,
+    ChevronUp,
+    MoreVertical,
+    SlidersHorizontal,
+    AlertCircle,
+    Edit,
 } from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
-import { useFeatureFlag } from 'configcat-react';
-import { useAccounts } from '@/hooks/useAccounts';
-import logger from '@/utils/logger';
-import axiosInstance from '@/services/axiosConfig';
+
 import accountManager from '@/services/account/AccountManager';
 import AccountStatusIndicator from '@/components/common/AccountStatusIndicator';
 import BrokerSelectionModal from '@/components/common/Modal/BrokerSelectionModal';
 import BrokerEnvironmentModal from '@/components/common/Modal/BrokerEnvironmentModal';
 import DeleteAccount from '@/components/common/Modal/DeleteAccount';
 import IBLoginModal from '@/components/common/Modal/IBLoginModal';
+import webSocketManager from '@/services/websocket/webSocketManager';
 import AccountNicknameModal from '@/components/common/Modal/AccountNicknameModal';
-import { useWebSocketContext } from '@/services/websocket-proxy/contexts/WebSocketContext';
-import webSocketManager, { ConnectionState } from '@/services/websocket-proxy/WebSocketManager';
+import logger from '@/utils/logger';
+import axiosInstance from '@/services/axiosConfig';
+import { useFeatureFlag } from 'configcat-react';
 
-// SortButton Component (unchanged)
+
+
+// SortButton Component
 const SortButton = ({ onSort }) => {
     const sortOptions = [
         { label: 'Name', value: 'name' },
@@ -50,7 +68,7 @@ const SortButton = ({ onSort }) => {
                 bg="rgba(255, 255, 255, 0.1)"
                 backdropFilter="blur(10px)"
                 borderColor="rgba(255, 255, 255, 0.18)"
-                boxShadow="0 8px 32px 0 rgba(0, 0, 198, 224, 0.37)"
+                boxShadow="0 8px 32px 0 rgba(0, 198, 224, 0.37)"
                 borderRadius="xl"
             >
                 {sortOptions.map((option) => (
@@ -69,7 +87,6 @@ const SortButton = ({ onSort }) => {
     );
 };
 
-// AccountOptions Component (unchanged)
 const AccountOptions = ({ account, onEditName, onDelete }) => {
     return (
         <Menu>
@@ -85,7 +102,7 @@ const AccountOptions = ({ account, onEditName, onDelete }) => {
                 bg="rgba(255, 255, 255, 0.1)"
                 backdropFilter="blur(10px)"
                 borderColor="rgba(255, 255, 255, 0.18)"
-                boxShadow="0 8px 32px 0 rgba(0, 0, 198, 224, 0.37)"
+                boxShadow="0 8px 32px 0 rgba(0, 198, 224, 0.37)"
                 borderRadius="xl"
             >
                 <MenuItem
@@ -112,32 +129,24 @@ const AccountOptions = ({ account, onEditName, onDelete }) => {
 };
 
 const Management = () => {
-    const toast = useToast();
-    // Use the useAccounts hook to fetch and cache accounts data
-    const { 
-        data: accounts = [], 
-        isLoading, 
-        isError, 
-        error, 
-        refetch 
-    } = useAccounts();
-
-    // State for WebSocket connection tracking
-    const [connectionStatuses, setConnectionStatuses] = useState(() => new Map());
-    const connectingRef = useRef(false);
-    
-    // Keep other state variables
+    // State Management
+    const [accounts, setAccounts] = useState([]);
+    const [isLoading, setIsLoading] = useState(true);
     const [selectedAccount, setSelectedAccount] = useState(null);
     const [selectedBroker, setSelectedBroker] = useState(null);
     const [expandedAccounts, setExpandedAccounts] = useState(new Set());
     const [fetchError, setFetchError] = useState(null);
+    const [connectionStatuses, setConnectionStatuses] = useState(() => new Map());
     const [sortBy, setSortBy] = useState(null);
     const [accountUpdates, setAccountUpdates] = useState({});
     const [editingAccount, setEditingAccount] = useState(null);
     const { value: showPnL } = useFeatureFlag('show_pnl', false);
     const { value: enableExpansion } = useFeatureFlag('enable_expansion', true);
+
+    // Hooks
+    const toast = useToast();
     
-    // Modal controls (unchanged)
+    // Modal controls
     const {
         isOpen: isBrokerSelectOpen,
         onOpen: onBrokerSelectOpen,
@@ -168,234 +177,176 @@ const Management = () => {
         onClose: onIBLoginClose
     } = useDisclosure();
 
-    // Handlers (unchanged)
+    // Handlers
     const handleSort = (sortKey) => {
         setSortBy(sortKey);
     };
-
-    // Setup WebSocket connection status listeners
-    useEffect(() => {
-        // Listen for connection state changes
-        const handleConnectionState = (update) => {
-            const { brokerId, accountId, state } = update;
-            
-            // Map the connection state to a status for the indicator
-            let status;
-            switch (state) {
-                case ConnectionState.CONNECTED:
-                    status = 'connected';
-                    break;
-                case ConnectionState.CONNECTING:
-                    status = 'connecting';
-                    break;
-                case ConnectionState.RECONNECTING:
-                    status = 'reconnecting';
-                    break;
-                case ConnectionState.ERROR:
-                    status = 'error';
-                    break;
-                case ConnectionState.DISCONNECTED:
-                default:
-                    status = 'disconnected';
-                    break;
-            }
-            
-            // Update the status map
-            setConnectionStatuses(prev => {
-                const newMap = new Map(prev);
-                newMap.set(accountId, status);
-                return newMap;
-            });
-        };
-        
-        // Set up event listener
-        webSocketManager.on('connectionState', handleConnectionState);
-        
-        // Clean up on unmount
-        return () => {
-            webSocketManager.removeListener('connectionState', handleConnectionState);
-        };
-    }, []);
     
-    // Listen for WebSocket data updates
+
     useEffect(() => {
-        // Handle account updates
-        const handleAccountUpdate = (data) => {
-            setAccountUpdates(prev => ({
-                ...prev,
-                [data.accountId]: {
-                    ...prev[data.accountId],
-                    ...data,
-                    timestamp: Date.now()
-                }
-            }));
-        };
-        
-        // Handle position updates
-        const handlePositionUpdate = (data) => {
-            // Check if this update belongs to one of our accounts
-            const accountId = data.accountId;
-            const relevantAccount = accounts.find(acc => acc.account_id == accountId);
-            if (!relevantAccount) return;
-            
-            setAccountUpdates(prev => {
-                // Get existing account data or initialize
-                const accountData = prev[accountId] || {};
-                
-                // Update positions array if it exists
-                let positions = [...(accountData.positions || [])];
-                const existingPosIndex = positions.findIndex(
-                    p => p.contractId === data.contractId || p.symbol === data.symbol
-                );
-                
-                if (existingPosIndex >= 0) {
-                    // Update existing position
-                    positions[existingPosIndex] = { ...positions[existingPosIndex], ...data };
-                } else {
-                    // Add new position
-                    positions.push(data);
-                }
-                
-                // Calculate total P&L
-                const totalPnL = positions.reduce((sum, pos) => 
-                    sum + (pos.pnl || pos.totalPl || pos.unrealizedPL || 0), 0);
-                
-                return {
-                    ...prev,
-                    [accountId]: {
-                        ...accountData,
-                        positions,
-                        totalPnL,
-                        timestamp: Date.now()
+        const subscriptions = [];
+    
+        accounts.forEach(account => {
+            console.log('Setting up subscription for account:', account.account_id);
+            const accountSub = webSocketManager.onAccountUpdates()
+                .subscribe({
+                    next: (update) => {
+                        console.log('Received WebSocket update:', update);
+                        if (update.data && update.data.accountId === account.account_id) {
+                            console.log('Processing update for account:', account.account_id, update.data);
+                            setAccountUpdates(prev => {
+                                const newState = {
+                                    ...prev,
+                                    [account.account_id]: {
+                                        balance: update.data.balance,
+                                        totalPnL: update.data.totalPnL,
+                                        dayPnL: update.data.dayPnL,
+                                        openPnL: update.data.openPositionsPnL,
+                                        timestamp: update.timestamp
+                                    }
+                                };
+                                console.log('New account updates state:', newState);
+                                return newState;
+                            });
+                        }
+                    },
+                    error: (error) => {
+                        console.error(`WebSocket update error for account ${account.account_id}:`, error);
                     }
-                };
-            });
-        };
-        
-        // Set up event listeners
-        webSocketManager.on('accountUpdate', handleAccountUpdate);
-        webSocketManager.on('positionUpdate', handlePositionUpdate);
-        
-        // Clean up on unmount
+                });
+    
+            subscriptions.push(accountSub);
+        });
+    
         return () => {
-            webSocketManager.removeListener('accountUpdate', handleAccountUpdate);
-            webSocketManager.removeListener('positionUpdate', handlePositionUpdate);
+            subscriptions.forEach(sub => sub.unsubscribe());
         };
     }, [accounts]);
 
-    // Effect to establish WebSocket connections for active accounts when accounts load
     useEffect(() => {
-        // Skip if there are no accounts or already connecting
-        if (accounts.length === 0 || connectingRef.current) return;
-        
-        const connectAccounts = async () => {
-            try {
-                connectingRef.current = true;
-                logger.info(`Accounts loaded: ${accounts.length}, establishing WebSocket connections`);
-                
-                // Connect to each active account
-                for (const account of accounts) {
-                    // Skip if account is not active
-                    if (account.status !== 'active' || account.is_token_expired) {
-                        continue;
-                    }
-                    
-                    const brokerId = account.broker_id || 'tradovate';
-                    const accountId = account.account_id;
-                    
-                    // Skip if already connected
-                    if (webSocketManager.isConnected(brokerId, accountId)) {
-                        continue;
-                    }
-                    
-                    try {
-                        // Use shared connection if possible
-                        await webSocketManager.getOrCreateSharedConnection(
-                            brokerId, 
-                            account.environment || 'demo',
-                            accountId
-                        );
-                        
-                        logger.info(`Connected to ${brokerId}:${accountId}`);
-                    } catch (error) {
-                        logger.error(`Failed to connect to ${brokerId}:${accountId}:`, error);
-                        
-                        // Update connection status to error
-                        setConnectionStatuses(prev => {
-                            const newMap = new Map(prev);
-                            newMap.set(accountId, 'error');
-                            return newMap;
-                        });
-                    }
+        const statusSub = webSocketManager.onStatus()
+            .subscribe({
+                next: (statusUpdate) => {
+                    setConnectionStatuses(prev => {
+                        const newMap = new Map(prev);
+                        newMap.set(statusUpdate.accountId, statusUpdate.status);
+                        return newMap;
+                    });
+                },
+                error: (error) => {
+                    logger.error('WebSocket status subscription error:', error);
                 }
-            } catch (error) {
-                logger.error('Error connecting WebSockets:', error);
-            } finally {
-                connectingRef.current = false;
-            }
-        };
-        
-        // Run connection attempt with a slight delay to avoid race conditions
-        const timer = setTimeout(connectAccounts, 1000);
-        
-        // Clean up
-        return () => clearTimeout(timer);
-    }, [accounts]);
+            });
+    
+        return () => statusSub.unsubscribe();
+    }, []);
 
-    // Effect for error handling (unchanged)
-    useEffect(() => {
-        if (isError && error) {
+    const fetchAccounts = async (showLoadingState = true) => {
+        try {
+            if (showLoadingState) setIsLoading(true);
+            setFetchError(null);
+
+            await accountManager.fetchAccounts(true);
+
+        } catch (error) {
+            logger.error('Error fetching accounts:', error);
+            setFetchError(error.message || 'Failed to fetch accounts');
             toast({
-                title: "Error Loading Accounts",
-                description: error.message || "Failed to fetch account data",
+                title: "Error",
+                description: "Failed to fetch accounts",
                 status: "error",
                 duration: 5000,
                 isClosable: true,
             });
-            
-            logger.error('React Query error fetching accounts:', error);
-            setFetchError(error.message || 'Error loading accounts');
+        } finally {
+            if (showLoadingState) setIsLoading(false);
         }
-    }, [isError, error, toast]);
-    
-    // Effect to refetch on mount and window focus (unchanged)
-    useEffect(() => {
-        refetch();
-        
-        const handleFocus = () => {
-            console.log('Window focused, refreshing accounts data');
-            refetch();
-        };
-        
-        window.addEventListener('focus', handleFocus);
-        
-        return () => {
-            window.removeEventListener('focus', handleFocus);
-        };
-    }, [refetch]);
-    
-    // Cleanup WebSocket connections on unmount
-    useEffect(() => {
-        return () => {
-            // No need to disconnect all connections - let WebSocketManager handle this
-            // Just clean up our local state
-            setConnectionStatuses(new Map());
-        };
-    }, []);
+    };
 
-    // Handle account deletion (unchanged)
+    const handleUpdateNickname = async (accountId, nickname) => {
+        console.log("Starting nickname update:", { accountId, nickname });
+        
+        // Track the loading toast ID to close it later
+        let loadingToastId = null;
+        
+        try {
+          // Show loading toast
+          loadingToastId = toast({
+            title: "Updating nickname",
+            description: "Saving your changes...",
+            status: "loading",
+            duration: null,
+            isClosable: false,
+          });
+          
+          // Make the API call to update the nickname
+          const response = await axiosInstance.patch(`/api/v1/brokers/accounts/${accountId}`, {
+            nickname: nickname
+          });
+          
+          // Log the successful response
+          console.log("Nickname update response:", response.data);
+          
+          // Update accounts in component's local state
+          setAccounts(prev => {
+            const updatedAccounts = prev.map(acc => 
+              acc.account_id === accountId ? { ...acc, nickname: nickname } : acc
+            );
+            console.log("Updated accounts state:", updatedAccounts);
+            return updatedAccounts;
+          });
+          
+          // Also update selected account if it matches
+          if (selectedAccount && selectedAccount.account_id === accountId) {
+            setSelectedAccount(prev => ({ ...prev, nickname: nickname }));
+          }
+          
+          // Important: Update the central AccountManager service
+          // This ensures the nickname change persists across the app and survives page refreshes
+          await accountManager.updateAccount(accountId, { nickname: nickname });
+          
+          // Close loading toast
+          if (loadingToastId) {
+            toast.close(loadingToastId);
+          }
+          
+          // Show success toast
+          toast({
+            title: "Nickname Updated",
+            description: "Account nickname has been successfully updated",
+            status: "success",
+            duration: 3000,
+            isClosable: true,
+          });
+          
+        } catch (error) {
+          // Close loading toast
+          if (loadingToastId) {
+            toast.close(loadingToastId);
+          }
+          
+          console.error("Nickname update error:", error);
+          
+          toast({
+            title: "Update Failed",
+            description: error.response?.data?.detail || error.message || "Failed to update account nickname",
+            status: "error",
+            duration: 5000,
+            isClosable: true,
+          });
+          
+          // Reload accounts to ensure state is in sync
+          fetchAccounts(false);
+        }
+      }
+
+    // Handle account deletion
     const handleAccountDeletion = useCallback(async () => {
         if (!selectedAccount) return;
-    
+
         try {
-            // Close WebSocket first
-            const brokerId = selectedAccount.broker_id || 'tradovate';
-            webSocketManager.disconnect(brokerId, selectedAccount.account_id);
-            
+            webSocketManager.disconnect(selectedAccount.account_id);
             await accountManager.removeAccount(selectedAccount.account_id);
-            
-            // Trigger refetch to update the UI
-            refetch();
             
             toast({
                 title: "Account Removed",
@@ -416,9 +367,9 @@ const Management = () => {
                 isClosable: true,
             });
         }
-    }, [selectedAccount, toast, onDeleteClose, refetch]);
+    }, [selectedAccount, toast, onDeleteClose]);
 
-    // Handle broker selection (unchanged - keeping IB implementation as is)
+    // Handle broker selection
     const handleBrokerSelect = useCallback((broker) => {
         if (!broker) return;
         
@@ -438,7 +389,7 @@ const Management = () => {
         }
     }, [onBrokerSelectClose, onEnvironmentOpen, onIBLoginOpen]);
 
-    // Toggle account expansion (unchanged)
+    // Toggle account expansion
     const toggleAccountExpansion = useCallback((accountId) => {
         setExpandedAccounts(prev => {
             const newSet = new Set(prev);
@@ -451,42 +402,10 @@ const Management = () => {
         });
     }, []);
 
-    // Connect to WebSocket manually for an account
-    const connectToWebSocket = useCallback((account) => {
-        if (!account) return;
-        
-        const brokerId = account.broker_id || 'tradovate';
-        const accountId = account.account_id;
-        
-        logger.info(`Manually connecting to WebSocket for account ${accountId}`);
-        
-        // Use WebSocketManager to connect
-        webSocketManager.connect(brokerId, accountId, {
-            environment: account.environment || 'demo'
-        })
-        .then(() => {
-            toast({
-                title: "Connected",
-                description: `Connected to ${account.broker_id} account`,
-                status: "success",
-                duration: 3000,
-                isClosable: true,
-            });
-        })
-        .catch(error => {
-            toast({
-                title: "Connection Failed",
-                description: error.message || "Failed to connect to account",
-                status: "error",
-                duration: 3000,
-                isClosable: true,
-            });
-        });
-    }, [toast]);
-
-    // Handle IB Connect (unchanged)
     const handleIBConnect = async (connectionData) => {
         try {
+            setIsLoading(true);
+            
             // Make API call to connect IB account
             const response = await axiosInstance.post('/api/v1/brokers/interactivebrokers/connect', {
                 environment: connectionData.environment,
@@ -505,8 +424,8 @@ const Management = () => {
                 // Close the modal
                 onIBLoginClose();
                 
-                // Refresh accounts list using refetch
-                refetch();
+                // Refresh accounts list
+                await fetchAccounts();
             }
         } catch (error) {
             console.error('Error connecting IB account:', error);
@@ -517,10 +436,12 @@ const Management = () => {
                 duration: 5000,
                 isClosable: true,
             });
+        } finally {
+            setIsLoading(false);
         }
     };
 
-    // Sorted accounts logic (unchanged)
+    // Sort accounts based on current sortBy value
     const sortedAccounts = useMemo(() => {
         if (!sortBy) return accounts;
 
@@ -540,7 +461,158 @@ const Management = () => {
         });
     }, [accounts, sortBy]);
 
-    // Account item component with enhanced WebSocket status display
+    // Effect for initializing account subscriptions
+    useEffect(() => {
+        let accountSubscription;
+        let wsStatusSubscription;
+    
+        const initializeSubscriptions = async () => {
+            try {
+                setIsLoading(true);
+                
+                // Initialize WebSocket status subscription
+                wsStatusSubscription = webSocketManager.onStatus().subscribe({
+                    next: (statusUpdate) => {
+                        setConnectionStatuses(prev => new Map(prev).set(
+                            statusUpdate.accountId,
+                            statusUpdate.status
+                        ));
+                    },
+                    error: (error) => {
+                        console.error('WebSocket status subscription error:', error);
+                    }
+                });
+    
+                // Initialize account subscription
+                accountSubscription = accountManager.getAccountUpdates().subscribe({
+                    next: (update) => {
+                        if (update.type === 'bulk') {
+                            setAccounts(update.accounts);
+                        } else if (update.type === 'update') {
+                            setAccounts(prev => prev.map(account => 
+                                account.account_id === update.accountId ? update.account : account
+                            ));
+                        } else if (update.type === 'remove') {
+                            setAccounts(prev => prev.filter(account => 
+                                account.account_id !== update.accountId
+                            ));
+                        }
+                    },
+                    error: (error) => {
+                        console.error('Account subscription error:', error);
+                        setFetchError('Error receiving account updates');
+                    }
+                });
+    
+                // Initial account fetch
+                await fetchAccounts();
+    
+            } catch (error) {
+                console.error('Initialization error:', error);
+                setFetchError('Failed to initialize account management');
+            } finally {
+                setIsLoading(false);
+            }
+        };
+    
+        initializeSubscriptions();
+    
+        // Cleanup subscriptions
+        return () => {
+            if (accountSubscription) accountSubscription.unsubscribe();
+            if (wsStatusSubscription) wsStatusSubscription.unsubscribe();
+        };
+    }, []);
+
+    // Effect for WebSocket connections
+    useEffect(() => {
+        const connectAccounts = async () => {
+            try {
+                const activeAccounts = accounts.filter(acc => 
+                    acc.status === 'active' && !acc.is_token_expired
+                );
+                
+                for (const account of activeAccounts) {
+                    const token = localStorage.getItem('access_token');
+                    if (!token) continue;
+    
+                    const connected = await webSocketManager.connect(
+                        account.account_id,
+                        token
+                    );
+                    
+                    if (!connected) {
+                        logger.error(`Failed to connect WebSocket for account ${account.account_id}`);
+                    }
+                }
+            } catch (error) {
+                logger.error('Error connecting WebSockets:', error);
+            }
+        };
+    
+        const handleVisibilityChange = () => {
+            if (!document.hidden) {
+                logger.info('Tab became visible, reconnecting WebSockets');
+                connectAccounts();
+            }
+        };
+    
+        const handleFocus = () => {
+            logger.info('Window focused, checking WebSocket connections');
+            connectAccounts();
+        };
+    
+        // Initial connection
+        if (accounts.length > 0) {
+            connectAccounts();
+        }
+    
+        // Add event listeners
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+        window.addEventListener('focus', handleFocus);
+    
+        // Cleanup
+        return () => {
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
+            window.removeEventListener('focus', handleFocus);
+        };
+    }, [accounts]);
+
+    useEffect(() => {
+        const subscriptions = [];
+    
+        accounts.forEach(account => {
+            // Subscribe to account updates
+            const accountSub = webSocketManager.onAccountUpdates()
+                .subscribe({
+                    next: (update) => {
+                        if (update.data.accountId === account.account_id) {
+                            setAccountUpdates(prev => ({
+                                ...prev,
+                                [account.account_id]: {
+                                    balance: update.data.balance,
+                                    totalPnL: update.data.totalPnL,
+                                    todaysPnL: update.data.todaysPnL,
+                                    openPnL: update.data.openPnL,
+                                    timestamp: update.data.timestamp
+                                }
+                            }));
+                        }
+                    },
+                    error: (error) => {
+                        logger.error(`WebSocket update error for account ${account.account_id}:`, error);
+                    }
+                });
+    
+            subscriptions.push(accountSub);
+        });
+    
+        return () => {
+            subscriptions.forEach(sub => sub.unsubscribe());
+        };
+    }, [accounts]);
+
+    // AccountItem Component
     const AccountItem = ({ 
         account, 
         isExpanded, 
@@ -550,7 +622,18 @@ const Management = () => {
         onEditName,
     }) => {
         const updates = accountUpdates[account.account_id];
-        
+        console.log('Account render:', {
+            accountId: account.account_id,
+            rawUpdates: updates,
+            connectionStatus,
+            displayValues: {
+                balance: updates?.balance ?? account.balance ?? 0,
+                totalPnL: updates?.totalPnL ?? account.totalPnL ?? 0,
+                todaysPnL: updates?.todaysPnL ?? account.todaysPnL ?? 0,
+                openPnL: updates?.openPnL ?? account.openPnL ?? 0
+            }
+        });
+    
         // Use real-time values if available, otherwise fall back to account values
         const displayValues = {
             balance: updates?.balance ?? account.balance ?? 0,
@@ -593,7 +676,7 @@ const Management = () => {
                     </Flex>
         
                     {/* Balance Group - More Compact */}
-                    {showPnL && (
+                    {showPnL&&(
                     <Flex align="center" gap={4} flex="3" px={3}> 
                         <VStack spacing={0} align="flex-start">  
                             <Text fontSize="xs" color="whiteAlpha.700" lineHeight="1.2">Balance</Text>
@@ -630,7 +713,7 @@ const Management = () => {
         
                     {/* Actions Group */}
                     <Flex align="center" gap={1} flex="0 0 auto"> 
-                       <AccountOptions 
+                        <AccountOptions 
                             account={account}
                             onEditName={onEditName}
                             onDelete={onDelete}
@@ -652,106 +735,35 @@ const Management = () => {
                 {/* Expanded Section */}
                 {enableExpansion && isExpanded && showPnL && (
                     <Box 
-                        p={3} 
-                        borderTop="1px solid" 
-                        borderColor="whiteAlpha.200"
-                        bg="whiteAlpha.50"
-                    >
-                        <HStack spacing={6}>
-                            <Box>
-                                <Text fontSize="xs" color="whiteAlpha.700">Today's P&L</Text>
-                                <Text fontSize="sm" fontWeight="semibold" color={displayValues.todaysPnL >= 0 ? 'green.400' : 'red.400'}>
-                                    ${displayValues.todaysPnL.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                </Text>
-                            </Box>
-                            <Box>
-                                <Text fontSize="xs" color="whiteAlpha.700">Realized P&L</Text>
-                                <Text fontSize="sm" fontWeight="semibold" color={displayValues.realizedPnL >= 0 ? 'green.400' : 'red.400'}>
-                                    ${displayValues.realizedPnL.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                </Text>
-                            </Box>
-                            <Box>
-                                <Text fontSize="xs" color="whiteAlpha.700">Weekly P&L</Text>
-                                <Text fontSize="sm" fontWeight="semibold" color={displayValues.weeklyPnL >= 0 ? 'green.400' : 'red.400'}>
-                                    ${displayValues.weeklyPnL.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                </Text>
-                            </Box>
-                        </HStack>
-                    </Box>
+                    p={3} 
+                    borderTop="1px solid" 
+                    borderColor="whiteAlpha.200"
+                    bg="whiteAlpha.50"
+                >
+                    <HStack spacing={6}>
+                        <Box>
+                            <Text fontSize="xs" color="whiteAlpha.700">Today's P&L</Text>
+                            <Text fontSize="sm" fontWeight="semibold" color={displayValues.todaysPnL >= 0 ? 'green.400' : 'red.400'}>
+                                ${displayValues.todaysPnL.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </Text>
+                        </Box>
+                        <Box>
+                            <Text fontSize="xs" color="whiteAlpha.700">Realized P&L</Text>
+                            <Text fontSize="sm" fontWeight="semibold" color={displayValues.realizedPnL >= 0 ? 'green.400' : 'red.400'}>
+                                ${displayValues.realizedPnL.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </Text>
+                        </Box>
+                        <Box>
+                            <Text fontSize="xs" color="whiteAlpha.700">Weekly P&L</Text>
+                            <Text fontSize="sm" fontWeight="semibold" color={displayValues.weeklyPnL >= 0 ? 'green.400' : 'red.400'}>
+                                ${displayValues.weeklyPnL.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </Text>
+                        </Box>
+                    </HStack>
+                </Box>
                 )}
             </Box>
         );
-    };
-
-    // Handle nickname update
-    const handleUpdateNickname = async (accountId, nickname) => {
-        console.log("Starting nickname update:", { accountId, nickname });
-        
-        // Track the loading toast ID to close it later
-        let loadingToastId = null;
-        
-        try {
-            // Show loading toast
-            loadingToastId = toast({
-                title: "Updating nickname",
-                description: "Saving your changes...",
-                status: "loading",
-                duration: null,
-                isClosable: false,
-            });
-            
-            // Make the API call to update the nickname
-            const response = await axiosInstance.patch(`/api/v1/brokers/accounts/${accountId}`, {
-                nickname: nickname
-            });
-            
-            // Log the successful response
-            console.log("Nickname update response:", response.data);
-            
-            // Update selected account if it matches
-            if (selectedAccount && selectedAccount.account_id === accountId) {
-                setSelectedAccount(prev => ({ ...prev, nickname: nickname }));
-            }
-            
-            // Important: Update the central AccountManager service
-            await accountManager.updateAccount(accountId, { nickname: nickname });
-            
-            // Trigger a refetch to update the accounts data
-            refetch();
-            
-            // Close loading toast
-            if (loadingToastId) {
-                toast.close(loadingToastId);
-            }
-            
-            // Show success toast
-            toast({
-                title: "Nickname Updated",
-                description: "Account nickname has been successfully updated",
-                status: "success",
-                duration: 3000,
-                isClosable: true,
-            });
-            
-        } catch (error) {
-            // Close loading toast
-            if (loadingToastId) {
-                toast.close(loadingToastId);
-            }
-            
-            console.error("Nickname update error:", error);
-            
-            toast({
-                title: "Update Failed",
-                description: error.response?.data?.detail || error.message || "Failed to update account nickname",
-                status: "error",
-                duration: 5000,
-                isClosable: true,
-            });
-            
-            // Reload accounts to ensure state is in sync
-            refetch();
-        }
     };
     
     // Render accounts list with loading and error states
@@ -856,7 +868,7 @@ const Management = () => {
                 </VStack>
             </VStack>
 
-            {/* Modals - Unchanged */}
+            {/* Modals */}
             <BrokerSelectionModal
                 isOpen={isBrokerSelectOpen}
                 onClose={onBrokerSelectClose}
@@ -876,8 +888,7 @@ const Management = () => {
                     onEnvironmentSelect={async (environment) => {
                         try {
                             onEnvironmentClose();
-                            // Use refetch instead of fetchAccounts
-                            refetch();
+                            await fetchAccounts();
                         } catch (error) {
                             logger.error('Environment selection error:', error);
                             toast({

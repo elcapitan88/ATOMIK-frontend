@@ -2,7 +2,6 @@ import React, { Suspense, useEffect, lazy } from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Box, Spinner, Text } from '@chakra-ui/react';
 import { useAuth } from '@/contexts/AuthContext';
-import { WebSocketProvider } from '@/services/websocket-proxy';
 
 // Import components
 import Homepage from './components/pages/Homepage/Homepage';
@@ -154,97 +153,95 @@ function App() {
   }, [isAuthenticated, setAuthenticatedState]);
   
   return (
-    <WebSocketProvider>
-      <Suspense fallback={<LoadingSpinner />}>
-        <RouteTracker />
-        <Routes>
-          {/* Public Routes */}
-          <Route path="/" element={<Homepage />} />
-    
-          <Route path="/start" element={<LandingPage />} />
-          
-          {/* Pricing Route - Now publicly accessible */}
-          <Route
-            path="/pricing"
-            element={
-              <PricingRoute>
-                <PricingPage />
-              </PricingRoute>
-            }
-          />
-          
-          {/* Auth Routes */}
-          <Route
-            path="/auth"
-            element={
-              <WithoutAuth>
-                <AuthPage />
-              </WithoutAuth>
-            }
-          />
-          
-          <Route
-            path="/auth/reset-password"
-            element={
-              <WithoutAuth>
-                <ResetPassword />
-              </WithoutAuth>
-            }
-          />
-    
-          {/* Payment Success Route */}
-          <Route 
-            path="/payment/success" 
-            element={
-              <PaymentSuccessRoute>
-                <PaymentSuccess />
-              </PaymentSuccessRoute>
-            } 
-          />
-          
-          {/* Docs Routes - Updated to use DocsHandler */}
-          <Route path="/docs/*" element={null} />
-          <Route path="/blog/*" element={null} />
-    
-          {/* Protected Routes */}
-          <Route
-            path="/dashboard"
-            element={
-              <WithAuth>
-                <DashboardLayout>
-                  <Dashboard />
-                </DashboardLayout>
-              </WithAuth>
-            }
-          />
-    
-          <Route
-            path="/marketplace"
-            element={
-              <WithAuth>
-                <DashboardLayout>
-                  <MarketplacePage />
-                </DashboardLayout>
-              </WithAuth>
-            }
-          />
-    
-          <Route
-            path="/settings"
-            element={
-              <WithAuth>
-                <DashboardLayout>
-                  <SettingsPage />
-                </DashboardLayout>
-              </WithAuth>
-            }
-          />
-    
-          {/* Catch all route */}
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </Suspense>
-      </WebSocketProvider>
+    <Suspense fallback={<LoadingSpinner />}>
+      <RouteTracker />
+      <Routes>
+        {/* Public Routes */}
+        <Route path="/" element={<Homepage />} />
+  
+        <Route path="/start" element={<LandingPage />} />
+        
+        {/* Pricing Route - Now publicly accessible */}
+        <Route
+          path="/pricing"
+          element={
+            <PricingRoute>
+              <PricingPage />
+            </PricingRoute>
+          }
+        />
+        
+        {/* Auth Routes */}
+        <Route
+          path="/auth"
+          element={
+            <WithoutAuth>
+              <AuthPage />
+            </WithoutAuth>
+          }
+        />
+        
+        <Route
+          path="/auth/reset-password"
+          element={
+            <WithoutAuth>
+              <ResetPassword />
+            </WithoutAuth>
+          }
+        />
+  
+        {/* Payment Success Route */}
+        <Route 
+          path="/payment/success" 
+          element={
+            <PaymentSuccessRoute>
+              <PaymentSuccess />
+            </PaymentSuccessRoute>
+          } 
+        />
+        
+        {/* Docs Routes - Updated to use DocsHandler */}
+        <Route path="/docs/*" element={null} />
+        <Route path="/blog/*" element={null} />
+  
+        {/* Protected Routes */}
+        <Route
+          path="/dashboard"
+          element={
+            <WithAuth>
+              <DashboardLayout>
+                <Dashboard />
+              </DashboardLayout>
+            </WithAuth>
+          }
+        />
+  
+        <Route
+          path="/marketplace"
+          element={
+            <WithAuth>
+              <DashboardLayout>
+                <MarketplacePage />
+              </DashboardLayout>
+            </WithAuth>
+          }
+        />
+  
+        <Route
+          path="/settings"
+          element={
+            <WithAuth>
+              <DashboardLayout>
+                <SettingsPage />
+              </DashboardLayout>
+            </WithAuth>
+          }
+        />
+  
+        {/* Catch all route */}
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </Suspense>
   );
 }
 

@@ -12,6 +12,27 @@ export const ENVIRONMENTS = {
   PAPER: 'paper'
 };
 
+export const CONNECTION_STATE = {
+  DISCONNECTED: 'disconnected',
+  TOKEN_VALID: 'token_valid',
+  WS_CONNECTING: 'ws_connecting',
+  FULLY_CONNECTED: 'fully_connected'
+};
+
+export const CONNECTION_STATE_MESSAGES = {
+  [CONNECTION_STATE.DISCONNECTED]: "Account Disconnected",
+  [CONNECTION_STATE.TOKEN_VALID]: "Account Connected - Token Valid",
+  [CONNECTION_STATE.WS_CONNECTING]: "Connecting to WebSocket",
+  [CONNECTION_STATE.FULLY_CONNECTED]: "Fully Connected"
+};
+
+export const CONNECTION_STATE_COLORS = {
+  [CONNECTION_STATE.DISCONNECTED]: "red.400",
+  [CONNECTION_STATE.TOKEN_VALID]: "green.400",
+  [CONNECTION_STATE.WS_CONNECTING]: "blue.400",
+  [CONNECTION_STATE.FULLY_CONNECTED]: "green.400"
+};
+
 export const BROKER_FEATURES = {
   REAL_TIME_DATA: 'real_time_data',
   MARKET_DATA: 'market_data',
@@ -23,35 +44,6 @@ export const BROKER_FEATURES = {
     STOP: 'stop',
     STOP_LIMIT: 'stop_limit'
   }
-};
-
-export const CONNECTION_STATE = {
-  DISCONNECTED: 'disconnected',
-  CONNECTING: 'connecting',
-  CONNECTED: 'connected',
-  RECONNECTING: 'reconnecting',
-  ERROR: 'error',
-  TOKEN_VALID: 'token_valid'
-};
-
-// Update colors for new states
-export const CONNECTION_STATE_COLORS = {
-  [CONNECTION_STATE.DISCONNECTED]: 'red.500',
-  [CONNECTION_STATE.CONNECTING]: 'yellow.500',
-  [CONNECTION_STATE.CONNECTED]: 'green.500',
-  [CONNECTION_STATE.RECONNECTING]: 'blue.500',
-  [CONNECTION_STATE.ERROR]: 'red.500',
-  [CONNECTION_STATE.TOKEN_VALID]: 'orange.500'
-};
-
-// Update messages for new states
-export const CONNECTION_STATE_MESSAGES = {
-  [CONNECTION_STATE.DISCONNECTED]: 'Disconnected from broker',
-  [CONNECTION_STATE.CONNECTING]: 'Connecting to broker...',
-  [CONNECTION_STATE.CONNECTED]: 'Connected to broker',
-  [CONNECTION_STATE.RECONNECTING]: 'Reconnecting to broker...',
-  [CONNECTION_STATE.ERROR]: 'Connection error',
-  [CONNECTION_STATE.TOKEN_VALID]: 'Authenticated but not connected'
 };
 
 export const BROKERS = {

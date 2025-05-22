@@ -122,7 +122,7 @@ const Hero = () => {
                     }}
                     px={8}
                   >
-                    Tre Free for 14 Days
+                    Try Free for 14 Days
                   </Button>
                 </RouterLink>
                 <Button
