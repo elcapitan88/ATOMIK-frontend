@@ -22,12 +22,21 @@ import {
   Alert,
   AlertIcon,
   ModalCloseButton,
+  Badge,
 } from '@chakra-ui/react';
 import { Plus, Minus } from 'lucide-react';
 import axiosInstance from '@/services/axiosConfig';
 import { useStrategies } from '@/hooks/useStrategies';
 import { webhookApi } from '@/services/api/Webhooks/webhookApi';
 import { getDisplayTickers, getContractTicker } from '@/utils/formatting/tickerUtils';
+
+// Helper function to get broker display info
+const getBrokerInfo = (brokerId) => {
+  if (brokerId === 'interactivebrokers') {
+    return { name: 'IB', color: 'blue' };
+  }
+  return { name: 'Tradovate', color: 'green' };
+};
 
 // Styles configuration
 const glassEffect = {
@@ -135,7 +144,7 @@ const ActivateStrategyModal = ({ isOpen, onClose, onSubmit, strategy = null }) =
         try {
           console.log('Fetching accounts and webhooks...');
           const [accountsResponse, webhooksResponse] = await Promise.all([
-            axiosInstance.get('/api/v1/brokers/tradovate/accounts'),
+            axiosInstance.get('/api/v1/brokers/accounts'),
             webhookApi.getAllAvailableWebhooks()
           ]);
 
@@ -400,7 +409,7 @@ const ActivateStrategyModal = ({ isOpen, onClose, onSubmit, strategy = null }) =
                 >
                   {accounts.map(account => (
                     <option key={account.account_id} value={account.account_id}>
-                      {account.name || account.account_id}
+                      {account.name || account.account_id} ({getBrokerInfo(account.broker_id).name})
                     </option>
                   ))}
                 </Select>
@@ -495,7 +504,7 @@ const ActivateStrategyModal = ({ isOpen, onClose, onSubmit, strategy = null }) =
                   >
                     {accounts.map(account => (
                       <option key={account.account_id} value={account.account_id}>
-                        {account.name || account.account_id}
+                        {account.name || account.account_id} ({getBrokerInfo(account.broker_id).name})
                       </option>
                     ))}
                   </Select>
@@ -531,7 +540,7 @@ const ActivateStrategyModal = ({ isOpen, onClose, onSubmit, strategy = null }) =
                       <HStack key={follower.accountId} spacing={2}>
                         <Box flex={2} bg="whiteAlpha.100" p={2} borderRadius="md">
                           <Text fontSize="sm" color="white">
-                            {account?.name || follower.accountId}
+                            {account?.name || follower.accountId} ({getBrokerInfo(account?.broker_id).name})
                           </Text>
                         </Box>
                         

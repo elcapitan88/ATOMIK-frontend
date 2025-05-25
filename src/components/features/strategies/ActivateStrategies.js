@@ -16,12 +16,21 @@ import {
   IconButton,
   Text,
   useDisclosure,
-  useToast
+  useToast,
+  Badge
 } from '@chakra-ui/react';
 import { MoreVertical, Settings, Trash2, SlidersHorizontal } from 'lucide-react';
 import ActivateStrategyModal from './ActivateStrategyModal';
 import DeleteStrategy from './DeleteStrategy';
 import { useStrategies } from '@/hooks/useStrategies';
+
+// Helper function to get broker display info
+const getBrokerInfo = (brokerId) => {
+  if (brokerId === 'interactivebrokers') {
+    return { name: 'IB', color: 'blue' };
+  }
+  return { name: 'Tradovate', color: 'green' };
+};
 
 const ActivateStrategies = () => {
   // React Query hooks
@@ -285,7 +294,10 @@ const ActivateStrategies = () => {
                             </Text>
                           </Flex>
                           <Text fontSize="xs" color="whiteAlpha.700">
-                            Account: {String(strategy.broker_account?.account_id || 'N/A')} • 
+                            Account: {String(strategy.broker_account?.account_id || 'N/A')} 
+                            <Badge ml={1} colorScheme={getBrokerInfo(strategy.broker_account?.broker_id).color} size="sm">
+                              {getBrokerInfo(strategy.broker_account?.broker_id).name}
+                            </Badge> • 
                             Qty: {strategy.quantity || 0}
                           </Text>
                         </Flex>
@@ -377,7 +389,10 @@ const ActivateStrategies = () => {
                             </Text>
                           </Flex>
                           <Text fontSize="xs" color="whiteAlpha.700">
-                            Leader: {String(strategy.leader_broker_account?.account_id || 'N/A')} • 
+                            Leader: {String(strategy.leader_broker_account?.account_id || 'N/A')} 
+                            <Badge ml={1} colorScheme={getBrokerInfo(strategy.leader_broker_account?.broker_id).color} size="sm">
+                              {getBrokerInfo(strategy.leader_broker_account?.broker_id).name}
+                            </Badge> • 
                             Followers: {strategy.follower_accounts?.length || 0} • 
                             Ticker: {strategy.ticker || 'N/A'}
                           </Text>
