@@ -60,6 +60,7 @@ import {
 import { motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import axiosInstance from '@/services/axiosConfig';
+import { ProfilePicture } from '@/components/common/ProfilePicture';
 
 const MotionBox = motion(Box);
 const MotionFlex = motion(Flex);
@@ -725,38 +726,14 @@ const SettingsPage = () => {
                   align={{ base: "center", md: "flex-start" }}
                   gap={6}
                 >
-                  <Box position="relative">
-                    <Avatar
-                      size="xl"
-                      src="/api/placeholder/100/100"
-                      name={personalName}
-                      border="2px solid #00C6E0"
-                      bg="#1a1a1a"
-                      cursor="pointer"
-                      onClick={handleAvatarClick}
-                    />
-                    <IconButton
-                      aria-label="Change avatar"
-                      icon={<Camera size={16} />}
-                      size="sm"
-                      isRound
-                      position="absolute"
-                      bottom={0}
-                      right={0}
-                      bg="#00C6E0"
-                      color="white"
-                      _hover={{ bg: "#00A3B8" }}
-                      onClick={handleAvatarClick}
-                    />
-                    <Input
-                      type="file"
-                      hidden
-                      ref={fileInputRef}
-                      accept="image/*"
-                      onChange={handleAvatarChange}
-                    />
-                  </Box>
-                  <VStack align={{ base: "center", md: "flex-start" }} spacing={1}>
+                  <ProfilePicture 
+                    user={user}
+                    size="xl"
+                    editable={true}
+                    showStatus={false}
+                  />
+                  
+                  <VStack align={{ base: "center", md: "flex-start" }} spacing={2} flex={1}>
                     <Box position="relative">
                       {isEditingName ? (
                         // Show input field when editing
@@ -779,7 +756,8 @@ const SettingsPage = () => {
                               borderColor: "#00C6E0"
                             }}
                           />
-                          <HStack position="absolute" top="50%" right={-20} transform="translateY(-50%)" spacing={1}>
+                          
+                          <HStack position="absolute" right={2} top="50%" transform="translateY(-50%)" spacing={1}>
                             <IconButton
                               aria-label="Cancel"
                               icon={<X size={14} />}
@@ -839,9 +817,9 @@ const SettingsPage = () => {
                       Pro Trader
                     </Text>
                     <Text color="whiteAlpha.600" fontSize="xs" mt={2}>
-                      Upload a clear profile picture to personalize your account.
+                      Your profile picture helps others recognize you across the platform.
                       <br />
-                      Square images work best, recommended size 200x200px.
+                      Click on your avatar to upload or change your picture.
                     </Text>
                   </VStack>
                 </Flex>
@@ -930,7 +908,7 @@ const SettingsPage = () => {
                 />
 
                 {/* Email Notifications */}
-                <Box mt={4} p={4} bg="#1a1a1a" borderRadius="md" border="1px solid #333">
+                <Box mt={6}>
                   <VStack spacing={4} align="stretch">
                     <Flex justify="space-between" align="center">
                       <HStack>
@@ -959,7 +937,7 @@ const SettingsPage = () => {
                       <Box>
                         <FormLabel color="white" mb="0" fontSize="sm">Marketing Updates</FormLabel>
                         <Text fontSize="xs" color="whiteAlpha.600">
-                          Receive news about features and promotions
+                          Receive news about new features and promotions
                         </Text>
                       </Box>
                       <Switch 
