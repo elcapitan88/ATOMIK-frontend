@@ -14,6 +14,7 @@ import {
   IconButton,
   Tooltip,
   useBreakpointValue,
+  Avatar,
 } from '@chakra-ui/react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { 
@@ -119,14 +120,14 @@ const Menu = ({ onSelectItem }) => {
     if (user) {
       if (user.username) {
         setDisplayName(user.username);
-      } else if (user.full_name) {
-        setDisplayName(user.full_name);
+      } else if (user.full_name || user.fullName) {
+        setDisplayName(user.full_name || user.fullName);
       } else if (user.email) {
         const emailName = user.email.split('@')[0];
         setDisplayName(emailName);
       }
     }
-  }, [user]);
+  }, [user, user?.username, user?.full_name, user?.fullName, user?.email, user?.profile_picture]);
 
   // Define menu items
   const menuItems = [
@@ -340,18 +341,16 @@ const Menu = ({ onSelectItem }) => {
                     data-user-menu="true"
                   >
                     <Flex align="center">
-                      <Flex
-                        w="32px"
-                        h="32px"
-                        borderRadius="full"
+                      <Avatar
+                        size="sm"
+                        src={user?.profile_picture || user?.profilePicture}
+                        name={displayName}
                         bg="rgba(0, 198, 224, 0.2)"
-                        border="2px solid rgba(0, 198, 224, 0.5)"
-                        align="center"
-                        justify="center"
-                        flexShrink={0}
-                      >
-                        <User size={16} color="rgba(0, 198, 224, 1)" />
-                      </Flex>
+                        color="#00C6E0"
+                        icon={<User size={16} />}
+                        borderWidth="2px"
+                        borderColor="#333"
+                      />
                       
                       {isMenuExpanded && (
                         <Box ml={3} maxW="100px">
