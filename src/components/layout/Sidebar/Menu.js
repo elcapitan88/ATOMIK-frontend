@@ -39,21 +39,24 @@ const MenuItem = memo(({ icon, item, isSelected, onClick, isExpanded }) => {
   
   return (
     <Flex
-      py={2}
+      py={2.5}
       px={3}
-      bg={isSelected ? 'rgba(0, 198, 224, 0.1)' : 'transparent'}
+      bg={isSelected ? 'rgba(0, 198, 224, 0.08)' : 'transparent'}
       borderLeft="2px solid"
       borderColor={isSelected ? "#00C6E0" : "transparent"}
       borderRadius="md"
+      position="relative"
       onClick={(e) => {
         e.stopPropagation();
         onClick(item);
       }}
       cursor="pointer"
-      transition="all 0.2s"
+      transition="all 0.3s ease"
       _hover={{
-        bg: 'rgba(0, 198, 224, 0.05)',
-        borderColor: isSelected ? "#00C6E0" : "rgba(0, 198, 224, 0.3)"
+        bg: 'rgba(0, 198, 224, 0.04)',
+        borderColor: isSelected ? "#00C6E0" : "rgba(0, 198, 224, 0.4)",
+        transform: 'translateX(4px)',
+        boxShadow: 'inset 0 0 0 1px rgba(0, 198, 224, 0.15)'
       }}
       align="center"
       gap={3}
@@ -61,8 +64,16 @@ const MenuItem = memo(({ icon, item, isSelected, onClick, isExpanded }) => {
       justify={isExpanded ? "flex-start" : "center"}
       data-nav-item="true"
     >
-      {IconComponent && <IconComponent size={16} color="#00C6E0" />}
-      {isExpanded && <Text color="white" fontSize="sm">{item}</Text>}
+      {IconComponent && <IconComponent size={16} color={isSelected ? "#00C6E0" : "rgba(255, 255, 255, 0.9)"} />}
+      {isExpanded && (
+        <Text 
+          color="white" 
+          fontSize="sm"
+          fontWeight={isSelected ? "medium" : "normal"}
+        >
+          {item}
+        </Text>
+      )}
     </Flex>
   );
 });
@@ -83,15 +94,25 @@ const MobileMenuItem = memo(({ icon, item, isSelected, onClick }) => {
       flex="1"
       borderBottom={isSelected ? "2px solid" : "none"}
       borderColor={isSelected ? "#00C6E0" : "transparent"}
+      position="relative"
       onClick={(e) => {
         e.stopPropagation();
         onClick(item);
       }}
       cursor="pointer"
+      transition="all 0.2s ease"
+      _hover={{
+        bg: 'rgba(0, 198, 224, 0.03)'
+      }}
       data-nav-item="true"
     >
-      {IconComponent && <IconComponent size={20} color="#00C6E0" />}
-      <Text color="white" fontSize="xs" mt={1}>
+      {IconComponent && <IconComponent size={20} color={isSelected ? "#00C6E0" : "rgba(255, 255, 255, 0.9)"} />}
+      <Text 
+        color="white" 
+        fontSize="xs" 
+        mt={1}
+        fontWeight={isSelected ? "medium" : "normal"}
+      >
         {item}
       </Text>
     </Flex>
@@ -231,9 +252,7 @@ const Menu = ({ onSelectItem }) => {
           h="64px"
           w="100%"
           bg="rgba(0, 0, 0, 0.75)"
-          backdropFilter="blur(10px)"
           borderTopRadius="xl"
-          boxShadow="0 -2px 10px rgba(0, 0, 0, 0.2)"
           zIndex={1000}
           px={2}
           py={1}
@@ -272,8 +291,6 @@ const Menu = ({ onSelectItem }) => {
           flexDirection="column"
           zIndex={1000}
           bg="rgba(0, 0, 0, 0.75)"
-          backdropFilter="blur(10px)"
-          boxShadow="0 0 20px rgba(0, 198, 224, 0.15)"
           border="1px solid rgba(255, 255, 255, 0.1)"
           role="navigation"
           aria-label="Main Navigation"
@@ -289,8 +306,11 @@ const Menu = ({ onSelectItem }) => {
               aria-label={isMenuExpanded ? "Collapse menu" : "Expand menu"}
               icon={isMenuExpanded ? <ChevronLeft size={16} /> : <MenuIcon size={16} />}
               variant="ghost"
-              color="#00C6E0"
-              _hover={{ bg: "rgba(0, 198, 224, 0.1)" }}
+              color="rgba(255, 255, 255, 0.9)"
+              _hover={{ 
+                bg: "rgba(0, 198, 224, 0.08)",
+                color: "#00C6E0"
+              }}
               onClick={(e) => {
                 e.stopPropagation();
                 toggleMenu();
@@ -345,8 +365,8 @@ const Menu = ({ onSelectItem }) => {
                         size="sm"
                         src={user?.profile_picture || user?.profilePicture}
                         name={displayName}
-                        bg="rgba(0, 198, 224, 0.2)"
-                        color="#00C6E0"
+                        bg="rgba(0, 198, 224, 0.15)"
+                        color="white"
                         icon={<User size={16} />}
                         borderWidth="2px"
                         borderColor="#333"
@@ -378,8 +398,6 @@ const Menu = ({ onSelectItem }) => {
                 <PopoverContent
                   bg="rgba(0, 0, 0, 0.8)"
                   borderColor="rgba(255, 255, 255, 0.1)"
-                  backdropFilter="blur(10px)"
-                  boxShadow="0 8px 32px 0 rgba(0, 198, 224, 0.2)"
                   _focus={{ boxShadow: "none" }}
                   width="200px"
                   onClick={(e) => e.stopPropagation()} // Prevent menu toggle
@@ -413,7 +431,7 @@ const Menu = ({ onSelectItem }) => {
                         onClick={handleSupportClick} 
                         isExpanded={true}
                       />
-                      <Box my={2} h="1px" bg="whiteAlpha.200" />
+                      <Box my={2} h="1px" bg="whiteAlpha.300" />
                       <MenuItem 
                         icon={LogOut} 
                         item="Log Out" 
