@@ -26,6 +26,8 @@ import {
     SlidersHorizontal,
     AlertCircle,
     Edit,
+    Power,
+    RefreshCw,
 } from 'lucide-react';
 
 import accountManager from '@/services/account/AccountManager';
@@ -34,11 +36,13 @@ import BrokerSelectionModal from '@/components/common/Modal/BrokerSelectionModal
 import BrokerEnvironmentModal from '@/components/common/Modal/BrokerEnvironmentModal';
 import DeleteAccount from '@/components/common/Modal/DeleteAccount';
 import IBLoginModal from '@/components/common/Modal/IBLoginModal';
-import webSocketManager from '@/services/websocket/webSocketManager';
 import AccountNicknameModal from '@/components/common/Modal/AccountNicknameModal';
 import logger from '@/utils/logger';
 import axiosInstance from '@/services/axiosConfig';
 import { useFeatureFlag } from 'configcat-react';
+import { useWebSocketContext } from '@/services/websocket-proxy/contexts/WebSocketContext';
+
+
 
 
 
@@ -87,7 +91,22 @@ const SortButton = ({ onSort }) => {
     );
 };
 
-const AccountOptions = ({ account, onEditName, onDelete }) => {
+const AccountOptions = ({ account, onEditName, onDelete, onPowerToggle, onRestart }) => {
+    // Check if this is an Interactive Brokers account
+    const isIBAccount = account.broker_id === 'interactivebrokers';
+    
+    // Determine power button text based on digital_ocean_status
+    const getPowerButtonText = () => {
+        if (!isIBAccount) return null;
+        const status = account.digital_ocean_status || account.status;
+        return status === 'running' ? 'Power Off' : 'Power On';
+    };
+    
+    const getPowerButtonIcon = () => {
+        const status = account.digital_ocean_status || account.status;
+        return status === 'running' ? <Power size={14} /> : <Power size={14} />;
+    };
+
     return (
         <Menu>
             <MenuButton
@@ -114,6 +133,32 @@ const AccountOptions = ({ account, onEditName, onDelete }) => {
                 >
                     Edit Nickname
                 </MenuItem>
+                
+                {/* Interactive Brokers specific options */}
+                {isIBAccount && (
+                    <>
+                        <MenuItem
+                            onClick={() => onPowerToggle(account)}
+                            _hover={{ bg: "whiteAlpha.200" }}
+                            bg="transparent"
+                            color="white"
+                            icon={getPowerButtonIcon()}
+                        >
+                            {getPowerButtonText()}
+                        </MenuItem>
+                        
+                        <MenuItem
+                            onClick={() => onRestart(account)}
+                            _hover={{ bg: "whiteAlpha.200" }}
+                            bg="transparent"
+                            color="white"
+                            icon={<RefreshCw size={14} />}
+                        >
+                            Restart
+                        </MenuItem>
+                    </>
+                )}
+                
                 <MenuItem
                     onClick={() => onDelete(account)}
                     _hover={{ bg: "whiteAlpha.200" }}
@@ -136,12 +181,12 @@ const Management = () => {
     const [selectedBroker, setSelectedBroker] = useState(null);
     const [expandedAccounts, setExpandedAccounts] = useState(new Set());
     const [fetchError, setFetchError] = useState(null);
-    const [connectionStatuses, setConnectionStatuses] = useState(() => new Map());
     const [sortBy, setSortBy] = useState(null);
     const [accountUpdates, setAccountUpdates] = useState({});
     const [editingAccount, setEditingAccount] = useState(null);
     const { value: showPnL } = useFeatureFlag('show_pnl', false);
     const { value: enableExpansion } = useFeatureFlag('enable_expansion', true);
+    const { connect: wsConnect, getConnectionState, isConnected, disconnect, getAccountData } = useWebSocketContext();
 
     // Hooks
     const toast = useToast();
@@ -181,65 +226,6 @@ const Management = () => {
     const handleSort = (sortKey) => {
         setSortBy(sortKey);
     };
-    
-
-    useEffect(() => {
-        const subscriptions = [];
-    
-        accounts.forEach(account => {
-            console.log('Setting up subscription for account:', account.account_id);
-            const accountSub = webSocketManager.onAccountUpdates()
-                .subscribe({
-                    next: (update) => {
-                        console.log('Received WebSocket update:', update);
-                        if (update.data && update.data.accountId === account.account_id) {
-                            console.log('Processing update for account:', account.account_id, update.data);
-                            setAccountUpdates(prev => {
-                                const newState = {
-                                    ...prev,
-                                    [account.account_id]: {
-                                        balance: update.data.balance,
-                                        totalPnL: update.data.totalPnL,
-                                        dayPnL: update.data.dayPnL,
-                                        openPnL: update.data.openPositionsPnL,
-                                        timestamp: update.timestamp
-                                    }
-                                };
-                                console.log('New account updates state:', newState);
-                                return newState;
-                            });
-                        }
-                    },
-                    error: (error) => {
-                        console.error(`WebSocket update error for account ${account.account_id}:`, error);
-                    }
-                });
-    
-            subscriptions.push(accountSub);
-        });
-    
-        return () => {
-            subscriptions.forEach(sub => sub.unsubscribe());
-        };
-    }, [accounts]);
-
-    useEffect(() => {
-        const statusSub = webSocketManager.onStatus()
-            .subscribe({
-                next: (statusUpdate) => {
-                    setConnectionStatuses(prev => {
-                        const newMap = new Map(prev);
-                        newMap.set(statusUpdate.accountId, statusUpdate.status);
-                        return newMap;
-                    });
-                },
-                error: (error) => {
-                    logger.error('WebSocket status subscription error:', error);
-                }
-            });
-    
-        return () => statusSub.unsubscribe();
-    }, []);
 
     const fetchAccounts = async (showLoadingState = true) => {
         try {
@@ -345,7 +331,7 @@ const Management = () => {
         if (!selectedAccount) return;
 
         try {
-            webSocketManager.disconnect(selectedAccount.account_id);
+            disconnect(selectedAccount.broker_id, selectedAccount.account_id);
             await accountManager.removeAccount(selectedAccount.account_id);
             
             toast({
@@ -368,6 +354,72 @@ const Management = () => {
             });
         }
     }, [selectedAccount, toast, onDeleteClose]);
+
+    // Handle power toggle for IB accounts
+    const handlePowerToggle = useCallback(async (account) => {
+        const status = account.digital_ocean_status || account.status;
+        const action = status === 'running' ? 'stop' : 'start';
+        const actionText = status === 'running' ? 'stopping' : 'starting';
+        
+        try {
+            const response = await axiosInstance.post(
+                `/api/v1/brokers/interactivebrokers/accounts/${account.account_id}/${action}`
+            );
+            
+            if (response.data.success) {
+                toast({
+                    title: "Server Action",
+                    description: `Server is ${actionText}...`,
+                    status: "info",
+                    duration: 3000,
+                    isClosable: true,
+                });
+                
+                // Refresh accounts to get updated status
+                setTimeout(() => fetchAccounts(false), 2000);
+            }
+        } catch (error) {
+            logger.error(`Error ${action}ing IB server:`, error);
+            toast({
+                title: "Server Error",
+                description: error.response?.data?.detail || `Failed to ${action} server`,
+                status: "error",
+                duration: 5000,
+                isClosable: true,
+            });
+        }
+    }, [toast, fetchAccounts]);
+
+    // Handle restart for IB accounts
+    const handleRestart = useCallback(async (account) => {
+        try {
+            const response = await axiosInstance.post(
+                `/api/v1/brokers/interactivebrokers/accounts/${account.account_id}/restart`
+            );
+            
+            if (response.data.success) {
+                toast({
+                    title: "Server Restarting",
+                    description: "Server is restarting. This may take a few minutes.",
+                    status: "info",
+                    duration: 5000,
+                    isClosable: true,
+                });
+                
+                // Refresh accounts to get updated status
+                setTimeout(() => fetchAccounts(false), 3000);
+            }
+        } catch (error) {
+            logger.error('Error restarting IB server:', error);
+            toast({
+                title: "Restart Error",
+                description: error.response?.data?.detail || "Failed to restart server",
+                status: "error",
+                duration: 5000,
+                isClosable: true,
+            });
+        }
+    }, [toast, fetchAccounts]);
 
     // Handle broker selection
     const handleBrokerSelect = useCallback((broker) => {
@@ -464,25 +516,11 @@ const Management = () => {
     // Effect for initializing account subscriptions
     useEffect(() => {
         let accountSubscription;
-        let wsStatusSubscription;
-    
+
         const initializeSubscriptions = async () => {
             try {
                 setIsLoading(true);
                 
-                // Initialize WebSocket status subscription
-                wsStatusSubscription = webSocketManager.onStatus().subscribe({
-                    next: (statusUpdate) => {
-                        setConnectionStatuses(prev => new Map(prev).set(
-                            statusUpdate.accountId,
-                            statusUpdate.status
-                        ));
-                    },
-                    error: (error) => {
-                        console.error('WebSocket status subscription error:', error);
-                    }
-                });
-    
                 // Initialize account subscription
                 accountSubscription = accountManager.getAccountUpdates().subscribe({
                     next: (update) => {
@@ -503,10 +541,10 @@ const Management = () => {
                         setFetchError('Error receiving account updates');
                     }
                 });
-    
+
                 // Initial account fetch
                 await fetchAccounts();
-    
+
             } catch (error) {
                 console.error('Initialization error:', error);
                 setFetchError('Failed to initialize account management');
@@ -514,103 +552,133 @@ const Management = () => {
                 setIsLoading(false);
             }
         };
-    
+
         initializeSubscriptions();
-    
+
         // Cleanup subscriptions
         return () => {
             if (accountSubscription) accountSubscription.unsubscribe();
-            if (wsStatusSubscription) wsStatusSubscription.unsubscribe();
         };
     }, []);
 
-    // Effect for WebSocket connections
+    // Track if we've already attempted auto-connect to prevent duplicates
+    const hasAutoConnectedRef = useRef(false);
+    const lastConnectionAttemptRef = useRef({});
+    
     useEffect(() => {
-        const connectAccounts = async () => {
-            try {
-                const activeAccounts = accounts.filter(acc => 
-                    acc.status === 'active' && !acc.is_token_expired
-                );
-                
-                for (const account of activeAccounts) {
-                    const token = localStorage.getItem('access_token');
-                    if (!token) continue;
+    // Add a ref to track connection attempts
+    const connectionAttempts = new Set();
     
-                    const connected = await webSocketManager.connect(
-                        account.account_id,
-                        token
-                    );
-                    
-                    if (!connected) {
-                        logger.error(`Failed to connect WebSocket for account ${account.account_id}`);
-                    }
-                }
-            } catch (error) {
-                logger.error('Error connecting WebSockets:', error);
-            }
-        };
-    
-        const handleVisibilityChange = () => {
-            if (!document.hidden) {
-                logger.info('Tab became visible, reconnecting WebSockets');
-                connectAccounts();
-            }
-        };
-    
-        const handleFocus = () => {
-            logger.info('Window focused, checking WebSocket connections');
-            connectAccounts();
-        };
-    
-        // Initial connection
-        if (accounts.length > 0) {
-            connectAccounts();
+    const autoConnectAccounts = async () => {
+        // Check if auto-connect is disabled
+        const autoConnectDisabled = localStorage.getItem('disable_auto_connect') === 'true';
+        if (autoConnectDisabled) {
+            logger.info('Auto-connect is disabled by user preference');
+            return;
         }
+        
+        // Check if user is authenticated
+        const token = localStorage.getItem('access_token');
+        if (!token) {
+            logger.info('No auth token found, skipping auto-connect');
+            return;
+        }
+        
+        // Only proceed if we have accounts and not currently connecting
+        if (accounts.length === 0) return;
+        
+        // Check if any connections are already active or pending
+        let hasActiveConnections = false;
+        for (const account of accounts) {
+            const state = getConnectionState(account.broker_id, account.account_id);
+            if (state && state !== 'disconnected' && state !== 'error') {
+                hasActiveConnections = true;
+                break;
+            }
+        }
+        
+        if (hasActiveConnections) {
+            logger.info('Active connections found, skipping auto-connect');
+            return;
+        }
+        
+        for (const account of accounts) {
+            // Create a unique key for this connection attempt
+            const connectionKey = `${account.broker_id}:${account.account_id}`;
+            
+            // Skip if we're already attempting to connect to this account
+            if (connectionAttempts.has(connectionKey)) {
+                logger.info(`Skipping duplicate connection attempt for ${connectionKey}`);
+                continue;
+            }
+            
+            // Only connect to active accounts with valid tokens
+            if (account.status === 'active' && account.broker_id && account.account_id) {
+                // Double-check token validity
+                const token = localStorage.getItem('access_token');
+                if (!token) {
+                    logger.warn(`No access token found for ${connectionKey}`);
+                    continue;
+                }
+                try {
+                    // Check if already connected
+                    const currentState = getConnectionState(account.broker_id, account.account_id);
+                    
+                    // Skip if already connected, connecting, or in any validation state
+                    if (currentState === 'connected' || 
+                        currentState === 'ready' || 
+                        currentState === 'connecting' ||
+                        currentState === 'validating_user' ||
+                        currentState === 'checking_subscription' ||
+                        currentState === 'checking_broker_access' ||
+                        currentState === 'connecting_to_broker') {
+                        logger.info(`Skipping ${connectionKey} - already in state: ${currentState}`);
+                        continue;
+                    }
+                    
+                    // Check cooldown period (60 seconds between attempts for the same account)
+                    const now = Date.now();
+                    const lastAttempt = lastConnectionAttemptRef.current[connectionKey] || 0;
+                    if (now - lastAttempt < 60000) {
+                        logger.info(`Skipping ${connectionKey} - cooldown period active (${Math.round((60000 - (now - lastAttempt)) / 1000)}s remaining)`);
+                        continue;
+                    }
+                    
+                    // Mark this connection as being attempted
+                    connectionAttempts.add(connectionKey);
+                    lastConnectionAttemptRef.current[connectionKey] = now;
+                    
+                    logger.info(`Auto-connecting to ${account.broker_id}:${account.account_id}`);
+                    
+                    // Add a small delay between connection attempts to avoid overwhelming the server
+                    if (connectionAttempts.size > 1) {
+                        await new Promise(resolve => setTimeout(resolve, 3000));
+                    }
+                    
+                    await wsConnect(account.broker_id, account.account_id);
+                } catch (error) {
+                    logger.error(`Failed to auto-connect to ${account.broker_id}:${account.account_id}:`, error);
+                } finally {
+                    // Remove from attempts set after completion
+                    connectionAttempts.delete(connectionKey);
+                }
+            }
+        }
+    };
     
-        // Add event listeners
-        document.addEventListener('visibilitychange', handleVisibilityChange);
-        window.addEventListener('focus', handleFocus);
-    
+        // Add a delay before auto-connecting to ensure component is fully mounted
+        // Increased delay to prevent rapid connection attempts on page load
+        const timeoutId = setTimeout(() => {
+            autoConnectAccounts();
+        }, 1000);
+        
         // Cleanup
         return () => {
-            document.removeEventListener('visibilitychange', handleVisibilityChange);
-            window.removeEventListener('focus', handleFocus);
+            clearTimeout(timeoutId);
+            connectionAttempts.clear();
         };
-    }, [accounts]);
-
-    useEffect(() => {
-        const subscriptions = [];
+    }, [accounts, wsConnect, getConnectionState]);
     
-        accounts.forEach(account => {
-            // Subscribe to account updates
-            const accountSub = webSocketManager.onAccountUpdates()
-                .subscribe({
-                    next: (update) => {
-                        if (update.data.accountId === account.account_id) {
-                            setAccountUpdates(prev => ({
-                                ...prev,
-                                [account.account_id]: {
-                                    balance: update.data.balance,
-                                    totalPnL: update.data.totalPnL,
-                                    todaysPnL: update.data.todaysPnL,
-                                    openPnL: update.data.openPnL,
-                                    timestamp: update.data.timestamp
-                                }
-                            }));
-                        }
-                    },
-                    error: (error) => {
-                        logger.error(`WebSocket update error for account ${account.account_id}:`, error);
-                    }
-                });
-    
-            subscriptions.push(accountSub);
-        });
-    
-        return () => {
-            subscriptions.forEach(sub => sub.unsubscribe());
-        };
-    }, [accounts]);
 
     // AccountItem Component
     const AccountItem = ({ 
@@ -620,28 +688,19 @@ const Management = () => {
         onToggleExpand, 
         onDelete,
         onEditName,
+        getAccountData,
     }) => {
-        const updates = accountUpdates[account.account_id];
-        console.log('Account render:', {
-            accountId: account.account_id,
-            rawUpdates: updates,
-            connectionStatus,
-            displayValues: {
-                balance: updates?.balance ?? account.balance ?? 0,
-                totalPnL: updates?.totalPnL ?? account.totalPnL ?? 0,
-                todaysPnL: updates?.todaysPnL ?? account.todaysPnL ?? 0,
-                openPnL: updates?.openPnL ?? account.openPnL ?? 0
-            }
-        });
-    
+        // Get real-time account data from WebSocket context
+        const realtimeData = getAccountData(account.broker_id, account.account_id);
+        
         // Use real-time values if available, otherwise fall back to account values
         const displayValues = {
-            balance: updates?.balance ?? account.balance ?? 0,
-            totalPnL: updates?.totalPnL ?? account.totalPnL ?? 0,
-            todaysPnL: updates?.todaysPnL ?? account.todaysPnL ?? 0,
-            openPnL: updates?.openPnL ?? account.openPnL ?? 0,
-            realizedPnL: updates?.realizedPnL ?? account.realizedPnL ?? 0,
-            weeklyPnL: updates?.weeklyPnL ?? account.weeklyPnL ?? 0
+            balance: realtimeData?.balance ?? account.balance ?? 0,
+            totalPnL: realtimeData?.totalPnL ?? account.totalPnL ?? 0,
+            todaysPnL: realtimeData?.todaysPnL ?? account.todaysPnL ?? 0,
+            openPnL: realtimeData?.openPnL ?? account.openPnL ?? 0,
+            realizedPnL: realtimeData?.realizedPnL ?? account.realizedPnL ?? 0,
+            weeklyPnL: realtimeData?.weeklyPnL ?? account.weeklyPnL ?? 0
         };
 
         return (
@@ -664,6 +723,7 @@ const Management = () => {
                         <AccountStatusIndicator 
                             tokenValid={!account.is_token_expired}
                             wsStatus={connectionStatus}
+                            account={account}
                         />
                         <VStack spacing={0} align="flex-start"> 
                             <Text fontWeight="bold" fontSize="sm" lineHeight="1.2">
@@ -717,6 +777,8 @@ const Management = () => {
                             account={account}
                             onEditName={onEditName}
                             onDelete={onDelete}
+                            onPowerToggle={handlePowerToggle}
+                            onRestart={handleRestart}
                         />
                         {enableExpansion && (
                         <Box 
@@ -798,7 +860,7 @@ const Management = () => {
                 key={account.account_id}
                 account={account}
                 isExpanded={expandedAccounts.has(account.account_id)}
-                connectionStatus={connectionStatuses.get(account.account_id)}
+                connectionStatus={getConnectionState(account.broker_id, account.account_id)}
                 onToggleExpand={(accountId) => toggleAccountExpansion(accountId)}
                 onDelete={() => {
                     setSelectedAccount(account);
@@ -808,6 +870,7 @@ const Management = () => {
                     setEditingAccount(account);
                     openNicknameModal();
                 }}
+                getAccountData={getAccountData}
             />
         ));
     };

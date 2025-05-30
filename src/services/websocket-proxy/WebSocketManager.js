@@ -3,6 +3,7 @@
 import WebSocketClient from './WebSocketClient';
 import { EventEmitter } from 'events';
 import logger from '@/utils/logger';
+import { POSITION_MESSAGE_TYPES, isPositionUpdateEvent } from './constants/positionEvents';
 
 /**
  * Connection states enum
@@ -12,7 +13,13 @@ export const ConnectionState = {
   CONNECTING: 'connecting',
   CONNECTED: 'connected',
   ERROR: 'error',
-  RECONNECTING: 'reconnecting'
+  RECONNECTING: 'reconnecting',
+  // New validation states
+  VALIDATING_USER: 'validating_user',
+  CHECKING_SUBSCRIPTION: 'checking_subscription',
+  CHECKING_BROKER_ACCESS: 'checking_broker_access',
+  CONNECTING_TO_BROKER: 'connecting_to_broker',
+  READY: 'ready'
 };
 
 /**
@@ -82,38 +89,43 @@ class WebSocketManager extends EventEmitter {
   }
   
   /**
- * Get the WebSocket URL for a broker account
- * @param {string} brokerId - Broker identifier
- * @param {string} accountId - Account identifier
- * @returns {string} WebSocket URL
- */
+   * Get the WebSocket URL for a broker account
+   * @param {string} brokerId - Broker identifier
+   * @param {string} accountId - Account identifier
+   * @returns {string} WebSocket URL
+   */
   getWebSocketUrl(brokerId, accountId) {
-    // Add debugging BEFORE retrieving the token
     console.log(`[WebSocketManager] Getting WebSocket URL: broker=${brokerId}, account=${accountId}`);
-    
-    // Get token from localStorage
     const token = localStorage.getItem('access_token');
     
     // Debug token info without exposing the actual token
     console.log(`[WebSocketManager] Raw token length: ${token?.length || 0}`);
     
-    // Base URL construction
-    const baseUrl = this.config.baseUrl || process.env.REACT_APP_WS_PROXY_URL || 'ws://localhost:8001';
+    // Determine the base URL based on environment
+    let baseUrl;
+    if (process.env.NODE_ENV === 'production') {
+        // In production, use the Railway WebSocket URL
+        baseUrl = process.env.REACT_APP_WS_PROXY_URL || 'wss://websocket-proxy-production.up.railway.app';
+    } else {
+        // In development, use localhost
+        baseUrl = 'ws://localhost:8001';
+    }
+    
     console.log(`[WebSocketManager] Using base URL: ${baseUrl}`);
     
     // Construct the URL with properly encoded token (only once)
     const url = `${baseUrl}/ws/${brokerId}?broker_account_id=${accountId}&token=${encodeURIComponent(token)}`;
     
     return url;
-  }
+}
   
   /**
- * Connect to a broker account
- * @param {string} brokerId - Broker identifier
- * @param {string} accountId - Account identifier
- * @param {Object} options - Connection options
- * @returns {Promise<string>} - Resolves to connection ID when connected
- */
+   * Connect to a broker account with enhanced state tracking
+   * @param {string} brokerId - Broker identifier
+   * @param {string} accountId - Account identifier
+   * @param {Object} options - Connection options
+   * @returns {Promise<string>} - Resolves to connection ID when connected
+   */
   async connect(brokerId, accountId, options = {}) {
     if (!brokerId || !accountId) {
       const errorMsg = 'Broker ID and Account ID are required';
@@ -121,126 +133,38 @@ class WebSocketManager extends EventEmitter {
       throw new Error(errorMsg);
     }
     
-    // Debug connection attempt with detailed parameters
     console.log(`[WebSocketManager] Connect called: broker=${brokerId}, account=${accountId}, options=`, options);
     
     const connectionId = `${brokerId}:${accountId}`;
     
-    // Check if we already have a pending connection promise for this connection
+    // Check if we already have a pending connection promise
     if (this.pendingConnections?.has(connectionId)) {
       console.log(`[WebSocketManager] Connection already pending for ${connectionId}`);
       return this.pendingConnections.get(connectionId);
     }
     
-    // Create a new promise for this connection attempt
-    const connectionPromise = new Promise((resolve, reject) => {
-      try {
-        // Update connection state
-        this.connectionState?.set(connectionId, ConnectionState.CONNECTING);
-        this.emit('connectionState', { 
-          brokerId, 
-          accountId, 
-          state: ConnectionState.CONNECTING 
-        });
-        
-        // Get the WebSocket URL
-        const wsUrl = this.getWebSocketUrl(brokerId, accountId);
-        
-        // Create WebSocket connection with a much longer timeout
-        console.log(`[WebSocketManager] Creating WebSocket connection to ${brokerId}:${accountId}`);
-        
-        const client = new WebSocket(wsUrl);
-        
-        // Track connection timeout with a longer value (30 seconds instead of default)
-        const connectionTimeout = setTimeout(() => {
-          console.error(`[WebSocketManager] Connection timeout for ${connectionId}`);
-          client.close(4000, "Connection timeout");
-          reject(new Error("Connection timeout"));
-        }, 30000); // Increased from typical 10s to 30s
-        
-        // Set up WebSocket event handlers
-        client.onopen = () => {
-          console.log(`[WebSocketManager] WebSocket connection opened: ${connectionId}`);
-          clearTimeout(connectionTimeout);
-          
-          // Update connection state
-          this.connections?.set(connectionId, client);
-          this.connectionState?.set(connectionId, ConnectionState.CONNECTED);
-          this.emit('connectionState', { 
-            brokerId, 
-            accountId, 
-            state: ConnectionState.CONNECTED 
-          });
-          
-          resolve(connectionId);
-        };
-        
-        client.onclose = (event) => {
-          console.log(`[WebSocketManager] WebSocket connection closed: ${connectionId} (Code: ${event.code})`);
-          clearTimeout(connectionTimeout);
-          
-          // Only reject if this close happens during initial connection
-          if (this.connectionState?.get(connectionId) === ConnectionState.CONNECTING) {
-            reject(new Error(`Connection closed during initialization: ${event.reason || 'No reason provided'}`));
-          }
-          
-          // Update connection state
-          this.connectionState?.set(connectionId, ConnectionState.DISCONNECTED);
-          this.emit('connectionState', { 
-            brokerId, 
-            accountId, 
-            state: ConnectionState.DISCONNECTED,
-            code: event.code,
-            reason: event.reason
-          });
-        };
-        
-        client.onerror = (error) => {
-          console.error(`[WebSocketManager] WebSocket error for ${connectionId}:`, error);
-          
-          // Only reject if this happens during initial connection
-          if (this.connectionState?.get(connectionId) === ConnectionState.CONNECTING) {
-            reject(new Error("WebSocket connection error"));
-          }
-          
-          // Update connection state
-          this.connectionState?.set(connectionId, ConnectionState.ERROR);
-          this.emit('connectionState', { 
-            brokerId, 
-            accountId, 
-            state: ConnectionState.ERROR,
-            error: error.message
-          });
-        };
-        
-        // Add message handler to detect initial connection messages
-        client.onmessage = (event) => {
-          try {
-            const data = JSON.parse(event.data);
-            // Check for connection status messages
-            if (data.type === 'connecting_status' || data.type === 'connection_established') {
-              console.log(`[WebSocketManager] Received connection status: ${data.type}`, data);
-            }
-          } catch (e) {
-            // Non-JSON messages can be ignored here
-          }
-        };
-        
-      } catch (error) {
-        reject(error);
-      }
-    });
+    // Check if already connected
+    const existingClient = this.connections.get(connectionId);
+    if (existingClient && existingClient.isConnected && existingClient.isConnected()) {
+      console.log(`[WebSocketManager] Already connected to ${connectionId}`);
+      return connectionId;
+    }
+    
+    // Create connection promise
+    const connectionPromise = this._createConnection(brokerId, accountId, options);
     
     // Store the pending connection promise
     this.pendingConnections.set(connectionId, connectionPromise);
     
-    // Clean up the pending promise after it resolves or rejects
+    // Clean up after completion
     connectionPromise.finally(() => {
-      this.pendingConnections.delete(connectionId);
+      if (this.pendingConnections.get(connectionId) === connectionPromise) {
+        this.pendingConnections.delete(connectionId);
+      }
     });
     
     return connectionPromise;
-  }
+}
   
   /**
    * Internal method to create a new connection
@@ -271,34 +195,6 @@ class WebSocketManager extends EventEmitter {
     }
     
     try {
-      // Check for an existing shared connection if sharing is enabled
-      if (options.useSharedConnection) {
-        const environment = options.environment || 'demo';
-        const sharedKey = `${brokerId}:${environment}`;
-        
-        if (this.sharedBrokerConnections.has(sharedKey)) {
-          const sharedClient = this.sharedBrokerConnections.get(sharedKey);
-          
-          // Check if the shared connection is still valid
-          if (sharedClient.isConnected()) {
-            // Use the shared connection
-            this.connections.set(connectionId, sharedClient);
-            this.connectionState.set(connectionId, ConnectionState.CONNECTED);
-            this.emit('connectionState', { 
-              brokerId, 
-              accountId, 
-              state: ConnectionState.CONNECTED 
-            });
-            
-            logger.info(`Using shared connection for ${connectionId}`);
-            return connectionId;
-          } else {
-            // Remove the invalid shared connection
-            this.sharedBrokerConnections.delete(sharedKey);
-          }
-        }
-      }
-      
       // Create WebSocket client
       const wsUrl = this.getWebSocketUrl(brokerId, accountId);
       logger.info(`Creating new WebSocket connection to ${wsUrl}`);
@@ -310,12 +206,35 @@ class WebSocketManager extends EventEmitter {
         debug: options.debug || false
       });
       
-      // Set up event listeners
-      client.on('connected', () => {
-        this.handleConnection(brokerId, accountId);
+      // Listen for state changes from server
+      client.on('state_change', (data) => {
+        // Map server states to our ConnectionState enum
+        const stateMap = {
+          'initializing': ConnectionState.CONNECTING,
+          'authenticated': ConnectionState.VALIDATING_USER,
+          'subscription_verified': ConnectionState.CHECKING_SUBSCRIPTION,
+          'connecting_to_broker': ConnectionState.CONNECTING_TO_BROKER,
+          'broker_connected': ConnectionState.CONNECTED,
+          'ready': ConnectionState.READY,
+          'disconnected': ConnectionState.DISCONNECTED,
+          'error': ConnectionState.ERROR
+        };
+        
+        const mappedState = stateMap[data.state] || ConnectionState.CONNECTING;
+        this.connectionState.set(connectionId, mappedState);
+        
+        this.emit('connectionState', {
+          brokerId,
+          accountId,
+          state: mappedState,
+          serverState: data.state,
+          message: data.message,
+          error: data.error
+        });
       });
       
-      client.on('disconnected', () => {
+      // Set up other event listeners
+      client.on('disconnected', (reason) => {
         this.handleDisconnection(brokerId, accountId);
       });
       
@@ -323,39 +242,24 @@ class WebSocketManager extends EventEmitter {
         this.handleError(brokerId, accountId, error);
       });
       
-      client.on('reconnecting', () => {
-        this.connectionState.set(connectionId, ConnectionState.RECONNECTING);
-        this.emit('connectionState', { 
-          brokerId, 
-          accountId, 
-          state: ConnectionState.RECONNECTING 
-        });
-      });
-      
-      client.on('reconnect_failed', () => {
-        this.handleReconnectFailed(brokerId, accountId);
-      });
-      
       client.on('message', (message) => {
         this.handleMessage(brokerId, accountId, message);
       });
       
-      // Store the client
+      // Store the client BEFORE connecting
       this.connections.set(connectionId, client);
       
-      // Connect to the WebSocket
+      // Connect and wait for ready state
       await client.connect(token);
       
-      // If successful and this is a shared connection, store it
-      if (options.createSharedConnection) {
-        const environment = options.environment || 'demo';
-        const sharedKey = `${brokerId}:${environment}`;
-        this.sharedBrokerConnections.set(sharedKey, client);
-        logger.info(`Created shared connection for ${sharedKey}`);
-      }
+      // If we get here, connection is ready
+      logger.info(`Successfully connected to ${connectionId}`);
       
       return connectionId;
+      
     } catch (error) {
+      // Clean up on error
+      this.connections.delete(connectionId);
       this.connectionState.set(connectionId, ConnectionState.ERROR);
       this.emit('connectionState', { 
         brokerId, 
@@ -379,43 +283,46 @@ class WebSocketManager extends EventEmitter {
     const connectionId = `${brokerId}:${accountId}`;
     const client = this.connections.get(connectionId);
     
-    if (client) {
-      // Check if this is a shared connection
-      const isShared = Array.from(this.sharedBrokerConnections.entries())
-        .some(([_, sharedClient]) => sharedClient === client);
-      
-      // If it's a shared connection, don't actually close it
-      // Just remove this specific connection tracking
-      if (isShared) {
-        logger.info(`Disconnecting from shared connection for ${connectionId}`);
+    if (!client) {
+        logger.warn(`No connection found for ${connectionId}`);
+        return false;
+    }
+    
+    try {
+        // Fix: Check if it's a native WebSocket or a WebSocketClient
+        if (client instanceof WebSocket) {
+            // Native WebSocket uses close()
+            if (client.readyState === WebSocket.OPEN || client.readyState === WebSocket.CONNECTING) {
+                client.close(1000, "Normal closure");
+            }
+        } else if (typeof client.disconnect === 'function') {
+            // WebSocketClient wrapper has disconnect()
+            client.disconnect();
+        }
+        
+        // Clean up
         this.connections.delete(connectionId);
         this.connectionState.set(connectionId, ConnectionState.DISCONNECTED);
         
+        // Clear any pending connections
+        if (this.pendingConnections.has(connectionId)) {
+            this.pendingConnections.delete(connectionId);
+        }
+        
+        // Emit disconnection event
         this.emit('connectionState', { 
-          brokerId, 
-          accountId, 
-          state: ConnectionState.DISCONNECTED 
+            brokerId, 
+            accountId, 
+            state: ConnectionState.DISCONNECTED 
         });
         
+        logger.info(`Disconnected from ${connectionId}`);
         return true;
-      }
-      
-      // Regular connection - actually close it
-      client.disconnect();
-      this.connections.delete(connectionId);
-      this.connectionState.set(connectionId, ConnectionState.DISCONNECTED);
-      
-      this.emit('connectionState', { 
-        brokerId, 
-        accountId, 
-        state: ConnectionState.DISCONNECTED 
-      });
-      
-      logger.info(`Disconnected from ${connectionId}`);
-      return true;
+        
+    } catch (error) {
+        logger.error(`Error disconnecting ${connectionId}:`, error);
+        return false;
     }
-    
-    return false;
   }
   
   /**
@@ -487,6 +394,8 @@ class WebSocketManager extends EventEmitter {
     const connectionId = `${brokerId}:${accountId}`;
     const client = this.connections.get(connectionId);
     
+    console.log('[WebSocketManager] sendMessage called:', { connectionId, message, hasClient: !!client });
+    
     if (!client) {
       logger.warn(`Cannot send message: No connection for ${connectionId}`);
       return false;
@@ -496,7 +405,55 @@ class WebSocketManager extends EventEmitter {
     await this.applyRateLimit(category);
     
     // Send message
-    return client.send(message);
+    const result = client.send(message);
+    console.log('[WebSocketManager] Message sent, result:', result);
+    return result;
+  }
+  
+  /**
+   * Alias for sendMessage for backward compatibility
+   */
+  send(brokerId, accountId, message, category = 'default') {
+    return this.sendMessage(brokerId, accountId, message, category);
+  }
+  
+  /**
+   * Test market data access for debugging
+   * @param {string} brokerId - Broker identifier
+   * @param {string} accountId - Account identifier
+   * @returns {Promise<Object>} - Test results
+   */
+  async testMarketDataAccess(brokerId, accountId) {
+    return new Promise((resolve, reject) => {
+      const connectionId = `${brokerId}:${accountId}`;
+      
+      // Set up one-time listener for the response
+      const responseHandler = (data) => {
+        if (data.type === 'debug_test_market_data_response') {
+          this.off('message', responseHandler);
+          logger.info('[WebSocketManager] Market data test response:', data.data);
+          resolve(data.data);
+        }
+      };
+      
+      this.on('message', responseHandler);
+      
+      // Send the test message
+      const sent = this.sendMessage(brokerId, accountId, {
+        type: 'debug_test_market_data'
+      });
+      
+      if (!sent) {
+        this.off('message', responseHandler);
+        reject(new Error('Failed to send test message'));
+      }
+      
+      // Timeout after 10 seconds
+      setTimeout(() => {
+        this.off('message', responseHandler);
+        reject(new Error('Market data test timeout'));
+      }, 10000);
+    });
   }
   
   /**
@@ -649,6 +606,90 @@ class WebSocketManager extends EventEmitter {
    * @param {Object} message - Message object
    */
   handleMessage(brokerId, accountId, message) {
+    const connectionId = `${brokerId}:${accountId}`;
+    console.log('[WebSocketManager] handleMessage received:', { connectionId, messageType: message.type, message });
+    
+    // Extra debug for user_data messages
+    if (message?.type === 'user_data') {
+      console.log('[WebSocketManager] DEBUGGING: user_data message details:', {
+        hasData: !!message.data,
+        dataType: typeof message.data,
+        dataKeys: message.data ? Object.keys(message.data) : null,
+        fullMessage: JSON.stringify(message, null, 2)
+      });
+    }
+    
+    // Handle connection state messages
+    if (message.type) {
+      switch (message.type) {
+        case 'connecting':
+        case 'keep_alive':
+        case 'initialization_progress':
+        case 'connecting_status':
+          // Progress updates - log but don't change state
+          logger.debug(`[WebSocketManager] Progress: ${message.type}`);
+          break;
+          
+        case 'connection_established':
+        case 'broker_websocket_connected':
+        case 'broker_connection_status':
+          // Connection is progressing
+          logger.info(`[WebSocketManager] Connection progress: ${message.type}`);
+          break;
+          
+        case 'user_data':
+          // User data received - connection is ready
+          console.log('[WebSocketManager] User data received, data available:', !!message.data);
+          console.log('[WebSocketManager] User data keys:', message.data ? Object.keys(message.data) : 'NO DATA');
+          if (message.data && message.data.positions) {
+            console.log('[WebSocketManager] Positions in user_data:', message.data.positions.length);
+          }
+          logger.info(`[WebSocketManager] User data received - connection ready`);
+          this.connectionState.set(connectionId, ConnectionState.READY);
+          this.emit('connectionState', { 
+            brokerId, 
+            accountId, 
+            state: ConnectionState.READY,
+            message: 'Ready for Trading'
+          });
+          break;
+          
+        case 'account_info':
+        case 'broker_connected':
+        case 'connection_ready':
+        case 'ready':
+          // Connection is fully ready
+          logger.info(`[WebSocketManager] Connection fully ready: ${connectionId}`);
+          this.connectionState.set(connectionId, ConnectionState.READY);
+          this.emit('connectionState', { 
+            brokerId, 
+            accountId, 
+            state: ConnectionState.READY,
+            message: 'Ready for Trading'
+          });
+          break;
+          
+        case 'error':
+        case 'connection_error':
+        case 'broker_connection_error':
+          logger.error(`[WebSocketManager] Connection error: ${message.message}`);
+          this.connectionState.set(connectionId, ConnectionState.ERROR);
+          this.emit('connectionState', { 
+            brokerId, 
+            accountId, 
+            state: ConnectionState.ERROR,
+            error: message.message
+          });
+          break;
+          
+        default:
+          // Log any unhandled message types
+          logger.debug(`[WebSocketManager] Unhandled message type: ${message.type}`);
+          break;
+      }
+    }
+    
+    // Continue with the existing message handling...
     // Add metadata to message
     const enrichedMessage = {
       ...message,
@@ -671,11 +712,24 @@ class WebSocketManager extends EventEmitter {
         this.updateAccountData(brokerId, accountId, message.data);
       } else if (message.type === 'position_update' && message.data) {
         this.updatePositionData(brokerId, accountId, message.data);
+      } else if (isPositionUpdateEvent(message.type) && message.data) {
+        // Handle new position event types
+        this.handlePositionEvent(brokerId, accountId, message);
       } else if (message.type === 'order_update' && message.data) {
         this.updateOrderData(brokerId, accountId, message.data);
+      } else if (message.type === 'position_price_update' && message.data) {
+        // Handle real-time position price updates
+        this.handlePositionPriceUpdate(brokerId, accountId, message.data);
       } else if (message.type === 'user_data' && message.data) {
         // Handle initial sync data
+        console.log('[WebSocketManager] About to call handleUserData with data:', !!message.data);
         this.handleUserData(brokerId, accountId, message.data);
+      } else if (message.type === 'user_data') {
+        console.log('[WebSocketManager] user_data message received but no data:', message);
+      } else if (message.type === 'positions_snapshot' && message.data) {
+        // Handle positions snapshot
+        console.log('[WebSocketManager] positions_snapshot received:', message.data);
+        this.handlePositionSnapshot(brokerId, accountId, message.data);
       }
     }
   }
@@ -841,9 +895,10 @@ class WebSocketManager extends EventEmitter {
    * @param {Object} data - Position data
    */
   updatePositionData(brokerId, accountId, data) {
-    if (!data.contractId && !data.symbol) return;
+    if (!data.contractId && !data.symbol && !data.positionId) return;
     
-    const key = `${brokerId}:${accountId}:${data.contractId || data.symbol}`;
+    // Use positionId if available, otherwise fall back to contractId or symbol
+    const key = `${brokerId}:${accountId}:${data.positionId || data.contractId || data.symbol}`;
     const currentData = this.dataCache.positions.get(key) || {};
     
     // Merge with existing data
@@ -858,8 +913,173 @@ class WebSocketManager extends EventEmitter {
     // Update cache
     this.dataCache.positions.set(key, updatedData);
     
-    // Emit position update event
-    this.emit('positionUpdate', updatedData);
+    // Emit position update event in the new format
+    this.emit('positionUpdate', {
+      brokerId,
+      accountId,
+      type: 'update', // Legacy update type
+      position: updatedData
+    });
+  }
+
+  /**
+   * Handle new position event types
+   * @param {string} brokerId - Broker identifier
+   * @param {string} accountId - Account identifier
+   * @param {Object} message - Message object with type and data
+   */
+  handlePositionEvent(brokerId, accountId, message) {
+    const { type, data } = message;
+    console.log('[WebSocketManager] handlePositionEvent:', { brokerId, accountId, type, data });
+    
+    // Create position key
+    const positionKey = `${brokerId}:${accountId}:${data.positionId || data.contractId || data.symbol}`;
+    
+    switch (type) {
+      case POSITION_MESSAGE_TYPES.POSITION_OPENED:
+        // New position opened
+        const newPosition = {
+          ...data,
+          brokerId,
+          accountId,
+          timestamp: Date.now(),
+          lastUpdate: Date.now(),
+          isNew: true // Flag for UI animation
+        };
+        
+        this.dataCache.positions.set(positionKey, newPosition);
+        
+        // Emit specific event for new positions
+        this.emit('positionOpened', newPosition);
+        this.emit('positionUpdate', { brokerId, accountId, type: 'opened', position: newPosition });
+        break;
+        
+      case POSITION_MESSAGE_TYPES.POSITION_CLOSED:
+        // Position closed
+        const closedPosition = this.dataCache.positions.get(positionKey);
+        if (closedPosition) {
+          // Mark as closed but keep in cache briefly for UI transition
+          closedPosition.isClosed = true;
+          closedPosition.closedAt = Date.now();
+          closedPosition.closePrice = data.closePrice;
+          closedPosition.realizedPnL = data.realizedPnL;
+          
+          this.emit('positionClosed', { ...closedPosition, ...data });
+          this.emit('positionUpdate', { brokerId, accountId, type: 'closed', position: closedPosition });
+          
+          // Remove from cache after delay (for UI animation)
+          setTimeout(() => {
+            this.dataCache.positions.delete(positionKey);
+          }, 5000);
+        }
+        break;
+        
+      case POSITION_MESSAGE_TYPES.POSITION_PRICE_UPDATE:
+        // Real-time price update
+        const positionForPrice = this.dataCache.positions.get(positionKey);
+        if (positionForPrice) {
+          const previousPrice = positionForPrice.currentPrice;
+          const previousPnL = positionForPrice.unrealizedPnL;
+          
+          // Update position with new price data
+          Object.assign(positionForPrice, {
+            currentPrice: data.currentPrice,
+            unrealizedPnL: data.unrealizedPnL,
+            previousPrice,
+            previousPnL,
+            lastPriceUpdate: Date.now(),
+            priceChange: data.currentPrice - previousPrice,
+            priceChangePercent: ((data.currentPrice - previousPrice) / previousPrice) * 100
+          });
+          
+          // Emit price update event
+          this.emit('positionPriceUpdate', positionForPrice);
+          this.emit('positionUpdate', { 
+            brokerId, 
+            accountId, 
+            type: 'priceUpdate', 
+            position: positionForPrice,
+            previousValues: { price: previousPrice, pnl: previousPnL }
+          });
+        }
+        break;
+        
+      case POSITION_MESSAGE_TYPES.POSITION_PNL_UPDATE:
+        // P&L specific update
+        const positionForPnL = this.dataCache.positions.get(positionKey);
+        if (positionForPnL) {
+          const previousPnL = positionForPnL.unrealizedPnL;
+          
+          Object.assign(positionForPnL, {
+            unrealizedPnL: data.unrealizedPnL,
+            previousPnL,
+            lastPnLUpdate: Date.now()
+          });
+          
+          this.emit('positionPnLUpdate', positionForPnL);
+          this.emit('positionUpdate', { 
+            brokerId, 
+            accountId, 
+            type: 'pnlUpdate', 
+            position: positionForPnL,
+            previousPnL
+          });
+        }
+        break;
+        
+      case POSITION_MESSAGE_TYPES.POSITION_UPDATED:
+        // General position update (quantity, stops, etc.)
+        const positionToUpdate = this.dataCache.positions.get(positionKey);
+        if (positionToUpdate) {
+          Object.assign(positionToUpdate, data.updates, {
+            lastUpdate: Date.now()
+          });
+          
+          this.emit('positionModified', positionToUpdate);
+          this.emit('positionUpdate', { 
+            brokerId, 
+            accountId, 
+            type: 'modified', 
+            position: positionToUpdate,
+            updates: data.updates
+          });
+        }
+        break;
+        
+      case POSITION_MESSAGE_TYPES.POSITIONS_SNAPSHOT:
+        // Full position snapshot - replace all positions for this account
+        const accountKey = `${brokerId}:${accountId}`;
+        
+        // Clear existing positions for this account
+        for (const [key] of this.dataCache.positions.entries()) {
+          if (key.startsWith(accountKey)) {
+            this.dataCache.positions.delete(key);
+          }
+        }
+        
+        // Add all positions from snapshot
+        if (data.positions && Array.isArray(data.positions)) {
+          data.positions.forEach(position => {
+            const key = `${brokerId}:${accountId}:${position.positionId || position.contractId || position.symbol}`;
+            this.dataCache.positions.set(key, {
+              ...position,
+              brokerId,
+              accountId,
+              timestamp: Date.now(),
+              lastUpdate: Date.now()
+            });
+          });
+        }
+        
+        this.emit('positionsSnapshot', { brokerId, accountId, positions: data.positions });
+        this.emit('positionUpdate', { brokerId, accountId, type: 'snapshot' });
+        break;
+        
+      default:
+        // Fallback to standard update
+        this.updatePositionData(brokerId, accountId, data);
+        break;
+    }
   }
   
   /**
@@ -891,14 +1111,133 @@ class WebSocketManager extends EventEmitter {
   }
   
   /**
+   * Transform Tradovate position to frontend format
+   * @param {Object} rawPosition - Raw position from Tradovate
+   * @param {Object} contractInfo - Contract information
+   * @returns {Object} - Transformed position
+   */
+  transformTradovatePosition(rawPosition, contractInfo) {
+    return {
+      positionId: String(rawPosition.id),
+      accountId: rawPosition.accountId,
+      symbol: contractInfo?.name || rawPosition.symbol || `Contract-${rawPosition.contractId}`,
+      side: rawPosition.netPos > 0 ? 'LONG' : 'SHORT',
+      quantity: Math.abs(rawPosition.netPos),
+      avgPrice: rawPosition.netPrice || rawPosition.avgPrice,
+      currentPrice: rawPosition.currentPrice || rawPosition.netPrice || rawPosition.avgPrice,
+      unrealizedPnL: rawPosition.unrealizedPnL || 0,
+      timeEntered: rawPosition.timestamp || rawPosition.timeEntered,
+      contractId: rawPosition.contractId,
+      // Keep original fields for debugging
+      _original: rawPosition
+    };
+  }
+
+  /**
+   * Handle position price update from market data
+   * @param {string} brokerId - Broker identifier
+   * @param {string} accountId - Account identifier
+   * @param {Object} data - Price update data
+   */
+  handlePositionPriceUpdate(brokerId, accountId, data) {
+    console.log('[WebSocketManager] handlePositionPriceUpdate:', { brokerId, accountId, data });
+    
+    const positionKey = `${brokerId}:${accountId}:${data.positionId || data.contractId}`;
+    const position = this.dataCache.positions.get(positionKey);
+    
+    if (position) {
+      // Update position with new price data
+      const previousPrice = position.currentPrice;
+      const previousPnL = position.unrealizedPnL;
+      
+      const updatedPosition = {
+        ...position,
+        currentPrice: data.currentPrice,
+        unrealizedPnL: data.unrealizedPnL,
+        lastPriceUpdate: Date.now()
+      };
+      
+      // Update cache
+      this.dataCache.positions.set(positionKey, updatedPosition);
+      
+      // Emit price update event
+      this.emit('positionUpdate', {
+        brokerId,
+        accountId,
+        type: 'priceUpdate',
+        position: updatedPosition,
+        previousValues: { price: previousPrice, pnl: previousPnL }
+      });
+    }
+  }
+
+  /**
+   * Handle positions snapshot
+   * @param {string} brokerId - Broker identifier
+   * @param {string} accountId - Account identifier
+   * @param {Array} positions - Array of positions
+   */
+  handlePositionSnapshot(brokerId, accountId, positions) {
+    console.log('[WebSocketManager] handlePositionSnapshot called:', { brokerId, accountId, positionsCount: positions?.length });
+    
+    if (!Array.isArray(positions)) {
+      console.error('[WebSocketManager] Positions snapshot is not an array:', positions);
+      return;
+    }
+    
+    // Clear existing positions for this account
+    const accountKey = `${brokerId}:${accountId}`;
+    for (const [key] of this.dataCache.positions.entries()) {
+      if (key.startsWith(accountKey)) {
+        this.dataCache.positions.delete(key);
+      }
+    }
+    
+    // Add all positions from snapshot
+    positions.forEach(position => {
+      // Transform if needed
+      const transformedPosition = position.id && !position.positionId 
+        ? this.transformTradovatePosition(position, null)
+        : position;
+        
+      if (transformedPosition) {
+        this.updatePositionData(brokerId, accountId, transformedPosition);
+      }
+    });
+    
+    // Emit snapshot event
+    this.emit('positionUpdate', {
+      brokerId,
+      accountId,
+      type: 'snapshot',
+      positions: this.getPositions(brokerId, accountId)
+    });
+  }
+
+  /**
    * Handle initial user data sync
    * @param {string} brokerId - Broker identifier
    * @param {string} accountId - Account identifier
    * @param {Object} data - User data
    */
   handleUserData(brokerId, accountId, data) {
+    console.log('[WebSocketManager] handleUserData called:', { brokerId, accountId, data });
+    
+    // Create a map of contractId to symbol from contracts data
+    const contractSymbolMap = new Map();
+    if (data.contracts && Array.isArray(data.contracts)) {
+      console.log('[WebSocketManager] Processing contracts:', data.contracts.length);
+      data.contracts.forEach(contract => {
+        if (contract.id && contract.name) {
+          contractSymbolMap.set(contract.id, contract.name);
+          console.log(`[WebSocketManager] Contract mapping: ${contract.id} → ${contract.name}`);
+        }
+      });
+    }
+    
     // Process accounts
     if (data.accounts && Array.isArray(data.accounts)) {
+      console.log('[WebSocketManager] Processing accounts:', data.accounts.length);
       data.accounts.forEach(account => {
         this.updateAccountData(brokerId, accountId, account);
       });
@@ -906,8 +1245,30 @@ class WebSocketManager extends EventEmitter {
     
     // Process positions
     if (data.positions && Array.isArray(data.positions)) {
+      console.log('[WebSocketManager] Processing positions:', data.positions.length);
       data.positions.forEach(position => {
-        this.updatePositionData(brokerId, accountId, position);
+        // Get contract info for this position
+        const contractInfo = position.contractId && contractSymbolMap.has(position.contractId) 
+          ? { name: contractSymbolMap.get(position.contractId) }
+          : null;
+        
+        // Transform position to frontend format
+        const transformedPosition = this.transformTradovatePosition(position, contractInfo);
+        
+        console.log(`[WebSocketManager] Transformed position:`, {
+          original: position,
+          transformed: transformedPosition
+        });
+        
+        this.updatePositionData(brokerId, accountId, transformedPosition);
+      });
+      
+      // Emit a snapshot event for positions
+      this.emit('positionUpdate', {
+        brokerId,
+        accountId,
+        type: 'snapshot',
+        positions: this.getPositions(brokerId, accountId)
       });
     }
     
@@ -1181,6 +1542,18 @@ class WebSocketManager extends EventEmitter {
       clearInterval(this.persistInterval);
       this.persistInterval = null;
     }
+  }
+  
+  /**
+   * Alias for sendMessage for backward compatibility
+   * @param {string} brokerId - Broker identifier
+   * @param {string} accountId - Account identifier
+   * @param {Object} message - Message to send
+   * @returns {Promise<boolean>} - Success status
+   */
+  send(brokerId, accountId, message) {
+    console.log('[WebSocketManager] send() called (alias for sendMessage)');
+    return this.sendMessage(brokerId, accountId, message);
   }
   
   /**

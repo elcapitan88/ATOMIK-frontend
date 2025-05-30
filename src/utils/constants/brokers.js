@@ -16,6 +16,10 @@ export const CONNECTION_STATE = {
   DISCONNECTED: 'disconnected',
   TOKEN_VALID: 'token_valid',
   WS_CONNECTING: 'ws_connecting',
+  VALIDATING_USER: 'validating_user',
+  CHECKING_SUBSCRIPTION: 'checking_subscription',
+  CHECKING_BROKER_ACCESS: 'checking_broker_access',
+  CONNECTING_TO_BROKER: 'connecting_to_broker',
   FULLY_CONNECTED: 'fully_connected'
 };
 
@@ -23,13 +27,21 @@ export const CONNECTION_STATE_MESSAGES = {
   [CONNECTION_STATE.DISCONNECTED]: "Account Disconnected",
   [CONNECTION_STATE.TOKEN_VALID]: "Account Connected - Token Valid",
   [CONNECTION_STATE.WS_CONNECTING]: "Connecting to WebSocket",
-  [CONNECTION_STATE.FULLY_CONNECTED]: "Fully Connected"
+  [CONNECTION_STATE.VALIDATING_USER]: "Validating credentials...",
+  [CONNECTION_STATE.CHECKING_SUBSCRIPTION]: "Checking subscription...",
+  [CONNECTION_STATE.CHECKING_BROKER_ACCESS]: "Validating broker access...",
+  [CONNECTION_STATE.CONNECTING_TO_BROKER]: "Connecting to broker...",
+  [CONNECTION_STATE.FULLY_CONNECTED]: "Ready for Trading"
 };
 
 export const CONNECTION_STATE_COLORS = {
   [CONNECTION_STATE.DISCONNECTED]: "red.400",
-  [CONNECTION_STATE.TOKEN_VALID]: "green.400",
+  [CONNECTION_STATE.TOKEN_VALID]: "yellow.400",
   [CONNECTION_STATE.WS_CONNECTING]: "blue.400",
+  [CONNECTION_STATE.VALIDATING_USER]: "blue.400",
+  [CONNECTION_STATE.CHECKING_SUBSCRIPTION]: "blue.400",
+  [CONNECTION_STATE.CHECKING_BROKER_ACCESS]: "blue.400",
+  [CONNECTION_STATE.CONNECTING_TO_BROKER]: "blue.400",
   [CONNECTION_STATE.FULLY_CONNECTED]: "green.400"
 };
 

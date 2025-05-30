@@ -18,7 +18,11 @@ const initialState = {
   isCreating: false,
   componentTypeToCreate: null,
   isLoading: false,
-  error: null
+  error: null,
+  strategyMetadata: {
+    name: '',
+    description: ''
+  }
 };
 
 // Create the context
@@ -32,22 +36,32 @@ export const StrategyBuilderProvider = ({ children }) => {
   const [componentTypeToCreate, setComponentTypeToCreate] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [strategyMetadata, setStrategyMetadata] = useState({
+    name: '',
+    description: ''
+  });
 
-  // Load components from localStorage on mount
+  // Load components and metadata from localStorage on mount
   useEffect(() => {
-    const loadComponents = () => {
+    const loadData = () => {
       try {
         const storedComponents = localStorage.getItem('strategyBuilderComponents');
+        const storedMetadata = localStorage.getItem('strategyBuilderMetadata');
+        
         if (storedComponents) {
           setComponents(JSON.parse(storedComponents));
         }
+        
+        if (storedMetadata) {
+          setStrategyMetadata(JSON.parse(storedMetadata));
+        }
       } catch (err) {
-        logger.error('Error loading strategy components:', err);
-        setError('Failed to load saved components');
+        logger.error('Error loading strategy data:', err);
+        setError('Failed to load saved strategy');
       }
     };
 
-    loadComponents();
+    loadData();
   }, []);
 
   // Save components to localStorage when they change
@@ -59,6 +73,15 @@ export const StrategyBuilderProvider = ({ children }) => {
     }
   }, [components]);
 
+  // Save metadata to localStorage when it changes
+  useEffect(() => {
+    try {
+      localStorage.setItem('strategyBuilderMetadata', JSON.stringify(strategyMetadata));
+    } catch (err) {
+      logger.error('Error saving strategy metadata:', err);
+    }
+  }, [strategyMetadata]);
+
   // Create a new component
   const createComponent = useCallback((type, title = 'New Component') => {
     const newComponent = {
@@ -68,7 +91,8 @@ export const StrategyBuilderProvider = ({ children }) => {
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       config: {},
-      isActive: true
+      isActive: true,
+      position: { x: 100, y: 100 } // Add default position
     };
 
     setComponents(prev => [...prev, newComponent]);
@@ -119,6 +143,14 @@ export const StrategyBuilderProvider = ({ children }) => {
     setComponentTypeToCreate(null);
   }, []);
 
+  // Update strategy metadata
+  const updateStrategyMetadata = useCallback((updates) => {
+    setStrategyMetadata(prev => ({
+      ...prev,
+      ...updates
+    }));
+  }, []);
+
   // Context value
   const value = {
     components,
@@ -127,12 +159,14 @@ export const StrategyBuilderProvider = ({ children }) => {
     componentTypeToCreate,
     isLoading,
     error,
+    strategyMetadata,
     createComponent,
     updateComponent,
     deleteComponent,
     selectComponent,
     startCreatingComponent,
-    cancelCreatingComponent
+    cancelCreatingComponent,
+    updateStrategyMetadata
   };
 
   return (

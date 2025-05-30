@@ -35,6 +35,7 @@ import { webhookApi } from '@/services/api/Webhooks/webhookApi';
 import { STRATEGY_TYPE_OPTIONS } from '@utils/constants/strategyTypes';
 import StrategyCard from '../features/marketplace/components/StrategyCard';
 import Menu from '../layout/Sidebar/Menu';
+import { useAuth } from '@/contexts/AuthContext';
 
 const MotionFlex = motion(Flex);
 const MotionBox = motion(Box);
@@ -73,6 +74,9 @@ const categories = [
 ];
 
 const MarketplacePage = () => {
+  // Auth hook
+  const { user, isLoading: authLoading } = useAuth();
+  
   // State management
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
@@ -409,6 +413,18 @@ const MarketplacePage = () => {
       </VStack>
     );
   };
+
+  // Wait for auth to load
+  if (authLoading || !user) {
+    return (
+      <Flex justify="center" align="center" height="100vh" bg="background">
+        <VStack spacing={4}>
+          <Spinner size="xl" color="blue.500" thickness="4px" />
+          <Text color="whiteAlpha.900">Loading marketplace...</Text>
+        </VStack>
+      </Flex>
+    );
+  }
 
   return (
     <Flex minH="100vh" bg="background" color="text.primary" fontFamily="body">

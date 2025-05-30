@@ -87,10 +87,13 @@ export const AuthProvider = ({ children }) => {
               if (userData.full_name && !userData.fullName) {
                 userData.fullName = userData.full_name;
               }
+              if (userData.profile_picture && !userData.profilePicture) {
+                userData.profilePicture = userData.profile_picture;
+              }
               
               setUser(userData);
               setIsAuthenticated(true);
-              logger.info("Auth initialized with user:", userData.email);
+              logger.info("Auth initialized with user:", userData.email, userData);
             } else {
               // Token invalid, clean up
               handleLogout(false);
@@ -145,6 +148,9 @@ export const AuthProvider = ({ children }) => {
       const userData = { ...user };
       if (userData.full_name && !userData.fullName) {
         userData.fullName = userData.full_name;
+      }
+      if (userData.profile_picture && !userData.profilePicture) {
+        userData.profilePicture = userData.profile_picture;
       }
       
       setUser(userData);
@@ -280,6 +286,9 @@ export const AuthProvider = ({ children }) => {
       if (normalizedUserData.full_name && !normalizedUserData.fullName) {
         normalizedUserData.fullName = normalizedUserData.full_name;
       }
+      if (normalizedUserData.profile_picture && !normalizedUserData.profilePicture) {
+        normalizedUserData.profilePicture = normalizedUserData.profile_picture;
+      }
       
       // Update auth state
       setUser(normalizedUserData);
@@ -312,7 +321,17 @@ export const AuthProvider = ({ children }) => {
       const response = await axiosInstance.get('/api/v1/auth/verify');
       
       if (response.data?.valid && response.data?.user) {
-        setUser(response.data.user);
+        const userData = response.data.user;
+        
+        // Normalize user data fields
+        if (userData.full_name && !userData.fullName) {
+          userData.fullName = userData.full_name;
+        }
+        if (userData.profile_picture && !userData.profilePicture) {
+          userData.profilePicture = userData.profile_picture;
+        }
+        
+        setUser(userData);
         setIsAuthenticated(true);
         return true;
       }
