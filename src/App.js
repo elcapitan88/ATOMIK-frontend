@@ -14,15 +14,17 @@ const ResetPassword = lazy(() => import('./components/pages/ResetPassword'));
 const SettingsPage = lazy(() => import('./components/pages/SettingsPage'));
 const MarketplacePage = lazy(() => import('./components/pages/MarketplacePage'));
 const PricingPage = lazy(() => import('./components/pages/PricingPage'));
-//const StrategyBuilderPage = lazy(() => import('./components/pages/Builder/StrategyBuilderPage'));
+const StrategyBuilderPage = lazy(() => import('./components/pages/Builder/StrategyBuilderPage'));
 const LandingPage = lazy(() => import('./components/pages/landing/LandingPage'));
-//const AdminDashboard = lazy(() => import('./components/pages/Admin/AdminDashboard').then(module => ({ default: module.default })));
-// const OverviewPage = lazy(() => import('./components/pages/Admin/Overview/OverviewPage').then(module => ({ default: module.default })));
-// const UsersPage = lazy(() => import('./components/pages/Admin/Users/UsersPage').then(module => ({ default: module.default })));
-// const WebhooksMonitorPage = lazy(() => import('./components/pages/Admin/Webhooks/WebhooksMonitorPage'));
-// const AnalyticsPage = lazy(() => import('./components/pages/Admin/Analytics/AnalyticsPage'));
-// const RolesPage = lazy(() => import('./components/pages/Admin/Roles/RolesPage'));
-// const AdminSettingsPage = lazy(() => import('./components/pages/Admin/Settings/AdminSettingsPage'));
+const ComingSoon = lazy(() => import('./components/common/ComingSoon'));
+
+const AdminDashboard = lazy(() => import('./components/pages/Admin/AdminDashboard').then(module => ({ default: module.default })));
+const OverviewPage = lazy(() => import('./components/pages/Admin/Overview/OverviewPage').then(module => ({ default: module.default })));
+const UsersPage = lazy(() => import('./components/pages/Admin/Users/UsersPage').then(module => ({ default: module.default })));
+const WebhooksMonitorPage = lazy(() => import('./components/pages/Admin/Webhooks/WebhooksMonitorPage'));
+const AnalyticsPage = lazy(() => import('./components/pages/Admin/Analytics/AnalyticsPage'));
+const RolesPage = lazy(() => import('./components/pages/Admin/Roles/RolesPage'));
+const AdminSettingsPage = lazy(() => import('./components/pages/Admin/Settings/AdminSettingsPage'));
 
 const RouteTracker = () => {
   const location = useLocation();
@@ -122,6 +124,42 @@ const PaymentSuccessRoute = React.memo(({ children }) => {
 const PricingRoute = React.memo(({ children }) => {
   // Simply return children without any conditional checks
   // This makes the pricing page accessible to everyone
+  return children;
+});
+
+// Route guard for admin routes
+const AdminRoute = React.memo(({ children }) => {
+  const { isAuthenticated, isLoading, user } = useAuth();
+  const location = useLocation();
+  
+  // Loading state - show spinner while checking auth
+  if (isLoading) {
+    return <LoadingSpinner />;
+  }
+  
+  // Not authenticated - redirect to auth page
+  if (!isAuthenticated) {
+    return <Navigate to="/auth" state={{ from: location }} replace />;
+  }
+  
+  // In development, bypass admin check
+  if (process.env.NODE_ENV === 'development') {
+    return children;
+  }
+  
+  // Check admin privileges (only in production)
+  const isAdmin = user && (
+    user.role === 'admin' || 
+    user.role === 'superadmin' || 
+    user.username === 'admin'
+  );
+  
+  // Not admin - redirect to dashboard
+  if (!isAdmin) {
+    return <Navigate to="/dashboard" replace />;
+  }
+  
+  // User is authenticated and has admin privileges
   return children;
 });
 
@@ -237,6 +275,45 @@ function App() {
             </WithAuth>
           }
         />
+  
+        <Route
+          path="/strategy-builder"
+          element={
+            <WithAuth>
+              {process.env.NODE_ENV === 'development' ? (
+                <DashboardLayout>
+                  <StrategyBuilderPage />
+                </DashboardLayout>
+              ) : (
+                <ComingSoon 
+                  title="Strategy Builder"
+                  subtitle="Advanced Trading Strategy Creation"
+                  description="Build sophisticated trading strategies with our intuitive drag-and-drop interface. Define entry and exit conditions, risk management rules, and automated execution parameters."
+                  estimatedLaunch="Q2 2025"
+                />
+              )}
+            </WithAuth>
+          }
+        />
+  
+        {/* Admin Routes */}
+        <Route
+          path="/admin"
+          element={
+            <WithAuth>
+              <AdminRoute>
+                <AdminDashboard />
+              </AdminRoute>
+            </WithAuth>
+          }
+        >
+          <Route index element={<OverviewPage />} />
+          <Route path="users" element={<UsersPage />} />
+          <Route path="webhooks" element={<WebhooksMonitorPage />} />
+          <Route path="analytics" element={<AnalyticsPage />} />
+          <Route path="roles" element={<RolesPage />} />
+          <Route path="settings" element={<AdminSettingsPage />} />
+        </Route>
   
         {/* Catch all route */}
         <Route path="*" element={<Navigate to="/" replace />} />
