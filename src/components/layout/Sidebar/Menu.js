@@ -28,7 +28,8 @@ import {
   Wand2, 
   Store, 
   Menu as MenuIcon, 
-  ChevronLeft 
+  ChevronLeft,
+  Shield
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import SupportModal from '../../common/Modal/SupportModal';
@@ -157,24 +158,42 @@ const Menu = ({ onSelectItem }) => {
     return user.profile_picture || user.profilePicture || '';
   }, [user]);
 
+  // Check if user has admin access (only app_role)
+  const hasAdminAccess = React.useMemo(() => {
+    return user && user.app_role === 'admin';
+  }, [user]);
+
   // Define menu items
-  const menuItems = [
-    { 
-      name: 'Dashboard', 
-      icon: LayoutDashboard,
-      path: '/dashboard'
-    },
-    { 
-      name: 'Strategy Builder', 
-      icon: Wand2,
-      path: '/strategy-builder'
-    },
-    { 
-      name: 'Marketplace', 
-      icon: Store,
-      path: '/marketplace'
+  const menuItems = React.useMemo(() => {
+    const baseItems = [
+      { 
+        name: 'Dashboard', 
+        icon: LayoutDashboard,
+        path: '/dashboard'
+      },
+      { 
+        name: 'Strategy Builder', 
+        icon: Wand2,
+        path: '/strategy-builder'
+      },
+      { 
+        name: 'Marketplace', 
+        icon: Store,
+        path: '/marketplace'
+      }
+    ];
+
+    // Conditionally add admin menu item
+    if (hasAdminAccess) {
+      baseItems.push({
+        name: 'Admin',
+        icon: Shield,
+        path: '/admin'
+      });
     }
-  ];
+
+    return baseItems;
+  }, [hasAdminAccess]);
   
   const toggleMenu = (e) => {
     if (e) {
@@ -205,7 +224,7 @@ const Menu = ({ onSelectItem }) => {
     if (menuItem) {
       setSelectedItem(menuItem.name);
     }
-  }, [location.pathname]);
+  }, [location.pathname, menuItems]);
 
   const handleLogout = async () => {
     try {
