@@ -127,7 +127,7 @@ const useFeatureFlags = () => {
     const featureCategories = {
       'UI Enhancements': ['new-dashboard', 'advanced-charts'],
       'Advanced Analytics': ['advanced-analytics', 'ai-insights'],
-      'Trading Features': ['experimental-trading'],
+      'Trading Features': ['experimental-trading', 'strategy-builder'],
       'App Features': ['ai-insights', 'mobile-app-preview', 'social-trading'],
       'Integrations': ['broker-integration-v2'],
       'Communication': ['member-chat']
@@ -249,6 +249,7 @@ const useFeatureFlags = () => {
     hasSocialTrading: isFeatureEnabled('social-trading'),
     hasMobileAppPreview: isFeatureEnabled('mobile-app-preview'),
     hasMemberChat: isFeatureEnabled('member-chat'),
+    hasStrategyBuilder: isFeatureEnabled('strategy-builder'),
   };
 };
 
