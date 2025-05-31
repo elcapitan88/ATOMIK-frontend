@@ -6,12 +6,12 @@
  * beta testing, and gradual rollouts.
  */
 
-import { useState, useEffect, useCallback, useContext } from 'react';
-import { AuthContext } from '../contexts/AuthContext';
+import { useState, useEffect, useCallback } from 'react';
+import { useAuth } from '../contexts/AuthContext';
 import { envConfig } from '../config/environment';
 
 const useFeatureFlags = () => {
-  const { user, isAuthenticated } = useContext(AuthContext);
+  const { user, isAuthenticated } = useAuth();
   const [features, setFeatures] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
