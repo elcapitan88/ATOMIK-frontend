@@ -163,11 +163,6 @@ const Menu = ({ onSelectItem }) => {
     return user && user.app_role === 'admin';
   }, [user]);
 
-  // Check if user has admin access (only app_role)
-  const hasAdminAccess = React.useMemo(() => {
-    return user && user.app_role === 'admin';
-  }, [user]);
-
   // Define menu items
   const menuItems = React.useMemo(() => {
     const baseItems = [
