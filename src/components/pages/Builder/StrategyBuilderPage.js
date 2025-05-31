@@ -14,10 +14,12 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { StrategyBuilderProvider } from '@/contexts/StrategyBuilderContext';
 import useStrategyBuilder from '@/hooks/useStrategyBuilder';
+import useFeatureFlags from '@/hooks/useFeatureFlags';
 import Menu from '@/components/layout/Sidebar/Menu';
 import StrategyGrid from './components/StrategyGrid';
 import CreateStrategyButton from './components/CreateStrategyButton';
 import EmptyState from './components/EmptyState';
+import ComingSoon from './components/ComingSoon';
 import logger from '@/utils/logger';
 
 // Motion components
@@ -96,6 +98,7 @@ const StrategyBuilderPageContent = () => {
 
 const StrategyBuilderPage = () => {
   const { isAuthenticated } = useAuth();
+  const { hasStrategyBuilder } = useFeatureFlags();
   const navigate = useNavigate();
 
   // Auth check
@@ -141,9 +144,15 @@ const StrategyBuilderPage = () => {
             zIndex={1} 
             overflowY="auto"
           >
-            <StrategyBuilderProvider>
-              <StrategyBuilderPageContent />
-            </StrategyBuilderProvider>
+            {hasStrategyBuilder ? (
+              <StrategyBuilderProvider>
+                <StrategyBuilderPageContent />
+              </StrategyBuilderProvider>
+            ) : (
+              <Flex h="full" align="center" justify="center" p={4}>
+                <ComingSoon />
+              </Flex>
+            )}
           </Box>
         </Box>
       </Box>
