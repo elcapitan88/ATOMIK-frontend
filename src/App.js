@@ -3,11 +3,6 @@ import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Box, Spinner } from '@chakra-ui/react';
 import { useAuth } from '@/contexts/AuthContext';
 
-// Import debug utilities (development only)
-if (process.env.NODE_ENV === 'development') {
-  import('./utils/debugFeatureFlags');
-}
-
 // Import components
 import Homepage from './components/pages/Homepage/Homepage';
 
@@ -163,6 +158,13 @@ const AdminRoute = React.memo(({ children }) => {
 function App() {
   const { isAuthenticated, setAuthenticatedState } = useAuth();
   
+  // Import debug utilities in development
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'development') {
+      import('./utils/debugFeatureFlags').catch(console.error);
+    }
+  }, []);
+  
   // Add the new useEffect right here, before the return statement
   useEffect(() => {
     // Check for stored credentials on app load
@@ -277,18 +279,9 @@ function App() {
           path="/strategy-builder"
           element={
             <WithAuth>
-              {process.env.NODE_ENV === 'development' ? (
-                <DashboardLayout>
-                  <StrategyBuilderPage />
-                </DashboardLayout>
-              ) : (
-                <ComingSoon 
-                  title="Strategy Builder"
-                  subtitle="Advanced Trading Strategy Creation"
-                  description="Build sophisticated trading strategies with our intuitive drag-and-drop interface. Define entry and exit conditions, risk management rules, and automated execution parameters."
-                  estimatedLaunch="Q2 2025"
-                />
-              )}
+              <DashboardLayout>
+                <StrategyBuilderPage />
+              </DashboardLayout>
             </WithAuth>
           }
         />
