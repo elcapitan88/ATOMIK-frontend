@@ -138,8 +138,9 @@ const AdminRoute = React.memo(({ children }) => {
     return children;
   }
   
-  // Check admin privileges (only in production)
+  // Check admin privileges - use same field as Menu.js
   const isAdmin = user && (
+    user.app_role === 'admin' || 
     user.role === 'admin' || 
     user.role === 'superadmin' || 
     user.username === 'admin'
