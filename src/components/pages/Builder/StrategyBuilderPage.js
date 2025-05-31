@@ -165,7 +165,7 @@ const StrategyBuilderPageContent = () => {
 
 const StrategyBuilderPage = () => {
   const { isAuthenticated, user, isLoading: authLoading } = useAuth();
-  const { hasStrategyBuilder } = useFeatureFlags();
+  const { hasStrategyBuilder, loading: featureFlagsLoading, error: featureFlagsError } = useFeatureFlags();
   const navigate = useNavigate();
 
   // Auth check
@@ -175,18 +175,57 @@ const StrategyBuilderPage = () => {
     }
   }, [isAuthenticated, navigate]);
 
+  // Feature flag check - allow admin users and beta testers
+  const shouldAllowAccess = user?.app_role === 'admin' || hasStrategyBuilder;
+  
+  useEffect(() => {
+    console.log('[StrategyBuilder] Feature flags state:', {
+      hasStrategyBuilder,
+      featureFlagsLoading,
+      featureFlagsError,
+      user: user?.email,
+      userAppRole: user?.app_role,
+      shouldAllowAccess
+    });
+    
+    if (!featureFlagsLoading && !shouldAllowAccess) {
+      console.log('[StrategyBuilder] Access denied - redirecting to dashboard');
+      navigate('/dashboard', { replace: true });
+    }
+  }, [hasStrategyBuilder, featureFlagsLoading, navigate, user, shouldAllowAccess]);
+
   // Log page view
   useEffect(() => {
     logger.info('Strategy Builder page viewed');
   }, []);
 
-  // Wait for auth to load
-  if (authLoading || !user) {
+  // Wait for auth and feature flags to load
+  if (authLoading || !user || featureFlagsLoading) {
     return (
       <Flex justify="center" align="center" height="100vh" bg="background">
         <VStack spacing={4}>
           <Spinner size="xl" color="blue.500" thickness="4px" />
           <Text color="whiteAlpha.900">Loading strategy builder...</Text>
+        </VStack>
+      </Flex>
+    );
+  }
+
+  // Check feature access - allow admin users and feature flag users
+  if (!shouldAllowAccess) {
+    return (
+      <Flex justify="center" align="center" height="100vh" bg="background">
+        <VStack spacing={4}>
+          <Text color="red.400" fontSize="xl">Access Denied</Text>
+          <Text color="whiteAlpha.700">
+            You don't have access to the Strategy Builder feature.
+          </Text>
+          <Text color="whiteAlpha.500" fontSize="sm">
+            Contact support if you believe this is an error.
+          </Text>
+          <Text color="whiteAlpha.500" fontSize="xs">
+            Debug: app_role="{user?.app_role}", hasStrategyBuilder={String(hasStrategyBuilder)}
+          </Text>
         </VStack>
       </Flex>
     );
