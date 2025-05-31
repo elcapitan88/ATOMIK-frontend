@@ -114,7 +114,11 @@ const StrategyBuilderPage = () => {
     <Flex minH="100vh" bg="background" color="text.primary" fontFamily="body">
       <Menu onSelectItem={() => {}} />
       
-      <Box flexGrow={1} ml={16}>
+      <Box 
+        flexGrow={1} 
+        ml={{ base: 0, md: 16 }}
+        mb={{ base: "70px", md: 0 }}
+      >
         <Box h="100vh" w="full" overflow="hidden" position="relative">
           {/* Background Effects */}
           <Box 
