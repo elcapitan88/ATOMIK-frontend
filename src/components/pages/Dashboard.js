@@ -393,26 +393,9 @@ const DashboardContent = () => {
                 );
 
             case 'Strategy Builder':
-                return (
-                    <Flex 
-                        position="relative" 
-                        h="full" 
-                        p={4} 
-                        zIndex={2}
-                        justify="center"
-                        align="center"
-                        direction="column"
-                        gap={4}
-                    >
-                        <Text fontSize="3xl" fontWeight="bold" color="white">
-                            Coming Soon
-                        </Text>
-                        <Text fontSize="md" color="whiteAlpha.700" textAlign="center" maxW="400px">
-                            Our strategy builder is currently under development. 
-                            Stay tuned for powerful trading strategy creation tools.
-                        </Text>
-                    </Flex>
-                );
+                // Redirect to the dedicated Strategy Builder page
+                navigate('/strategy-builder');
+                return null;
 
             case 'Marketplace':
                 return (
