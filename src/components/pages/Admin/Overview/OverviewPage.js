@@ -47,7 +47,7 @@ import {
   Shield,
   Webhook
 } from 'lucide-react';
-import adminService from '../../../../services/api/admin';
+import adminService from '@/services/api/admin';
 
 // Quick Action Card Component
 const QuickActionCard = ({ title, description, icon, onClick, colorScheme = "blue", isNew = false }) => {
@@ -507,7 +507,7 @@ const OverviewPage = () => {
             </Flex>
             <Divider mb={4} borderColor="whiteAlpha.200" />
             <VStack spacing={4} align="stretch">
-              {systemStatus.map((system, idx) => (
+              {formattedSystemStatus.map((system, idx) => (
                 <Flex key={idx} justify="space-between" align="center" py={2}>
                   <HStack>
                     <Text color="white" fontWeight="medium">{system.name}</Text>

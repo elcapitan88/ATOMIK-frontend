@@ -112,7 +112,7 @@ const DashboardContent = () => {
 
     // Hooks
     const navigate = useNavigate();
-    const { isAuthenticated } = useAuth();
+    const { isAuthenticated, user, isLoading: authLoading } = useAuth();
     const toast = useToast();
     const { hasMemberChat } = useFeatureFlags();
     
@@ -262,8 +262,8 @@ const DashboardContent = () => {
         }));
     };
 
-    // Loading state
-    if (isLoading) {
+    // Loading state - wait for both auth and dashboard data
+    if (isLoading || authLoading || !user) {
         return <LoadingSpinner />;
     }
 

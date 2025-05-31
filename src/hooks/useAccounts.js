@@ -35,6 +35,7 @@ export function useAccounts() {
             status: account.status || 'inactive',
             is_token_expired: account.is_token_expired || false,
             is_deleted: account.is_deleted || false,
+            is_active: account.active !== undefined ? account.active : account.is_active !== undefined ? account.is_active : true, // Normalize active field
             balance: parseFloat(account.balance || 0),
             // Add any other fields that need normalization
           };

@@ -2,6 +2,7 @@
 import { Subject } from 'rxjs';
 import tradovateApi from '../api/brokers/tradovate/tradovateApi';
 import logger from '@/utils/logger';
+import axiosInstance from '@/services/axiosConfig';
 
 class AccountManager {
     constructor() {
@@ -192,7 +193,17 @@ class AccountManager {
     // Remove account
     async removeAccount(accountId) {
         try {
-            await tradovateApi.removeAccount(accountId);
+            // Get the account to check its broker type
+            const account = this.accounts.get(accountId);
+            
+            if (account && account.broker_id === 'interactivebrokers') {
+                // Use IB-specific endpoint that destroys the Digital Ocean droplet
+                await axiosInstance.delete(`/api/v1/brokers/interactivebrokers/accounts/${accountId}`);
+            } else {
+                // Use generic endpoint for other brokers
+                await tradovateApi.removeAccount(accountId);
+            }
+            
             this.accounts.delete(accountId);
             this.accountStatus.delete(accountId);
             

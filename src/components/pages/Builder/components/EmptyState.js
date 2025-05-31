@@ -22,10 +22,10 @@ const MotionBox = motion(Box);
 const MotionFlex = motion(Flex);
 
 const EmptyState = () => {
-  const { startCreatingComponent, COMPONENT_TYPES } = useStrategyBuilder();
+  const { createComponentWithDefaultTitle, COMPONENT_TYPES } = useStrategyBuilder();
 
   const handleCreateEntry = () => {
-    startCreatingComponent(COMPONENT_TYPES.ENTRY);
+    createComponentWithDefaultTitle(COMPONENT_TYPES.ENTRY);
   };
 
   // Decorative elements for the visual design

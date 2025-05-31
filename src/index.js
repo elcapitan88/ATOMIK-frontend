@@ -10,6 +10,7 @@ import App from './App';
 import { AuthProvider } from './contexts/AuthContext';
 import theme from './styles/theme';
 import { ConfigCatProvider } from 'configcat-react';
+import { WebSocketProvider } from './services/websocket-proxy/contexts/WebSocketContext';
 
 // Import global styles
 import './styles/globals.css';
@@ -97,7 +98,7 @@ class ErrorBoundary extends React.Component {
 const root = ReactDOM.createRoot(document.getElementById('root'));
 
 root.render(
-  <React.StrictMode>
+  //<React.StrictMode>
     <ErrorBoundary>
       <HelmetProvider>
         <QueryClientProvider client={queryClient}>
@@ -105,7 +106,9 @@ root.render(
             <ConfigCatProvider sdkKey={process.env.REACT_APP_CONFIGCAT_SDK_KEY}>
               <BrowserRouter>
                 <AuthProvider>
+                  <WebSocketProvider>
                   <App />
+                  </WebSocketProvider>
                 </AuthProvider>
               </BrowserRouter>
             </ConfigCatProvider>
@@ -114,7 +117,7 @@ root.render(
         </QueryClientProvider>
       </HelmetProvider>
     </ErrorBoundary>
-  </React.StrictMode>
+  //</React.StrictMode>
 );
 
 // Handle unhandled promise rejections

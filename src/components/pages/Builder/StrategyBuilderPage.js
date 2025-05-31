@@ -7,10 +7,12 @@ import {
   VStack, 
   HStack,
   Spinner,
+  IconButton,
   useToast
 } from '@chakra-ui/react';
 import { useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
+import { ChevronLeft, ChevronRight, MessageCircle } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { StrategyBuilderProvider } from '@/contexts/StrategyBuilderContext';
 import useStrategyBuilder from '@/hooks/useStrategyBuilder';
@@ -19,15 +21,25 @@ import Menu from '@/components/layout/Sidebar/Menu';
 import StrategyGrid from './components/StrategyGrid';
 import CreateStrategyButton from './components/CreateStrategyButton';
 import EmptyState from './components/EmptyState';
-import ComingSoon from './components/ComingSoon';
+import Chatbox from '@/components/Chatbox';
 import logger from '@/utils/logger';
 
 // Motion components
 const MotionBox = motion(Box);
 
 const StrategyBuilderPageContent = () => {
-  const { components, isLoading, error } = useStrategyBuilder();
+  const { components, isLoading, error, strategyMetadata } = useStrategyBuilder();
+  const [isChatOpen, setIsChatOpen] = useState(false);
   const toast = useToast();
+
+  // Chat handlers
+  const handleOpenChat = () => {
+    setIsChatOpen(true);
+  };
+
+  const handleCloseChat = () => {
+    setIsChatOpen(false);
+  };
 
   // Show error toast if needed
   useEffect(() => {
@@ -83,7 +95,7 @@ const StrategyBuilderPageContent = () => {
                 transition={{ duration: 0.3 }}
                 flex="1"
               >
-                <StrategyGrid />
+                <StrategyGrid onOpenChat={handleOpenChat} />
               </MotionBox>
             )}
           </AnimatePresence>
@@ -92,12 +104,67 @@ const StrategyBuilderPageContent = () => {
 
       {/* Create Button (fixed position) */}
       <CreateStrategyButton />
+
+      {/* Chat Toggle Arrow - Right Side */}
+      <motion.div
+        initial={{ x: 50, opacity: 0 }}
+        animate={{ 
+          x: isChatOpen ? -450 : 0, // Move left when chat is open
+          opacity: 1 
+        }}
+        transition={{ 
+          type: "spring", 
+          damping: 25, 
+          stiffness: 200,
+          opacity: { duration: 0.3 }
+        }}
+        style={{
+          position: 'fixed',
+          right: 0,
+          top: '50%',
+          transform: 'translateY(-50%)',
+          zIndex: 150
+        }}
+      >
+        <IconButton
+          icon={isChatOpen ? <ChevronRight size={24} /> : <ChevronLeft size={24} />}
+          onClick={isChatOpen ? handleCloseChat : handleOpenChat}
+          bg="rgba(0, 0, 0, 0.8)"
+          backdropFilter="blur(10px)"
+          border="1px solid rgba(255, 255, 255, 0.2)"
+          borderRight="none"
+          borderTopLeftRadius="xl"
+          borderBottomLeftRadius="xl"
+          borderTopRightRadius="0"
+          borderBottomRightRadius="0"
+          color="#00C6E0"
+          size="lg"
+          h="60px"
+          w="35px"
+          _hover={{
+            bg: "rgba(0, 198, 224, 0.1)",
+            borderColor: "rgba(0, 198, 224, 0.4)",
+            color: "#00D7F2"
+          }}
+          _active={{
+            bg: "rgba(0, 198, 224, 0.2)"
+          }}
+          aria-label={isChatOpen ? "Close AI Chat" : "Open AI Chat"}
+        />
+      </motion.div>
+
+      {/* AI Chat Overlay - positioned outside grid to prevent layout shifts */}
+      <Chatbox
+        isOpen={isChatOpen}
+        onClose={handleCloseChat}
+        strategyData={{ components, metadata: strategyMetadata }}
+      />
     </Box>
   );
 };
 
 const StrategyBuilderPage = () => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user, isLoading: authLoading } = useAuth();
   const { hasStrategyBuilder } = useFeatureFlags();
   const navigate = useNavigate();
 
@@ -112,6 +179,18 @@ const StrategyBuilderPage = () => {
   useEffect(() => {
     logger.info('Strategy Builder page viewed');
   }, []);
+
+  // Wait for auth to load
+  if (authLoading || !user) {
+    return (
+      <Flex justify="center" align="center" height="100vh" bg="background">
+        <VStack spacing={4}>
+          <Spinner size="xl" color="blue.500" thickness="4px" />
+          <Text color="whiteAlpha.900">Loading strategy builder...</Text>
+        </VStack>
+      </Flex>
+    );
+  }
 
   return (
     <Flex minH="100vh" bg="background" color="text.primary" fontFamily="body">
@@ -144,15 +223,9 @@ const StrategyBuilderPage = () => {
             zIndex={1} 
             overflowY="auto"
           >
-            {hasStrategyBuilder ? (
-              <StrategyBuilderProvider>
-                <StrategyBuilderPageContent />
-              </StrategyBuilderProvider>
-            ) : (
-              <Flex h="full" align="center" justify="center" p={4}>
-                <ComingSoon />
-              </Flex>
-            )}
+            <StrategyBuilderProvider>
+              <StrategyBuilderPageContent />
+            </StrategyBuilderProvider>
           </Box>
         </Box>
       </Box>

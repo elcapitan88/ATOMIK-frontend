@@ -105,65 +105,65 @@ export const useTradeData = () => {
   }, []);
 
   // Initialize and set up polling
-  // useEffect(() => {
-  //   let positionsInterval;
-  //   let tradesInterval;
-  //   let mounted = true;
+  useEffect(() => {
+    let positionsInterval;
+    let tradesInterval;
+    let mounted = true;
 
-  //   const initialize = async () => {
-  //     try {
-  //       const accounts = await fetchAccounts();
+    const initialize = async () => {
+      try {
+        const accounts = await fetchAccounts();
         
-  //       if (accounts.length > 0 && mounted) {
-  //         await Promise.all([
-  //           fetchOpenPositions(accounts),
-  //           fetchHistoricalTrades(accounts)
-  //         ]);
-  //       }
-  //     } catch (error) {
-  //       logger.error('Error initializing trade data:', error);
-  //     }
-  //   };
+        if (accounts.length > 0 && mounted) {
+          await Promise.all([
+            fetchOpenPositions(accounts),
+            fetchHistoricalTrades(accounts)
+          ]);
+        }
+      } catch (error) {
+        logger.error('Error initializing trade data:', error);
+      }
+    };
 
-  //   initialize();
+    initialize();
 
-  //   // Set up polling intervals
-  //   positionsInterval = setInterval(() => {
-  //     if (activeAccounts.length > 0) {
-  //       fetchOpenPositions(activeAccounts);
-  //     }
-  //   }, 30000); // Poll positions every 30 seconds
+    // Set up polling intervals
+    positionsInterval = setInterval(() => {
+      if (activeAccounts.length > 0) {
+        fetchOpenPositions(activeAccounts);
+      }
+    }, 30000); // Poll positions every 30 seconds
 
-  //   tradesInterval = setInterval(() => {
-  //     if (activeAccounts.length > 0) {
-  //       fetchHistoricalTrades(activeAccounts);
-  //     }
-  //   }, 10000); // Poll historical trades every 10 seconds
+    tradesInterval = setInterval(() => {
+      if (activeAccounts.length > 0) {
+        fetchHistoricalTrades(activeAccounts);
+      }
+    }, 10000); // Poll historical trades every 10 seconds
 
-  //   return () => {
-  //     mounted = false;
-  //     clearInterval(positionsInterval);
-  //     clearInterval(tradesInterval);
-  //   };
-  // }, [fetchAccounts, fetchOpenPositions, fetchHistoricalTrades, activeAccounts]);
+    return () => {
+      mounted = false;
+      clearInterval(positionsInterval);
+      clearInterval(tradesInterval);
+    };
+  }, [fetchAccounts, fetchOpenPositions, fetchHistoricalTrades, activeAccounts]);
 
   // Function to manually refresh data
-  // const refreshData = useCallback(async () => {
-  //   setIsLoading(true);
-  //   try {
-  //     const accounts = await fetchAccounts();
-  //     if (accounts.length > 0) {
-  //       await Promise.all([
-  //         fetchOpenPositions(accounts),
-  //         fetchHistoricalTrades(accounts)
-  //       ]);
-  //     }
-  //   } catch (error) {
-  //     logger.error('Error refreshing data:', error);
-  //   } finally {
-  //     setIsLoading(false);
-  //   }
-  // }, [fetchAccounts, fetchOpenPositions, fetchHistoricalTrades]);
+  const refreshData = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const accounts = await fetchAccounts();
+      if (accounts.length > 0) {
+        await Promise.all([
+          fetchOpenPositions(accounts),
+          fetchHistoricalTrades(accounts)
+        ]);
+      }
+    } catch (error) {
+      logger.error('Error refreshing data:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [fetchAccounts, fetchOpenPositions, fetchHistoricalTrades]);
 
   return {
     openPositions,
@@ -171,6 +171,6 @@ export const useTradeData = () => {
     isLoading,
     error,
     activeAccounts,
-    //refreshData
+    refreshData
   };
 };

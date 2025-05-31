@@ -126,30 +126,42 @@ const Menu = ({ onSelectItem }) => {
   const [isMenuExpanded, setIsMenuExpanded] = useState(false);
   const [selectedItem, setSelectedItem] = useState('Dashboard');
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
-  const [displayName, setDisplayName] = useState('User');
   const { isOpen: isSupportOpen, onOpen: onSupportOpen, onClose: onSupportClose } = useDisclosure();
   const menuRef = useRef(null);
   
   const navigate = useNavigate();
   const location = useLocation();
   const toast = useToast();
-  const { user, logout, isAuthenticated } = useAuth();
+  const { user, logout, isAuthenticated, isLoading } = useAuth();
 
   // Use Chakra's breakpoint hook
   const isMobile = useBreakpointValue({ base: true, md: false });
 
-  useEffect(() => {
-    if (user) {
-      if (user.username) {
-        setDisplayName(user.username);
-      } else if (user.full_name || user.fullName) {
-        setDisplayName(user.full_name || user.fullName);
-      } else if (user.email) {
-        const emailName = user.email.split('@')[0];
-        setDisplayName(emailName);
-      }
+  // Compute display name directly from user data
+  const displayName = React.useMemo(() => {
+    if (!user) return '';
+    
+    if (user.username) {
+      return user.username;
+    } else if (user.full_name || user.fullName) {
+      return user.full_name || user.fullName;
+    } else if (user.email) {
+      return user.email.split('@')[0];
     }
-  }, [user, user?.username, user?.full_name, user?.fullName, user?.email, user?.profile_picture]);
+    
+    return '';
+  }, [user]);
+
+  // Compute profile picture URL directly
+  const profilePictureUrl = React.useMemo(() => {
+    if (!user) return '';
+    return user.profile_picture || user.profilePicture || '';
+  }, [user]);
+
+  // Check if user has admin access (only app_role)
+  const hasAdminAccess = React.useMemo(() => {
+    return user && user.app_role === 'admin';
+  }, [user]);
 
   // Check if user has admin access (only app_role)
   const hasAdminAccess = React.useMemo(() => {
@@ -382,7 +394,7 @@ const Menu = ({ onSelectItem }) => {
                     <Flex align="center">
                       <Avatar
                         size="sm"
-                        src={user?.profile_picture || user?.profilePicture}
+                        src={profilePictureUrl}
                         name={displayName}
                         bg="rgba(0, 198, 224, 0.15)"
                         color="white"

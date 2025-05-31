@@ -1,11 +1,12 @@
 // src/components/pages/Builder/components/StrategyCard.js
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
   Box,
   Flex,
   Text,
   IconButton,
   Input,
+  Textarea,
   useOutsideClick,
   Menu,
   MenuButton,
@@ -31,41 +32,71 @@ const StrategyCard = ({
   gridSize = 25,
   canvasRef
 }) => {
+  // ALL HOOKS MUST BE CALLED FIRST, BEFORE ANY CONDITIONAL LOGIC
   const { updateComponent, deleteComponent, selectComponent } = useStrategyBuilder();
   const [isEditing, setIsEditing] = useState(false);
-  const [title, setTitle] = useState(component.title);
+  const [title, setTitle] = useState(component?.title || '');
   const [isDragging, setIsDragging] = useState(false);
+  const [isEditingConfig, setIsEditingConfig] = useState(false);
+  const [configText, setConfigText] = useState(component?.configuration || '');
   
   // Card dimensions
   const CARD_WIDTH = 280;
   const CARD_HEIGHT = 180;
   
   const inputRef = useRef(null);
-  const cardRef = useRef(null);
-  
-  // Refs for position tracking
-  const positionX = useRef(component.position?.x || 0);
-  const positionY = useRef(component.position?.y || 0);
-  
-  // Additional refs for improved drag handling
-  const isDraggingRef = useRef(false);
-  const lastKnownPositionRef = useRef({ x: 0, y: 0 });
-  const canvasScrollPositionRef = useRef({ x: 0, y: 0 });
-  const initialMousePositionRef = useRef({ x: 0, y: 0 });
-  const cardPositionBeforeDragRef = useRef({ x: 0, y: 0 });
-  const animationFrameRef = useRef(null);
-  
-  // Update position refs when component position changes from outside
+  const configRef = useRef(null);
+
+  // Function to snap position to grid
+  const snapToGrid = useCallback((value) => {
+    return Math.round(value / gridSize) * gridSize;
+  }, [gridSize]);
+
+  // Update title when component title changes
   useEffect(() => {
-    if (component.position && !isDragging) {
-      positionX.current = component.position.x;
-      positionY.current = component.position.y;
-      lastKnownPositionRef.current = { 
-        x: component.position.x, 
-        y: component.position.y 
-      };
+    if (component?.title) {
+      setTitle(component.title);
     }
-  }, [component.position, isDragging]);
+  }, [component?.title]);
+
+  // Update config text when component configuration changes
+  useEffect(() => {
+    if (component?.configuration !== undefined) {
+      setConfigText(component.configuration);
+    }
+  }, [component?.configuration]);
+
+  // Save edited title
+  const handleSaveTitle = useCallback(() => {
+    if (component && title.trim() !== component.title) {
+      updateComponent(component.id, { title: title.trim() });
+    }
+    setIsEditing(false);
+  }, [component, title, updateComponent]);
+
+  // Cancel title editing
+  const handleCancelEdit = useCallback(() => {
+    if (component) {
+      setTitle(component.title);
+    }
+    setIsEditing(false);
+  }, [component]);
+
+  // Save edited configuration
+  const handleSaveConfig = useCallback(() => {
+    if (component && configText !== component.configuration) {
+      updateComponent(component.id, { configuration: configText });
+    }
+    setIsEditingConfig(false);
+  }, [component, configText, updateComponent]);
+
+  // Cancel configuration editing
+  const handleCancelConfigEdit = useCallback(() => {
+    if (component) {
+      setConfigText(component.configuration || '');
+    }
+    setIsEditingConfig(false);
+  }, [component]);
 
   // Handle outside clicks when editing title
   useOutsideClick({
@@ -77,10 +108,87 @@ const StrategyCard = ({
     },
   });
 
+  // Handle outside clicks when editing config
+  useOutsideClick({
+    ref: configRef,
+    handler: () => {
+      if (isEditingConfig) {
+        handleSaveConfig();
+      }
+    },
+  });
+
+  // Handle drag start
+  const handleDragStart = useCallback(() => {
+    if (isEditing || isEditingConfig) return;
+    setIsDragging(true);
+  }, [isEditing, isEditingConfig]);
+
+  // Handle drag end with grid snapping
+  const handleDragEnd = useCallback((event, info) => {
+    if (!component) return;
+    
+    setIsDragging(false);
+    
+    // Get current position from the drag
+    const currentX = component.position?.x || 0;
+    const currentY = component.position?.y || 0;
+    
+    // Calculate new position based on drag offset
+    const newX = currentX + info.offset.x;
+    const newY = currentY + info.offset.y;
+    
+    // Snap to grid
+    const snappedX = snapToGrid(newX);
+    const snappedY = snapToGrid(newY);
+    
+    // Ensure position doesn't go negative
+    const finalX = Math.max(0, snappedX);
+    const finalY = Math.max(0, snappedY);
+    
+    // Update component position
+    if (onDragEnd) {
+      onDragEnd(component.id, { x: finalX, y: finalY });
+    }
+  }, [component, snapToGrid, onDragEnd]);
+
+  // NOW we can do safety checks AFTER all hooks have been called
+  if (!component || !component.id || !component.title) {
+    console.error('StrategyCard: component prop is missing or invalid:', component);
+    return null;
+  }
+
   // Handle card click
   const handleCardClick = () => {
-    if (!isEditing && !isDragging) {
+    if (!isEditing && !isEditingConfig && !isDragging) {
       selectComponent(component.id);
+    }
+  };
+
+  // Start editing configuration
+  const handleEditConfig = (e) => {
+    e.stopPropagation();
+    setIsEditingConfig(true);
+    setTimeout(() => {
+      if (configRef.current) {
+        configRef.current.focus();
+      }
+    }, 50);
+  };
+
+  // Handle config text change
+  const handleConfigChange = (e) => {
+    setConfigText(e.target.value);
+  };
+
+  // Handle config keydown
+  const handleConfigKeyDown = (e) => {
+    if (e.key === 'Escape') {
+      handleCancelConfigEdit();
+    }
+    // Allow Ctrl+Enter or Cmd+Enter to save
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+      handleSaveConfig();
     }
   };
 
@@ -94,20 +202,6 @@ const StrategyCard = ({
         inputRef.current.select();
       }
     }, 50);
-  };
-
-  // Save edited title
-  const handleSaveTitle = () => {
-    if (title.trim() !== component.title) {
-      updateComponent(component.id, { title: title.trim() });
-    }
-    setIsEditing(false);
-  };
-
-  // Cancel title editing
-  const handleCancelEdit = () => {
-    setTitle(component.title);
-    setIsEditing(false);
   };
 
   // Handle title input change
@@ -129,180 +223,6 @@ const StrategyCard = ({
     e.stopPropagation();
     deleteComponent(component.id);
   };
-
-  // Function to snap position to grid
-  const snapToGrid = (value) => {
-    return Math.round(value / gridSize) * gridSize;
-  };
-
-  // Improved drag start with better position handling
-  const startDrag = (event) => {
-    if (isEditing) return;
-    
-    // Cancel any ongoing animation frame
-    if (animationFrameRef.current) {
-      cancelAnimationFrame(animationFrameRef.current);
-      animationFrameRef.current = null;
-    }
-    
-    // Store the canvas scroll position
-    if (canvasRef && canvasRef.current && canvasRef.current.parentElement) {
-      canvasScrollPositionRef.current = {
-        x: canvasRef.current.parentElement.scrollLeft,
-        y: canvasRef.current.parentElement.scrollTop
-      };
-    }
-    
-    // Store the current component position
-    const currentX = component.position?.x || 0;
-    const currentY = component.position?.y || 0;
-    cardPositionBeforeDragRef.current = { x: currentX, y: currentY };
-    lastKnownPositionRef.current = { x: currentX, y: currentY };
-    
-    // Store the exact mouse position in client coordinates
-    initialMousePositionRef.current = {
-      x: event.clientX,
-      y: event.clientY
-    };
-    
-    // Set drag state
-    isDraggingRef.current = true;
-    setIsDragging(true);
-  };
-
-  // Handle drag event 
-  const handleDrag = (event, info) => {
-    if (!isDraggingRef.current) return;
-    
-    // Get mouse position delta from initial click
-    const deltaX = event.clientX - initialMousePositionRef.current.x;
-    const deltaY = event.clientY - initialMousePositionRef.current.y;
-    
-    // Add delta to original card position, accounting for zoom level
-    const newX = cardPositionBeforeDragRef.current.x + (deltaX / zoomLevel);
-    const newY = cardPositionBeforeDragRef.current.y + (deltaY / zoomLevel);
-    
-    // Apply grid snapping
-    const snappedX = snapToGrid(newX);
-    const snappedY = snapToGrid(newY);
-    
-    // Make sure we're not skipping grid points during fast movement
-    const currentX = positionX.current;
-    const currentY = positionY.current;
-    
-    // Calculate differences to determine movement direction and distance
-    const xDiff = snappedX - currentX;
-    const yDiff = snappedY - currentY;
-    
-    // Only move one grid point at a time for smooth path following
-    let targetX = currentX;
-    let targetY = currentY;
-    
-    // Determine next x position based on direction and distance
-    if (Math.abs(xDiff) >= gridSize) {
-      targetX = currentX + Math.sign(xDiff) * gridSize;
-    } else {
-      targetX = snappedX;
-    }
-    
-    // Determine next y position based on direction and distance
-    if (Math.abs(yDiff) >= gridSize) {
-      targetY = currentY + Math.sign(yDiff) * gridSize;
-    } else {
-      targetY = snappedY;
-    }
-    
-    // Only update if there's actual movement
-    if (targetX !== currentX || targetY !== currentY) {
-      // Update card position
-      positionX.current = targetX;
-      positionY.current = targetY;
-      
-      // Update DOM directly to ensure smooth visual movement
-      if (cardRef.current) {
-        cardRef.current.style.transform = `translate3d(${targetX}px, ${targetY}px, 0)`;
-      }
-      
-      // Update last known position
-      lastKnownPositionRef.current = { x: targetX, y: targetY };
-      
-      // Call parent's drag handler
-      if (onDrag) {
-        onDrag(component.id, { x: targetX, y: targetY });
-      }
-      
-      // If we still need to move more to reach the snapped position,
-      // schedule another update on the next animation frame for smoother motion
-      if ((Math.abs(snappedX - targetX) >= gridSize || Math.abs(snappedY - targetY) >= gridSize) && 
-          (Math.abs(deltaX) > gridSize || Math.abs(deltaY) > gridSize)) {
-        
-        // Cancel any existing animation frame
-        if (animationFrameRef.current) {
-          cancelAnimationFrame(animationFrameRef.current);
-        }
-        
-        // Schedule next movement step
-        animationFrameRef.current = requestAnimationFrame(() => {
-          handleDrag(event, info);
-        });
-      }
-    }
-  };
-
-  // Handle drag end
-  const handleDragEnd = (event) => {
-    // Cancel any ongoing animation frame
-    if (animationFrameRef.current) {
-      cancelAnimationFrame(animationFrameRef.current);
-      animationFrameRef.current = null;
-    }
-    
-    isDraggingRef.current = false;
-    setIsDragging(false);
-    
-    // Get final position
-    const finalX = lastKnownPositionRef.current.x;
-    const finalY = lastKnownPositionRef.current.y;
-    
-    if (onDragEnd) {
-      onDragEnd(component.id, { x: finalX, y: finalY });
-    }
-  };
-
-  // Clean up effect
-  useEffect(() => {
-    return () => {
-      isDraggingRef.current = false;
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
-      }
-    };
-  }, []);
-
-  // Set up mouse move and mouse up event listeners for manual drag handling
-  useEffect(() => {
-    const handleMouseMove = (e) => {
-      if (isDraggingRef.current) {
-        handleDrag(e, null);
-      }
-    };
-    
-    const handleMouseUp = (e) => {
-      if (isDraggingRef.current) {
-        handleDragEnd(e);
-      }
-    };
-    
-    // Add event listeners
-    document.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('mouseup', handleMouseUp);
-    
-    // Clean up
-    return () => {
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
-    };
-  }, []);
 
   // Get component type display name
   const getTypeDisplayName = () => {
@@ -340,12 +260,18 @@ const StrategyCard = ({
   );
 
   return (
-    <Box
-      ref={cardRef}
+    <MotionBox
+      drag={!isEditing && !isEditingConfig}
+      dragMomentum={false}
+      dragElastic={0}
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
       initial={{ opacity: 0, scale: 0.9 }}
       animate={{ 
         opacity: 1, 
-        scale: 1
+        scale: 1,
+        x: component.position?.x || 0,
+        y: component.position?.y || 0
       }}
       exit={{ opacity: 0, scale: 0.9 }}
       onClick={handleCardClick}
@@ -359,20 +285,17 @@ const StrategyCard = ({
       backdropFilter="blur(10px)"
       overflow="hidden"
       position="absolute"
-      cursor={isDragging ? "grabbing" : "pointer"}
+      cursor={isDragging ? "grabbing" : "grab"}
       width={`${CARD_WIDTH}px`}
       height={`${CARD_HEIGHT}px`}
       zIndex={isDragging ? 100 : 1}
       transition="all 0.2s"
+      data-strategy-card
       _hover={{
         bg: "rgba(0, 0, 0, 0.5)",
         boxShadow: `0 8px 30px rgba(0, 0, 0, 0.12), 0 0 10px rgba(${typeColor === '#00C6E0' ? '0, 198, 224' : '153, 50, 204'}, 0.3)`,
         borderColor: typeColor
       }}
-      style={{ 
-        transform: `translate3d(${component.position?.x || 0}px, ${component.position?.y || 0}px, 0)`
-      }}
-      onMouseDown={startDrag}
     >
       {/* Drag Handle */}
       <DragHandle />
@@ -464,16 +387,31 @@ const StrategyCard = ({
             aria-label="More options"
           />
           <MenuList
-            bg="rgba(0, 0, 0, 0.8)"
-            borderColor="whiteAlpha.200"
-            boxShadow="lg"
+            bg="rgba(0, 0, 0, 0.95)"
+            backdropFilter="blur(10px)"
+            border="1px solid rgba(255, 255, 255, 0.1)"
+            borderRadius="xl"
+            boxShadow="0 8px 32px rgba(0, 0, 0, 0.4)"
+            py={2}
+            minW="180px"
             onClick={(e) => e.stopPropagation()}
           >
             <MenuItem 
               icon={<Edit size={14} />} 
               onClick={handleEditTitle}
               color="white"
-              _hover={{ bg: "whiteAlpha.100" }}
+              bg="transparent"
+              borderRadius="lg"
+              mx={2}
+              mb={1}
+              _hover={{ 
+                bg: "rgba(255, 255, 255, 0.1)",
+                transform: "translateX(2px)"
+              }}
+              _focus={{
+                bg: "rgba(255, 255, 255, 0.1)"
+              }}
+              transition="all 0.2s"
             >
               Rename
             </MenuItem>
@@ -481,7 +419,19 @@ const StrategyCard = ({
               icon={<Trash2 size={14} />} 
               onClick={handleDelete}
               color="red.300"
-              _hover={{ bg: "red.900" }}
+              bg="transparent"
+              borderRadius="lg"
+              mx={2}
+              _hover={{ 
+                bg: "rgba(239, 68, 68, 0.2)",
+                color: "red.200",
+                transform: "translateX(2px)"
+              }}
+              _focus={{
+                bg: "rgba(239, 68, 68, 0.2)",
+                color: "red.200"
+              }}
+              transition="all 0.2s"
             >
               Delete
             </MenuItem>
@@ -504,27 +454,96 @@ const StrategyCard = ({
         {getTypeDisplayName()}
       </Badge>
 
-      {/* Card Body - Placeholder for future content */}
+      {/* Card Body - Configuration Area */}
       <Box p={4} h="calc(100% - 45px)">
-        <Flex 
-          direction="column" 
-          justify="center" 
-          align="center" 
-          h="full" 
-          opacity={0.6}
-        >
-          <Text fontSize="sm" color="whiteAlpha.700" textAlign="center">
-            Component configuration will appear here
-          </Text>
-          {/* Display grid coordinates if needed for debugging */}
-          {isDragging && (
-            <Text fontSize="xs" color="whiteAlpha.700" mt={2}>
-              Position: {snapToGrid(positionX.current)}, {snapToGrid(positionY.current)}
-            </Text>
-          )}
-        </Flex>
+        {isEditingConfig ? (
+          <Flex direction="column" h="full">
+            <Textarea
+              ref={configRef}
+              value={configText}
+              onChange={handleConfigChange}
+              onKeyDown={handleConfigKeyDown}
+              placeholder={`Enter ${getTypeDisplayName().toLowerCase()} condition...`}
+              bg="rgba(0, 0, 0, 0.6)"
+              border="1px solid"
+              borderColor={typeColor}
+              borderRadius="lg"
+              color="white"
+              fontSize="sm"
+              resize="none"
+              h="full"
+              _focus={{
+                borderColor: typeColor,
+                boxShadow: `0 0 0 1px ${typeColor}`
+              }}
+              _placeholder={{
+                color: "whiteAlpha.500"
+              }}
+              onClick={(e) => e.stopPropagation()}
+            />
+            <Flex mt={2} justify="flex-end" gap={2}>
+              <IconButton
+                icon={<Check size={14} />}
+                size="xs"
+                variant="ghost"
+                colorScheme="green"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleSaveConfig();
+                }}
+                aria-label="Save configuration"
+              />
+              <IconButton
+                icon={<X size={14} />}
+                size="xs"
+                variant="ghost"
+                colorScheme="red"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleCancelConfigEdit();
+                }}
+                aria-label="Cancel edit"
+              />
+            </Flex>
+          </Flex>
+        ) : (
+          <Box 
+            h="full" 
+            cursor="text"
+            onClick={handleEditConfig}
+            p={2}
+            borderRadius="lg"
+            transition="all 0.2s"
+            _hover={{
+              bg: "rgba(255, 255, 255, 0.05)"
+            }}
+          >
+            {configText ? (
+              <Text 
+                fontSize="sm" 
+                color="white" 
+                whiteSpace="pre-wrap"
+                lineHeight="1.4"
+              >
+                {configText}
+              </Text>
+            ) : (
+              <Flex 
+                direction="column" 
+                justify="center" 
+                align="center" 
+                h="full" 
+                opacity={0.6}
+              >
+                <Text fontSize="sm" color="whiteAlpha.700" textAlign="center">
+                  Click to add {getTypeDisplayName().toLowerCase()} condition
+                </Text>
+              </Flex>
+            )}
+          </Box>
+        )}
       </Box>
-    </Box>
+    </MotionBox>
   );
 };
 
