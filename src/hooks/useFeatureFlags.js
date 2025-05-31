@@ -23,6 +23,7 @@ const useFeatureFlags = () => {
    */
   const fetchUserFeatures = useCallback(async () => {
     if (!isAuthenticated || !user) {
+      console.log('[FeatureFlags] User not authenticated or missing, skipping fetch');
       setLoading(false);
       return;
     }
@@ -30,6 +31,9 @@ const useFeatureFlags = () => {
     try {
       setLoading(true);
       setError(null);
+      
+      console.log('[FeatureFlags] Fetching features for user:', user?.email || user?.id);
+      console.log('[FeatureFlags] User app_role:', user?.app_role);
 
       const response = await fetch(`${envConfig.apiBaseUrl}/api/v1/beta/features/me`, {
         method: 'GET',
@@ -39,16 +43,24 @@ const useFeatureFlags = () => {
         },
       });
 
+      console.log('[FeatureFlags] API response status:', response.status);
+
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const errorText = await response.text();
+        console.error('[FeatureFlags] API error response:', errorText);
+        throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
       }
 
       const data = await response.json();
+      console.log('[FeatureFlags] API response data:', data);
+      console.log('[FeatureFlags] Features received:', data.features);
+      console.log('[FeatureFlags] Strategy builder enabled:', data.features?.['strategy-builder']);
+      
       setFeatures(data.features || {});
       setIsBetaTester(data.is_beta_tester || false);
       setFeatureCount(data.feature_count || 0);
     } catch (err) {
-      console.error('Error fetching user features:', err);
+      console.error('[FeatureFlags] Error fetching user features:', err);
       setError(err.message);
       setFeatures({});
     } finally {
@@ -60,7 +72,9 @@ const useFeatureFlags = () => {
    * Check if a specific feature is enabled for the user
    */
   const isFeatureEnabled = useCallback((featureName) => {
-    return Boolean(features[featureName]);
+    const isEnabled = Boolean(features[featureName]);
+    console.log(`[FeatureFlags] Checking feature '${featureName}': ${isEnabled}`, { features });
+    return isEnabled;
   }, [features]);
 
   /**
@@ -249,7 +263,11 @@ const useFeatureFlags = () => {
     hasSocialTrading: isFeatureEnabled('social-trading'),
     hasMobileAppPreview: isFeatureEnabled('mobile-app-preview'),
     hasMemberChat: isFeatureEnabled('member-chat'),
-    hasStrategyBuilder: isFeatureEnabled('strategy-builder'),
+    hasStrategyBuilder: (() => {
+      const enabled = isFeatureEnabled('strategy-builder');
+      console.log('[FeatureFlags] hasStrategyBuilder result:', enabled);
+      return enabled;
+    })(),
   };
 };
 

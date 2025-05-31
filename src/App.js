@@ -3,6 +3,11 @@ import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Box, Spinner } from '@chakra-ui/react';
 import { useAuth } from '@/contexts/AuthContext';
 
+// Import debug utilities (development only)
+if (process.env.NODE_ENV === 'development') {
+  import('./utils/debugFeatureFlags');
+}
+
 // Import components
 import Homepage from './components/pages/Homepage/Homepage';
 

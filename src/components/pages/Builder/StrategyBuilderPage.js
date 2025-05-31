@@ -179,17 +179,7 @@ const StrategyBuilderPage = () => {
   const shouldAllowAccess = user?.app_role === 'admin' || hasStrategyBuilder;
   
   useEffect(() => {
-    console.log('[StrategyBuilder] Feature flags state:', {
-      hasStrategyBuilder,
-      featureFlagsLoading,
-      featureFlagsError,
-      user: user?.email,
-      userAppRole: user?.app_role,
-      shouldAllowAccess
-    });
-    
     if (!featureFlagsLoading && !shouldAllowAccess) {
-      console.log('[StrategyBuilder] Access denied - redirecting to dashboard');
       navigate('/dashboard', { replace: true });
     }
   }, [hasStrategyBuilder, featureFlagsLoading, navigate, user, shouldAllowAccess]);
@@ -222,9 +212,6 @@ const StrategyBuilderPage = () => {
           </Text>
           <Text color="whiteAlpha.500" fontSize="sm">
             Contact support if you believe this is an error.
-          </Text>
-          <Text color="whiteAlpha.500" fontSize="xs">
-            Debug: app_role="{user?.app_role}", hasStrategyBuilder={String(hasStrategyBuilder)}
           </Text>
         </VStack>
       </Flex>
