@@ -34,7 +34,7 @@ const useFeatureFlags = () => {
       const response = await fetch(`${envConfig.apiBaseUrl}/api/v1/beta/features/me`, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
           'Content-Type': 'application/json',
         },
       });
@@ -75,7 +75,7 @@ const useFeatureFlags = () => {
       const response = await fetch(`${envConfig.apiBaseUrl}/api/v1/beta/features/${featureName}/access`, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
           'Content-Type': 'application/json',
         },
       });
@@ -103,7 +103,7 @@ const useFeatureFlags = () => {
       const response = await fetch(`${envConfig.apiBaseUrl}/api/v1/beta/features/categories/${category}`, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
           'Content-Type': 'application/json',
         },
       });
