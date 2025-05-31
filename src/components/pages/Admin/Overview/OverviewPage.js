@@ -47,6 +47,7 @@ import {
   Shield,
   Webhook
 } from 'lucide-react';
+import adminService from '../../../../services/api/admin';
 
 // Quick Action Card Component
 const QuickActionCard = ({ title, description, icon, onClick, colorScheme = "blue", isNew = false }) => {

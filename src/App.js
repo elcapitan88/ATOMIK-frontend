@@ -1,6 +1,6 @@
 import React, { Suspense, useEffect, lazy } from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
-import { Box, Spinner, Text } from '@chakra-ui/react';
+import { Box, Spinner } from '@chakra-ui/react';
 import { useAuth } from '@/contexts/AuthContext';
 
 // Import components
@@ -59,15 +59,6 @@ const LoadingSpinner = () => (
   </Box>
 );
 
-// NEW: Docs Handler Component
-const DocsHandler = () => {
-  useEffect(() => {
-    // Redirect to the Railway app directly
-    window.location.href = "https://atomik-docs-production.up.railway.app" + window.location.pathname;
-  }, []);
-  
-  return <LoadingSpinner />;
-};
 
 // Route guard for authenticated routes
 const WithAuth = React.memo(({ children }) => {
