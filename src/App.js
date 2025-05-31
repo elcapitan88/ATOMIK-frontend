@@ -20,10 +20,10 @@ const ComingSoon = lazy(() => import('./components/common/ComingSoon'));
 
 const AdminDashboard = lazy(() => import('./components/pages/Admin/AdminDashboard').then(module => ({ default: module.default })));
 const OverviewPage = lazy(() => import('./components/pages/Admin/Overview/OverviewPage').then(module => ({ default: module.default })));
-const UsersPage = lazy(() => import('./components/pages/Admin/Users/UsersPage').then(module => ({ default: module.default })));
+const UserManagement = lazy(() => import('./components/pages/Admin/UserManagement/UserManagement'));
+const FeatureFlagsPage = lazy(() => import('./components/pages/Admin/FeatureFlags/FeatureFlagsPage'));
 const WebhooksMonitorPage = lazy(() => import('./components/pages/Admin/Webhooks/WebhooksMonitorPage'));
 const AnalyticsPage = lazy(() => import('./components/pages/Admin/Analytics/AnalyticsPage'));
-const RolesPage = lazy(() => import('./components/pages/Admin/Roles/RolesPage'));
 const AdminSettingsPage = lazy(() => import('./components/pages/Admin/Settings/AdminSettingsPage'));
 
 const RouteTracker = () => {
@@ -308,10 +308,10 @@ function App() {
           }
         >
           <Route index element={<OverviewPage />} />
-          <Route path="users" element={<UsersPage />} />
+          <Route path="users" element={<UserManagement />} />
+          <Route path="feature-flags" element={<FeatureFlagsPage />} />
           <Route path="webhooks" element={<WebhooksMonitorPage />} />
           <Route path="analytics" element={<AnalyticsPage />} />
-          <Route path="roles" element={<RolesPage />} />
           <Route path="settings" element={<AdminSettingsPage />} />
         </Route>
   

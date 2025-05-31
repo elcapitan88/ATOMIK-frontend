@@ -24,6 +24,7 @@ import {
   BarChart2,
   Settings,
   ShieldCheck,
+  TestTube,
   Menu as MenuIcon
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
@@ -64,7 +65,7 @@ const AdminDashboard = () => {
     if (path.includes('/admin/users')) return 'users';
     if (path.includes('/admin/webhooks')) return 'webhooks';
     if (path.includes('/admin/analytics')) return 'analytics';
-    if (path.includes('/admin/roles')) return 'roles';
+    if (path.includes('/admin/feature-flags')) return 'feature-flags';
     if (path.includes('/admin/settings')) return 'settings';
     return 'overview';
   };
@@ -74,10 +75,10 @@ const AdminDashboard = () => {
   // Navigation items
   const navItems = [
     { icon: LayoutDashboard, label: 'Overview', route: 'overview' },
-    { icon: Users, label: 'Users', route: 'users' },
+    { icon: Users, label: 'User Management', route: 'users' },
+    { icon: TestTube, label: 'Feature Flags', route: 'feature-flags' },
     { icon: Webhook, label: 'Webhooks', route: 'webhooks' },
     { icon: BarChart2, label: 'Analytics', route: 'analytics' },
-    { icon: ShieldCheck, label: 'Roles', route: 'roles' },
     { icon: Settings, label: 'Settings', route: 'settings' }
   ];
   

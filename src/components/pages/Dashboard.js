@@ -13,9 +13,12 @@ import {
 } from '@chakra-ui/react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { ChatProvider, useChat } from '@/contexts/ChatContext';
 import axiosInstance from '@/services/axiosConfig';
 import Menu from '../layout/Sidebar/Menu';
 import TradingViewWidget from '../features/trading/TradingViewWidget';
+import MemberChatMenu from '../chat/MemberChatMenu';
+import MemberChatComponent from '../chat/MemberChat';
 import logger from '@/utils/logger';
 
 // Lazy loaded components
@@ -86,7 +89,8 @@ class ErrorBoundary extends React.Component {
     }
 }
 
-const Dashboard = () => {
+const DashboardContent = () => {
+    const chat = useChat();
     // State Management
     const [selectedItem, setSelectedItem] = useState('Dashboard');
     const [isLoading, setIsLoading] = useState(true);
@@ -272,6 +276,7 @@ const Dashboard = () => {
     }
 
     const renderContent = () => {
+        console.log('🔍 Dashboard: Rendering content for selectedItem:', selectedItem);
         switch (selectedItem) {
             case 'Dashboard':
                 return (
@@ -416,6 +421,7 @@ const Dashboard = () => {
                     </ErrorBoundary>
                 );
 
+
             default:
                 return null;
         }
@@ -473,7 +479,46 @@ const Dashboard = () => {
                     </Box>
                 </Box>
             </Box>
+            
+            {/* Chat Components */}
+            <MemberChatMenu
+                isOpen={chat.isOpen}
+                onToggle={chat.toggleChat}
+                unreadCount={chat.getTotalUnreadCount()}
+                channels={chat.channels}
+                onChannelSelect={chat.selectChannel}
+                activeChannelId={chat.activeChannelId}
+            />
+            
+            <MemberChatComponent
+                isOpen={chat.isOpen}
+                onClose={() => chat.toggleChat()}
+                channels={chat.channels}
+                activeChannelId={chat.activeChannelId}
+                onChannelSelect={chat.selectChannel}
+                messages={chat.messages}
+                userRoles={{}} // TODO: Implement role fetching
+                isLoading={chat.isLoading}
+                error={chat.error}
+                onSendMessage={chat.sendMessage}
+                onEditMessage={chat.editMessage}
+                onDeleteMessage={chat.deleteMessage}
+                onAddReaction={chat.addReaction}
+                onRemoveReaction={chat.removeReaction}
+                currentUser={chat.currentUser}
+                chatSettings={chat.settings}
+                onUpdateChatSettings={() => {}} // TODO: Implement settings update
+            />
         </Flex>
+    );
+};
+
+// Main Dashboard component wrapped with ChatProvider
+const Dashboard = () => {
+    return (
+        <ChatProvider>
+            <DashboardContent />
+        </ChatProvider>
     );
 };
 

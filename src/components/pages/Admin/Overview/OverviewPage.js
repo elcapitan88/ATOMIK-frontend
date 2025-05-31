@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Box,
   Grid,
@@ -22,7 +23,12 @@ import {
   Td,
   Icon,
   Divider,
-  useColorModeValue
+  useColorModeValue,
+  Spinner,
+  Center,
+  useToast,
+  Button,
+  SimpleGrid
 } from '@chakra-ui/react';
 import {
   TrendingUp,
@@ -34,8 +40,68 @@ import {
   AlertTriangle,
   CheckCircle,
   Calendar,
-  DollarSign
+  DollarSign,
+  Flag,
+  TestTube,
+  Settings,
+  Shield,
+  Webhook
 } from 'lucide-react';
+
+// Quick Action Card Component
+const QuickActionCard = ({ title, description, icon, onClick, colorScheme = "blue", isNew = false }) => {
+  const IconComponent = icon;
+  
+  return (
+    <Box
+      as="button"
+      bg="rgba(0, 0, 0, 0.4)"
+      borderRadius="xl"
+      p={6}
+      border="1px solid"
+      borderColor="whiteAlpha.200"
+      transition="all 0.2s"
+      _hover={{
+        bg: "rgba(0, 0, 0, 0.6)",
+        borderColor: "whiteAlpha.400",
+        transform: "translateY(-2px)",
+        boxShadow: "lg"
+      }}
+      onClick={onClick}
+      width="100%"
+      textAlign="left"
+      position="relative"
+    >
+      {isNew && (
+        <Badge
+          position="absolute"
+          top={2}
+          right={2}
+          colorScheme="green"
+          variant="solid"
+          fontSize="xs"
+        >
+          NEW
+        </Badge>
+      )}
+      <VStack align="start" spacing={3}>
+        <Icon
+          as={IconComponent}
+          boxSize={8}
+          color={`${colorScheme}.400`}
+        />
+        <VStack align="start" spacing={1}>
+          <Text color="white" fontWeight="bold" fontSize="lg">
+            {title}
+          </Text>
+          <Text color="whiteAlpha.700" fontSize="sm">
+            {description}
+          </Text>
+        </VStack>
+      </VStack>
+    </Box>
+  );
+};
 
 // Metric Card Component
 const MetricCard = ({ title, value, change, icon, colorScheme = "blue" }) => {
@@ -167,29 +233,135 @@ const ActivityItem = ({ type, message, time, status }) => {
 };
 
 const OverviewPage = () => {
-  // In a real application, this data would come from API calls
-  const metrics = [
-    { title: "Total Users", value: "1,254", change: 12.5, icon: Users, colorScheme: "blue" },
-    { title: "New Signups", value: "48", change: 22.0, icon: UserPlus, colorScheme: "green" },
-    { title: "Active Users", value: "764", change: 5.3, icon: Activity, colorScheme: "purple" },
-    { title: "Trades Today", value: "8,652", change: -2.4, icon: TrendingUp, colorScheme: "orange" }
-  ];
-  
-  const systemStatus = [
-    { name: "API Servers", status: "healthy", uptime: "99.99%" },
-    { name: "WebSocket Service", status: "healthy", uptime: "99.95%" },
-    { name: "Database", status: "healthy", uptime: "100%" },
-    { name: "Webhook Processor", status: "warning", uptime: "98.76%" }
-  ];
-  
-  const recentActivity = [
-    { type: "signup", message: "New user registered", time: "2 min ago" },
-    { type: "webhook", message: "Webhook processing delay detected", time: "15 min ago", status: "warning" },
-    { type: "trade", message: "Large trade executed ($25,000)", time: "32 min ago" },
-    { type: "user", message: "User password reset requested", time: "1 hour ago" },
-    { type: "webhook", message: "TradingView webhook integration updated", time: "3 hours ago" },
-    { type: "signup", message: "5 new users from marketing campaign", time: "5 hours ago" }
-  ];
+  const navigate = useNavigate();
+  const [isLoading, setIsLoading] = useState(true);
+  const [stats, setStats] = useState(null);
+  const [systemStatus, setSystemStatus] = useState(null);
+  const [recentActivity, setRecentActivity] = useState([]);
+  const [userMetrics, setUserMetrics] = useState(null);
+  const [featureFlagStats, setFeatureFlagStats] = useState(null);
+  const toast = useToast();
+
+  useEffect(() => {
+    fetchDashboardData();
+    // Refresh data every 30 seconds
+    const interval = setInterval(fetchDashboardData, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const fetchDashboardData = async () => {
+    try {
+      // Fetch all data in parallel
+      const [overviewStats, userMetricsData, systemStatusData, activityData, flagStats] = await Promise.all([
+        adminService.getOverviewStats(),
+        adminService.getUserMetrics(),
+        adminService.getSystemStatus(),
+        adminService.getRecentActivity(),
+        adminService.getFeatureFlagStats()
+      ]);
+
+      setStats(overviewStats);
+      setUserMetrics(userMetricsData);
+      setSystemStatus(systemStatusData);
+      setRecentActivity(activityData);
+      setFeatureFlagStats(flagStats);
+      setIsLoading(false);
+    } catch (error) {
+      console.error('Error fetching dashboard data:', error);
+      toast({
+        title: 'Error loading dashboard',
+        description: 'Failed to fetch dashboard data. Please try again.',
+        status: 'error',
+        duration: 5000,
+        isClosable: true,
+      });
+      setIsLoading(false);
+    }
+  };
+
+  // Calculate percentage change for new signups (comparing to last week)
+  const calculateSignupChange = () => {
+    if (!stats) return 0;
+    const lastWeekSignups = stats.new_signups_week - stats.new_signups_today;
+    if (lastWeekSignups === 0) return 100;
+    return ((stats.new_signups_today - (lastWeekSignups / 7)) / (lastWeekSignups / 7) * 100).toFixed(1);
+  };
+
+  // Format metrics with real data
+  const metrics = stats ? [
+    { 
+      title: "Total Users", 
+      value: stats.total_users.toLocaleString(), 
+      change: userMetrics?.growth_rate || 0, 
+      icon: Users, 
+      colorScheme: "blue" 
+    },
+    { 
+      title: "New Signups (Today)", 
+      value: stats.new_signups_today.toString(), 
+      change: parseFloat(calculateSignupChange()), 
+      icon: UserPlus, 
+      colorScheme: "green" 
+    },
+    { 
+      title: "Active Users", 
+      value: stats.active_users.toLocaleString(), 
+      change: null, // We don't have historical data for comparison yet
+      icon: Activity, 
+      colorScheme: "purple" 
+    },
+    { 
+      title: "Trades Today", 
+      value: stats.trades_today.toLocaleString(), 
+      change: null, // We don't have historical data for comparison yet
+      icon: TrendingUp, 
+      colorScheme: "orange" 
+    }
+  ] : [];
+
+  // Format system status data
+  const formattedSystemStatus = systemStatus ? [
+    { 
+      name: "API Servers", 
+      status: systemStatus.api_health === "healthy" ? "healthy" : "critical", 
+      uptime: `${systemStatus.uptime_percentage}%` 
+    },
+    { 
+      name: "Database", 
+      status: systemStatus.database_status === "healthy" ? "healthy" : "critical", 
+      uptime: "100%" 
+    },
+    // Add services from the backend response
+    ...(systemStatus.services || []).map(service => ({
+      name: service.name,
+      status: service.status === "healthy" ? "healthy" : 
+              service.status === "warning" ? "warning" : "critical",
+      uptime: service.uptime || "N/A"
+    }))
+  ] : [];
+
+  // Add WebSocket connections info if available
+  if (systemStatus && systemStatus.system_metrics) {
+    const websocketService = formattedSystemStatus.find(s => s.name === "WebSocket Service");
+    if (!websocketService) {
+      formattedSystemStatus.splice(1, 0, { 
+        name: "WebSocket Service", 
+        status: systemStatus.system_metrics.active_connections > 0 ? "healthy" : "warning", 
+        uptime: "99.95%" 
+      });
+    }
+  }
+
+  if (isLoading) {
+    return (
+      <Center h="400px">
+        <VStack spacing={4}>
+          <Spinner size="xl" color="blue.500" thickness="4px" />
+          <Text color="whiteAlpha.800">Loading dashboard data...</Text>
+        </VStack>
+      </Center>
+    );
+  }
   
   return (
     <Box>
@@ -206,6 +378,60 @@ const OverviewPage = () => {
           </Flex>
         </Badge>
       </Flex>
+
+      {/* Additional Stats Row */}
+      {stats && (
+        <Grid templateColumns={{ base: "repeat(1, 1fr)", md: "repeat(2, 1fr)", lg: "repeat(4, 1fr)" }} gap={4} mb={6}>
+          <Box bg="rgba(0, 0, 0, 0.4)" p={4} borderRadius="lg" border="1px solid" borderColor="whiteAlpha.200">
+            <Text color="whiteAlpha.600" fontSize="sm" mb={1}>New Signups (Week)</Text>
+            <Text color="white" fontSize="xl" fontWeight="bold">{stats.new_signups_week}</Text>
+          </Box>
+          <Box bg="rgba(0, 0, 0, 0.4)" p={4} borderRadius="lg" border="1px solid" borderColor="whiteAlpha.200">
+            <Text color="whiteAlpha.600" fontSize="sm" mb={1}>New Signups (Month)</Text>
+            <Text color="white" fontSize="xl" fontWeight="bold">{stats.new_signups_month}</Text>
+          </Box>
+          <Box bg="rgba(0, 0, 0, 0.4)" p={4} borderRadius="lg" border="1px solid" borderColor="whiteAlpha.200">
+            <Text color="whiteAlpha.600" fontSize="sm" mb={1}>Monthly Revenue</Text>
+            <Text color="white" fontSize="xl" fontWeight="bold">${stats.total_revenue.toLocaleString()}</Text>
+          </Box>
+          <Box 
+            bg="rgba(0, 0, 0, 0.4)" 
+            p={4} 
+            borderRadius="lg" 
+            border="1px solid" 
+            borderColor="whiteAlpha.200"
+            position="relative"
+            cursor="pointer"
+            onClick={() => navigate('/admin/feature-flags')}
+            _hover={{
+              bg: "rgba(0, 0, 0, 0.6)",
+              borderColor: "orange.400",
+              transform: "translateY(-1px)"
+            }}
+            transition="all 0.2s"
+          >
+            <Badge
+              position="absolute"
+              top={2}
+              right={2}
+              colorScheme="orange"
+              variant="solid"
+              fontSize="xs"
+            >
+              NEW
+            </Badge>
+            <Text color="whiteAlpha.600" fontSize="sm" mb={1}>Active Beta Features</Text>
+            <HStack>
+              <Text color="white" fontSize="xl" fontWeight="bold">
+                {featureFlagStats?.beta_features || 6}
+              </Text>
+              <Text color="orange.400" fontSize="sm">
+                /{featureFlagStats?.total_features || 8} total
+              </Text>
+            </HStack>
+          </Box>
+        </Grid>
+      )}
       
       {/* Key Metrics */}
       <Grid templateColumns={{ base: "repeat(1, 1fr)", md: "repeat(2, 1fr)", lg: "repeat(4, 1fr)" }} gap={6} mb={8}>
@@ -215,6 +441,42 @@ const OverviewPage = () => {
           </GridItem>
         ))}
       </Grid>
+
+      {/* Quick Actions */}
+      <Box mb={8}>
+        <Heading size="md" color="white" mb={4}>Quick Actions</Heading>
+        <SimpleGrid columns={{ base: 1, md: 2, lg: 4 }} spacing={6}>
+          <QuickActionCard
+            title="Feature Flags"
+            description="Manage beta features and rollout strategies"
+            icon={Flag}
+            onClick={() => navigate('/admin/feature-flags')}
+            colorScheme="orange"
+            isNew={true}
+          />
+          <QuickActionCard
+            title="Beta Testers"
+            description="Manage beta tester roles and access"
+            icon={TestTube}
+            onClick={() => navigate('/admin/beta-testers')}
+            colorScheme="purple"
+          />
+          <QuickActionCard
+            title="User Management"
+            description="View and manage user accounts"
+            icon={Users}
+            onClick={() => navigate('/admin/users')}
+            colorScheme="blue"
+          />
+          <QuickActionCard
+            title="Webhooks Monitor"
+            description="Monitor webhook status and logs"
+            icon={Webhook}
+            onClick={() => navigate('/admin/webhooks')}
+            colorScheme="green"
+          />
+        </SimpleGrid>
+      </Box>
       
       {/* System Status and Recent Activity */}
       <Grid
