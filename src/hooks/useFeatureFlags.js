@@ -129,7 +129,8 @@ const useFeatureFlags = () => {
       'Advanced Analytics': ['advanced-analytics', 'ai-insights'],
       'Trading Features': ['experimental-trading'],
       'App Features': ['ai-insights', 'mobile-app-preview', 'social-trading'],
-      'Integrations': ['broker-integration-v2']
+      'Integrations': ['broker-integration-v2'],
+      'Communication': ['member-chat']
     };
 
     const categoryFeatureNames = featureCategories[category] || [];
@@ -152,7 +153,8 @@ const useFeatureFlags = () => {
       'Advanced Analytics': [],
       'Trading Features': [],
       'App Features': [],
-      'Integrations': []
+      'Integrations': [],
+      'Communication': []
     };
 
     Object.keys(categories).forEach(category => {
@@ -246,6 +248,7 @@ const useFeatureFlags = () => {
     hasBrokerIntegrationV2: isFeatureEnabled('broker-integration-v2'),
     hasSocialTrading: isFeatureEnabled('social-trading'),
     hasMobileAppPreview: isFeatureEnabled('mobile-app-preview'),
+    hasMemberChat: isFeatureEnabled('member-chat'),
   };
 };
 

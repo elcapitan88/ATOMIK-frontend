@@ -15,6 +15,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { ChatProvider, useChat } from '@/contexts/ChatContext';
 import axiosInstance from '@/services/axiosConfig';
+import useFeatureFlags from '@/hooks/useFeatureFlags';
 import Menu from '../layout/Sidebar/Menu';
 import TradingViewWidget from '../features/trading/TradingViewWidget';
 import MemberChatMenu from '../chat/MemberChatMenu';
@@ -113,6 +114,7 @@ const DashboardContent = () => {
     const navigate = useNavigate();
     const { isAuthenticated } = useAuth();
     const toast = useToast();
+    const { hasMemberChat } = useFeatureFlags();
     
     // Responsive breakpoints
     const isMobile = useBreakpointValue({ base: true, md: false });
@@ -480,35 +482,39 @@ const DashboardContent = () => {
                 </Box>
             </Box>
             
-            {/* Chat Components */}
-            <MemberChatMenu
-                isOpen={chat.isOpen}
-                onToggle={chat.toggleChat}
-                unreadCount={chat.getTotalUnreadCount()}
-                channels={chat.channels}
-                onChannelSelect={chat.selectChannel}
-                activeChannelId={chat.activeChannelId}
-            />
-            
-            <MemberChatComponent
-                isOpen={chat.isOpen}
-                onClose={() => chat.toggleChat()}
-                channels={chat.channels}
-                activeChannelId={chat.activeChannelId}
-                onChannelSelect={chat.selectChannel}
-                messages={chat.messages}
-                userRoles={{}} // TODO: Implement role fetching
-                isLoading={chat.isLoading}
-                error={chat.error}
-                onSendMessage={chat.sendMessage}
-                onEditMessage={chat.editMessage}
-                onDeleteMessage={chat.deleteMessage}
-                onAddReaction={chat.addReaction}
-                onRemoveReaction={chat.removeReaction}
-                currentUser={chat.currentUser}
-                chatSettings={chat.settings}
-                onUpdateChatSettings={() => {}} // TODO: Implement settings update
-            />
+            {/* Chat Components - Feature Gated */}
+            {hasMemberChat && (
+                <>
+                    <MemberChatMenu
+                        isOpen={chat.isOpen}
+                        onToggle={chat.toggleChat}
+                        unreadCount={chat.getTotalUnreadCount()}
+                        channels={chat.channels}
+                        onChannelSelect={chat.selectChannel}
+                        activeChannelId={chat.activeChannelId}
+                    />
+                    
+                    <MemberChatComponent
+                        isOpen={chat.isOpen}
+                        onClose={() => chat.toggleChat()}
+                        channels={chat.channels}
+                        activeChannelId={chat.activeChannelId}
+                        onChannelSelect={chat.selectChannel}
+                        messages={chat.messages}
+                        userRoles={{}} // TODO: Implement role fetching
+                        isLoading={chat.isLoading}
+                        error={chat.error}
+                        onSendMessage={chat.sendMessage}
+                        onEditMessage={chat.editMessage}
+                        onDeleteMessage={chat.deleteMessage}
+                        onAddReaction={chat.addReaction}
+                        onRemoveReaction={chat.removeReaction}
+                        currentUser={chat.currentUser}
+                        chatSettings={chat.settings}
+                        onUpdateChatSettings={() => {}} // TODO: Implement settings update
+                    />
+                </>
+            )}
         </Flex>
     );
 };
