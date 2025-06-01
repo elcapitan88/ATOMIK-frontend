@@ -256,13 +256,34 @@ const LiveTradesView = () => {
     );
   }
 
-  // Empty state - no connected accounts
+  // Empty state - show coming soon instead of no connected accounts
   if (connectedAccounts.length === 0) {
     return (
       <Flex justify="center" align="center" height="100%" width="100%">
-        <VStack spacing={2}>
-          <AlertTriangle size={24} color="white" opacity={0.6} />
-          <Text color="whiteAlpha.600">No active trading accounts connected</Text>
+        <VStack spacing={4} textAlign="center" px={6}>
+          <Box
+            w="60px"
+            h="60px"
+            borderRadius="full"
+            bg="linear-gradient(135deg, rgba(0, 198, 224, 0.1), rgba(153, 50, 204, 0.1))"
+            border="2px solid"
+            borderColor="rgba(0, 198, 224, 0.3)"
+            display="flex"
+            alignItems="center"
+            justifyContent="center"
+            animation="pulse 2s infinite"
+          >
+            <Activity size={28} color="#00C6E0" />
+          </Box>
+          <VStack spacing={2}>
+            <Text color="white" fontSize="lg" fontWeight="bold">
+              Live Trading View Coming Soon!
+            </Text>
+            <Text color="whiteAlpha.700" fontSize="sm" maxW="300px">
+              We're building an amazing real-time trading experience with live positions, 
+              market data, and advanced analytics. Stay tuned!
+            </Text>
+          </VStack>
         </VStack>
       </Flex>
     );
@@ -427,8 +448,30 @@ const LiveTradesView = () => {
           {!throttledPositions || throttledPositions.length === 0 ? (
             <Tr>
               <Td colSpan={10}>
-                <Flex justify="center" align="center" py={4}>
-                  <Text color="whiteAlpha.600">No open positions</Text>
+                <Flex justify="center" align="center" py={8}>
+                  <VStack spacing={3}>
+                    <Box
+                      w="40px"
+                      h="40px"
+                      borderRadius="full"
+                      bg="rgba(0, 198, 224, 0.1)"
+                      border="1px solid"
+                      borderColor="rgba(0, 198, 224, 0.3)"
+                      display="flex"
+                      alignItems="center"
+                      justifyContent="center"
+                    >
+                      <Activity size={20} color="#00C6E0" />
+                    </Box>
+                    <VStack spacing={1}>
+                      <Text color="white" fontSize="md" fontWeight="semibold">
+                        Real-Time Positions Coming Soon!
+                      </Text>
+                      <Text color="whiteAlpha.600" fontSize="sm" textAlign="center">
+                        Live position tracking with real-time P&L updates
+                      </Text>
+                    </VStack>
+                  </VStack>
                 </Flex>
               </Td>
             </Tr>

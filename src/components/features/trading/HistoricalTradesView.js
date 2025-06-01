@@ -418,8 +418,32 @@ const HistoricalTradesView = () => {
               {sortedTrades.length === 0 ? (
                 <Tr>
                   <Td colSpan={10} borderColor="transparent">
-                    <Flex justify="center" align="center" py={4}>
-                      <Text color="rgba(255, 255, 255, 0.6)">No historical trades match your filters</Text>
+                    <Flex justify="center" align="center" py={8}>
+                      <VStack spacing={4} textAlign="center">
+                        <Box
+                          w="50px"
+                          h="50px"
+                          borderRadius="full"
+                          bg="linear-gradient(135deg, rgba(0, 198, 224, 0.1), rgba(153, 50, 204, 0.1))"
+                          border="2px solid"
+                          borderColor="rgba(0, 198, 224, 0.3)"
+                          display="flex"
+                          alignItems="center"
+                          justifyContent="center"
+                          animation="pulse 2s infinite"
+                        >
+                          <FileText size={24} color="#00C6E0" />
+                        </Box>
+                        <VStack spacing={2}>
+                          <Text color="white" fontSize="lg" fontWeight="bold">
+                            Trade History Coming Soon!
+                          </Text>
+                          <Text color="rgba(255, 255, 255, 0.7)" fontSize="sm" maxW="280px">
+                            Comprehensive trade analytics, detailed performance reports, 
+                            and advanced filtering options are on the way!
+                          </Text>
+                        </VStack>
+                      </VStack>
                     </Flex>
                   </Td>
                 </Tr>
