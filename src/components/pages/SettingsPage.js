@@ -59,9 +59,11 @@ import {
   Zap,
   Shield,
   FileText,
-  RefreshCw
+  RefreshCw,
+  ArrowLeft
 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import axiosInstance from '@/services/axiosConfig';
 import { ProfilePicture } from '@/components/common/ProfilePicture';
@@ -454,6 +456,7 @@ const PasswordChangeModal = ({ isOpen, onClose }) => {
 const SettingsPage = () => {
   // Update this line to include updateUserProfile
   const { user, updateUserProfile } = useAuth();
+  const navigate = useNavigate();
   const [selectedSection, setSelectedSection] = useState('profile');
   const [isLoadingStripePortal, setIsLoadingStripePortal] = useState(false);
   const [personalName, setPersonalName] = useState('');
@@ -485,6 +488,11 @@ const SettingsPage = () => {
     { id: 'profile', label: 'Profile', icon: User },
     { id: 'billing', label: 'Billing', icon: CreditCard }
   ];
+
+  // Handle back navigation
+  const handleGoBack = () => {
+    navigate(-1);
+  };
 
   // Function to open Stripe Customer Portal in new tab
   const openStripePortal = async () => {
@@ -1282,19 +1290,42 @@ const SettingsPage = () => {
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.3, delay: 0.1 }}
           >
-            <DarkCard w={{ base: "full", md: "64" }}>
-              <VStack spacing={0} align="stretch">
-                {menuItems.map(item => (
-                  <MenuItem
-                    key={item.id}
-                    icon={item.icon}
-                    label={item.label}
-                    isSelected={selectedSection === item.id}
-                    onClick={() => setSelectedSection(item.id)}
-                  />
-                ))}
-              </VStack>
-            </DarkCard>
+            <VStack spacing={4} align="stretch">
+              {/* Back Button */}
+              <Tooltip label="Go back" placement="right">
+                <IconButton
+                  aria-label="Go back"
+                  icon={<ArrowLeft size={20} />}
+                  variant="ghost"
+                  color="whiteAlpha.700"
+                  size="md"
+                  w="fit-content"
+                  _hover={{ 
+                    color: "#00C6E0",
+                    bg: "rgba(0, 198, 224, 0.1)"
+                  }}
+                  _active={{
+                    bg: "rgba(0, 198, 224, 0.2)"
+                  }}
+                  onClick={handleGoBack}
+                />
+              </Tooltip>
+              
+              {/* Settings Menu */}
+              <DarkCard w={{ base: "full", md: "64" }}>
+                <VStack spacing={0} align="stretch">
+                  {menuItems.map(item => (
+                    <MenuItem
+                      key={item.id}
+                      icon={item.icon}
+                      label={item.label}
+                      isSelected={selectedSection === item.id}
+                      onClick={() => setSelectedSection(item.id)}
+                    />
+                  ))}
+                </VStack>
+              </DarkCard>
+            </VStack>
           </MotionBox>
 
           {/* Main Content */}
