@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useWebSocketContext } from '../contexts/WebSocketContext';
 import { ConnectionState } from '../WebSocketManager';
 import logger from '@/utils/logger';
+import { envConfig } from '../../../config/environment';
 
 /**
  * Hook for managing a WebSocket connection to a broker account
@@ -72,7 +73,9 @@ export const useWebSocketConnection = (brokerId, accountId, options = {}) => {
     
     try {
       setConnecting(true);
-      logger.info(`Connecting to ${brokerId}:${accountId}`);
+      if (envConfig.debugConfig.websocket.enabled) {
+        logger.info(`Connecting to ${brokerId}:${accountId}`);
+      }
       
       const result = await contextConnect(brokerId, accountId);
       return result;
@@ -89,7 +92,9 @@ export const useWebSocketConnection = (brokerId, accountId, options = {}) => {
   const disconnect = useCallback(() => {
     if (!brokerId || !accountId) return;
     
-    logger.info(`Disconnecting from ${brokerId}:${accountId}`);
+    if (envConfig.debugConfig.websocket.enabled) {
+      logger.info(`Disconnecting from ${brokerId}:${accountId}`);
+    }
     contextDisconnect(brokerId, accountId);
   }, [brokerId, accountId, contextDisconnect]);
   

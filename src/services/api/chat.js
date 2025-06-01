@@ -212,6 +212,20 @@ export class ChatService {
       case 'connection_established':
         console.log('✅ ChatService: Connection established confirmed');
         break;
+      case 'connection_refresh':
+        console.log('🔄 ChatService: Server requested connection refresh - reconnecting...');
+        console.log('🔄 Refresh reason:', event.reason || 'unknown');
+        // Force reconnection by disconnecting and letting the error handler reconnect
+        this.disconnect();
+        // Get current token from localStorage and reconnect
+        const token = localStorage.getItem('token');
+        if (token) {
+          setTimeout(() => {
+            console.log('🔄 ChatService: Executing forced reconnection...');
+            this.connect(token);
+          }, 1000); // 1 second delay before reconnect
+        }
+        break;
       case 'new_message':
         console.log('📨 ChatService: Emitting new_message event:', data);
         this.emit('new_message', data);

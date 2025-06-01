@@ -11,6 +11,17 @@ class EnvironmentConfig {
         },
         frontend: {
           baseUrl: process.env.REACT_APP_FRONTEND_URL
+        },
+        debug: {
+          websocket: {
+            enabled: process.env.REACT_APP_DEBUG_WEBSOCKET === 'true',
+            trading: process.env.REACT_APP_DEBUG_TRADING === 'true',
+            positions: process.env.REACT_APP_DEBUG_POSITIONS === 'true',
+            marketData: process.env.REACT_APP_DEBUG_MARKET_DATA === 'true'
+          },
+          chat: {
+            enabled: process.env.REACT_APP_DEBUG_CHAT !== 'false'
+          }
         }
       };
     }
@@ -50,6 +61,10 @@ class EnvironmentConfig {
   
     getApiUrl(path) {
       return `${this.config.api.baseUrl}${this.config.api.version}${path}`;
+    }
+  
+    get debugConfig() {
+      return this.config.debug;
     }
   }
   

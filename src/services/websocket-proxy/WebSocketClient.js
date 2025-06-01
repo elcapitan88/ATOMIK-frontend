@@ -2,6 +2,7 @@
 
 import { EventEmitter } from 'events';
 import logger from '@/utils/logger';
+import { envConfig } from '../../config/environment';
 
 /**
  * WebSocketClient - Simplified WebSocket client that follows server state
@@ -54,7 +55,9 @@ class WebSocketClient extends EventEmitter {
   connect(token) {
     return new Promise((resolve, reject) => {
       if (this.socket && this.socket.readyState === WebSocket.OPEN) {
-        logger.debug('Already connected');
+        if (envConfig.debugConfig.websocket.enabled) {
+          logger.debug('Already connected');
+        }
         return resolve();
       }
       
@@ -67,10 +70,14 @@ class WebSocketClient extends EventEmitter {
           this.sessionId = savedSessionId;
           const separator = this.url.includes('?') ? '&' : '?';
           connectUrl = `${this.url}${separator}session_id=${savedSessionId}`;
-          logger.info(`Reconnecting with session: ${savedSessionId}`);
+          if (envConfig.debugConfig.websocket.enabled) {
+            logger.info(`Reconnecting with session: ${savedSessionId}`);
+          }
         }
         
-        logger.info(`Connecting to WebSocket: ${connectUrl}`);
+        if (envConfig.debugConfig.websocket.enabled) {
+          logger.info(`Connecting to WebSocket: ${connectUrl}`);
+        }
         
         // Reset state
         this.manualClose = false;
@@ -93,7 +100,9 @@ class WebSocketClient extends EventEmitter {
         }, 120000); // 120 second timeout - increased for slower connections
         
         this.socket.onopen = () => {
-          logger.info('WebSocket opened, waiting for server initialization...');
+          if (envConfig.debugConfig.websocket.enabled) {
+            logger.info('WebSocket opened, waiting for server initialization...');
+          }
           // Don't change state yet - wait for server messages
         };
         
@@ -102,7 +111,9 @@ class WebSocketClient extends EventEmitter {
             const data = JSON.parse(event.data);
             
             // Log all incoming messages for debugging
-            logger.debug(`Received message type: ${data.type}`, data);
+            if (envConfig.debugConfig.websocket.enabled) {
+              logger.debug(`Received message type: ${data.type}`, data);
+            }
             
             // Handle different message types from the new server
             if (data.type === 'connection_test') {
@@ -254,16 +265,18 @@ class WebSocketClient extends EventEmitter {
             }
             
             // Emit all other messages for application handling
-            console.log('[WebSocketClient] Emitting message:', data.type);
-            
-            // Extra debug for user_data messages
-            if (data.type === 'user_data') {
-              console.log('[WebSocketClient] DEBUGGING: user_data emission details:', {
-                hasData: !!data.data,
-                dataType: typeof data.data,
-                dataKeys: data.data ? Object.keys(data.data) : null,
-                messageStructure: JSON.stringify(data, null, 2)
-              });
+            if (envConfig.debugConfig.websocket.enabled) {
+              console.log('[WebSocketClient] Emitting message:', data.type);
+              
+              // Extra debug for user_data messages
+              if (data.type === 'user_data') {
+                console.log('[WebSocketClient] DEBUGGING: user_data emission details:', {
+                  hasData: !!data.data,
+                  dataType: typeof data.data,
+                  dataKeys: data.data ? Object.keys(data.data) : null,
+                  messageStructure: JSON.stringify(data, null, 2)
+                });
+              }
             }
             
             this.emit('message', data);
@@ -351,28 +364,36 @@ class WebSocketClient extends EventEmitter {
   send(message) {
     const data = typeof message === 'string' ? message : JSON.stringify(message);
     
-    console.log('[WebSocketClient] send() called:', { 
-      message, 
-      socketState: this.socket?.readyState,
-      clientState: this.state,
-      isOpen: this.socket?.readyState === WebSocket.OPEN
-    });
+    if (envConfig.debugConfig.websocket.enabled) {
+      console.log('[WebSocketClient] send() called:', { 
+        message, 
+        socketState: this.socket?.readyState,
+        clientState: this.state,
+        isOpen: this.socket?.readyState === WebSocket.OPEN
+      });
+    }
     
     if (this.socket && this.socket.readyState === WebSocket.OPEN) {
       if (this.state === 'ready') {
         // Connection is ready, send immediately
-        console.log('[WebSocketClient] Sending message immediately');
+        if (envConfig.debugConfig.websocket.enabled) {
+          console.log('[WebSocketClient] Sending message immediately');
+        }
         this.socket.send(data);
         return true;
       } else {
         // Connection not ready, queue the message
-        console.log('[WebSocketClient] Queueing message until connection ready');
+        if (envConfig.debugConfig.websocket.enabled) {
+          console.log('[WebSocketClient] Queueing message until connection ready');
+        }
         logger.debug('Queueing message until connection ready');
         this.messageQueue.push(data);
         return true;
       }
     } else {
-      console.log('[WebSocketClient] Cannot send - WebSocket not open');
+      if (envConfig.debugConfig.websocket.enabled) {
+        console.log('[WebSocketClient] Cannot send - WebSocket not open');
+      }
       logger.warn('Cannot send message: WebSocket not open');
       return false;
     }

@@ -5,6 +5,7 @@ import { useWebSocketContext } from '../contexts/WebSocketContext';
 import webSocketManager, { ConnectionState } from '../WebSocketManager';
 import logger from '@/utils/logger';
 import { POSITION_MESSAGE_TYPES, POSITION_UPDATE_THROTTLE } from '../constants/positionEvents';
+import { envConfig } from '../../../config/environment';
 
 /**
  * Hook for accessing position data from WebSocket
@@ -281,13 +282,17 @@ const useWebSocketPositions = (brokerId, accountId) => {
   
   // Get initial positions and subscribe to updates
   useEffect(() => {
-    console.log('[useWebSocketPositions] useEffect triggered - brokerId:', brokerId, 'accountId:', accountId);
+    if (envConfig.debugConfig.positions.enabled) {
+      console.log('[useWebSocketPositions] useEffect triggered - brokerId:', brokerId, 'accountId:', accountId);
+    }
     
     // Reset the request in flight flag when useEffect runs
     requestInFlightRef.current = false;
     
     if (!brokerId || !accountId) {
-      console.log('[useWebSocketPositions] Missing brokerId or accountId, setting empty positions');
+      if (envConfig.debugConfig.positions.enabled) {
+        console.log('[useWebSocketPositions] Missing brokerId or accountId, setting empty positions');
+      }
       setPositions([]);
       setLoading(false);
       return;
@@ -295,7 +300,9 @@ const useWebSocketPositions = (brokerId, accountId) => {
     
     // Load from cache first
     const cachedPositions = webSocketManager.getPositions(brokerId, accountId);
-    console.log('[useWebSocketPositions] Cached positions:', cachedPositions);
+    if (envConfig.debugConfig.positions.enabled) {
+      console.log('[useWebSocketPositions] Cached positions:', cachedPositions);
+    }
     
     // Initialize positions map with normalized data
     positionsMapRef.current.clear();
@@ -313,18 +320,26 @@ const useWebSocketPositions = (brokerId, accountId) => {
     // Don't set loading to false yet if we have no cached positions
     // We'll set it to false after we get a response or timeout
     if (cachedPositions.length > 0) {
-      console.log('[useWebSocketPositions] Have cached positions, setting loading to false');
+      if (envConfig.debugConfig.positions.enabled) {
+        console.log('[useWebSocketPositions] Have cached positions, setting loading to false');
+      }
       setLoading(false);
     } else {
-      console.log('[useWebSocketPositions] No cached positions, keeping loading state');
+      if (envConfig.debugConfig.positions.enabled) {
+        console.log('[useWebSocketPositions] No cached positions, keeping loading state');
+      }
     }
     
     // Enhanced position update handler with error handling
     const handlePositionUpdate = (update) => {
-      console.log('[useWebSocketPositions] handlePositionUpdate received:', update);
+      if (envConfig.debugConfig.positions.enabled) {
+        console.log('[useWebSocketPositions] handlePositionUpdate received:', update);
+      }
       try {
         if (update.brokerId !== brokerId || update.accountId !== accountId) {
-          console.log('[useWebSocketPositions] Update for different broker/account, ignoring');
+          if (envConfig.debugConfig.positions.enabled) {
+            console.log('[useWebSocketPositions] Update for different broker/account, ignoring');
+          }
           return;
         }
         

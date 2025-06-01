@@ -4,6 +4,7 @@ import WebSocketClient from './WebSocketClient';
 import { EventEmitter } from 'events';
 import logger from '@/utils/logger';
 import { POSITION_MESSAGE_TYPES, isPositionUpdateEvent } from './constants/positionEvents';
+import { envConfig } from '../../config/environment';
 
 /**
  * Connection states enum
@@ -95,11 +96,15 @@ class WebSocketManager extends EventEmitter {
    * @returns {string} WebSocket URL
    */
   getWebSocketUrl(brokerId, accountId) {
-    console.log(`[WebSocketManager] Getting WebSocket URL: broker=${brokerId}, account=${accountId}`);
+    if (envConfig.debugConfig.websocket.enabled) {
+      console.log(`[WebSocketManager] Getting WebSocket URL: broker=${brokerId}, account=${accountId}`);
+    }
     const token = localStorage.getItem('access_token');
     
     // Debug token info without exposing the actual token
-    console.log(`[WebSocketManager] Raw token length: ${token?.length || 0}`);
+    if (envConfig.debugConfig.websocket.enabled) {
+      console.log(`[WebSocketManager] Raw token length: ${token?.length || 0}`);
+    }
     
     // Determine the base URL based on environment
     let baseUrl;
@@ -111,7 +116,9 @@ class WebSocketManager extends EventEmitter {
         baseUrl = 'ws://localhost:8001';
     }
     
-    console.log(`[WebSocketManager] Using base URL: ${baseUrl}`);
+    if (envConfig.debugConfig.websocket.enabled) {
+      console.log(`[WebSocketManager] Using base URL: ${baseUrl}`);
+    }
     
     // Construct the URL with properly encoded token (only once)
     const url = `${baseUrl}/ws/${brokerId}?broker_account_id=${accountId}&token=${encodeURIComponent(token)}`;
@@ -133,20 +140,26 @@ class WebSocketManager extends EventEmitter {
       throw new Error(errorMsg);
     }
     
-    console.log(`[WebSocketManager] Connect called: broker=${brokerId}, account=${accountId}, options=`, options);
+    if (envConfig.debugConfig.websocket.enabled) {
+      console.log(`[WebSocketManager] Connect called: broker=${brokerId}, account=${accountId}, options=`, options);
+    }
     
     const connectionId = `${brokerId}:${accountId}`;
     
     // Check if we already have a pending connection promise
     if (this.pendingConnections?.has(connectionId)) {
-      console.log(`[WebSocketManager] Connection already pending for ${connectionId}`);
+      if (envConfig.debugConfig.websocket.enabled) {
+        console.log(`[WebSocketManager] Connection already pending for ${connectionId}`);
+      }
       return this.pendingConnections.get(connectionId);
     }
     
     // Check if already connected
     const existingClient = this.connections.get(connectionId);
     if (existingClient && existingClient.isConnected && existingClient.isConnected()) {
-      console.log(`[WebSocketManager] Already connected to ${connectionId}`);
+      if (envConfig.debugConfig.websocket.enabled) {
+        console.log(`[WebSocketManager] Already connected to ${connectionId}`);
+      }
       return connectionId;
     }
     
@@ -394,7 +407,9 @@ class WebSocketManager extends EventEmitter {
     const connectionId = `${brokerId}:${accountId}`;
     const client = this.connections.get(connectionId);
     
-    console.log('[WebSocketManager] sendMessage called:', { connectionId, message, hasClient: !!client });
+    if (envConfig.debugConfig.websocket.enabled) {
+      console.log('[WebSocketManager] sendMessage called:', { connectionId, message, hasClient: !!client });
+    }
     
     if (!client) {
       logger.warn(`Cannot send message: No connection for ${connectionId}`);
@@ -406,7 +421,9 @@ class WebSocketManager extends EventEmitter {
     
     // Send message
     const result = client.send(message);
-    console.log('[WebSocketManager] Message sent, result:', result);
+    if (envConfig.debugConfig.websocket.enabled) {
+      console.log('[WebSocketManager] Message sent, result:', result);
+    }
     return result;
   }
   
@@ -607,16 +624,18 @@ class WebSocketManager extends EventEmitter {
    */
   handleMessage(brokerId, accountId, message) {
     const connectionId = `${brokerId}:${accountId}`;
-    console.log('[WebSocketManager] handleMessage received:', { connectionId, messageType: message.type, message });
-    
-    // Extra debug for user_data messages
-    if (message?.type === 'user_data') {
-      console.log('[WebSocketManager] DEBUGGING: user_data message details:', {
-        hasData: !!message.data,
-        dataType: typeof message.data,
-        dataKeys: message.data ? Object.keys(message.data) : null,
-        fullMessage: JSON.stringify(message, null, 2)
-      });
+    if (envConfig.debugConfig.websocket.enabled) {
+      console.log('[WebSocketManager] handleMessage received:', { connectionId, messageType: message.type, message });
+      
+      // Extra debug for user_data messages
+      if (message?.type === 'user_data') {
+        console.log('[WebSocketManager] DEBUGGING: user_data message details:', {
+          hasData: !!message.data,
+          dataType: typeof message.data,
+          dataKeys: message.data ? Object.keys(message.data) : null,
+          fullMessage: JSON.stringify(message, null, 2)
+        });
+      }
     }
     
     // Handle connection state messages
