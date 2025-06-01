@@ -13,7 +13,7 @@ export const useChat = () => {
 };
 
 export const ChatProvider = ({ children }) => {
-  const { user, token } = useAuth();
+  const { user } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [channels, setChannels] = useState([]);
   const [activeChannelId, setActiveChannelId] = useState(null);
@@ -22,26 +22,71 @@ export const ChatProvider = ({ children }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [isConnected, setIsConnected] = useState(false);
+  
+  // Get token from localStorage and set up monitoring
+  const [token, setToken] = useState(() => localStorage.getItem('access_token'));
+  
+  // Monitor localStorage for token changes
+  useEffect(() => {
+    const checkToken = () => {
+      const currentToken = localStorage.getItem('access_token');
+      if (currentToken !== token) {
+        console.log('🔍 ChatContext: Token updated in localStorage');
+        setToken(currentToken);
+      }
+    };
+    
+    // Check every second for token changes
+    const interval = setInterval(checkToken, 1000);
+    
+    return () => clearInterval(interval);
+  }, [token]);
 
   // Load initial data when user is authenticated
   useEffect(() => {
-    console.log('🔍 ChatContext: useEffect triggered', { user: !!user, token: !!token });
+    console.log('🔍 ChatContext: useEffect triggered', { 
+      user: !!user, 
+      token: !!token, 
+      hasUser: user ? user.id : 'no-user', 
+      hasToken: token ? 'yes' : 'no',
+      tokenType: typeof token,
+      tokenValue: token ? token.substring(0, 20) + '...' : 'null'
+    });
     if (user && token) {
-      console.log('🔍 ChatContext: Loading initial data...');
+      console.log('🔍 ChatContext: User and token available - Loading initial data...');
       loadChannels();
       loadSettings();
       connectToRealTime();
+    } else {
+      console.log('🔍 ChatContext: User or token not available yet - skipping initialization', {
+        userAvailable: !!user,
+        tokenAvailable: !!token
+      });
     }
     
     return () => {
+      console.log('🔍 ChatContext: useEffect cleanup - disconnecting SSE');
       chatService.disconnect();
     };
   }, [user, token]);
 
+  // Load messages when chat opens with an active channel (safeguard)
+  useEffect(() => {
+    if (isOpen && activeChannelId && !messages[activeChannelId]) {
+      console.log('🔍 ChatContext: Loading messages for opened chat channel:', activeChannelId);
+      loadMessages(activeChannelId);
+    }
+  }, [isOpen, activeChannelId]);
+
   // Real-time connection
   const connectToRealTime = () => {
-    if (!token) return;
+    console.log('🔍 ChatContext: connectToRealTime called', { token: !!token });
+    if (!token) {
+      console.log('❌ ChatContext: No token available for SSE connection');
+      return;
+    }
 
+    console.log('🔍 ChatContext: Attempting to connect to SSE...');
     chatService.connect(token);
     
     chatService.on('connected', () => {
@@ -306,15 +351,38 @@ export const ChatProvider = ({ children }) => {
 
   const toggleChat = () => {
     console.log('🔍 ChatContext: toggleChat called', { isOpen, channelsCount: channels.length });
-    setIsOpen(!isOpen);
+    const newIsOpen = !isOpen;
+    setIsOpen(newIsOpen);
     
     // If opening chat and no channels loaded, try to load them
-    if (!isOpen && channels.length === 0) {
+    if (newIsOpen && channels.length === 0) {
       console.log('🔍 ChatContext: No channels found on open, loading...');
       loadChannels();
     }
     
-    if (!isOpen && activeChannelId && !messages[activeChannelId]) {
+    // If opening chat and not connected to SSE, connect now
+    if (newIsOpen && !isConnected) {
+      console.log('🔍 ChatContext: Chat opening - checking SSE connection...', {
+        hasUser: !!user,
+        hasToken: !!token,
+        isConnected: isConnected,
+        userId: user?.id
+      });
+      
+      if (user && token) {
+        console.log('🔍 ChatContext: User and token available - establishing SSE connection...');
+        connectToRealTime();
+      } else {
+        console.log('❌ ChatContext: Cannot establish SSE - missing auth data', {
+          user: !!user,
+          token: !!token
+        });
+      }
+    }
+    
+    // If opening chat and we have an active channel but no messages, load them
+    if (newIsOpen && activeChannelId && !messages[activeChannelId]) {
+      console.log('🔍 ChatContext: Loading messages for active channel on open:', activeChannelId);
       loadMessages(activeChannelId);
     }
   };
