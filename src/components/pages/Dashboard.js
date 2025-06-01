@@ -112,7 +112,7 @@ const DashboardContent = () => {
 
     // Hooks
     const navigate = useNavigate();
-    const { isAuthenticated, user, isLoading: authLoading } = useAuth();
+    const { isAuthenticated, user, isLoading: authLoading, refreshAuthState } = useAuth();
     const toast = useToast();
     const { hasMemberChat } = useFeatureFlags();
     
@@ -204,6 +204,22 @@ const DashboardContent = () => {
             window.fetch = originalFetch;
         };
     }, []);
+
+    // Refresh auth state when dashboard mounts
+    useEffect(() => {
+        const refreshAuth = async () => {
+            try {
+                await refreshAuthState();
+                logger.info('Auth state refreshed on dashboard mount');
+            } catch (error) {
+                logger.error('Failed to refresh auth state:', error);
+            }
+        };
+
+        if (isAuthenticated && refreshAuthState) {
+            refreshAuth();
+        }
+    }, [isAuthenticated, refreshAuthState]);
 
     // Initial data loading
     useEffect(() => {

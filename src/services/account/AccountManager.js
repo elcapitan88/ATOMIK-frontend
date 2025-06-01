@@ -1,5 +1,5 @@
 // src/services/account/AccountManager.js
-import { Subject } from 'rxjs';
+import { Subject, Observable } from 'rxjs';
 import tradovateApi from '../api/brokers/tradovate/tradovateApi';
 import logger from '@/utils/logger';
 import axiosInstance from '@/services/axiosConfig';
@@ -22,7 +22,22 @@ class AccountManager {
 
     // Get account updates as an observable
     getAccountUpdates() {
-        return this.accountSubject.asObservable();
+        // Create a new observable that immediately emits current state to new subscribers
+        return new Observable(subscriber => {
+            // Immediately emit current accounts if they exist
+            if (this.accounts.size > 0) {
+                subscriber.next({
+                    type: 'bulk',
+                    accounts: Array.from(this.accounts.values())
+                });
+            }
+            
+            // Subscribe to future updates
+            const subscription = this.accountSubject.subscribe(subscriber);
+            
+            // Return cleanup function
+            return () => subscription.unsubscribe();
+        });
     }
 
     // Get account status updates as an observable

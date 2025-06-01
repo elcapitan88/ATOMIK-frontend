@@ -431,7 +431,8 @@ export const AuthProvider = ({ children }) => {
     registerStarter,
     checkPendingRegistration,
     updateUserProfile,
-    setAuthenticatedState
+    setAuthenticatedState,
+    refreshAuthState
   };
 
   return (
