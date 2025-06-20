@@ -118,14 +118,18 @@ class StrategiesApi {
 
   async updateStrategy(strategyId, updateData) {
     try {
+      console.log('Updating strategy with data:', JSON.stringify(updateData, null, 2));
+      
       const response = await this.withRetry(() =>
-        axiosInstance.patch(`${this.baseUrl}/${strategyId}`, updateData)
+        axiosInstance.put(`${this.baseUrl}/${strategyId}`, updateData)
       );
 
       this.clearCache();
+      console.log('Strategy update response:', response.data);
       return response.data;
 
     } catch (error) {
+      console.error('Strategy update error:', error);
       throw handleApiError(error);
     }
   }

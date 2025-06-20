@@ -82,6 +82,60 @@ export const useStrategies = () => {
     }
   });
 
+  // Mutation for updating strategy
+  const updateStrategyMutation = useMutation({
+    mutationFn: ({ strategyId, updateData }) => strategiesApi.updateStrategy(strategyId, updateData),
+    onMutate: async ({ strategyId, updateData }) => {
+      await queryClient.cancelQueries(STRATEGIES_KEYS.lists());
+      const previousStrategies = queryClient.getQueryData(STRATEGIES_KEYS.lists());
+      
+      // Optimistically update the strategy in the cache
+      queryClient.setQueryData(STRATEGIES_KEYS.lists(), (old = []) => {
+        return old.map(strategy => 
+          strategy.id === strategyId 
+            ? { ...strategy, ...updateData }
+            : strategy
+        );
+      });
+      
+      return { previousStrategies };
+    },
+    onSuccess: (response, { strategyId }) => {
+      // Update the cache with the response from the server
+      queryClient.setQueryData(STRATEGIES_KEYS.lists(), (old = []) => {
+        return old.map(strategy => 
+          strategy.id === strategyId ? response : strategy
+        );
+      });
+
+      toast({
+        title: "Strategy Updated",
+        description: "Strategy has been successfully updated",
+        status: "success",
+        duration: 3000,
+        isClosable: true,
+      });
+    },
+    onError: (error, variables, context) => {
+      // Rollback to previous state if there was an error
+      if (context?.previousStrategies) {
+        queryClient.setQueryData(STRATEGIES_KEYS.lists(), context.previousStrategies);
+      }
+      
+      toast({
+        title: "Error updating strategy",
+        description: error.message,
+        status: "error",
+        duration: 5000,
+        isClosable: true,
+      });
+    },
+    onSettled: () => {
+      // Always refetch after error or success
+      queryClient.invalidateQueries(STRATEGIES_KEYS.lists());
+    }
+  });
+
   // Mutation for toggling strategy
   const toggleStrategyMutation = useMutation({
     mutationFn: (strategyId) => strategiesApi.toggleStrategy(strategyId),
@@ -163,6 +217,11 @@ export const useStrategies = () => {
     createStrategy: createStrategyMutation.mutate,
     isCreating: createStrategyMutation.isLoading,
     createStrategyError: createStrategyMutation.error,
+
+    // Update Strategy
+    updateStrategy: updateStrategyMutation.mutate,
+    isUpdating: updateStrategyMutation.isLoading,
+    updateStrategyError: updateStrategyMutation.error,
 
     // Toggle Strategy
     toggleStrategy: toggleStrategyMutation.mutate,

@@ -99,7 +99,7 @@ const ActivateStrategyModal = ({ isOpen, onClose, onSubmit, strategy = null }) =
   
   const [accounts, setAccounts] = useState([]);
   const [webhooks, setWebhooks] = useState([]);
-  const { createStrategy, isCreating, createStrategyError } = useStrategies();
+  const { createStrategy, isCreating, createStrategyError, updateStrategy, isUpdating, updateStrategyError } = useStrategies();
   const toast = useToast();
 
   const displayTickers = getDisplayTickers();
@@ -289,34 +289,65 @@ const ActivateStrategyModal = ({ isOpen, onClose, onSubmit, strategy = null }) =
   // Form submission handler
   const handleSubmit = async () => {
     try {
-      const strategyData = formData.selectedType === 'single' 
-        ? {
-            strategy_type: 'single',
-            webhook_id: formData.singleAccount.webhookId,
-            ticker: getContractTicker(formData.singleAccount.ticker),
-            account_id: formData.singleAccount.accountId,
-            quantity: Number(formData.singleAccount.quantity)
-          }
-        : {
-            strategy_type: 'multiple',
-            webhook_id: formData.multipleAccount.webhookId,
-            ticker: getContractTicker(formData.multipleAccount.ticker),
-            leader_account_id: formData.multipleAccount.leaderAccountId,
-            leader_quantity: Number(formData.multipleAccount.leaderQuantity),
-            group_name: formData.multipleAccount.groupName,
-            follower_account_ids: formData.multipleAccount.followerAccounts.map(f => f.accountId),
-            follower_quantities: formData.multipleAccount.followerAccounts.map(f => Number(f.quantity))
-          };
-  
-      await createStrategy(strategyData);
+      const isUpdating = !!strategy; // If strategy prop exists, we're updating
       
-      // Close the modal only after successful creation
+      if (isUpdating) {
+        // For updates, only send the fields that can be updated
+        const updateData = formData.selectedType === 'single' 
+          ? {
+              quantity: Number(formData.singleAccount.quantity),
+              is_active: true // You can add an active/inactive toggle in the form if needed
+            }
+          : {
+              leader_quantity: Number(formData.multipleAccount.leaderQuantity),
+              follower_quantities: formData.multipleAccount.followerAccounts.map(f => Number(f.quantity)),
+              is_active: true // You can add an active/inactive toggle in the form if needed
+            };
+
+        await updateStrategy({ 
+          strategyId: strategy.id, 
+          updateData 
+        });
+        
+        toast({
+          title: "Strategy Updated",
+          description: "Strategy has been successfully updated",
+          status: "success",
+          duration: 3000,
+          isClosable: true,
+        });
+      } else {
+        // For creation, send all required fields
+        const strategyData = formData.selectedType === 'single' 
+          ? {
+              strategy_type: 'single',
+              webhook_id: formData.singleAccount.webhookId,
+              ticker: formData.singleAccount.ticker, // Let backend convert to display ticker
+              account_id: formData.singleAccount.accountId,
+              quantity: Number(formData.singleAccount.quantity)
+            }
+          : {
+              strategy_type: 'multiple',
+              webhook_id: formData.multipleAccount.webhookId,
+              ticker: formData.multipleAccount.ticker, // Let backend convert to display ticker
+              leader_account_id: formData.multipleAccount.leaderAccountId,
+              leader_quantity: Number(formData.multipleAccount.leaderQuantity),
+              group_name: formData.multipleAccount.groupName,
+              follower_account_ids: formData.multipleAccount.followerAccounts.map(f => f.accountId),
+              follower_quantities: formData.multipleAccount.followerAccounts.map(f => Number(f.quantity))
+            };
+
+        await createStrategy(strategyData);
+      }
+      
+      // Close the modal only after successful operation
       onClose();
       
     } catch (error) {
       console.error('Strategy submission error:', error);
+      const operation = strategy ? 'updating' : 'creating';
       toast({
-        title: "Error creating strategy",
+        title: `Error ${operation} strategy`,
         description: error.message,
         status: "error",
         duration: 5000,
@@ -617,7 +648,7 @@ const ActivateStrategyModal = ({ isOpen, onClose, onSubmit, strategy = null }) =
               width="full"
               colorScheme="green"
               onClick={handleSubmit}
-              isLoading={isCreating}
+              isLoading={strategy ? isUpdating : isCreating}
               loadingText={strategy ? "Updating..." : "Creating..."}
               isDisabled={!isFormValid()}
               size="lg"
