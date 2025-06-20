@@ -89,41 +89,42 @@ function WebhookDetailsModal({ isOpen, onClose, webhook, isNewlyCreated = false 
         
         <ModalBody py={6}>
           <VStack spacing={6} align="stretch">
-            {/* One-time Secret Warning for newly created webhooks */}
-            {isNewlyCreated && (
-              <Alert 
-                status="error" 
-                variant="solid"
-                bg="red.600"
-                borderRadius="md"
-                flexDirection="column"
-                alignItems="flex-start"
-                p={4}
-              >
-                <HStack mb={2}>
-                  <AlertTriangle size={20} />
-                  <Text fontWeight="bold" fontSize="md">
-                    IMPORTANT: Save Your Webhook URL Now!
+            {/* Combined Security Alert */}
+            <Alert 
+              status={isNewlyCreated ? "error" : "warning"}
+              variant="subtle"
+              bg={isNewlyCreated ? "rgba(229, 62, 62, 0.1)" : "rgba(236, 201, 75, 0.1)"}
+              borderRadius="md"
+              flexDirection="column"
+              alignItems="flex-start"
+              p={4}
+            >
+              {isNewlyCreated ? (
+                <>
+                  <HStack mb={2} alignItems="center">
+                    <AlertTriangle size={20} color="#E53E3E" />
+                    <Text fontWeight="bold" fontSize="md" color="red.500">
+                      IMPORTANT: Save Your Webhook URL Now!
+                    </Text>
+                  </HStack>
+                  <VStack spacing={2} align="flex-start" w="full">
+                    <Text fontSize="sm">
+                      This is the ONLY time you'll see the complete webhook URL with the secret key. 
+                      Copy and save it immediately - it cannot be retrieved later for security reasons.
+                    </Text>
+                    <Text fontSize="sm" fontStyle="italic">
+                      This URL contains sensitive credentials. Keep it secure and never share it publicly.
+                    </Text>
+                  </VStack>
+                </>
+              ) : (
+                <HStack>
+                  <AlertIcon />
+                  <Text fontSize="sm">
+                    This URL contains sensitive credentials. Keep it secure and never share it publicly.
                   </Text>
                 </HStack>
-                <Text fontSize="sm">
-                  This is the ONLY time you'll see the complete webhook URL with the secret key. 
-                  Copy and save it immediately - it cannot be retrieved later for security reasons.
-                </Text>
-              </Alert>
-            )}
-
-            {/* Security Alert */}
-            <Alert 
-              status="warning" 
-              variant="subtle"
-              bg="rgba(236, 201, 75, 0.1)"
-              borderRadius="md"
-            >
-              <AlertIcon />
-              <Text fontSize="sm">
-                This URL contains sensitive credentials. Keep it secure and never share it publicly.
-              </Text>
+              )}
             </Alert>
 
             {/* Webhook URL */}
