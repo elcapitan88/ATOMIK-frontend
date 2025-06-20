@@ -787,54 +787,84 @@ const ActivateStrategyModal = ({ isOpen, onClose, onSubmit, strategy = null }) =
     </Modal>
 
     {/* Confirmation Modal for Core Field Changes */}
-    <Modal isOpen={showConfirmation} onClose={() => setShowConfirmation(false)} isCentered>
-      <ModalOverlay bg="blackAlpha.300" backdropFilter="blur(10px)" />
+    <Modal isOpen={showConfirmation} onClose={() => setShowConfirmation(false)} isCentered size="md">
+      <ModalOverlay bg="blackAlpha.300" backdropFilter="blur(5px)" />
       <ModalContent 
-        bg="rgba(26, 32, 44, 0.95)"
-        borderColor="rgba(255, 255, 255, 0.18)"
-        borderWidth={1}
+        bg="rgba(255, 255, 255, 0.1)"
+        backdropFilter="blur(10px)"
         boxShadow="0 8px 32px 0 rgba(0, 198, 224, 0.37)"
-        backdropFilter="blur(20px)"
+        border="1px solid rgba(255, 255, 255, 0.18)"
+        borderRadius="xl"
+        color="white"
         maxW="md"
       >
-        <ModalHeader color="white" pb={2}>
+        <ModalHeader 
+          borderBottom="1px solid rgba(255, 255, 255, 0.1)"
+          pb={4}
+          fontSize="lg"
+          fontWeight="semibold"
+        >
           ⚠️ Replace Strategy?
         </ModalHeader>
-        <ModalCloseButton color="white" />
-        <ModalBody pb={6}>
-          <VStack spacing={4} align="stretch">
-            <Text color="whiteAlpha.900" fontSize="sm">
+        <ModalCloseButton 
+          color="whiteAlpha.700"
+          _hover={{ color: "white", bg: "whiteAlpha.200" }}
+        />
+        <ModalBody py={6}>
+          <VStack spacing={5} align="stretch">
+            <Text color="whiteAlpha.900" fontSize="sm" lineHeight="1.6">
               You've changed core fields (ticker, account, or webhook). This requires creating a new strategy to maintain data integrity.
             </Text>
             
             <Box 
-              bg="rgba(255, 193, 7, 0.1)" 
-              border="1px solid rgba(255, 193, 7, 0.3)"
-              borderRadius="md" 
-              p={3}
+              bg="rgba(255, 193, 7, 0.08)" 
+              border="1px solid rgba(255, 193, 7, 0.25)"
+              borderRadius="lg" 
+              p={4}
+              backdropFilter="blur(5px)"
             >
-              <Text color="yellow.200" fontSize="xs" fontWeight="medium">
-                Your current strategy will be replaced with the new settings. This action cannot be undone.
+              <Text color="yellow.200" fontSize="sm" fontWeight="medium" lineHeight="1.5">
+                ⚡ Your current strategy will be replaced with the new settings. This action cannot be undone.
               </Text>
             </Box>
 
-            <HStack spacing={3} pt={2}>
+            <HStack spacing={3} pt={3}>
               <Button
                 flex={1}
                 variant="ghost"
                 onClick={() => setShowConfirmation(false)}
                 color="whiteAlpha.700"
-                _hover={{ bg: 'whiteAlpha.100' }}
+                _hover={{ 
+                  bg: 'whiteAlpha.200',
+                  color: 'white'
+                }}
+                _active={{
+                  bg: 'whiteAlpha.300'
+                }}
+                borderRadius="lg"
+                size="lg"
               >
                 Cancel
               </Button>
               <Button
                 flex={1}
-                colorScheme="orange"
+                bg="linear-gradient(135deg, rgba(255, 140, 0, 0.8), rgba(255, 69, 0, 0.8))"
+                color="white"
                 onClick={handleConfirmedRecreate}
                 isLoading={isDeleting || isCreating}
                 loadingText="Replacing..."
-                _hover={{ bg: 'orange.500' }}
+                _hover={{ 
+                  bg: "linear-gradient(135deg, rgba(255, 140, 0, 0.9), rgba(255, 69, 0, 0.9))",
+                  transform: 'translateY(-1px)',
+                  boxShadow: 'lg'
+                }}
+                _active={{
+                  transform: 'translateY(0)',
+                  boxShadow: 'md'
+                }}
+                borderRadius="lg"
+                size="lg"
+                fontWeight="semibold"
               >
                 Replace Strategy
               </Button>
