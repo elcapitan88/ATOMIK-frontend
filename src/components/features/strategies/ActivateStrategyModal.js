@@ -472,6 +472,7 @@ const ActivateStrategyModal = ({ isOpen, onClose, onSubmit, strategy = null }) =
 
   // Modal render
   return (
+    <>
     <Modal 
       isOpen={isOpen} 
       onClose={onClose} 
@@ -842,6 +843,7 @@ const ActivateStrategyModal = ({ isOpen, onClose, onSubmit, strategy = null }) =
         </ModalBody>
       </ModalContent>
     </Modal>
+    </>
   );
 };
 
