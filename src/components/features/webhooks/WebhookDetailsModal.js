@@ -7,6 +7,7 @@ import { ModalHeader } from '@chakra-ui/react';
 import { ModalBody } from '@chakra-ui/react';
 import { ModalCloseButton } from '@chakra-ui/react';
 import { VStack } from '@chakra-ui/react';
+import { HStack } from '@chakra-ui/react';
 import { Box } from '@chakra-ui/react';
 import { Text } from '@chakra-ui/react';
 import { Input } from '@chakra-ui/react';
@@ -19,10 +20,10 @@ import { AlertIcon } from '@chakra-ui/react';
 import { useToast } from '@chakra-ui/react';
 import { Code } from '@chakra-ui/react';
 
-import { Copy, CheckCircle } from 'lucide-react';
+import { Copy, CheckCircle, AlertTriangle } from 'lucide-react';
 
-function WebhookDetailsModal({ isOpen, onClose, webhook }) {
-  const fullWebhookUrl = `${webhook?.webhook_url}?secret=${webhook?.secret_key}`;
+function WebhookDetailsModal({ isOpen, onClose, webhook, isNewlyCreated = false }) {
+  const fullWebhookUrl = webhook?.complete_webhook_url || `${webhook?.webhook_url}?secret=${webhook?.secret_key}`;
   const { hasCopied: hasUrlCopied, onCopy: onUrlCopy } = useClipboard(fullWebhookUrl);
   const toast = useToast();
 
@@ -88,6 +89,30 @@ function WebhookDetailsModal({ isOpen, onClose, webhook }) {
         
         <ModalBody py={6}>
           <VStack spacing={6} align="stretch">
+            {/* One-time Secret Warning for newly created webhooks */}
+            {isNewlyCreated && (
+              <Alert 
+                status="error" 
+                variant="solid"
+                bg="red.600"
+                borderRadius="md"
+                flexDirection="column"
+                alignItems="flex-start"
+                p={4}
+              >
+                <HStack mb={2}>
+                  <AlertTriangle size={20} />
+                  <Text fontWeight="bold" fontSize="md">
+                    IMPORTANT: Save Your Webhook URL Now!
+                  </Text>
+                </HStack>
+                <Text fontSize="sm">
+                  This is the ONLY time you'll see the complete webhook URL with the secret key. 
+                  Copy and save it immediately - it cannot be retrieved later for security reasons.
+                </Text>
+              </Alert>
+            )}
+
             {/* Security Alert */}
             <Alert 
               status="warning" 
@@ -116,9 +141,21 @@ function WebhookDetailsModal({ isOpen, onClose, webhook }) {
                 <InputRightElement width="4.5rem">
                   <IconButton
                     size="sm"
-                    onClick={onUrlCopy}
+                    onClick={() => {
+                      onUrlCopy();
+                      if (isNewlyCreated && !hasUrlCopied) {
+                        toast({
+                          title: "Webhook URL Copied!",
+                          description: "The complete webhook URL with secret has been copied to your clipboard. Save it somewhere secure.",
+                          status: "success",
+                          duration: 5000,
+                          isClosable: true,
+                        });
+                      }
+                    }}
                     icon={hasUrlCopied ? <CheckCircle size={16} /> : <Copy size={16} />}
                     aria-label={hasUrlCopied ? "Copied" : "Copy URL"}
+                    colorScheme={hasUrlCopied ? "green" : "gray"}
                   />
                 </InputRightElement>
               </InputGroup>

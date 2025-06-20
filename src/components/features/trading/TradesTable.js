@@ -15,12 +15,14 @@ import WebhooksView from '@/components/features/trading/WebhooksView';  // or wh
 import LiveTradesView from './LiveTradesView';
 import HistoricalTradesView from './HistoricalTradesView';
 import WebhookModal from '../webhooks/WebhookModal';
+import WebhookDetailsModal from '../webhooks/WebhookDetailsModal';
 import { webhookApi } from '@/services/api/Webhooks/webhookApi';
 
 const TradesTable = () => {
   const [webhooksHandler, setWebhooksHandler] = useState(null);
   const [activeView, setActiveView] = useState('webhooks'); // 'positions' or 'webhooks'
   const [positionView, setPositionView] = useState('open'); // 'open' or 'historical'
+  const [newlyCreatedWebhook, setNewlyCreatedWebhook] = useState(null); // Store newly created webhook
   const toast = useToast();
   
   // Modal control - only for webhook creation
@@ -30,11 +32,21 @@ const TradesTable = () => {
     onClose: onWebhookModalClose
   } = useDisclosure();
 
+  // Modal control for webhook details
+  const {
+    isOpen: isDetailsModalOpen,
+    onOpen: onDetailsModalOpen,
+    onClose: onDetailsModalClose
+  } = useDisclosure();
+
   // Handler for webhook creation
   const handleCreateWebhook = async (webhookData) => {
     try {
       console.log('Creating webhook...', webhookData);
-      await webhookApi.generateWebhook(webhookData);
+      const createdWebhook = await webhookApi.generateWebhook(webhookData);
+      
+      // Store the newly created webhook with all its data including secret
+      setNewlyCreatedWebhook(createdWebhook);
       
       console.log('Webhook created, handler:', webhooksHandler);
       if (webhooksHandler?.refreshData) {
@@ -44,14 +56,12 @@ const TradesTable = () => {
         console.warn('No refresh handler available');
       }
 
-      toast({
-        title: "Webhook Created",
-        description: "Your webhook has been generated successfully",
-        status: "success",
-        duration: 3000,
-        isClosable: true,
-      });
+      // Close the creation modal
       onWebhookModalClose();
+      
+      // Open the details modal to show the webhook with secret
+      onDetailsModalOpen();
+      
     } catch (error) {
       console.error('Webhook creation error:', error);
       toast({
@@ -235,6 +245,28 @@ const TradesTable = () => {
         onClose={onWebhookModalClose}
         onSubmit={handleCreateWebhook}
       />
+      
+      {/* Webhook Details Modal for showing newly created webhook */}
+      {newlyCreatedWebhook && (
+        <WebhookDetailsModal
+          isOpen={isDetailsModalOpen}
+          onClose={() => {
+            onDetailsModalClose();
+            setNewlyCreatedWebhook(null); // Clear the webhook data after closing
+            
+            // Show success toast after user has seen the webhook details
+            toast({
+              title: "Webhook Created Successfully",
+              description: "Your webhook URL has been generated. Please save it securely.",
+              status: "success",
+              duration: 5000,
+              isClosable: true,
+            });
+          }}
+          webhook={newlyCreatedWebhook}
+          isNewlyCreated={true} // Flag to show special warning
+        />
+      )}
     </Box>
   );
 };
