@@ -99,7 +99,9 @@ const ActivateStrategyModal = ({ isOpen, onClose, onSubmit, strategy = null }) =
   
   const [accounts, setAccounts] = useState([]);
   const [webhooks, setWebhooks] = useState([]);
-  const { createStrategy, isCreating, createStrategyError, updateStrategy, isUpdating, updateStrategyError } = useStrategies();
+  const [showConfirmation, setShowConfirmation] = useState(false);
+  const [pendingChangeType, setPendingChangeType] = useState(null);
+  const { createStrategy, isCreating, createStrategyError, updateStrategy, isUpdating, updateStrategyError, deleteStrategy, isDeleting } = useStrategies();
   const toast = useToast();
 
   const displayTickers = getDisplayTickers();
@@ -140,6 +142,10 @@ const ActivateStrategyModal = ({ isOpen, onClose, onSubmit, strategy = null }) =
   // Data fetching effect
   useEffect(() => {
     if (isOpen) {
+      // Reset confirmation state when modal opens
+      setShowConfirmation(false);
+      setPendingChangeType(null);
+      
       const fetchData = async () => {
         try {
           console.log('Fetching accounts and webhooks...');
@@ -286,22 +292,131 @@ const ActivateStrategyModal = ({ isOpen, onClose, onSubmit, strategy = null }) =
     }));
   };
 
+  // Helper function to detect what type of changes are being made
+  const detectChangeType = () => {
+    if (!strategy) return 'create';
+
+    const currentData = formData.selectedType === 'single' 
+      ? {
+          ticker: formData.singleAccount.ticker,
+          account_id: formData.singleAccount.accountId,
+          webhook_id: formData.singleAccount.webhookId,
+          quantity: Number(formData.singleAccount.quantity)
+        }
+      : {
+          ticker: formData.multipleAccount.ticker,
+          leader_account_id: formData.multipleAccount.leaderAccountId,
+          webhook_id: formData.multipleAccount.webhookId,
+          leader_quantity: Number(formData.multipleAccount.leaderQuantity),
+          follower_account_ids: formData.multipleAccount.followerAccounts.map(f => f.accountId),
+          follower_quantities: formData.multipleAccount.followerAccounts.map(f => Number(f.quantity)),
+          group_name: formData.multipleAccount.groupName
+        };
+
+    // Check for core field changes that require delete + recreate
+    const coreFieldsChanged = 
+      currentData.ticker !== strategy.ticker ||
+      currentData.webhook_id !== strategy.webhook_id ||
+      (strategy.strategy_type === 'single' && currentData.account_id !== strategy.account_id) ||
+      (strategy.strategy_type === 'multiple' && currentData.leader_account_id !== strategy.leader_account_id) ||
+      (strategy.strategy_type === 'multiple' && 
+        JSON.stringify(currentData.follower_account_ids.sort()) !== JSON.stringify(strategy.follower_account_ids?.sort() || []));
+
+    if (coreFieldsChanged) {
+      return 'recreate';
+    }
+
+    // Check for simple updates (quantities, group name, active status)
+    const quantitiesChanged = 
+      (strategy.strategy_type === 'single' && currentData.quantity !== strategy.quantity) ||
+      (strategy.strategy_type === 'multiple' && 
+        (currentData.leader_quantity !== strategy.leader_quantity ||
+         JSON.stringify(currentData.follower_quantities) !== JSON.stringify(strategy.follower_quantities || []))) ||
+      (strategy.strategy_type === 'multiple' && currentData.group_name !== strategy.group_name);
+
+    return quantitiesChanged ? 'update' : 'nochange';
+  };
+
+  // Handle confirmed recreate operation
+  const handleConfirmedRecreate = async () => {
+    try {
+      setShowConfirmation(false);
+      
+      // First delete the existing strategy
+      await deleteStrategy(strategy.id);
+      
+      // Then create the new strategy with updated data
+      const strategyData = formData.selectedType === 'single' 
+        ? {
+            strategy_type: 'single',
+            webhook_id: formData.singleAccount.webhookId,
+            ticker: formData.singleAccount.ticker,
+            account_id: formData.singleAccount.accountId,
+            quantity: Number(formData.singleAccount.quantity)
+          }
+        : {
+            strategy_type: 'multiple',
+            webhook_id: formData.multipleAccount.webhookId,
+            ticker: formData.multipleAccount.ticker,
+            leader_account_id: formData.multipleAccount.leaderAccountId,
+            leader_quantity: Number(formData.multipleAccount.leaderQuantity),
+            group_name: formData.multipleAccount.groupName,
+            follower_account_ids: formData.multipleAccount.followerAccounts.map(f => f.accountId),
+            follower_quantities: formData.multipleAccount.followerAccounts.map(f => Number(f.quantity))
+          };
+
+      await createStrategy(strategyData);
+      
+      toast({
+        title: "Strategy Replaced",
+        description: "Your strategy has been successfully updated with the new settings",
+        status: "success",
+        duration: 4000,
+        isClosable: true,
+      });
+      
+      onClose();
+      
+    } catch (error) {
+      console.error('Strategy recreate error:', error);
+      toast({
+        title: "Error updating strategy",
+        description: "Failed to update strategy. Please try again.",
+        status: "error",
+        duration: 5000,
+        isClosable: true,
+      });
+    }
+  };
+
   // Form submission handler
   const handleSubmit = async () => {
     try {
-      const isUpdating = !!strategy; // If strategy prop exists, we're updating
+      const changeType = detectChangeType();
       
-      if (isUpdating) {
+      if (changeType === 'nochange') {
+        toast({
+          title: "No Changes",
+          description: "No changes were made to the strategy",
+          status: "info",
+          duration: 3000,
+          isClosable: true,
+        });
+        onClose();
+        return;
+      }
+      
+      if (changeType === 'update') {
         // For updates, only send the fields that can be updated
         const updateData = formData.selectedType === 'single' 
           ? {
               quantity: Number(formData.singleAccount.quantity),
-              is_active: true // You can add an active/inactive toggle in the form if needed
+              is_active: true
             }
           : {
               leader_quantity: Number(formData.multipleAccount.leaderQuantity),
               follower_quantities: formData.multipleAccount.followerAccounts.map(f => Number(f.quantity)),
-              is_active: true // You can add an active/inactive toggle in the form if needed
+              is_active: true
             };
 
         await updateStrategy({ 
@@ -309,13 +424,12 @@ const ActivateStrategyModal = ({ isOpen, onClose, onSubmit, strategy = null }) =
           updateData 
         });
         
-        toast({
-          title: "Strategy Updated",
-          description: "Strategy has been successfully updated",
-          status: "success",
-          duration: 3000,
-          isClosable: true,
-        });
+      } else if (changeType === 'recreate') {
+        // Show confirmation modal for core field changes
+        setPendingChangeType('recreate');
+        setShowConfirmation(true);
+        return; // Don't close the modal yet
+        
       } else {
         // For creation, send all required fields
         const strategyData = formData.selectedType === 'single' 
@@ -666,6 +780,64 @@ const ActivateStrategyModal = ({ isOpen, onClose, onSubmit, strategy = null }) =
             >
               {strategy ? 'Update Strategy' : 'Activate Strategy'}
             </Button>
+          </VStack>
+        </ModalBody>
+      </ModalContent>
+    </Modal>
+
+    {/* Confirmation Modal for Core Field Changes */}
+    <Modal isOpen={showConfirmation} onClose={() => setShowConfirmation(false)} isCentered>
+      <ModalOverlay bg="blackAlpha.300" backdropFilter="blur(10px)" />
+      <ModalContent 
+        bg="rgba(26, 32, 44, 0.95)"
+        borderColor="rgba(255, 255, 255, 0.18)"
+        borderWidth={1}
+        boxShadow="0 8px 32px 0 rgba(0, 198, 224, 0.37)"
+        backdropFilter="blur(20px)"
+        maxW="md"
+      >
+        <ModalHeader color="white" pb={2}>
+          ⚠️ Replace Strategy?
+        </ModalHeader>
+        <ModalCloseButton color="white" />
+        <ModalBody pb={6}>
+          <VStack spacing={4} align="stretch">
+            <Text color="whiteAlpha.900" fontSize="sm">
+              You've changed core fields (ticker, account, or webhook). This requires creating a new strategy to maintain data integrity.
+            </Text>
+            
+            <Box 
+              bg="rgba(255, 193, 7, 0.1)" 
+              border="1px solid rgba(255, 193, 7, 0.3)"
+              borderRadius="md" 
+              p={3}
+            >
+              <Text color="yellow.200" fontSize="xs" fontWeight="medium">
+                Your current strategy will be replaced with the new settings. This action cannot be undone.
+              </Text>
+            </Box>
+
+            <HStack spacing={3} pt={2}>
+              <Button
+                flex={1}
+                variant="ghost"
+                onClick={() => setShowConfirmation(false)}
+                color="whiteAlpha.700"
+                _hover={{ bg: 'whiteAlpha.100' }}
+              >
+                Cancel
+              </Button>
+              <Button
+                flex={1}
+                colorScheme="orange"
+                onClick={handleConfirmedRecreate}
+                isLoading={isDeleting || isCreating}
+                loadingText="Replacing..."
+                _hover={{ bg: 'orange.500' }}
+              >
+                Replace Strategy
+              </Button>
+            </HStack>
           </VStack>
         </ModalBody>
       </ModalContent>
