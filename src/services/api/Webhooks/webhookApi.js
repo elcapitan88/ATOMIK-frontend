@@ -136,9 +136,17 @@ class WebhookApi {
 
     // New marketplace-related methods
     async listSharedStrategies() {
-        return this.errorHandler(() => 
-            axiosInstance.get(`${this.baseUrl}/shared`)
-        );
+        console.log('[WebhookApi] Making request to:', `${this.baseUrl}/shared`);
+        return this.errorHandler(async () => {
+            const response = await axiosInstance.get(`${this.baseUrl}/shared`);
+            console.log('[WebhookApi] listSharedStrategies response:', {
+                status: response.status,
+                data: response.data,
+                isArray: Array.isArray(response.data),
+                length: response.data?.length || 0
+            });
+            return response;
+        });
     }
 
     async subscribeToStrategy(token) {

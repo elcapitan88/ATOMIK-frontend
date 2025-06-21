@@ -96,17 +96,72 @@ const OAuthCallback = () => {
 
         setStatus('complete');
 
-        // Navigate to dashboard with success state
-        setTimeout(() => {
-          navigate('/dashboard', { 
-            state: { 
-              accountConnected: true,
-              accounts: response.accounts,
-              wsStatus: wsStatus,
-              connectionErrors: failedConnections
-            }
-          });
-        }, 1000);
+        // Check if this OAuth came from Trading Lab
+        const tradingLabContext = sessionStorage.getItem('trading_lab_oauth_context');
+        const satelliteContext = sessionStorage.getItem('trading_lab_satellite_context');
+        
+        if (tradingLabContext || satelliteContext) {
+          // OAuth initiated from Trading Lab - check for account-first flow
+          logger.info('OAuth from Trading Lab - checking flow type');
+          
+          let parsedContext = null;
+          try {
+            parsedContext = tradingLabContext ? JSON.parse(tradingLabContext) : null;
+          } catch (error) {
+            logger.warn('Failed to parse Trading Lab context:', error);
+          }
+          
+          // Check if this is account-first flow that should redirect to strategy selection
+          if (parsedContext && parsedContext.flow === 'account_first' && parsedContext.redirect_to === 'strategy_selection') {
+            logger.info('OAuth from account-first flow - redirecting to strategy selection');
+            
+            // Clear the OAuth context since we're handling the redirect
+            sessionStorage.removeItem('trading_lab_oauth_context');
+            
+            setTimeout(() => {
+              navigate('/trading-lab', { 
+                state: { 
+                  oauthSuccess: true,
+                  accountConnected: true,
+                  accounts: response.accounts,
+                  wsStatus: wsStatus,
+                  connectionErrors: failedConnections,
+                  context: 'core',
+                  flow: 'account_first',
+                  forceStep: 'strategy_selection' // Force Trading Lab to show strategy selection
+                }
+              });
+            }, 1000);
+          } else {
+            // Regular Trading Lab OAuth - redirect back to Trading Lab
+            logger.info('OAuth from Trading Lab - redirecting back to Trading Lab');
+            
+            setTimeout(() => {
+              navigate('/trading-lab', { 
+                state: { 
+                  oauthSuccess: true,
+                  accountConnected: true,
+                  accounts: response.accounts,
+                  wsStatus: wsStatus,
+                  connectionErrors: failedConnections,
+                  context: tradingLabContext ? 'core' : 'satellite'
+                }
+              });
+            }, 1000);
+          }
+        } else {
+          // Regular OAuth - navigate to dashboard
+          setTimeout(() => {
+            navigate('/dashboard', { 
+              state: { 
+                accountConnected: true,
+                accounts: response.accounts,
+                wsStatus: wsStatus,
+                connectionErrors: failedConnections
+              }
+            });
+          }, 1000);
+        }
 
       } catch (error) {
         logger.error('OAuth callback processing failed:', error);
@@ -122,14 +177,46 @@ const OAuthCallback = () => {
           isClosable: true,
         });
 
-        // Navigate to dashboard with error state
-        setTimeout(() => {
-          navigate('/dashboard', { 
-            state: { 
-              error: error.message || 'Failed to connect account'
-            }
-          });
-        }, 3000);
+        // Check if this OAuth came from Trading Lab for error handling too
+        const tradingLabContext = sessionStorage.getItem('trading_lab_oauth_context');
+        const satelliteContext = sessionStorage.getItem('trading_lab_satellite_context');
+        
+        if (tradingLabContext || satelliteContext) {
+          // OAuth error from Trading Lab - check for account-first flow
+          let parsedContext = null;
+          try {
+            parsedContext = tradingLabContext ? JSON.parse(tradingLabContext) : null;
+          } catch (error) {
+            logger.warn('Failed to parse Trading Lab context during error handling:', error);
+          }
+          
+          // Clear OAuth context on error
+          sessionStorage.removeItem('trading_lab_oauth_context');
+          if (satelliteContext) {
+            sessionStorage.removeItem('trading_lab_satellite_context');
+          }
+          
+          // OAuth error from Trading Lab - redirect back to Trading Lab with error
+          setTimeout(() => {
+            navigate('/trading-lab', { 
+              state: { 
+                oauthError: true,
+                error: error.message || 'Failed to connect account',
+                context: tradingLabContext ? 'core' : 'satellite',
+                flow: parsedContext?.flow || 'regular'
+              }
+            });
+          }, 3000);
+        } else {
+          // Regular OAuth error - navigate to dashboard with error state
+          setTimeout(() => {
+            navigate('/dashboard', { 
+              state: { 
+                error: error.message || 'Failed to connect account'
+              }
+            });
+          }, 3000);
+        }
       }
     };
 

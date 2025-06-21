@@ -3,6 +3,7 @@ import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Box, Spinner } from '@chakra-ui/react';
 import { useAuth } from '@/contexts/AuthContext';
 import { initializeContracts } from './utils/formatting/tickerUtils';
+import affiliateService from './services/affiliateService';
 
 // Import components
 import Homepage from './components/pages/Homepage/Homepage';
@@ -198,6 +199,22 @@ function App() {
       }
     }
   }, [isAuthenticated, setAuthenticatedState]);
+  
+  // Initialize referral tracking on app load
+  useEffect(() => {
+    const initReferralTracking = async () => {
+      try {
+        const activeReferral = await affiliateService.initializeReferralTracking();
+        if (activeReferral) {
+          console.log('Referral tracking initialized with code:', activeReferral);
+        }
+      } catch (error) {
+        console.error('Failed to initialize referral tracking:', error);
+      }
+    };
+    
+    initReferralTracking();
+  }, []);
   
   return (
     <Suspense fallback={<LoadingSpinner />}>

@@ -27,8 +27,29 @@ const LOG_LEVELS = {
         if (arg instanceof Error) {
           return arg.stack || arg.message;
         }
-        if (typeof arg === 'object') {
-          return JSON.stringify(arg);
+        if (typeof arg === 'object' && arg !== null) {
+          try {
+            // Check if it's a DOM element
+            if (arg.nodeType) {
+              return `[DOM Element: ${arg.tagName || 'Unknown'}]`;
+            }
+            // Check if it's a React element
+            if (arg.$$typeof) {
+              return '[React Element]';
+            }
+            // Try to stringify, with circular reference handling
+            return JSON.stringify(arg, (key, value) => {
+              if (typeof value === 'object' && value !== null) {
+                // Skip React fibers and DOM properties
+                if (key.startsWith('__react') || key.startsWith('_react') || value.nodeType) {
+                  return '[Circular]';
+                }
+              }
+              return value;
+            });
+          } catch (error) {
+            return '[Object - Cannot stringify]';
+          }
         }
         return arg;
       });

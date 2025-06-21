@@ -268,6 +268,7 @@ const useFeatureFlags = () => {
       console.log('[FeatureFlags] hasStrategyBuilder result:', enabled);
       return enabled;
     })(),
+    hasAtomikTradingLab: isFeatureEnabled('atomik-trading-lab'),
   };
 };
 

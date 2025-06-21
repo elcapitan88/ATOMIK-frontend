@@ -21,6 +21,7 @@ import { useNavigate, useSearchParams, Link as RouterLink, useLocation } from 'r
 import { useAuth } from '@/contexts/AuthContext';
 import axiosInstance from '@/services/axiosConfig';
 import logger from '@/utils/logger';
+import affiliateService from '@/services/affiliateService';
 
 const MotionBox = motion(Box);
 
@@ -87,10 +88,35 @@ const PaymentSuccess = () => {
       });
     }
     
+    // Track affiliate conversion if referral code exists
+    try {
+      const sessionId = searchParams.get('session_id');
+      const email = searchParams.get('email') || 
+                   (registrationDataRef.current && registrationDataRef.current.email) ||
+                   (localStorage.getItem('pendingRegistration') && JSON.parse(localStorage.getItem('pendingRegistration')).email);
+      
+      if (sessionId && email) {
+        const conversionData = {
+          amount: parseFloat(localStorage.getItem('subscriptionValue') || '0'),
+          email: decodeURIComponent(email),
+          orderId: sessionId,
+          planName: localStorage.getItem('selectedPlan') || 'Subscription',
+          planInterval: localStorage.getItem('planInterval') || 'monthly'
+        };
+        
+        const wasTracked = affiliateService.trackConversion(conversionData);
+        if (wasTracked) {
+          logger.info('Affiliate conversion tracked successfully', conversionData);
+        }
+      }
+    } catch (error) {
+      logger.error('Error tracking affiliate conversion:', error);
+    }
+    
     // Clean up localStorage items if needed
     localStorage.removeItem('pendingRegistration');
     // Other cleanup as needed
-  }, []);
+  }, [searchParams]);
   
 
   // Setup & Cleanup
@@ -113,8 +139,8 @@ const PaymentSuccess = () => {
   // Handle authentication redirect
   useEffect(() => {
     if (isAuthenticated) {
-      logger.info('User already authenticated, redirecting to dashboard');
-      navigate('/dashboard', { replace: true });
+      logger.info('User already authenticated, redirecting to Trading Lab');
+      navigate('/trading-lab/payment-success-loading', { replace: true });
     }
   }, [isAuthenticated, navigate]);
 
@@ -216,7 +242,7 @@ const PaymentSuccess = () => {
               if (mounted.current) {
                 // Clear auth redirect flag right before navigation
                 sessionStorage.removeItem('auth_redirect_in_progress');
-                navigate('/dashboard', { replace: true });
+                navigate('/trading-lab/payment-success-loading', { replace: true });
               }
             }, AUTO_REDIRECT_DELAY);
           
@@ -312,7 +338,7 @@ useEffect(() => {
               
               redirectTimeout.current = setTimeout(() => {
                 if (mounted.current) {
-                  navigate('/dashboard', { replace: true });
+                  navigate('/trading-lab/payment-success-loading', { replace: true });
                 }
               }, AUTO_REDIRECT_DELAY);
               return;

@@ -8,11 +8,12 @@ import {
   HStack,
   Spinner,
   IconButton,
+  Button,
   useToast
 } from '@chakra-ui/react';
 import { useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
-import { ChevronLeft, ChevronRight, MessageCircle } from 'lucide-react';
+import { ChevronLeft, ChevronRight, MessageCircle, ArrowRight } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { StrategyBuilderProvider } from '@/contexts/StrategyBuilderContext';
 import useStrategyBuilder from '@/hooks/useStrategyBuilder';
@@ -21,6 +22,7 @@ import Menu from '@/components/layout/Sidebar/Menu';
 import StrategyGrid from './components/StrategyGrid';
 import CreateStrategyButton from './components/CreateStrategyButton';
 import EmptyState from './components/EmptyState';
+import EntryExperience from './components/EntryExperience';
 import Chatbox from '@/components/Chatbox';
 import logger from '@/utils/logger';
 
@@ -30,6 +32,8 @@ const MotionBox = motion(Box);
 const StrategyBuilderPageContent = () => {
   const { components, isLoading, error, strategyMetadata } = useStrategyBuilder();
   const [isChatOpen, setIsChatOpen] = useState(false);
+  const [selectedPath, setSelectedPath] = useState(null);
+  const [showMagicExperience, setShowMagicExperience] = useState(false);
   const toast = useToast();
 
   // Chat handlers
@@ -39,6 +43,47 @@ const StrategyBuilderPageContent = () => {
 
   const handleCloseChat = () => {
     setIsChatOpen(false);
+  };
+
+  // Path selection handler
+  const handlePathSelect = (path) => {
+    setSelectedPath(path);
+    
+    // Handle different path selections
+    switch (path.id) {
+      case 'popular':
+        // Will be implemented in next phase - template showcase
+        toast({
+          title: "Proven Strategies",
+          description: "Battle-tested strategy gallery coming soon!",
+          status: "info",
+          duration: 3000,
+          isClosable: true,
+        });
+        break;
+      case 'learn':
+        // Will be implemented in next phase - guided tutorial
+        toast({
+          title: "Master the Craft",
+          description: "Precision training modules coming soon!",
+          status: "info",
+          duration: 3000,
+          isClosable: true,
+        });
+        break;
+      default:
+        break;
+    }
+  };
+
+  // Start fresh handler - shows magic experience again
+  const handleStartFresh = () => {
+    setShowMagicExperience(true);
+  };
+
+  // Exit magic experience
+  const handleExitMagic = () => {
+    setShowMagicExperience(false);
   };
 
   // Show error toast if needed
@@ -59,12 +104,24 @@ const StrategyBuilderPageContent = () => {
       <Flex direction="column" h="full">
         {/* Header */}
         <Box mb={8}>
-          <HStack justify="space-between" mb={2}>
-            <Heading size="lg" color="white">Strategy Builder</Heading>
+          <HStack justify="flex-end" mb={2}>
+            {components.length > 0 && !showMagicExperience && (
+              <Button
+                onClick={handleStartFresh}
+                size="sm"
+                variant="outline"
+                borderColor="#00C6E0"
+                color="#00C6E0"
+                _hover={{ 
+                  bg: "rgba(0, 198, 224, 0.1)",
+                  borderColor: "#00D7F2" 
+                }}
+                leftIcon={<ArrowRight size={16} />}
+              >
+                Start Fresh
+              </Button>
+            )}
           </HStack>
-          <Text color="whiteAlpha.700">
-            Create and configure strategy components to build your automated trading system
-          </Text>
         </Box>
 
         {/* Main Content */}
@@ -74,7 +131,7 @@ const StrategyBuilderPageContent = () => {
           </Flex>
         ) : (
           <AnimatePresence mode="wait">
-            {components.length === 0 ? (
+            {(components.length === 0 || showMagicExperience) ? (
               <MotionBox
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
@@ -84,8 +141,37 @@ const StrategyBuilderPageContent = () => {
                 display="flex"
                 alignItems="center"
                 justifyContent="center"
+                position="relative"
               >
-                <EmptyState />
+                {/* Exit Magic Experience Button */}
+                {showMagicExperience && components.length > 0 && (
+                  <MotionBox
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    position="absolute"
+                    top={4}
+                    right={4}
+                    zIndex={10}
+                  >
+                    <Button
+                      onClick={handleExitMagic}
+                      size="sm"
+                      variant="ghost"
+                      color="whiteAlpha.700"
+                      _hover={{ color: "white", bg: "whiteAlpha.100" }}
+                    >
+                      ← Back to Strategies
+                    </Button>
+                  </MotionBox>
+                )}
+                
+                <EntryExperience 
+                  onPathSelect={handlePathSelect}
+                  onOpenChat={() => {
+                    handleOpenChat();
+                    setShowMagicExperience(false);
+                  }}
+                />
               </MotionBox>
             ) : (
               <MotionBox

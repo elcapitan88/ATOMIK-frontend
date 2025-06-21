@@ -180,6 +180,11 @@ const Menu = ({ onSelectItem }) => {
         name: 'Marketplace', 
         icon: Store,
         path: '/marketplace'
+      },
+      { 
+        name: 'Stats',
+        icon: LifeBuoy,
+        path: '/stats'
       }
     ];
 

@@ -1,0 +1,316 @@
+.strategy-activation-container {
+  min-height: 100vh;
+  background: #000000;
+  color: white;
+  display: flex;
+  flex-direction: column;
+}
+
+.activation-content {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+}
+
+.activation-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 24px;
+  padding: 2.5rem;
+  max-width: 600px;
+  width: 100%;
+  backdrop-filter: blur(10px);
+}
+
+/* Configuration Sections */
+.config-section {
+  margin-bottom: 2rem;
+}
+
+.config-label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #cccccc;
+  margin-bottom: 0.75rem;
+}
+
+/* Account Selection */
+.account-selector {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.account-option {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.account-option:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(0, 198, 224, 0.3);
+}
+
+.account-option.selected {
+  background: rgba(0, 198, 224, 0.1);
+  border-color: #00C6E0;
+}
+
+.account-name {
+  font-weight: 500;
+}
+
+.account-broker {
+  font-size: 0.875rem;
+  color: #888888;
+}
+
+/* Ticker Dropdown */
+.ticker-dropdown {
+  width: 100%;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  color: white;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.ticker-dropdown:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(0, 198, 224, 0.3);
+}
+
+.ticker-dropdown:focus {
+  outline: none;
+  border-color: #00C6E0;
+  box-shadow: 0 0 0 2px rgba(0, 198, 224, 0.2);
+}
+
+.ticker-dropdown option {
+  background: #1a1a1a;
+  color: white;
+  padding: 0.5rem;
+}
+
+.ticker-dropdown optgroup {
+  background: #2a2a2a;
+  color: #cccccc;
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+.ticker-dropdown optgroup option {
+  background: #1a1a1a;
+  color: white;
+  padding-left: 1rem;
+  font-weight: 400;
+}
+
+/* Quantity Control */
+.quantity-control {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: fit-content;
+}
+
+.quantity-button {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: white;
+  font-size: 1.25rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.quantity-button:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(0, 198, 224, 0.3);
+}
+
+.quantity-button:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.quantity-input {
+  width: 80px;
+  height: 48px;
+  padding: 0 1rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  color: white;
+  font-size: 1rem;
+  font-weight: 600;
+  text-align: center;
+  transition: all 0.2s ease;
+}
+
+.quantity-input:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(0, 198, 224, 0.3);
+}
+
+.quantity-input:focus {
+  outline: none;
+  border-color: #00C6E0;
+  box-shadow: 0 0 0 2px rgba(0, 198, 224, 0.2);
+}
+
+/* Hide number input arrows */
+.quantity-input::-webkit-outer-spin-button,
+.quantity-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.quantity-input[type=number] {
+  -moz-appearance: textfield;
+}
+
+/* Summary Section */
+.activation-summary {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 16px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.summary-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0;
+}
+
+.summary-item:not(:last-child) {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.summary-label {
+  font-size: 0.875rem;
+  color: #888888;
+}
+
+.summary-value {
+  font-weight: 500;
+  color: #00C6E0;
+}
+
+.summary-item.error .summary-label {
+  color: #EF4444;
+}
+
+.summary-item.error .summary-value {
+  color: #EF4444;
+  font-size: 0.875rem;
+}
+
+/* Activate Button */
+.activate-network-button {
+  width: 100%;
+  padding: 1.25rem 2rem;
+  background: linear-gradient(135deg, #00C6E0, #0099CC);
+  border: none;
+  border-radius: 16px;
+  color: white;
+  font-size: 1.125rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  box-shadow: 0 4px 20px rgba(0, 198, 224, 0.3);
+}
+
+.activate-network-button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 30px rgba(0, 198, 224, 0.4);
+}
+
+.activate-network-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.atomik-icon {
+  font-size: 1.5rem;
+}
+
+.activating {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Helper Text */
+.helper-text {
+  text-align: center;
+  font-size: 0.875rem;
+  color: #888888;
+  margin-top: 1rem;
+}
+
+.no-tickers-message {
+  text-align: center;
+  padding: 2rem;
+  color: #888888;
+  font-size: 0.875rem;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  .activation-content {
+    padding: 1rem;
+  }
+
+  .activation-card {
+    padding: 1.5rem;
+  }
+
+  .ticker-dropdown {
+    padding: 0.875rem;
+    font-size: 0.875rem;
+  }
+
+  .quantity-control {
+    gap: 0.375rem;
+  }
+
+  .quantity-button {
+    width: 40px;
+    height: 40px;
+    font-size: 1rem;
+  }
+
+  .quantity-input {
+    width: 60px;
+    height: 40px;
+    font-size: 0.875rem;
+  }
+}

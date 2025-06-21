@@ -1,6 +1,7 @@
 // src/services/affiliateService.js
 import axiosInstance from './axiosConfig';
 import logger from '@/utils/logger';
+import { storage } from '../utils/helpers/localStorage';
 
 // Define base URL as a constant to avoid class property issues
 const AFFILIATE_BASE_URL = '/api/v1/affiliate';
@@ -9,6 +10,11 @@ class AffiliateService {
   constructor() {
     // Explicitly set baseURL and ensure it's not undefined
     this.baseURL = AFFILIATE_BASE_URL;
+    
+    // Referral tracking constants
+    this.REFERRAL_KEY = 'atomik_referral_code';
+    this.REFERRAL_EXPIRY_KEY = 'atomik_referral_expiry';
+    this.REFERRAL_EXPIRY_DAYS = 15;
   }
 
   /**
@@ -139,6 +145,222 @@ class AffiliateService {
       throw error;
     }
   }
+
+  // ===== REFERRAL TRACKING METHODS =====
+
+  /**
+   * Capture referral code from URL parameters
+   * @returns {string|null} Captured referral code or null
+   */
+  captureReferralFromURL() {
+    try {
+      const urlParams = new URLSearchParams(window.location.search);
+      const referralCode = urlParams.get('ref');
+      
+      if (referralCode) {
+        logger.info('Referral code captured from URL:', referralCode);
+        this.storeReferralCode(referralCode);
+        
+        // Send to Rewardful
+        if (window.rewardful) {
+          window.rewardful('referral', referralCode);
+          logger.info('Referral code sent to Rewardful:', referralCode);
+        }
+        
+        this.cleanURLParameter();
+        return referralCode;
+      }
+      
+      return null;
+    } catch (error) {
+      logger.error('Error capturing referral from URL:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Store referral code with expiry
+   * @param {string} referralCode - Referral code to store
+   */
+  storeReferralCode(referralCode) {
+    try {
+      const expiryDate = new Date();
+      expiryDate.setDate(expiryDate.getDate() + this.REFERRAL_EXPIRY_DAYS);
+      
+      storage.set(this.REFERRAL_KEY, referralCode);
+      storage.set(this.REFERRAL_EXPIRY_KEY, expiryDate.getTime());
+      
+      logger.info(`Referral code stored: ${referralCode}, expires: ${expiryDate}`);
+    } catch (error) {
+      logger.error('Error storing referral code:', error);
+    }
+  }
+
+  /**
+   * Get stored referral code if not expired
+   * @returns {string|null} Referral code or null if expired/not found
+   */
+  getReferralCode() {
+    try {
+      const expiryTime = storage.get(this.REFERRAL_EXPIRY_KEY);
+      
+      if (expiryTime && new Date().getTime() > expiryTime) {
+        logger.info('Referral code expired, clearing storage');
+        this.clearReferralCode();
+        return null;
+      }
+      
+      return storage.get(this.REFERRAL_KEY);
+    } catch (error) {
+      logger.error('Error getting referral code:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Clear stored referral code
+   */
+  clearReferralCode() {
+    try {
+      storage.remove(this.REFERRAL_KEY);
+      storage.remove(this.REFERRAL_EXPIRY_KEY);
+      logger.info('Referral code cleared from storage');
+    } catch (error) {
+      logger.error('Error clearing referral code:', error);
+    }
+  }
+
+  /**
+   * Remove referral parameter from URL
+   */
+  cleanURLParameter() {
+    try {
+      const url = new URL(window.location);
+      url.searchParams.delete('ref');
+      
+      window.history.replaceState({}, document.title, url.pathname + url.search);
+      logger.info('Referral parameter cleaned from URL');
+    } catch (error) {
+      logger.error('Error cleaning URL parameter:', error);
+    }
+  }
+
+  /**
+   * Track referral click with Rewardful and backend
+   * @param {string} referralCode - Referral code to track
+   */
+  async trackReferralClick(referralCode) {
+    try {
+      // Track with Rewardful
+      if (window.rewardful) {
+        window.rewardful('click', { referral_code: referralCode });
+        logger.info('Referral click tracked with Rewardful:', referralCode);
+      }
+      
+      // Also track with our backend for analytics
+      await this.trackClickInBackend(referralCode);
+    } catch (error) {
+      logger.error('Error tracking referral click:', error);
+    }
+  }
+
+  /**
+   * Track click in backend for analytics
+   * @param {string} referralCode - Referral code to track
+   */
+  async trackClickInBackend(referralCode) {
+    try {
+      const clickData = {
+        referral_code: referralCode,
+        page_url: window.location.href,
+        referrer: document.referrer,
+        user_agent: navigator.userAgent
+      };
+      
+      const response = await axiosInstance.post(`${AFFILIATE_BASE_URL}/track-click`, clickData);
+      logger.info('Click tracked in backend:', response.data);
+    } catch (error) {
+      logger.error('Error tracking click in backend:', error);
+      // Don't throw error - tracking failure shouldn't break user experience
+    }
+  }
+
+  /**
+   * Track conversion with Rewardful
+   * @param {Object} conversionData - Conversion data
+   * @param {number} conversionData.amount - Sale amount
+   * @param {string} conversionData.email - Customer email
+   * @param {string} conversionData.orderId - Order/subscription ID
+   * @returns {boolean} True if conversion was tracked
+   */
+  trackConversion(conversionData) {
+    try {
+      const referralCode = this.getReferralCode();
+      
+      if (referralCode && window.rewardful) {
+        const conversionPayload = {
+          sale_amount: conversionData.amount,
+          email: conversionData.email,
+          order_id: conversionData.orderId,
+          referral_code: referralCode,
+          ...conversionData
+        };
+        
+        window.rewardful('convert', conversionPayload);
+        logger.info('Conversion tracked with referral:', { referralCode, ...conversionPayload });
+        
+        return true;
+      }
+      
+      logger.info('No referral code found for conversion tracking');
+      return false;
+    } catch (error) {
+      logger.error('Error tracking conversion:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Initialize referral tracking on page load
+   * @returns {string|null} Active referral code
+   */
+  async initializeReferralTracking() {
+    try {
+      logger.info('Initializing referral tracking');
+      
+      const capturedReferral = this.captureReferralFromURL();
+      
+      if (capturedReferral) {
+        await this.trackReferralClick(capturedReferral);
+      } else {
+        const existingReferral = this.getReferralCode();
+        if (existingReferral) {
+          logger.info('Existing referral code found:', existingReferral);
+        }
+      }
+      
+      return capturedReferral || this.getReferralCode();
+    } catch (error) {
+      logger.error('Error initializing referral tracking:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Get debug information for referral tracking
+   * @returns {Object} Debug information
+   */
+  getReferralDebugInfo() {
+    return {
+      referralCode: this.getReferralCode(),
+      expiryTime: storage.get(this.REFERRAL_EXPIRY_KEY),
+      isExpired: storage.get(this.REFERRAL_EXPIRY_KEY) ? new Date().getTime() > storage.get(this.REFERRAL_EXPIRY_KEY) : null,
+      rewardfulLoaded: !!window.rewardful,
+      expiryDays: this.REFERRAL_EXPIRY_DAYS
+    };
+  }
+
+  // ===== FORMATTING METHODS =====
 
   /**
    * Format currency value
