@@ -60,13 +60,17 @@ import {
   Shield,
   FileText,
   RefreshCw,
-  ArrowLeft
+  ArrowLeft,
+  DollarSign,
+  Calendar
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import axiosInstance from '@/services/axiosConfig';
 import { ProfilePicture } from '@/components/common/ProfilePicture';
+import { AffiliateDashboard, BecomeAffiliateModal } from '@/components/affiliate';
+import { useAffiliate } from '@/hooks/useAffiliate';
 
 const MotionBox = motion(Box);
 const MotionFlex = motion(Flex);
@@ -483,10 +487,25 @@ const SettingsPage = () => {
   const fileInputRef = useRef(null);
   const toast = useToast();
   const { isOpen, onOpen, onClose } = useDisclosure();
+  
+  // Affiliate functionality
+  const { isOpen: isAffiliateModalOpen, onOpen: onAffiliateModalOpen, onClose: onAffiliateModalClose } = useDisclosure();
+  const { isAffiliate, becomeAffiliate, isBecomingAffiliate } = useAffiliate();
+
+  // Handle joining affiliate program
+  const handleJoinAffiliate = async () => {
+    try {
+      await becomeAffiliate();
+      onAffiliateModalClose();
+    } catch (error) {
+      console.error('Error joining affiliate program:', error);
+    }
+  };
 
   const menuItems = [
     { id: 'profile', label: 'Profile', icon: User },
-    { id: 'billing', label: 'Billing', icon: CreditCard }
+    { id: 'billing', label: 'Billing', icon: CreditCard },
+    { id: 'affiliate', label: 'Affiliate', icon: DollarSign }
   ];
 
   // Handle back navigation
@@ -1268,6 +1287,255 @@ const SettingsPage = () => {
           </VStack>
         );
 
+      case 'affiliate':
+        return (
+          <VStack spacing={8} align="stretch">
+            {isAffiliate ? (
+              // Show affiliate dashboard for existing affiliates
+              <AffiliateDashboard />
+            ) : (
+              // Show join affiliate program for non-affiliates
+              <SectionContainer icon={DollarSign} title="Affiliate Program">
+                <VStack spacing={6} align="stretch">
+                  {/* Hero Section */}
+                  <Box
+                    bg="linear-gradient(135deg, rgba(0, 198, 224, 0.1) 0%, rgba(0, 198, 224, 0.05) 100%)"
+                    p={8}
+                    borderRadius="lg"
+                    border="1px solid rgba(0, 198, 224, 0.3)"
+                    position="relative"
+                    overflow="hidden"
+                  >
+                    <Box
+                      position="absolute"
+                      top="-50%"
+                      right="-20%"
+                      width="300px"
+                      height="300px"
+                      bg="radial-gradient(circle, rgba(0, 198, 224, 0.2) 0%, transparent 70%)"
+                      borderRadius="full"
+                      filter="blur(40px)"
+                    />
+                    
+                    <VStack spacing={6} align="center" position="relative" textAlign="center">
+                      <Box color="#00C6E0">
+                        <DollarSign size={48} />
+                      </Box>
+                      
+                      <VStack spacing={3}>
+                        <Text color="white" fontSize="2xl" fontWeight="bold">
+                          Join Our Affiliate Program
+                        </Text>
+                        <Text color="whiteAlpha.700" fontSize="lg">
+                          Earn 20% lifetime recurring commissions
+                        </Text>
+                        <Text color="whiteAlpha.600" fontSize="sm" maxW="md">
+                          Share AtomikTrading with your audience and earn generous commissions 
+                          for every successful referral. No caps, no limits.
+                        </Text>
+                      </VStack>
+                      
+                      <Button
+                        size="lg"
+                        bg="#00C6E0"
+                        color="white"
+                        px={8}
+                        py={6}
+                        fontSize="md"
+                        fontWeight="semibold"
+                        _hover={{ 
+                          bg: "#00A3B8",
+                          transform: "translateY(-2px)",
+                          boxShadow: "0 8px 20px -8px rgba(0, 198, 224, 0.5)"
+                        }}
+                        _active={{
+                          transform: "translateY(0)",
+                        }}
+                        leftIcon={<Zap size={20} />}
+                        onClick={onAffiliateModalOpen}
+                        transition="all 0.2s"
+                      >
+                        Join Affiliate Program
+                      </Button>
+                    </VStack>
+                  </Box>
+
+                  {/* Benefits Grid */}
+                  <SimpleGrid columns={{ base: 1, md: 3 }} spacing={6}>
+                    <Box bg="#1a1a1a" p={6} borderRadius="lg" border="1px solid #333">
+                      <VStack align="start" spacing={4}>
+                        <Box
+                          bg="rgba(0, 198, 224, 0.2)"
+                          p={3}
+                          borderRadius="md"
+                        >
+                          <DollarSign size={24} color="#00C6E0" />
+                        </Box>
+                        <VStack align="start" spacing={2}>
+                          <Text color="white" fontSize="lg" fontWeight="semibold">
+                            20% Commission
+                          </Text>
+                          <Text color="whiteAlpha.700" fontSize="sm">
+                            Earn 20% on all subscription plans - one of the highest rates in the industry.
+                          </Text>
+                        </VStack>
+                      </VStack>
+                    </Box>
+
+                    <Box bg="#1a1a1a" p={6} borderRadius="lg" border="1px solid #333">
+                      <VStack align="start" spacing={4}>
+                        <Box
+                          bg="rgba(0, 198, 224, 0.2)"
+                          p={3}
+                          borderRadius="md"
+                        >
+                          <RefreshCw size={24} color="#00C6E0" />
+                        </Box>
+                        <VStack align="start" spacing={2}>
+                          <Text color="white" fontSize="lg" fontWeight="semibold">
+                            Lifetime Revenue
+                          </Text>
+                          <Text color="whiteAlpha.700" fontSize="sm">
+                            Earn commissions for as long as your referrals remain subscribed.
+                          </Text>
+                        </VStack>
+                      </VStack>
+                    </Box>
+
+                    <Box bg="#1a1a1a" p={6} borderRadius="lg" border="1px solid #333">
+                      <VStack align="start" spacing={4}>
+                        <Box
+                          bg="rgba(0, 198, 224, 0.2)"
+                          p={3}
+                          borderRadius="md"
+                        >
+                          <Calendar size={24} color="#00C6E0" />
+                        </Box>
+                        <VStack align="start" spacing={2}>
+                          <Text color="white" fontSize="lg" fontWeight="semibold">
+                            Monthly Payouts
+                          </Text>
+                          <Text color="whiteAlpha.700" fontSize="sm">
+                            Automatic payments on the 1st of every month via Stripe.
+                          </Text>
+                        </VStack>
+                      </VStack>
+                    </Box>
+                  </SimpleGrid>
+
+                  {/* How It Works */}
+                  <Box bg="#1a1a1a" p={6} borderRadius="lg" border="1px solid #333">
+                    <Text color="white" fontSize="lg" fontWeight="semibold" mb={6}>
+                      How It Works
+                    </Text>
+                    
+                    <SimpleGrid columns={{ base: 1, md: 3 }} spacing={6}>
+                      <VStack align="center" spacing={4} textAlign="center">
+                        <Box
+                          bg="rgba(0, 198, 224, 0.2)"
+                          w="60px"
+                          h="60px"
+                          borderRadius="full"
+                          display="flex"
+                          alignItems="center"
+                          justifyContent="center"
+                        >
+                          <Text color="#00C6E0" fontSize="xl" fontWeight="bold">1</Text>
+                        </Box>
+                        <VStack spacing={2}>
+                          <Text color="white" fontSize="md" fontWeight="medium">
+                            Get Your Link
+                          </Text>
+                          <Text color="whiteAlpha.600" fontSize="sm">
+                            Receive a unique referral link to share with your audience
+                          </Text>
+                        </VStack>
+                      </VStack>
+
+                      <VStack align="center" spacing={4} textAlign="center">
+                        <Box
+                          bg="rgba(0, 198, 224, 0.2)"
+                          w="60px"
+                          h="60px"
+                          borderRadius="full"
+                          display="flex"
+                          alignItems="center"
+                          justifyContent="center"
+                        >
+                          <Text color="#00C6E0" fontSize="xl" fontWeight="bold">2</Text>
+                        </Box>
+                        <VStack spacing={2}>
+                          <Text color="white" fontSize="md" fontWeight="medium">
+                            Share & Promote
+                          </Text>
+                          <Text color="whiteAlpha.600" fontSize="sm">
+                            Share on social media, blogs, or directly with traders
+                          </Text>
+                        </VStack>
+                      </VStack>
+
+                      <VStack align="center" spacing={4} textAlign="center">
+                        <Box
+                          bg="rgba(0, 198, 224, 0.2)"
+                          w="60px"
+                          h="60px"
+                          borderRadius="full"
+                          display="flex"
+                          alignItems="center"
+                          justifyContent="center"
+                        >
+                          <Text color="#00C6E0" fontSize="xl" fontWeight="bold">3</Text>
+                        </Box>
+                        <VStack spacing={2}>
+                          <Text color="white" fontSize="md" fontWeight="medium">
+                            Earn Commissions
+                          </Text>
+                          <Text color="whiteAlpha.600" fontSize="sm">
+                            Get paid 20% monthly for the lifetime of each referral
+                          </Text>
+                        </VStack>
+                      </VStack>
+                    </SimpleGrid>
+                  </Box>
+
+                  {/* FAQ/Additional Info */}
+                  <Box
+                    bg="rgba(0, 198, 224, 0.05)"
+                    p={6}
+                    borderRadius="lg"
+                    border="1px solid rgba(0, 198, 224, 0.2)"
+                  >
+                    <HStack spacing={4} align="start">
+                      <Box color="#00C6E0" mt={1}>
+                        <Info size={20} />
+                      </Box>
+                      <VStack align="start" spacing={3}>
+                        <Text color="#00C6E0" fontSize="md" fontWeight="semibold">
+                          Program Details
+                        </Text>
+                        <VStack align="start" spacing={2}>
+                          <Text color="whiteAlpha.700" fontSize="sm">
+                            • Minimum payout threshold: $50
+                          </Text>
+                          <Text color="whiteAlpha.700" fontSize="sm">
+                            • 90-day cookie tracking window
+                          </Text>
+                          <Text color="whiteAlpha.700" fontSize="sm">
+                            • Real-time tracking and reporting
+                          </Text>
+                          <Text color="whiteAlpha.700" fontSize="sm">
+                            • Dedicated affiliate support
+                          </Text>
+                        </VStack>
+                      </VStack>
+                    </HStack>
+                  </Box>
+                </VStack>
+              </SectionContainer>
+            )}
+          </VStack>
+        );
+
       default:
         return null;
     }
@@ -1360,6 +1628,14 @@ const SettingsPage = () => {
 
       {/* Password Change Modal */}
       <PasswordChangeModal isOpen={isOpen} onClose={onClose} />
+      
+      {/* Become Affiliate Modal */}
+      <BecomeAffiliateModal 
+        isOpen={isAffiliateModalOpen} 
+        onClose={onAffiliateModalClose}
+        onJoin={handleJoinAffiliate}
+        isJoining={isBecomingAffiliate}
+      />
     </Flex>
   );
 };
