@@ -1,8 +1,13 @@
 import axios from 'axios';
 import logger from '@/utils/logger';
 
+// Determine API URL based on environment
+const API_URL = process.env.NODE_ENV === 'production' 
+    ? 'https://api.atomiktrading.io'
+    : 'http://localhost:8000';
+
 const axiosInstance = axios.create({
-    baseURL: 'http://localhost:8000',
+    baseURL: API_URL,
     withCredentials: true,
 });
 
