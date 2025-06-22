@@ -32,7 +32,24 @@ import {
   Link,
   Card,
   CardBody,
-  CardHeader
+  CardHeader,
+  Tabs,
+  TabList,
+  TabPanels,
+  Tab,
+  TabPanel,
+  Select,
+  FormControl,
+  FormLabel,
+  FormErrorMessage,
+  useToast,
+  Modal,
+  ModalOverlay,
+  ModalContent,
+  ModalHeader,
+  ModalBody,
+  ModalCloseButton,
+  useDisclosure
 } from '@chakra-ui/react';
 import {
   Copy,
@@ -45,10 +62,15 @@ import {
   CreditCard,
   Info,
   Eye,
-  RefreshCw
+  RefreshCw,
+  Settings,
+  FileText,
+  Wallet,
+  History
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useAffiliate } from '@/hooks/useAffiliate';
+import affiliateService from '@/services/affiliateService';
 
 const MotionBox = motion(Box);
 const MotionCard = motion(Card);
@@ -285,6 +307,264 @@ const RecentReferralsTable = ({ referrals = [], isLoading = false, formatCurrenc
   );
 };
 
+// Payout Method Configuration Component
+const PayoutMethodModal = ({ isOpen, onClose, currentMethod, currentDetails, onUpdateMethod }) => {
+  const [payoutMethod, setPayoutMethod] = useState(currentMethod || '');
+  const [paypalEmail, setPaypalEmail] = useState(currentDetails?.email || '');
+  const [wiseEmail, setWiseEmail] = useState(currentDetails?.email || '');
+  const [wiseRecipientType, setWiseRecipientType] = useState(currentDetails?.recipient_type || 'individual');
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [errors, setErrors] = useState({});
+
+  const validateForm = () => {
+    const newErrors = {};
+    
+    if (!payoutMethod) {
+      newErrors.method = 'Please select a payout method';
+    } else if (payoutMethod === 'paypal') {
+      if (!paypalEmail) {
+        newErrors.paypal = 'PayPal email is required';
+      } else if (!/\S+@\S+\.\S+/.test(paypalEmail)) {
+        newErrors.paypal = 'Please enter a valid email address';
+      }
+    } else if (payoutMethod === 'wise') {
+      if (!wiseEmail) {
+        newErrors.wise = 'Wise email is required';
+      } else if (!/\S+@\S+\.\S+/.test(wiseEmail)) {
+        newErrors.wise = 'Please enter a valid email address';
+      }
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = async () => {
+    if (!validateForm()) return;
+    
+    setIsUpdating(true);
+    try {
+      const details = payoutMethod === 'paypal' 
+        ? { email: paypalEmail }
+        : { email: wiseEmail, recipient_type: wiseRecipientType };
+      
+      await onUpdateMethod(payoutMethod, details);
+      onClose();
+    } catch (error) {
+      console.error('Error updating payout method:', error);
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  return (
+    <Modal isOpen={isOpen} onClose={onClose} size={{ base: "full", md: "md" }}>
+      <ModalOverlay />
+      <ModalContent bg="#1a1a1a" border="1px solid #333" mx={{ base: 4, md: 0 }}>
+        <ModalHeader color="white">Configure Payout Method</ModalHeader>
+        <ModalCloseButton color="whiteAlpha.700" />
+        
+        <ModalBody pb={6}>
+          <VStack spacing={6} align="stretch">
+            <FormControl isInvalid={errors.method}>
+              <FormLabel color="whiteAlpha.700" fontSize="sm">Payout Method</FormLabel>
+              <Select
+                value={payoutMethod}
+                onChange={(e) => setPayoutMethod(e.target.value)}
+                bg="#2a2a2a"
+                borderColor="#333"
+                color="white"
+                _hover={{ borderColor: "#00C6E0" }}
+                _focus={{ borderColor: "#00C6E0", boxShadow: "none" }}
+              >
+                <option value="">Select a method</option>
+                <option value="paypal">PayPal</option>
+                <option value="wise">Wise (formerly TransferWise)</option>
+              </Select>
+              <FormErrorMessage>{errors.method}</FormErrorMessage>
+            </FormControl>
+
+            {payoutMethod === 'paypal' && (
+              <FormControl isInvalid={errors.paypal}>
+                <FormLabel color="whiteAlpha.700" fontSize="sm">PayPal Email</FormLabel>
+                <Input
+                  type="email"
+                  value={paypalEmail}
+                  onChange={(e) => setPaypalEmail(e.target.value)}
+                  placeholder="your@paypal.email"
+                  bg="#2a2a2a"
+                  borderColor="#333"
+                  color="white"
+                  _hover={{ borderColor: "#00C6E0" }}
+                  _focus={{ borderColor: "#00C6E0", boxShadow: "none" }}
+                />
+                <FormErrorMessage>{errors.paypal}</FormErrorMessage>
+              </FormControl>
+            )}
+
+            {payoutMethod === 'wise' && (
+              <>
+                <FormControl isInvalid={errors.wise}>
+                  <FormLabel color="whiteAlpha.700" fontSize="sm">Wise Email</FormLabel>
+                  <Input
+                    type="email"
+                    value={wiseEmail}
+                    onChange={(e) => setWiseEmail(e.target.value)}
+                    placeholder="your@wise.email"
+                    bg="#2a2a2a"
+                    borderColor="#333"
+                    color="white"
+                    _hover={{ borderColor: "#00C6E0" }}
+                    _focus={{ borderColor: "#00C6E0", boxShadow: "none" }}
+                  />
+                  <FormErrorMessage>{errors.wise}</FormErrorMessage>
+                </FormControl>
+                
+                <FormControl>
+                  <FormLabel color="whiteAlpha.700" fontSize="sm">Recipient Type</FormLabel>
+                  <Select
+                    value={wiseRecipientType}
+                    onChange={(e) => setWiseRecipientType(e.target.value)}
+                    bg="#2a2a2a"
+                    borderColor="#333"
+                    color="white"
+                    _hover={{ borderColor: "#00C6E0" }}
+                    _focus={{ borderColor: "#00C6E0", boxShadow: "none" }}
+                  >
+                    <option value="individual">Individual</option>
+                    <option value="business">Business</option>
+                  </Select>
+                </FormControl>
+              </>
+            )}
+
+            <HStack spacing={3} pt={4}>
+              <Button
+                flex={1}
+                bg="#00C6E0"
+                color="white"
+                onClick={handleSubmit}
+                isLoading={isUpdating}
+                _hover={{ bg: "#00A3B8" }}
+              >
+                Save Method
+              </Button>
+              <Button
+                flex={1}
+                variant="outline"
+                borderColor="#333"
+                color="whiteAlpha.700"
+                onClick={onClose}
+                _hover={{ bg: "#2a2a2a" }}
+              >
+                Cancel
+              </Button>
+            </HStack>
+          </VStack>
+        </ModalBody>
+      </ModalContent>
+    </Modal>
+  );
+};
+
+// Payout History Table Component
+const PayoutHistoryTable = ({ payouts = [], isLoading = false, formatCurrency, formatDate }) => {
+  if (isLoading) {
+    return (
+      <Center py={8}>
+        <VStack>
+          <Spinner size="lg" color="#00C6E0" />
+          <Text color="whiteAlpha.600" fontSize="sm">Loading payout history...</Text>
+        </VStack>
+      </Center>
+    );
+  }
+
+  if (!payouts || payouts.length === 0) {
+    return (
+      <Center py={8}>
+        <VStack spacing={3}>
+          <Box color="whiteAlpha.400">
+            <Wallet size={48} />
+          </Box>
+          <Text color="whiteAlpha.600" fontSize="sm">
+            No payouts yet
+          </Text>
+          <Text color="whiteAlpha.500" fontSize="xs" textAlign="center">
+            Payouts are processed monthly by the 7th
+          </Text>
+        </VStack>
+      </Center>
+    );
+  }
+
+  const getStatusColor = (status) => {
+    const colorMap = {
+      'pending': 'yellow',
+      'processing': 'blue',
+      'completed': 'green',
+      'failed': 'red'
+    };
+    return colorMap[status] || 'gray';
+  };
+
+  return (
+    <TableContainer>
+      <Table variant="simple" size="sm">
+        <Thead>
+          <Tr>
+            <Th color="whiteAlpha.700" fontSize="xs" borderColor="#333">Period</Th>
+            <Th color="whiteAlpha.700" fontSize="xs" borderColor="#333" display={{ base: "none", md: "table-cell" }}>Method</Th>
+            <Th color="whiteAlpha.700" fontSize="xs" borderColor="#333">Amount</Th>
+            <Th color="whiteAlpha.700" fontSize="xs" borderColor="#333">Status</Th>
+            <Th color="whiteAlpha.700" fontSize="xs" borderColor="#333" display={{ base: "none", sm: "table-cell" }}>Date</Th>
+          </Tr>
+        </Thead>
+        <Tbody>
+          {payouts.map((payout, index) => (
+            <Tr key={payout.id || index}>
+              <Td borderColor="#333" py={3} fontSize={{ base: "xs", md: "sm" }}>
+                <VStack align="start" spacing={1}>
+                  <Text color="white" fontSize="sm" fontWeight="medium">
+                    {new Date(payout.period_start).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
+                  </Text>
+                  <Text color="whiteAlpha.600" fontSize="xs" display={{ base: "block", md: "none" }}>
+                    {payout.payout_method?.charAt(0).toUpperCase() + payout.payout_method?.slice(1)}
+                  </Text>
+                </VStack>
+              </Td>
+              <Td borderColor="#333" py={3} display={{ base: "none", md: "table-cell" }}>
+                <Text color="whiteAlpha.700" fontSize="sm">
+                  {payout.payout_method?.charAt(0).toUpperCase() + payout.payout_method?.slice(1)}
+                </Text>
+              </Td>
+              <Td borderColor="#333" py={3}>
+                <Text color="#00C6E0" fontSize="sm" fontWeight="medium">
+                  {formatCurrency(payout.payout_amount)}
+                </Text>
+              </Td>
+              <Td borderColor="#333" py={3}>
+                <Badge
+                  colorScheme={getStatusColor(payout.status)}
+                  variant="subtle"
+                  fontSize="xs"
+                >
+                  {payout.status?.charAt(0).toUpperCase() + payout.status?.slice(1)}
+                </Badge>
+              </Td>
+              <Td borderColor="#333" py={3} display={{ base: "none", sm: "table-cell" }}>
+                <Text color="whiteAlpha.600" fontSize="xs">
+                  {payout.payout_date ? formatDate(payout.payout_date) : 'Pending'}
+                </Text>
+              </Td>
+            </Tr>
+          ))}
+        </Tbody>
+      </Table>
+    </TableContainer>
+  );
+};
+
 // Program Info Component
 const ProgramInfo = ({ programInfo }) => (
   <MotionCard
@@ -329,16 +609,35 @@ const ProgramInfo = ({ programInfo }) => (
         <HStack justify="space-between">
           <Text color="whiteAlpha.700" fontSize="sm">Tracking Period</Text>
           <Text color="white" fontSize="sm" fontWeight="medium">
-            {programInfo?.tracking_period || '90 days'}
+            {programInfo?.tracking_period || '15 days'}
           </Text>
         </HStack>
         
         <HStack justify="space-between">
           <Text color="whiteAlpha.700" fontSize="sm">Payment Schedule</Text>
           <Text color="white" fontSize="sm" fontWeight="medium">
-            {programInfo?.payment_schedule || 'Monthly'}
+            {programInfo?.payment_schedule || 'Monthly (by 7th)'}
           </Text>
         </HStack>
+        
+        {programInfo?.terms_url && (
+          <>
+            <Divider borderColor="#333" />
+            <Link
+              href={programInfo.terms_url}
+              isExternal
+              color="#00C6E0"
+              fontSize="sm"
+              _hover={{ textDecoration: "underline" }}
+            >
+              <HStack>
+                <FileText size={14} />
+                <Text>Terms & Conditions</Text>
+                <ExternalLink size={12} />
+              </HStack>
+            </Link>
+          </>
+        )}
       </VStack>
     </CardBody>
   </MotionCard>
@@ -347,6 +646,11 @@ const ProgramInfo = ({ programInfo }) => (
 // Main Dashboard Component
 const AffiliateDashboard = () => {
   const [copyingLink, setCopyingLink] = useState(false);
+  const [payoutHistory, setPayoutHistory] = useState([]);
+  const [isLoadingPayouts, setIsLoadingPayouts] = useState(false);
+  const { isOpen: isPayoutModalOpen, onOpen: onPayoutModalOpen, onClose: onPayoutModalClose } = useDisclosure();
+  const toast = useToast();
+  
   const {
     dashboard,
     isLoading,
@@ -364,6 +668,51 @@ const AffiliateDashboard = () => {
     setCopyingLink(true);
     await copyReferralLink(link);
     setCopyingLink(false);
+  };
+
+  const fetchPayoutHistory = async () => {
+    setIsLoadingPayouts(true);
+    try {
+      const response = await affiliateService.getPayoutHistory({ page: 1, limit: 12 });
+      setPayoutHistory(response.payouts || []);
+    } catch (error) {
+      console.error('Error fetching payout history:', error);
+      toast({
+        title: "Error loading payout history",
+        description: error.response?.data?.detail || error.message || "Please try again later",
+        status: "error",
+        duration: 5000,
+        isClosable: true,
+      });
+    } finally {
+      setIsLoadingPayouts(false);
+    }
+  };
+
+  const handleUpdatePayoutMethod = async (method, details) => {
+    try {
+      await affiliateService.updatePayoutMethod(method, details);
+      
+      toast({
+        title: "Payout method updated",
+        description: `Your payout method has been set to ${method.charAt(0).toUpperCase() + method.slice(1)}`,
+        status: "success",
+        duration: 3000,
+        isClosable: true,
+      });
+      
+      // Refetch dashboard to update payout info
+      refetchDashboard();
+    } catch (error) {
+      console.error('Error updating payout method:', error);
+      toast({
+        title: "Error updating payout method",
+        description: error.response?.data?.detail || error.message || "Please try again later",
+        status: "error",
+        duration: 5000,
+        isClosable: true,
+      });
+    }
   };
 
   if (isLoading) {
@@ -405,11 +754,16 @@ const AffiliateDashboard = () => {
   const stats = affiliateData?.stats;
   const recentReferrals = dashboard?.recent_referrals || [];
   const programInfo = dashboard?.program_info;
+  const payoutInfo = dashboard?.payout_info;
 
   return (
-    <VStack spacing={8} align="stretch">
-      {/* Stats Grid */}
-      <SimpleGrid columns={{ base: 1, md: 2, lg: 4 }} spacing={6}>
+    <Box>
+      {/* Stats Grid - Mobile First */}
+      <SimpleGrid 
+        columns={{ base: 2, md: 4 }} 
+        spacing={{ base: 3, md: 6 }} 
+        mb={{ base: 6, md: 8 }}
+      >
         <StatCard
           icon={DollarSign}
           label="Total Earned"
@@ -439,101 +793,241 @@ const AffiliateDashboard = () => {
           label="Pending Payout"
           value={formatCurrency(stats?.pending_payout)}
           color="#F59E0B"
-          subtitle="Next payout: 1st"
+          subtitle="By the 7th"
         />
       </SimpleGrid>
 
-      {/* Referral Link */}
-      <ReferralLinkCard
-        referralLink={affiliateData?.referral_link}
-        onCopy={handleCopyLink}
-        isCopying={copyingLink}
-      />
+      {/* Referral Link - Mobile Optimized */}
+      <Box mb={{ base: 6, md: 8 }}>
+        <ReferralLinkCard
+          referralLink={affiliateData?.referral_link}
+          onCopy={handleCopyLink}
+          isCopying={copyingLink}
+        />
+      </Box>
 
-      {/* Recent Referrals and Program Info */}
-      <SimpleGrid columns={{ base: 1, lg: 3 }} spacing={6}>
-        {/* Recent Referrals */}
-        <Box gridColumn={{ base: 'span 1', lg: 'span 2' }}>
-          <MotionCard
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, delay: 0.3 }}
-            bg="#1a1a1a"
-            border="1px solid #333"
-            borderRadius="lg"
-          >
-            <CardHeader>
-              <HStack justify="space-between">
-                <HStack>
-                  <Box
-                    bg="rgba(0, 198, 224, 0.2)"
-                    p={2}
-                    borderRadius="md"
-                  >
-                    <TrendingUp size={18} color="#00C6E0" />
-                  </Box>
-                  <Text color="#00C6E0" fontSize="sm" fontWeight="semibold">
-                    RECENT REFERRALS
-                  </Text>
-                </HStack>
-                
-                {recentReferrals.length > 0 && (
-                  <Button
-                    size="xs"
-                    variant="ghost"
-                    color="#00C6E0"
-                    rightIcon={<Eye size={12} />}
-                  >
-                    View All
-                  </Button>
-                )}
-              </HStack>
-            </CardHeader>
-            
-            <CardBody pt={0}>
-              <RecentReferralsTable
-                referrals={recentReferrals}
-                isLoading={false}
-                formatCurrency={formatCurrency}
-                formatDate={formatDate}
-                getStatusColor={getStatusColor}
-                getStatusText={getStatusText}
-              />
-            </CardBody>
-          </MotionCard>
-        </Box>
-
-        {/* Program Info */}
-        <ProgramInfo programInfo={programInfo} />
-      </SimpleGrid>
-
-      {/* Payout Information */}
-      <MotionCard
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3, delay: 0.4 }}
-        bg="rgba(0, 198, 224, 0.05)"
-        border="1px solid rgba(0, 198, 224, 0.2)"
-        borderRadius="lg"
+      {/* Tabbed Interface - Mobile First */}
+      <Tabs 
+        variant="soft-rounded" 
+        colorScheme="cyan"
+        isLazy
+        index={0}
+        onChange={(index) => {
+          if (index === 1) {
+            fetchPayoutHistory();
+          }
+        }}
       >
-        <CardBody>
-          <HStack spacing={4} align="start">
-            <Box color="#00C6E0" mt={1}>
-              <Calendar size={20} />
-            </Box>
-            <Box>
-              <Text color="#00C6E0" fontSize="sm" fontWeight="semibold" mb={1}>
-                Next Payout Information
-              </Text>
-              <Text color="whiteAlpha.700" fontSize="sm">
-                Payouts are processed monthly on the 1st via Stripe. Minimum payout amount is $50. 
-                Current pending: <Text as="span" color="white" fontWeight="medium">{formatCurrency(stats?.pending_payout)}</Text>
-              </Text>
-            </Box>
-          </HStack>
-        </CardBody>
-      </MotionCard>
-    </VStack>
+        <TabList 
+          mb={6} 
+          gap={{ base: 2, md: 4 }}
+          overflowX="auto"
+          sx={{
+            '&::-webkit-scrollbar': { display: 'none' },
+            scrollbarWidth: 'none'
+          }}
+        >
+          <Tab 
+            color="whiteAlpha.700" 
+            _selected={{ 
+              color: "#00C6E0", 
+              bg: "rgba(0, 198, 224, 0.1)",
+              borderColor: "#00C6E0"
+            }}
+            fontSize={{ base: "sm", md: "md" }}
+            px={{ base: 4, md: 6 }}
+            py={{ base: 2, md: 3 }}
+            minW="fit-content"
+            whiteSpace="nowrap"
+          >
+            <HStack spacing={2}>
+              <TrendingUp size={16} />
+              <Text>Recent Referrals</Text>
+            </HStack>
+          </Tab>
+          
+          <Tab 
+            color="whiteAlpha.700" 
+            _selected={{ 
+              color: "#00C6E0", 
+              bg: "rgba(0, 198, 224, 0.1)",
+              borderColor: "#00C6E0"
+            }}
+            fontSize={{ base: "sm", md: "md" }}
+            px={{ base: 4, md: 6 }}
+            py={{ base: 2, md: 3 }}
+            minW="fit-content"
+            whiteSpace="nowrap"
+          >
+            <HStack spacing={2}>
+              <History size={16} />
+              <Text>Payout History</Text>
+            </HStack>
+          </Tab>
+        </TabList>
+
+        <TabPanels>
+          {/* Recent Referrals Tab */}
+          <TabPanel p={0}>
+            <VStack spacing={{ base: 4, md: 6 }} align="stretch">
+              {/* Recent Referrals Table */}
+              <MotionCard
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3 }}
+                bg="#1a1a1a"
+                border="1px solid #333"
+                borderRadius="lg"
+              >
+                <CardHeader pb={{ base: 2, md: 4 }}>
+                  <HStack justify="space-between">
+                    <HStack>
+                      <Box
+                        bg="rgba(0, 198, 224, 0.2)"
+                        p={2}
+                        borderRadius="md"
+                      >
+                        <TrendingUp size={18} color="#00C6E0" />
+                      </Box>
+                      <Text color="#00C6E0" fontSize={{ base: "sm", md: "md" }} fontWeight="semibold">
+                        RECENT REFERRALS
+                      </Text>
+                    </HStack>
+                  </HStack>
+                </CardHeader>
+                
+                <CardBody pt={0}>
+                  <RecentReferralsTable
+                    referrals={recentReferrals}
+                    isLoading={false}
+                    formatCurrency={formatCurrency}
+                    formatDate={formatDate}
+                    getStatusColor={getStatusColor}
+                    getStatusText={getStatusText}
+                  />
+                </CardBody>
+              </MotionCard>
+
+              {/* Program Info - Mobile Layout */}
+              <SimpleGrid columns={{ base: 1, lg: 2 }} spacing={{ base: 4, md: 6 }}>
+                <ProgramInfo programInfo={programInfo} />
+                
+                {/* Payout Settings Card */}
+                <MotionCard
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3, delay: 0.1 }}
+                  bg="#1a1a1a"
+                  border="1px solid #333"
+                  borderRadius="lg"
+                >
+                  <CardHeader>
+                    <HStack justify="space-between">
+                      <HStack>
+                        <Box
+                          bg="rgba(0, 198, 224, 0.2)"
+                          p={2}
+                          borderRadius="md"
+                        >
+                          <Settings size={18} color="#00C6E0" />
+                        </Box>
+                        <Text color="#00C6E0" fontSize="sm" fontWeight="semibold">
+                          PAYOUT SETTINGS
+                        </Text>
+                      </HStack>
+                    </HStack>
+                  </CardHeader>
+                  
+                  <CardBody pt={0}>
+                    <VStack align="stretch" spacing={4}>
+                      <HStack justify="space-between">
+                        <Text color="whiteAlpha.700" fontSize="sm">Current Method</Text>
+                        <Text color="white" fontSize="sm" fontWeight="medium">
+                          {payoutInfo?.payout_method || 'Not configured'}
+                        </Text>
+                      </HStack>
+                      
+                      <HStack justify="space-between">
+                        <Text color="whiteAlpha.700" fontSize="sm">Next Payout</Text>
+                        <Text color="white" fontSize="sm" fontWeight="medium">
+                          {payoutInfo?.next_payout_date}
+                        </Text>
+                      </HStack>
+                      
+                      <HStack justify="space-between">
+                        <Text color="whiteAlpha.700" fontSize="sm">Minimum</Text>
+                        <Text color="white" fontSize="sm" fontWeight="medium">
+                          {formatCurrency(payoutInfo?.minimum_payout)}
+                        </Text>
+                      </HStack>
+                      
+                      <Button
+                        size="sm"
+                        bg="#00C6E0"
+                        color="white"
+                        leftIcon={<Wallet size={14} />}
+                        onClick={onPayoutModalOpen}
+                        _hover={{ bg: "#00A3B8" }}
+                        w="full"
+                      >
+                        Configure Payout Method
+                      </Button>
+                    </VStack>
+                  </CardBody>
+                </MotionCard>
+              </SimpleGrid>
+            </VStack>
+          </TabPanel>
+
+          {/* Payout History Tab */}
+          <TabPanel p={0}>
+            <MotionCard
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3 }}
+              bg="#1a1a1a"
+              border="1px solid #333"
+              borderRadius="lg"
+            >
+              <CardHeader>
+                <HStack justify="space-between">
+                  <HStack>
+                    <Box
+                      bg="rgba(0, 198, 224, 0.2)"
+                      p={2}
+                      borderRadius="md"
+                    >
+                      <History size={18} color="#00C6E0" />
+                    </Box>
+                    <Text color="#00C6E0" fontSize="sm" fontWeight="semibold">
+                      PAYOUT HISTORY
+                    </Text>
+                  </HStack>
+                </HStack>
+              </CardHeader>
+              
+              <CardBody pt={0}>
+                <PayoutHistoryTable
+                  payouts={payoutHistory}
+                  isLoading={isLoadingPayouts}
+                  formatCurrency={formatCurrency}
+                  formatDate={formatDate}
+                />
+              </CardBody>
+            </MotionCard>
+          </TabPanel>
+        </TabPanels>
+      </Tabs>
+
+      {/* Payout Method Configuration Modal */}
+      <PayoutMethodModal
+        isOpen={isPayoutModalOpen}
+        onClose={onPayoutModalClose}
+        currentMethod={payoutInfo?.payout_method}
+        currentDetails={payoutInfo?.payout_details}
+        onUpdateMethod={handleUpdatePayoutMethod}
+      />
+    </Box>
   );
 };
 

@@ -363,6 +363,47 @@ class AffiliateService {
   }
 
   /**
+   * Update payout method
+   * @param {string} payoutMethod - 'paypal' or 'wise'
+   * @param {Object} payoutDetails - Method-specific details
+   * @returns {Promise<Object>} Success response
+   */
+  async updatePayoutMethod(payoutMethod, payoutDetails) {
+    try {
+      logger.info('Updating payout method:', { payoutMethod });
+      const response = await axiosInstance.put(`${AFFILIATE_BASE_URL}/payout-method`, {
+        payout_method: payoutMethod,
+        payout_details: payoutDetails
+      });
+      logger.info('Payout method updated successfully');
+      return response.data;
+    } catch (error) {
+      logger.error('Error updating payout method:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get payout history
+   * @param {Object} params - Query parameters
+   * @param {number} params.page - Page number
+   * @param {number} params.limit - Items per page
+   * @returns {Promise<Object>} Paginated payout history
+   */
+  async getPayoutHistory({ page = 1, limit = 12 } = {}) {
+    try {
+      const params = { page, limit };
+      logger.info('Fetching payout history', params);
+      const response = await axiosInstance.get(`${AFFILIATE_BASE_URL}/payout-history`, { params });
+      logger.info('Payout history fetched successfully');
+      return response.data;
+    } catch (error) {
+      logger.error('Error fetching payout history:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Get debug information for referral tracking
    * @returns {Object} Debug information
    */
