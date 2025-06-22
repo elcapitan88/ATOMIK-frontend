@@ -155,10 +155,12 @@ class AffiliateService {
   captureReferralFromURL() {
     try {
       const urlParams = new URLSearchParams(window.location.search);
-      const referralCode = urlParams.get('ref');
+      // Check for both 'via' (Rewardful standard) and 'ref' (legacy) parameters
+      const referralCode = urlParams.get('via') || urlParams.get('ref');
       
       if (referralCode) {
-        logger.info('Referral code captured from URL:', referralCode);
+        const parameterUsed = urlParams.get('via') ? 'via' : 'ref';
+        logger.info(`Referral code captured from URL (${parameterUsed}):`, referralCode);
         this.storeReferralCode(referralCode);
         
         // Send to Rewardful
@@ -236,10 +238,12 @@ class AffiliateService {
   cleanURLParameter() {
     try {
       const url = new URL(window.location);
+      // Clean both 'via' and 'ref' parameters
+      url.searchParams.delete('via');
       url.searchParams.delete('ref');
       
       window.history.replaceState({}, document.title, url.pathname + url.search);
-      logger.info('Referral parameter cleaned from URL');
+      logger.info('Referral parameters cleaned from URL');
     } catch (error) {
       logger.error('Error cleaning URL parameter:', error);
     }
