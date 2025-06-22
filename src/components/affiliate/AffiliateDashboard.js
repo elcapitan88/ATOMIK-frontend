@@ -491,6 +491,9 @@ const PayoutHistoryTable = ({ payouts = [], isLoading = false, formatCurrency, f
             No payouts yet
           </Text>
           <Text color="whiteAlpha.500" fontSize="xs" textAlign="center">
+            Start earning commissions! Your first payout will appear here once you reach the $50 minimum.
+          </Text>
+          <Text color="whiteAlpha.400" fontSize="xs" textAlign="center">
             Payouts are processed monthly by the 7th
           </Text>
         </VStack>
@@ -607,7 +610,7 @@ const ProgramInfo = ({ programInfo }) => (
         </HStack>
         
         <HStack justify="space-between">
-          <Text color="whiteAlpha.700" fontSize="sm">Tracking Period</Text>
+          <Text color="whiteAlpha.700" fontSize="sm">Credit Window</Text>
           <Text color="white" fontSize="sm" fontWeight="medium">
             {programInfo?.tracking_period || '15 days'}
           </Text>
@@ -648,6 +651,7 @@ const AffiliateDashboard = () => {
   const [copyingLink, setCopyingLink] = useState(false);
   const [payoutHistory, setPayoutHistory] = useState([]);
   const [isLoadingPayouts, setIsLoadingPayouts] = useState(false);
+  const [activeTab, setActiveTab] = useState(0);
   const { isOpen: isPayoutModalOpen, onOpen: onPayoutModalOpen, onClose: onPayoutModalClose } = useDisclosure();
   const toast = useToast();
   
@@ -811,8 +815,9 @@ const AffiliateDashboard = () => {
         variant="soft-rounded" 
         colorScheme="cyan"
         isLazy
-        index={0}
+        index={activeTab}
         onChange={(index) => {
+          setActiveTab(index);
           if (index === 1) {
             fetchPayoutHistory();
           }
