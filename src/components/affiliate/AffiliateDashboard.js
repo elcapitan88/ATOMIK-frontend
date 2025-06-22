@@ -822,6 +822,11 @@ const AffiliateDashboard = () => {
             fetchPayoutHistory();
           }
         }}
+        sx={{
+          '& .chakra-tabs__tab-panels': {
+            transition: 'all 0.3s ease-in-out'
+          }
+        }}
       >
         <TabList 
           mb={6} 
@@ -879,7 +884,7 @@ const AffiliateDashboard = () => {
               <MotionCard
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3 }}
+                transition={{ duration: 0.4, ease: "easeOut" }}
                 bg="#1a1a1a"
                 border="1px solid #333"
                 borderRadius="lg"
@@ -913,74 +918,6 @@ const AffiliateDashboard = () => {
                 </CardBody>
               </MotionCard>
 
-              {/* Program Info - Mobile Layout */}
-              <SimpleGrid columns={{ base: 1, lg: 2 }} spacing={{ base: 4, md: 6 }}>
-                <ProgramInfo programInfo={programInfo} />
-                
-                {/* Payout Settings Card */}
-                <MotionCard
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.3, delay: 0.1 }}
-                  bg="#1a1a1a"
-                  border="1px solid #333"
-                  borderRadius="lg"
-                >
-                  <CardHeader>
-                    <HStack justify="space-between">
-                      <HStack>
-                        <Box
-                          bg="rgba(0, 198, 224, 0.2)"
-                          p={2}
-                          borderRadius="md"
-                        >
-                          <Settings size={18} color="#00C6E0" />
-                        </Box>
-                        <Text color="#00C6E0" fontSize="sm" fontWeight="semibold">
-                          PAYOUT SETTINGS
-                        </Text>
-                      </HStack>
-                    </HStack>
-                  </CardHeader>
-                  
-                  <CardBody pt={0}>
-                    <VStack align="stretch" spacing={4}>
-                      <HStack justify="space-between">
-                        <Text color="whiteAlpha.700" fontSize="sm">Current Method</Text>
-                        <Text color="white" fontSize="sm" fontWeight="medium">
-                          {payoutInfo?.payout_method || 'Not configured'}
-                        </Text>
-                      </HStack>
-                      
-                      <HStack justify="space-between">
-                        <Text color="whiteAlpha.700" fontSize="sm">Next Payout</Text>
-                        <Text color="white" fontSize="sm" fontWeight="medium">
-                          {payoutInfo?.next_payout_date}
-                        </Text>
-                      </HStack>
-                      
-                      <HStack justify="space-between">
-                        <Text color="whiteAlpha.700" fontSize="sm">Minimum</Text>
-                        <Text color="white" fontSize="sm" fontWeight="medium">
-                          {formatCurrency(payoutInfo?.minimum_payout)}
-                        </Text>
-                      </HStack>
-                      
-                      <Button
-                        size="sm"
-                        bg="#00C6E0"
-                        color="white"
-                        leftIcon={<Wallet size={14} />}
-                        onClick={onPayoutModalOpen}
-                        _hover={{ bg: "#00A3B8" }}
-                        w="full"
-                      >
-                        Configure Payout Method
-                      </Button>
-                    </VStack>
-                  </CardBody>
-                </MotionCard>
-              </SimpleGrid>
             </VStack>
           </TabPanel>
 
@@ -989,7 +926,7 @@ const AffiliateDashboard = () => {
             <MotionCard
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3 }}
+              transition={{ duration: 0.4, ease: "easeOut" }}
               bg="#1a1a1a"
               border="1px solid #333"
               borderRadius="lg"
@@ -1023,6 +960,82 @@ const AffiliateDashboard = () => {
           </TabPanel>
         </TabPanels>
       </Tabs>
+
+      {/* Program Info & Payout Settings - Always Visible */}
+      <MotionBox
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, delay: 0.2 }}
+        mt={{ base: 6, md: 8 }}
+      >
+        <SimpleGrid columns={{ base: 1, lg: 2 }} spacing={{ base: 4, md: 6 }}>
+          <ProgramInfo programInfo={programInfo} />
+          
+          {/* Payout Settings Card */}
+          <MotionCard
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.3 }}
+            bg="#1a1a1a"
+            border="1px solid #333"
+            borderRadius="lg"
+          >
+            <CardHeader>
+              <HStack justify="space-between">
+                <HStack>
+                  <Box
+                    bg="rgba(0, 198, 224, 0.2)"
+                    p={2}
+                    borderRadius="md"
+                  >
+                    <Settings size={18} color="#00C6E0" />
+                  </Box>
+                  <Text color="#00C6E0" fontSize="sm" fontWeight="semibold">
+                    PAYOUT SETTINGS
+                  </Text>
+                </HStack>
+              </HStack>
+            </CardHeader>
+            
+            <CardBody pt={0}>
+              <VStack align="stretch" spacing={4}>
+                <HStack justify="space-between">
+                  <Text color="whiteAlpha.700" fontSize="sm">Current Method</Text>
+                  <Text color="white" fontSize="sm" fontWeight="medium">
+                    {payoutInfo?.payout_method || 'Not configured'}
+                  </Text>
+                </HStack>
+                
+                <HStack justify="space-between">
+                  <Text color="whiteAlpha.700" fontSize="sm">Next Payout</Text>
+                  <Text color="white" fontSize="sm" fontWeight="medium">
+                    {payoutInfo?.next_payout_date}
+                  </Text>
+                </HStack>
+                
+                <HStack justify="space-between">
+                  <Text color="whiteAlpha.700" fontSize="sm">Minimum</Text>
+                  <Text color="white" fontSize="sm" fontWeight="medium">
+                    {formatCurrency(payoutInfo?.minimum_payout)}
+                  </Text>
+                </HStack>
+                
+                <Button
+                  size="sm"
+                  bg="#00C6E0"
+                  color="white"
+                  leftIcon={<Wallet size={14} />}
+                  onClick={onPayoutModalOpen}
+                  _hover={{ bg: "#00A3B8" }}
+                  w="full"
+                >
+                  Configure Payout Method
+                </Button>
+              </VStack>
+            </CardBody>
+          </MotionCard>
+        </SimpleGrid>
+      </MotionBox>
 
       {/* Payout Method Configuration Modal */}
       <PayoutMethodModal
