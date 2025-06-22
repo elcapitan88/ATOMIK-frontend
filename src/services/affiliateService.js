@@ -163,10 +163,16 @@ class AffiliateService {
         logger.info(`Referral code captured from URL (${parameterUsed}):`, referralCode);
         this.storeReferralCode(referralCode);
         
-        // Send to Rewardful
+        // Rewardful handles referral tracking automatically when visiting ?via= links
+        // We just need to check if it detected the referral properly
         if (window.rewardful) {
-          window.rewardful('referral', referralCode);
-          logger.info('Referral code sent to Rewardful:', referralCode);
+          window.rewardful('ready', function() {
+            if (window.Rewardful && window.Rewardful.referral) {
+              logger.info('Rewardful detected referral:', window.Rewardful.referral);
+            } else {
+              logger.info('Rewardful loaded but no referral detected');
+            }
+          });
         }
         
         this.cleanURLParameter();
@@ -255,10 +261,13 @@ class AffiliateService {
    */
   async trackReferralClick(referralCode) {
     try {
-      // Track with Rewardful
+      // Rewardful tracks clicks automatically, just verify it's working
       if (window.rewardful) {
-        window.rewardful('click', { referral_code: referralCode });
-        logger.info('Referral click tracked with Rewardful:', referralCode);
+        window.rewardful('ready', function() {
+          if (window.Rewardful && window.Rewardful.referral) {
+            logger.info('Rewardful click tracking active for referral:', window.Rewardful.referral);
+          }
+        });
       }
       
       // Also track with our backend for analytics
