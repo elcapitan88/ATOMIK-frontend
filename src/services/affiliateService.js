@@ -163,8 +163,8 @@ class AffiliateService {
         logger.info(`Referral code captured from URL (${parameterUsed}):`, referralCode);
         this.storeReferralCode(referralCode);
         
-        // Rewardful handles referral tracking automatically when visiting ?via= links
-        // We just need to check if it detected the referral properly
+        // Let Rewardful process the URL parameter first, then clean it
+        const self = this;
         if (window.rewardful) {
           window.rewardful('ready', function() {
             if (window.Rewardful && window.Rewardful.referral) {
@@ -172,10 +172,13 @@ class AffiliateService {
             } else {
               logger.info('Rewardful loaded but no referral detected');
             }
+            // Clean URL after Rewardful has processed it
+            self.cleanURLParameter();
           });
+        } else {
+          // If Rewardful isn't available, clean URL immediately
+          this.cleanURLParameter();
         }
-        
-        this.cleanURLParameter();
         return referralCode;
       }
       
