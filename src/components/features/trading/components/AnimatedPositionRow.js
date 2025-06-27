@@ -158,6 +158,11 @@ const AnimatedPositionRow = memo(({
         />
       </Td>
       <Td>
+        <Text fontSize="sm" color="whiteAlpha.700">
+          {position.strategy_name || position.strategyId || '-'}
+        </Text>
+      </Td>
+      <Td>
         <Text fontSize="sm" color="whiteAlpha.900">
           {position.accountId}
         </Text>

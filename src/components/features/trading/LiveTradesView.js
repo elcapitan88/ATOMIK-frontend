@@ -43,6 +43,7 @@ import { formatCurrency } from '@/utils/formatting/currency';
 import { formatDate } from '@/utils/formatting/date';
 import { useWebSocketPositions, useWebSocketContext } from '@/services/websocket-proxy';
 import { useAccounts } from '@/hooks/useAccounts';
+import { useTrades } from '@/hooks/useTrades';
 import { useMemo, useEffect } from 'react';
 import AnimatedPositionRow from './components/AnimatedPositionRow';
 import PositionStatusIndicator from './components/PositionStatusIndicator';
@@ -61,6 +62,9 @@ const LiveTradesView = () => {
   const toast = useToast();
   const { data: accounts, isLoading: accountsLoading, error: accountsError } = useAccounts();
   const { isConnected, sendMessage, connections, testMarketDataAccess } = useWebSocketContext();
+  
+  // Use trades hook for database-backed live trades
+  const { liveTrades, closeTrade: closeTradeApi, isLoading: tradesLoading } = useTrades();
   const { 
     positions, 
     loading: positionsLoading, 
@@ -76,8 +80,52 @@ const LiveTradesView = () => {
   
   console.log('[LiveTradesView] Positions data:', { positions, positionsLoading, error, connectionHealth });
   
+  // Merge database trades with WebSocket positions
+  const mergedPositions = useMemo(() => {
+    // Start with WebSocket positions
+    const positionsMap = new Map();
+    
+    // Add WebSocket positions
+    if (positions && Array.isArray(positions)) {
+      positions.forEach(pos => {
+        const key = pos.positionId || pos.contractId;
+        positionsMap.set(key, { ...pos, source: 'websocket' });
+      });
+    }
+    
+    // Add or update with database trades
+    if (liveTrades && Array.isArray(liveTrades)) {
+      liveTrades.forEach(trade => {
+        const key = trade.position_id;
+        const existing = positionsMap.get(key);
+        
+        if (existing) {
+          // Merge data - WebSocket data takes precedence for real-time fields
+          positionsMap.set(key, {
+            ...existing,
+            ...trade,
+            // Keep real-time data from WebSocket
+            currentPrice: existing.currentPrice,
+            unrealizedPnl: existing.unrealizedPnl,
+            // Add database fields
+            strategy_id: trade.strategy_id,
+            strategy_name: trade.strategy_name,
+            max_unrealized_pnl: trade.max_unrealized_pnl,
+            max_adverse_pnl: trade.max_adverse_pnl,
+            source: 'both'
+          });
+        } else {
+          // Database-only trade (might be stale or WebSocket hasn't caught up)
+          positionsMap.set(key, { ...trade, source: 'database' });
+        }
+      });
+    }
+    
+    return Array.from(positionsMap.values());
+  }, [positions, liveTrades]);
+
   // Use throttled positions for better performance
-  const throttledPositions = useThrottledPositions(positions, {
+  const throttledPositions = useThrottledPositions(mergedPositions, {
     priceUpdateDelay: 500,
     pnlUpdateDelay: 250,
     bulkUpdateDelay: 1000
@@ -182,6 +230,7 @@ const LiveTradesView = () => {
     if (!selectedBroker || !selectedAccount) return;
     
     try {
+      // First try to close via WebSocket (real-time)
       const success = await sendMessage(selectedBroker, selectedAccount, {
         type: 'submit_order',
         data: {
@@ -194,6 +243,11 @@ const LiveTradesView = () => {
       });
 
       if (success) {
+        // Also close the trade in the database
+        if (position.id && closeTradeApi) {
+          await closeTradeApi(position.id);
+        }
+        
         toast({
           title: "Close order submitted",
           status: "success",
@@ -210,7 +264,7 @@ const LiveTradesView = () => {
         isClosable: true
       });
     }
-  }, [selectedBroker, selectedAccount, sendMessage, toast]);
+  }, [selectedBroker, selectedAccount, sendMessage, closeTradeApi, toast]);
 
   const handleSetAlert = useCallback((position) => {
     toast({
@@ -233,8 +287,8 @@ const LiveTradesView = () => {
   }, [toast]);
 
   // Loading state
-  if (accountsLoading || positionsLoading || !accounts) {
-    console.log('[LiveTradesView] Loading state:', { accountsLoading, positionsLoading, hasAccounts: !!accounts, accountsError });
+  if (accountsLoading || positionsLoading || tradesLoading || !accounts) {
+    console.log('[LiveTradesView] Loading state:', { accountsLoading, positionsLoading, tradesLoading, hasAccounts: !!accounts, accountsError });
     
     if (accountsError) {
       console.error('[LiveTradesView] Accounts loading error:', accountsError);
@@ -440,6 +494,7 @@ const LiveTradesView = () => {
             <Th color="whiteAlpha.600" isNumeric>Entry</Th>
             <Th color="whiteAlpha.600" isNumeric>Current</Th>
             <Th color="whiteAlpha.600" isNumeric>P&L</Th>
+            <Th color="whiteAlpha.600">Strategy</Th>
             <Th color="whiteAlpha.600" isNumeric>Account</Th>
             <Th width="50px"></Th>
           </Tr>
@@ -447,7 +502,7 @@ const LiveTradesView = () => {
         <Tbody>
           {!throttledPositions || throttledPositions.length === 0 ? (
             <Tr>
-              <Td colSpan={10}>
+              <Td colSpan={11}>
                 <Flex justify="center" align="center" py={8}>
                   <VStack spacing={3}>
                     <Box
