@@ -172,7 +172,7 @@ const Hero = () => {
               {/* Dashboard Image */}
               <Image
                 src="/images/dashboard.png"
-                alt="Atomik Trading Dashboard"
+                alt="Atomik Trading Dashboard showing automated trading strategies, real-time performance metrics, and webhook integrations for beginner-friendly trading automation"
                 position="absolute"
                 top="0"
                 left="0"

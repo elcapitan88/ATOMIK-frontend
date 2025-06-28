@@ -177,7 +177,7 @@ const BrokerSelection = ({
               {broker.logo.startsWith('/') ? (
                 <img 
                   src={broker.logo} 
-                  alt={`${broker.name} logo`}
+                  alt={`${broker.name} - ${broker.description} integration for automated trading${broker.isPropFirm ? ' and prop trading' : ''}`}
                   style={styles.brokerLogoImage}
                   onError={(e) => {
                     // Fallback to text if image fails to load
