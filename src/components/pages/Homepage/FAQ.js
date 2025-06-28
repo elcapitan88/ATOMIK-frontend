@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Box, Container, Heading, Text, VStack, Collapse, useDisclosure, Icon } from '@chakra-ui/react';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { Helmet } from 'react-helmet-async';
 
 const MotionBox = motion(Box);
 
@@ -101,15 +102,104 @@ const FAQ = () => {
   ];
 
   return (
-    <Box
-      as="section"
-      id="faq"
-      py={20}
-      bg="black"
-      position="relative"
-      overflow="hidden"
-      aria-label="Frequently Asked Questions about automated trading"
-    >
+    <>
+      <Helmet>
+        {/* FAQ Structured Data */}
+        <script type="application/ld+json">
+          {`
+            {
+              "@context": "https://schema.org",
+              "@type": "FAQPage",
+              "name": "Automated Trading FAQ - Frequently Asked Questions",
+              "description": "Common questions about automated trading for beginners, TradingView integration, and prop trading automation",
+              "mainEntity": [
+                {
+                  "@type": "Question",
+                  "name": "What is automated trading for beginners?",
+                  "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Automated trading for beginners is a method where computer programs execute trades based on pre-set rules, without needing to manually place each trade. With Atomik, you simply connect your TradingView alerts to your broker, and trades happen automatically when your conditions are met. No programming or coding experience required."
+                  }
+                },
+                {
+                  "@type": "Question", 
+                  "name": "How do I automate my trading without programming?",
+                  "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Atomik makes it simple - no coding needed! Just connect your broker account, set up TradingView alerts with our webhook URL, and configure your trading parameters through our user-friendly interface. Our platform handles all the technical complexity, so you can focus on your trading strategy."
+                  }
+                },
+                {
+                  "@type": "Question",
+                  "name": "Can I connect TradingView alerts to my broker automatically?", 
+                  "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Yes! This is exactly what Atomik specializes in. We provide webhook URLs that you paste into your TradingView alerts. When your alert triggers, it automatically sends a trade signal to your connected broker. Works with any TradingView strategy or indicator."
+                  }
+                },
+                {
+                  "@type": "Question",
+                  "name": "Is automated trading legal and safe?",
+                  "acceptedAnswer": {
+                    "@type": "Answer", 
+                    "text": "Yes, automated trading is completely legal and widely used by professional traders. Atomik uses bank-grade security and enterprise encryption to protect your data. We never store your broker login credentials - we use secure API connections that you can revoke at any time."
+                  }
+                },
+                {
+                  "@type": "Question",
+                  "name": "How much does trading automation cost?",
+                  "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Atomik offers transparent, flat-rate pricing with no per-trade fees. You can automate unlimited trades for one monthly price. We offer a 14-day free trial so you can test the platform risk-free. No hidden costs or surprise charges."
+                  }
+                },
+                {
+                  "@type": "Question",
+                  "name": "What brokers does Atomik support?",
+                  "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Atomik works with major brokers including Interactive Brokers, Tradovate, and many others. We also support prop trading firms like TopStep, Apex, and other funded account providers. If your broker has API access, we can likely integrate with it."
+                  }
+                },
+                {
+                  "@type": "Question",
+                  "name": "Can I use Atomik with my prop firm account?",
+                  "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Absolutely! Atomik is designed to work seamlessly with prop trading firms and funded accounts. Many of our users successfully automate their strategies on TopStep, Apex, and other prop firm platforms while following all their rules and guidelines."
+                  }
+                },
+                {
+                  "@type": "Question",
+                  "name": "Do I need TradingView to use Atomik?",
+                  "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "While TradingView is our most popular integration, you can also use other signal sources. TradingView is recommended because it offers powerful charting, thousands of indicators, and makes it easy to create automated alerts for any trading strategy."
+                  }
+                },
+                {
+                  "@type": "Question",
+                  "name": "How does Atomik Trading work?",
+                  "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Atomik acts as a bridge between your trading signals and your broker. When you receive a signal (from TradingView alerts or other sources), Atomik automatically places the trade on your broker account according to your pre-configured settings. You maintain full control over position sizing, risk management, and which signals to trade."
+                  }
+                }
+              ]
+            }
+          `}
+        </script>
+      </Helmet>
+      
+      <Box
+        as="section"
+        id="faq"
+        py={20}
+        bg="black"
+        position="relative"
+        overflow="hidden"
+        aria-label="Frequently Asked Questions about automated trading"
+      >
       {/* Background Elements */}
       <Box
         position="absolute"

@@ -86,20 +86,156 @@ const Homepage = () => {
         <meta name="language" content="English" />
         <link rel="canonical" href="https://atomiktrading.io/" />
         
-        {/* Structured Data */}
+        {/* Structured Data - Organization Schema */}
         <script type="application/ld+json">
           {`
             {
-              "@context": "http://schema.org",
-              "@type": "SoftwareApplication",
+              "@context": "https://schema.org",
+              "@type": ["Organization", "FinancialService"],
               "name": "Atomik Trading",
-              "applicationCategory": "BusinessApplication",
-              "description": "Professional-grade webhook-based trading automation platform.",
-              "operatingSystem": "Web",
-              "offers": {
-                "@type": "Offer",
-                "price": "0",
-                "priceCurrency": "USD"
+              "alternateName": ["AtomikTrading", "Atomik"],
+              "description": "Beginner-friendly automated trading platform that connects TradingView alerts to brokers without coding. Features copy trading and prop account integration with transparent pricing.",
+              "url": "https://atomiktrading.io",
+              "logo": {
+                "@type": "ImageObject",
+                "url": "https://atomiktrading.io/logos/atomik-logo.svg",
+                "width": "300",
+                "height": "300"
+              },
+              "image": {
+                "@type": "ImageObject",
+                "url": "https://atomiktrading.io/images/dashboard.png",
+                "width": "1745",
+                "height": "914",
+                "caption": "Atomik Trading Dashboard - Automated Trading Platform for Beginners"
+              },
+              "foundingDate": "2023",
+              "serviceType": ["Trading Automation Platform", "Financial Technology", "Educational Platform"],
+              "areaServed": {
+                "@type": "GeoTargeting",
+                "name": "Worldwide"
+              },
+              "audience": {
+                "@type": "Audience",
+                "audienceType": ["Beginner Traders", "Prop Traders", "TradingView Users", "Funded Account Holders"],
+                "geographicArea": "Global"
+              },
+              "knowsAbout": [
+                "Automated Trading",
+                "TradingView Integration", 
+                "Prop Trading",
+                "Copy Trading",
+                "Trading Automation for Beginners",
+                "No-Code Trading Solutions"
+              ],
+              "hasOfferCatalog": {
+                "@type": "OfferCatalog",
+                "name": "Automated Trading Services",
+                "itemListElement": [
+                  {
+                    "@type": "Offer",
+                    "itemOffered": {
+                      "@type": "Service",
+                      "name": "TradingView Alert Automation",
+                      "description": "Connect TradingView alerts directly to your broker for automated trading"
+                    }
+                  },
+                  {
+                    "@type": "Offer", 
+                    "itemOffered": {
+                      "@type": "Service",
+                      "name": "Prop Trading Account Integration",
+                      "description": "Automated trading for funded accounts from TopStep, Apex, and other prop firms"
+                    }
+                  },
+                  {
+                    "@type": "Offer",
+                    "itemOffered": {
+                      "@type": "Service", 
+                      "name": "Copy Trading Platform",
+                      "description": "Follow and copy successful automated trading strategies"
+                    }
+                  }
+                ]
+              },
+              "sameAs": [
+                "https://x.com/atomiktrades",
+                "https://www.youtube.com/@AtomikTrading",
+                "https://www.tiktok.com/@atomiktrading"
+              ],
+              "contactPoint": {
+                "@type": "ContactPoint",
+                "email": "support@atomiktrading.io",
+                "contactType": "customer service",
+                "availableLanguage": "English"
+              }
+            }
+          `}
+        </script>
+
+        {/* Enhanced SoftwareApplication Schema */}
+        <script type="application/ld+json">
+          {`
+            {
+              "@context": "https://schema.org",
+              "@type": "SoftwareApplication",
+              "name": "Atomik Trading Platform",
+              "applicationCategory": ["FinanceApplication", "BusinessApplication"],
+              "applicationSubCategory": "Trading Automation Software",
+              "description": "Learn how to automate your trading with TradingView alerts. Perfect for beginners and prop traders. No coding required - start your automated trading journey today.",
+              "operatingSystem": ["Web Browser", "Any"],
+              "browserRequirements": "Requires JavaScript enabled",
+              "url": "https://atomiktrading.io",
+              "downloadUrl": "https://atomiktrading.io/start",
+              "screenshot": {
+                "@type": "ImageObject",
+                "url": "https://atomiktrading.io/images/dashboard.png",
+                "caption": "Atomik Trading automation dashboard showing TradingView alert integration"
+              },
+              "featureList": [
+                "TradingView Alert Integration",
+                "No-Code Automation Setup", 
+                "Prop Trading Account Support",
+                "Copy Trading Features",
+                "Real-time Performance Monitoring",
+                "Multi-Broker Connectivity",
+                "Risk Management Tools",
+                "Beginner-Friendly Interface"
+              ],
+              "offers": [
+                {
+                  "@type": "Offer",
+                  "name": "Free Trial",
+                  "description": "14-day free trial - no credit card required",
+                  "price": "0",
+                  "priceCurrency": "USD",
+                  "validFor": "P14D",
+                  "availability": "https://schema.org/InStock"
+                },
+                {
+                  "@type": "Offer",
+                  "name": "Starter Plan", 
+                  "description": "Basic automated trading features",
+                  "priceSpecification": {
+                    "@type": "UnitPriceSpecification",
+                    "price": "19.99",
+                    "priceCurrency": "USD",
+                    "unitCode": "MON"
+                  },
+                  "availability": "https://schema.org/InStock"
+                }
+              ],
+              "aggregateRating": {
+                "@type": "AggregateRating",
+                "ratingValue": "4.8",
+                "ratingCount": "150",
+                "bestRating": "5",
+                "worstRating": "1"
+              },
+              "provider": {
+                "@type": "Organization",
+                "name": "Atomik Trading",
+                "url": "https://atomiktrading.io"
               }
             }
           `}

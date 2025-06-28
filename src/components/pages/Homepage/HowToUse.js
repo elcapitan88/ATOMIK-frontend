@@ -1,6 +1,7 @@
 import React from 'react';
 import { Box, Container, Heading, Text, VStack, HStack, Flex, Circle, useBreakpointValue } from '@chakra-ui/react';
 import { motion } from 'framer-motion';
+import { Helmet } from 'react-helmet-async';
 
 const MotionBox = motion(Box);
 const MotionFlex = motion(Flex);
@@ -118,13 +119,128 @@ const HowToUse = () => {
   const columns = useBreakpointValue({ base: 1, md: 2, lg: 4 });
 
   return (
-    <Box
-      id="how-to-use"
-      py={20}
-      bg="black"
-      position="relative"
-      overflow="hidden"
-    >
+    <>
+      <Helmet>
+        {/* HowTo Structured Data */}
+        <script type="application/ld+json">
+          {`
+            {
+              "@context": "https://schema.org",
+              "@type": "HowTo",
+              "name": "How to Automate Your Trading with TradingView Alerts",
+              "description": "Complete step-by-step guide to automate your trading by connecting TradingView alerts to your broker. Perfect for beginners, no programming required.",
+              "image": {
+                "@type": "ImageObject",
+                "url": "https://atomiktrading.io/images/dashboard.png",
+                "caption": "Atomik Trading dashboard showing automated trading setup"
+              },
+              "totalTime": "PT30M",
+              "estimatedCost": {
+                "@type": "MonetaryAmount",
+                "currency": "USD",
+                "value": "0"
+              },
+              "supply": [
+                {
+                  "@type": "HowToSupply",
+                  "name": "TradingView Account",
+                  "description": "Pro, Pro+, or Premium subscription required for webhook alerts"
+                },
+                {
+                  "@type": "HowToSupply", 
+                  "name": "Broker Account",
+                  "description": "Supported broker with API access (Interactive Brokers, Tradovate, etc.)"
+                },
+                {
+                  "@type": "HowToSupply",
+                  "name": "Atomik Trading Account",
+                  "description": "Free account to connect TradingView alerts to your broker"
+                }
+              ],
+              "tool": [
+                {
+                  "@type": "HowToTool",
+                  "name": "Computer or Mobile Device",
+                  "description": "Any device with internet browser access"
+                },
+                {
+                  "@type": "HowToTool",
+                  "name": "Internet Connection",
+                  "description": "Stable internet connection for real-time trading"
+                }
+              ],
+              "step": [
+                {
+                  "@type": "HowToStep",
+                  "position": 1,
+                  "name": "Connect Your Broker Account",
+                  "text": "Link your trading account in minutes. Works with any broker, including prop firms. No coding or technical setup required.",
+                  "url": "https://atomiktrading.io#how-to-use",
+                  "image": {
+                    "@type": "ImageObject",
+                    "url": "https://atomiktrading.io/images/dashboard.png",
+                    "caption": "Broker connection interface"
+                  }
+                },
+                {
+                  "@type": "HowToStep",
+                  "position": 2,
+                  "name": "Set Up TradingView Alerts",
+                  "text": "Connect your favorite TradingView strategies. Our simple webhook setup turns any alert into automated trades.",
+                  "url": "https://atomiktrading.io#how-to-use",
+                  "image": {
+                    "@type": "ImageObject",
+                    "url": "https://atomiktrading.io/images/dashboard.png",
+                    "caption": "TradingView alert configuration"
+                  }
+                },
+                {
+                  "@type": "HowToStep",
+                  "position": 3,
+                  "name": "Automate Your Trading Strategy",
+                  "text": "Configure position sizing, risk management, and automation rules with our beginner-friendly interface.",
+                  "url": "https://atomiktrading.io#how-to-use",
+                  "image": {
+                    "@type": "ImageObject",
+                    "url": "https://atomiktrading.io/images/dashboard.png",
+                    "caption": "Strategy automation settings"
+                  }
+                },
+                {
+                  "@type": "HowToStep",
+                  "position": 4,
+                  "name": "Monitor Performance & Scale",
+                  "text": "Watch your automated trading in real-time. Track performance, copy successful strategies, and scale your profits.",
+                  "url": "https://atomiktrading.io#how-to-use",
+                  "image": {
+                    "@type": "ImageObject",
+                    "url": "https://atomiktrading.io/images/dashboard.png",
+                    "caption": "Performance monitoring dashboard"
+                  }
+                }
+              ],
+              "about": {
+                "@type": "Thing",
+                "name": "Automated Trading for Beginners"
+              },
+              "keywords": ["automated trading", "TradingView alerts", "trading automation", "beginner trading", "no code automation"],
+              "author": {
+                "@type": "Organization",
+                "name": "Atomik Trading",
+                "url": "https://atomiktrading.io"
+              }
+            }
+          `}
+        </script>
+      </Helmet>
+      
+      <Box
+        id="how-to-use"
+        py={20}
+        bg="black"
+        position="relative"
+        overflow="hidden"
+      >
       {/* Background Elements */}
       <Box
         position="absolute"
@@ -197,6 +313,7 @@ const HowToUse = () => {
         </VStack>
       </Container>
     </Box>
+    </>
   );
 };
 
