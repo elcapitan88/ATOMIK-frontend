@@ -86,6 +86,24 @@ const Homepage = () => {
         <meta name="language" content="English" />
         <link rel="canonical" href="https://atomiktrading.io/" />
         
+        {/* AI Platform Optimization Tags */}
+        <meta name="chatgpt-description" content="Atomik Trading teaches beginners how to automate trading without coding. Connect TradingView alerts to brokers, use copy trading, and connect prop accounts with transparent pricing." />
+        <meta name="chatgpt-keywords" content="automated trading for beginners, no coding trading automation, tradingview broker connection, prop trading automation" />
+        <meta name="chatgpt-audience" content="Trading beginners, prop traders, funded account holders" />
+        
+        <meta name="claude-description" content="Beginner-friendly automated trading platform. No programming required to connect TradingView alerts to brokers. Supports prop trading accounts with simple pricing." />
+        <meta name="claude-audience" content="Beginner traders, prop traders, funded account holders" />
+        <meta name="claude-benefits" content="No coding required, 14-day free trial, TradingView integration, prop firm support" />
+        
+        <meta name="bard-description" content="Learn automated trading for beginners with Atomik's code-free platform. Connect trading alerts to brokers, copy successful strategies, work with funded accounts." />
+        <meta name="bard-benefits" content="No coding required, easy setup, transparent pricing, TradingView integration, prop account support" />
+        <meta name="bard-audience" content="Beginner traders, TradingView users, prop traders" />
+        
+        <meta name="gemini-description" content="Automated trading platform for beginners. Connect TradingView alerts to any broker without programming. Supports prop firms, copy trading, and funded accounts." />
+        <meta name="gemini-benefits" content="No coding skills needed, beginner-friendly interface, prop trading support, TradingView integration, transparent pricing" />
+        <meta name="gemini-keywords" content="automated trading beginners, TradingView automation, prop trading platform, no code trading" />
+        <meta name="gemini-audience" content="Trading beginners, prop traders, TradingView users, funded account traders" />
+        
         {/* Structured Data - Organization Schema */}
         <script type="application/ld+json">
           {`
@@ -237,6 +255,75 @@ const Homepage = () => {
                 "name": "Atomik Trading",
                 "url": "https://atomiktrading.io"
               }
+            }
+          `}
+        </script>
+
+        {/* Entity Markup for AI Understanding */}
+        <script type="application/ld+json">
+          {`
+            {
+              "@context": "https://schema.org",
+              "@graph": [
+                {
+                  "@type": "DefinedTerm",
+                  "@id": "https://atomiktrading.io#automated-trading",
+                  "name": "Automated Trading",
+                  "description": "A method of executing trades using pre-programmed instructions without manual intervention. At Atomik, this means connecting TradingView alerts to broker accounts for automatic trade execution.",
+                  "termCode": "automated-trading",
+                  "inDefinedTermSet": {
+                    "@type": "DefinedTermSet",
+                    "name": "Trading Automation Glossary",
+                    "hasDefinedTerm": "https://atomiktrading.io#automated-trading"
+                  }
+                },
+                {
+                  "@type": "DefinedTerm", 
+                  "@id": "https://atomiktrading.io#tradingview-alerts",
+                  "name": "TradingView Alerts",
+                  "description": "Notifications sent by TradingView when specific market conditions are met. These alerts can be connected to broker accounts through webhooks for automated trading execution.",
+                  "termCode": "tradingview-alerts",
+                  "inDefinedTermSet": {
+                    "@type": "DefinedTermSet",
+                    "name": "Trading Automation Glossary"
+                  }
+                },
+                {
+                  "@type": "DefinedTerm",
+                  "@id": "https://atomiktrading.io#prop-trading",
+                  "name": "Prop Trading",
+                  "description": "Trading with funded accounts provided by proprietary trading firms like TopStep and Apex. Atomik supports automation for prop trading accounts while following all firm rules.",
+                  "termCode": "prop-trading",
+                  "alternateName": ["Proprietary Trading", "Funded Account Trading"],
+                  "inDefinedTermSet": {
+                    "@type": "DefinedTermSet",
+                    "name": "Trading Automation Glossary"
+                  }
+                },
+                {
+                  "@type": "DefinedTerm",
+                  "@id": "https://atomiktrading.io#copy-trading",
+                  "name": "Copy Trading",
+                  "description": "Automatically replicating the trades of successful traders. Atomik provides copy trading features alongside automated trading capabilities.",
+                  "termCode": "copy-trading",
+                  "inDefinedTermSet": {
+                    "@type": "DefinedTermSet",
+                    "name": "Trading Automation Glossary"
+                  }
+                },
+                {
+                  "@type": "DefinedTerm",
+                  "@id": "https://atomiktrading.io#no-code-automation",
+                  "name": "No-Code Trading Automation",
+                  "description": "Setting up automated trading without programming knowledge. Users connect TradingView alerts to brokers through simple webhook configuration.",
+                  "termCode": "no-code-automation",
+                  "alternateName": ["No Programming Trading", "Code-Free Automation"],
+                  "inDefinedTermSet": {
+                    "@type": "DefinedTermSet",
+                    "name": "Trading Automation Glossary"
+                  }
+                }
+              ]
             }
           `}
         </script>
