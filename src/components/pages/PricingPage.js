@@ -89,15 +89,15 @@ const itemVariants = {
 // Helper function to get Stripe price IDs
 const get_price_id = (tier, interval) => {
   const price_mapping = {
-    // Pro tier
+    // Pro tier (displays as Starter)
     'pro_monthly': process.env.REACT_APP_STRIPE_PRICE_PRO_MONTHLY || 'price_1R1CX5Dw86VJEB1ab48KpdsV',
     'pro_yearly': process.env.REACT_APP_STRIPE_PRICE_PRO_YEARLY || 'price_1R1CXqDw86VJEB1arD41G8w4',
-    'pro_lifetime': process.env.REACT_APP_STRIPE_PRICE_PRO_LIFETIME || '',
+    'pro_lifetime': process.env.REACT_APP_STRIPE_PRICE_LIFETIME || 'price_1R1Cb5Dw86VJEB1ag4jgp4W5', // Single lifetime plan
     
-    // Elite tier
+    // Elite tier (displays as Pro)
     'elite_monthly': process.env.REACT_APP_STRIPE_PRICE_ELITE_MONTHLY || 'price_1R1CaDDw86VJEB1adLeC4qFL',
     'elite_yearly': process.env.REACT_APP_STRIPE_PRICE_ELITE_YEARLY || 'price_1R1CaaDw86VJEB1aFWp4yr9c',
-    'elite_lifetime': process.env.REACT_APP_STRIPE_PRICE_ELITE_LIFETIME || 'price_1R1Cb5Dw86VJEB1ag4jgp4W5',
+    'elite_lifetime': process.env.REACT_APP_STRIPE_PRICE_LIFETIME || 'price_1R1Cb5Dw86VJEB1ag4jgp4W5', // Same lifetime plan
   };
   
   const key = `${tier}_${interval}`;
@@ -318,7 +318,7 @@ const PriceCard = ({ tier, billingInterval, onClick, isPopular }) => {
           
           {billingInterval === 'lifetime' && (
             <Text fontSize="xs" color="#9932CC" mt={0.5}>  {/* Changed from fontSize="sm" mt={1} */}
-              One-time payment
+              One-time payment - Unlimited Everything
             </Text>
           )}
           
