@@ -109,9 +109,9 @@ const pricingData = {
   pro: { // Internal ID 'pro' is now marketed as "Starter"
     name: "Starter", // New marketing name (was "Pro")
     description: "For serious traders seeking automation and reliability",
-    monthlyPrice: 49,
-    yearlyPrice: 468, // $39/month billed annually
-    lifetimePrice: 990,
+    monthlyPrice: 129,
+    yearlyPrice: 1290, // $107.50/month billed annually
+    lifetimePrice: 2990,
     features: [
       { text: "Up to 5 connected trading accounts", available: true },
       { text: "5 active webhooks", available: true },
@@ -132,9 +132,9 @@ const pricingData = {
   elite: { // Internal ID 'elite' is now marketed as "Pro"
     name: "Pro", // New marketing name (was "Elite")
     description: "For professional traders and institutions",
-    monthlyPrice: 89,
-    yearlyPrice: 828, // $69/month billed annually
-    lifetimePrice: 1990,
+    monthlyPrice: 189,
+    yearlyPrice: 1890, // $157.50/month billed annually
+    lifetimePrice: 2990,
     features: [
       { text: "Unlimited connected accounts", available: true },
       { text: "Unlimited webhooks & configs", available: true },
