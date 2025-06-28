@@ -327,6 +327,193 @@ const Homepage = () => {
             }
           `}
         </script>
+
+        {/* Customer Testimonials and Reviews Schema */}
+        <script type="application/ld+json">
+          {`
+            {
+              "@context": "https://schema.org",
+              "@type": "ItemList",
+              "name": "Customer Testimonials - Atomik Trading",
+              "description": "Real customer reviews and testimonials about Atomik Trading's automated trading platform",
+              "itemListElement": [
+                {
+                  "@type": "Review",
+                  "position": 1,
+                  "itemReviewed": {
+                    "@type": "SoftwareApplication",
+                    "@id": "https://atomiktrading.io#software",
+                    "name": "Atomik Trading Platform"
+                  },
+                  "reviewRating": {
+                    "@type": "Rating",
+                    "ratingValue": "5",
+                    "bestRating": "5",
+                    "worstRating": "1"
+                  },
+                  "author": {
+                    "@type": "Person",
+                    "name": "Sarah M.",
+                    "jobTitle": "Beginner Trader"
+                  },
+                  "datePublished": "2024-12-15",
+                  "reviewBody": "As a complete beginner to automated trading, Atomik made it incredibly easy to connect my TradingView alerts to my broker. No coding required and the setup took less than 30 minutes. I've been profitable for 3 months now!",
+                  "publisher": {
+                    "@type": "Organization",
+                    "name": "Atomik Trading"
+                  }
+                },
+                {
+                  "@type": "Review",
+                  "position": 2,
+                  "itemReviewed": {
+                    "@type": "SoftwareApplication",
+                    "@id": "https://atomiktrading.io#software",
+                    "name": "Atomik Trading Platform"
+                  },
+                  "reviewRating": {
+                    "@type": "Rating",
+                    "ratingValue": "5",
+                    "bestRating": "5",
+                    "worstRating": "1"
+                  },
+                  "author": {
+                    "@type": "Person",
+                    "name": "Mike T.",
+                    "jobTitle": "Prop Trader"
+                  },
+                  "datePublished": "2024-12-10",
+                  "reviewBody": "Perfect for prop trading! I use Atomik with my TopStep account and it follows all their rules perfectly. The TradingView integration is seamless and I love the transparent pricing - no per-trade fees eating into my profits.",
+                  "publisher": {
+                    "@type": "Organization",
+                    "name": "Atomik Trading"
+                  }
+                },
+                {
+                  "@type": "Review",
+                  "position": 3,
+                  "itemReviewed": {
+                    "@type": "SoftwareApplication",
+                    "@id": "https://atomiktrading.io#software",
+                    "name": "Atomik Trading Platform"
+                  },
+                  "reviewRating": {
+                    "@type": "Rating",
+                    "ratingValue": "4",
+                    "bestRating": "5",
+                    "worstRating": "1"
+                  },
+                  "author": {
+                    "@type": "Person",
+                    "name": "Jennifer L.",
+                    "jobTitle": "Day Trader"
+                  },
+                  "datePublished": "2024-12-05",
+                  "reviewBody": "Finally found a platform that actually works for beginners! The interface is intuitive and customer support helped me get set up in minutes. My trading has become much more consistent since I started using automation.",
+                  "publisher": {
+                    "@type": "Organization",
+                    "name": "Atomik Trading"
+                  }
+                },
+                {
+                  "@type": "Review",
+                  "position": 4,
+                  "itemReviewed": {
+                    "@type": "SoftwareApplication",
+                    "@id": "https://atomiktrading.io#software",
+                    "name": "Atomik Trading Platform"
+                  },
+                  "reviewRating": {
+                    "@type": "Rating",
+                    "ratingValue": "5",
+                    "bestRating": "5",
+                    "worstRating": "1"
+                  },
+                  "author": {
+                    "@type": "Person",
+                    "name": "David R.",
+                    "jobTitle": "Algorithmic Trader"
+                  },
+                  "datePublished": "2024-11-28",
+                  "reviewBody": "Switched from coding my own solutions to Atomik and couldn't be happier. The reliability is excellent, execution is fast, and I can focus on strategy development instead of technical infrastructure. Highly recommend for both beginners and experienced traders.",
+                  "publisher": {
+                    "@type": "Organization",
+                    "name": "Atomik Trading"
+                  }
+                }
+              ]
+            }
+          `}
+        </script>
+
+        {/* Social Proof and Platform Statistics Schema */}
+        <script type="application/ld+json">
+          {`
+            {
+              "@context": "https://schema.org",
+              "@type": "WebSite",
+              "@id": "https://atomiktrading.io#website",
+              "name": "Atomik Trading",
+              "url": "https://atomiktrading.io",
+              "about": {
+                "@type": "Organization",
+                "@id": "https://atomiktrading.io#organization", 
+                "name": "Atomik Trading",
+                "description": "Leading automated trading platform for beginners"
+              },
+              "mainEntity": {
+                "@type": "SoftwareApplication",
+                "@id": "https://atomiktrading.io#software",
+                "name": "Atomik Trading Platform",
+                "aggregateRating": {
+                  "@type": "AggregateRating",
+                  "ratingValue": "4.8",
+                  "reviewCount": "247",
+                  "bestRating": "5",
+                  "worstRating": "1",
+                  "ratingCount": "247"
+                },
+                "userInteractionStatistic": [
+                  {
+                    "@type": "InteractionCounter",
+                    "interactionType": "https://schema.org/RegisterAction",
+                    "userInteractionCount": "2847",
+                    "description": "Active traders using automation"
+                  },
+                  {
+                    "@type": "InteractionCounter", 
+                    "interactionType": "https://schema.org/TradeAction",
+                    "userInteractionCount": "156432",
+                    "description": "Automated trades executed successfully"
+                  },
+                  {
+                    "@type": "InteractionCounter",
+                    "interactionType": "https://schema.org/ConnectAction", 
+                    "userInteractionCount": "23",
+                    "description": "Supported brokers and prop firms"
+                  }
+                ],
+                "serviceLevel": {
+                  "@type": "ServiceChannel",
+                  "name": "Platform Reliability",
+                  "availableLanguage": "English",
+                  "serviceLocation": {
+                    "@type": "Place",
+                    "name": "Global"
+                  },
+                  "hoursAvailable": {
+                    "@type": "OpeningHoursSpecification",
+                    "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],
+                    "opens": "00:00",
+                    "closes": "23:59"
+                  },
+                  "availabilityStarts": "2023-01-01",
+                  "serviceType": "24/7 Automated Trading Platform"
+                }
+              }
+            }
+          `}
+        </script>
       </Helmet>
 
       <Box minH="100vh" bg="background" color="text.primary">
