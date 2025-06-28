@@ -52,6 +52,8 @@
     "prebuild": "npm run generate-sitemap",
     "build": "CI=false BABEL_ENV=production NODE_OPTIONS=--openssl-legacy-provider craco build",
     "test": "set NODE_OPTIONS=--openssl-legacy-provider && craco test",
+    "optimize:images": "node scripts/optimize-images.js",
+    "build:analyze": "ANALYZE=true npm run build",
     "eject": "react-scripts eject"
   },
   "eslintConfig": {

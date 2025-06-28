@@ -16,9 +16,14 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="preconnect" href="https://www.googletagmanager.com" crossorigin />
+    <link rel="preconnect" href="https://www.google-analytics.com" crossorigin />
+    <link rel="preconnect" href="https://r.wdfl.co" crossorigin />
+    
+    <!-- DNS Prefetch for Additional Resources -->
     <link rel="dns-prefetch" href="https://api.atomiktrading.io" />
     <link rel="dns-prefetch" href="https://js.stripe.com" />
-    <link rel="dns-prefetch" href="https://r.wdfl.co" />
+    <link rel="dns-prefetch" href="https://www.googletagmanager.com" />
+    <link rel="dns-prefetch" href="https://www.google-analytics.com" />
     
     <!-- Preload Critical Assets for LCP -->
     <link rel="preload" href="/images/dashboard.png" as="image" fetchpriority="high" />
@@ -29,23 +34,64 @@
       <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" />
     </noscript>
     
-    <!-- Critical CSS for CLS Prevention -->
+    <!-- Critical CSS for CLS Prevention and Initial Paint -->
     <style>
-      /* Font fallback to prevent CLS during font load */
+      /* Critical inline CSS for faster initial paint */
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      
+      html {
+        font-size: 16px;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+      }
+      
       body {
         font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         font-display: swap;
+        background-color: #000;
+        color: #fff;
+        min-height: 100vh;
+        overflow-x: hidden;
       }
       
-      /* Prevent layout shift from images without dimensions */
-      img:not([width]):not([height]) {
-        height: auto;
+      /* Critical hero styles for LCP */
+      #root {
+        min-height: 100vh;
+      }
+      
+      /* Prevent layout shift from images */
+      img {
         max-width: 100%;
+        height: auto;
+        display: block;
+      }
+      
+      img:not([width]):not([height]) {
+        aspect-ratio: attr(width) / attr(height);
+      }
+      
+      /* Picture element styles */
+      picture {
+        display: block;
+      }
+      
+      /* Loading state */
+      .loading {
+        opacity: 0;
+        transition: opacity 0.3s ease-in-out;
+      }
+      
+      .loaded {
+        opacity: 1;
       }
       
       /* Skeleton loading styles for better perceived performance */
       .skeleton {
-        background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+        background: linear-gradient(90deg, #1a1a1a 25%, #2a2a2a 50%, #1a1a1a 75%);
         background-size: 200% 100%;
         animation: loading 1.5s infinite;
       }
@@ -53,6 +99,15 @@
       @keyframes loading {
         0% { background-position: 200% 0; }
         100% { background-position: -200% 0; }
+      }
+      
+      /* Reduce motion for accessibility */
+      @media (prefers-reduced-motion: reduce) {
+        * {
+          animation-duration: 0.01ms !important;
+          animation-iteration-count: 1 !important;
+          transition-duration: 0.01ms !important;
+        }
       }
     </style>
     
@@ -120,18 +175,36 @@
     <script>(function(w,r){w._rwq=r;w[r]=w[r]||function(){(w[r].q=w[r].q||[]).push(arguments)}})(window,'rewardful');</script>
     <script async src='https://r.wdfl.co/rw.js' data-rewardful='221f04'></script>
     
-    <!-- Service Worker Registration -->
+    <!-- Service Worker Registration with Enhanced Debugging -->
     <script>
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/sw.js')
+          navigator.serviceWorker.register('/sw.js', { scope: '/' })
             .then((registration) => {
-              console.log('SW registered: ', registration);
+              console.log('✅ Service Worker registered successfully');
+              console.log('Scope:', registration.scope);
+              
+              // Check SW status
+              if (registration.installing) {
+                console.log('Service Worker installing...');
+              } else if (registration.waiting) {
+                console.log('Service Worker waiting...');
+              } else if (registration.active) {
+                console.log('Service Worker active and running!');
+              }
+              
+              // Update found listener
+              registration.addEventListener('updatefound', () => {
+                console.log('Service Worker update found!');
+              });
             })
-            .catch((registrationError) => {
-              console.log('SW registration failed: ', registrationError);
+            .catch((error) => {
+              console.error('❌ Service Worker registration failed:', error);
+              console.error('Make sure sw.js exists in the public folder');
             });
         });
+      } else {
+        console.warn('Service Workers not supported in this browser');
       }
     </script>
   </head>

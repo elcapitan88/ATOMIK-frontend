@@ -3,6 +3,7 @@ import { Box, Container, Heading, Text, Button, Stack, VStack, Image } from '@ch
 import { motion } from 'framer-motion';
 import { Link as RouterLink } from 'react-router-dom';
 import ParticleBackground from './ParticleBackground';
+import { useAdaptiveLoading } from '../../../utils/adaptiveLoading';
 
 const MotionBox = motion(Box);
 
@@ -171,21 +172,43 @@ const Hero = () => {
                 paddingTop: '53.25%' // 16:9 Aspect Ratio
               }}
             >
-              {/* Dashboard Image */}
-              <Image
-                src="/images/dashboard.png"
-                alt="Atomik Trading Dashboard showing automated trading strategies, real-time performance metrics, and webhook integrations for beginner-friendly trading automation"
-                position="absolute"
-                top="0"
-                left="0"
-                width="100%"
-                height="100%"
-                objectFit="cover"
-                objectPosition="center"
-                htmlWidth="1745"
-                htmlHeight="914"
-                loading="eager"
-              />
+              {/* Dashboard Image - Responsive and Optimized */}
+              <picture>
+                <source
+                  type="image/webp"
+                  srcSet="/images/dashboard-mobile.webp 768w,
+                          /images/dashboard-tablet.webp 1024w,
+                          /images/dashboard-desktop.webp 1745w"
+                  sizes="(max-width: 768px) 100vw, 
+                         (max-width: 1024px) 100vw, 
+                         1745px"
+                />
+                <source
+                  type="image/jpeg"
+                  srcSet="/images/dashboard-mobile.jpg 768w,
+                          /images/dashboard-tablet.jpg 1024w,
+                          /images/dashboard-desktop.jpg 1745w"
+                  sizes="(max-width: 768px) 100vw, 
+                         (max-width: 1024px) 100vw, 
+                         1745px"
+                />
+                <Image
+                  src="/images/dashboard.png"
+                  alt="Atomik Trading Dashboard showing automated trading strategies, real-time performance metrics, and webhook integrations for beginner-friendly trading automation"
+                  position="absolute"
+                  top="0"
+                  left="0"
+                  width="100%"
+                  height="100%"
+                  objectFit="cover"
+                  objectPosition="center"
+                  htmlWidth="1745"
+                  htmlHeight="914"
+                  loading="eager"
+                  fetchpriority="high"
+                  onLoad={(e) => e.target.classList.add('loaded')}
+                />
+              </picture>
               
               {/* Hidden conversational content for AI understanding */}
               <Box 
