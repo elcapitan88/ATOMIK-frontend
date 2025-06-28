@@ -12,29 +12,62 @@
     <link rel="apple-touch-icon" href="%PUBLIC_URL%/logos/Atomik-favicon.png" />
     <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
     
-    <link rel="preconnect" href="https://www.atomiktrading.io" crossorigin>
-    <link rel="preload" href="/logos/atomik-logo.svg" as="image">
-    <link rel="preload" fetchpriority="high" as="fetch" href="/">
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <!-- Critical Resource Preloads for LCP Optimization -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="preconnect" href="https://www.googletagmanager.com" crossorigin />
+    <link rel="dns-prefetch" href="https://api.atomiktrading.io" />
+    <link rel="dns-prefetch" href="https://js.stripe.com" />
+    <link rel="dns-prefetch" href="https://r.wdfl.co" />
+    
+    <!-- Preload Critical Assets for LCP -->
+    <link rel="preload" href="/images/dashboard.png" as="image" fetchpriority="high" />
+    <link rel="preload" href="/logos/atomik-logo.svg" as="image" fetchpriority="high" />
     <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" media="print" onload="this.media='all'" />
     <noscript>
       <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" />
     </noscript>
     
+    <!-- Critical CSS for CLS Prevention -->
+    <style>
+      /* Font fallback to prevent CLS during font load */
+      body {
+        font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        font-display: swap;
+      }
+      
+      /* Prevent layout shift from images without dimensions */
+      img:not([width]):not([height]) {
+        height: auto;
+        max-width: 100%;
+      }
+      
+      /* Skeleton loading styles for better perceived performance */
+      .skeleton {
+        background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+        background-size: 200% 100%;
+        animation: loading 1.5s infinite;
+      }
+      
+      @keyframes loading {
+        0% { background-position: 200% 0; }
+        100% { background-position: -200% 0; }
+      }
+    </style>
+    
     <!-- Primary Meta Tags -->
-    <title>Atomik Trading - Professional Automated Trading Platform</title>
-    <meta name="title" content="Atomik Trading - Professional Automated Trading Platform">
-    <meta name="description" content="Atomik Trading: Professional webhook-based trading platform for copy trading and automated strategies. Designed for prop traders and funded accounts with real-time execution and advanced analytics." />
-    <meta name="keywords" content="trading platform, automated trading, webhook trading, copy trading, prop trading, funded traders, atomik trading, algorithmic trading" />
+    <title>Automated Trading for Beginners - No Coding Required | Atomik Trading</title>
+    <meta name="title" content="Automated Trading for Beginners - No Coding Required | Atomik Trading">
+    <meta name="description" content="Learn how to automate your trading with TradingView alerts. Perfect for beginners and prop traders. Connect any broker, no programming required. Start your 14-day free trial." />
+    <meta name="keywords" content="automated trading, how to automate trading, beginner automated trading, TradingView alerts, trading automation for beginners, no coding trading, prop trading automation" />
     <link rel="canonical" href="https://atomiktrading.io/" />
 
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://atomiktrading.io/" />
-    <meta property="og:title" content="Atomik Trading - Professional Automated Trading Platform" />
-    <meta property="og:description" content="Professional webhook-based platform for copy trading and automated strategies. Designed for prop traders and funded accounts with real-time execution." />
+    <meta property="og:title" content="Automated Trading for Beginners - No Coding Required | Atomik Trading" />
+    <meta property="og:description" content="Learn how to automate your trading with TradingView alerts. Perfect for beginners and prop traders. Connect any broker, no programming required." />
     <meta property="og:image" content="%PUBLIC_URL%/logos/og-image.png" />
     <meta property="og:image:alt" content="Atomik Trading - Automated Trading Platform Dashboard showing trading strategies and performance metrics" />
     <meta property="og:image:width" content="1200" />
@@ -43,8 +76,8 @@
     <!-- Twitter -->
     <meta property="twitter:card" content="summary_large_image" />
     <meta property="twitter:url" content="https://atomiktrading.io/" />
-    <meta property="twitter:title" content="Atomik Trading - Professional Automated Trading Platform" />
-    <meta property="twitter:description" content="Professional webhook-based platform for copy trading and automated strategies. Designed for prop traders and funded accounts." />
+    <meta property="twitter:title" content="Automated Trading for Beginners - No Coding Required" />
+    <meta property="twitter:description" content="Learn how to automate your trading with TradingView alerts. Perfect for beginners and prop traders. Connect any broker, no programming required." />
     <meta property="twitter:image" content="%PUBLIC_URL%/logos/og-image.png" />
     <meta property="twitter:image:alt" content="Atomik Trading - Automated Trading Platform Dashboard" />
 
@@ -86,6 +119,21 @@
     <!-- Rewardful Tracking Script -->
     <script>(function(w,r){w._rwq=r;w[r]=w[r]||function(){(w[r].q=w[r].q||[]).push(arguments)}})(window,'rewardful');</script>
     <script async src='https://r.wdfl.co/rw.js' data-rewardful='221f04'></script>
+    
+    <!-- Service Worker Registration -->
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js')
+            .then((registration) => {
+              console.log('SW registered: ', registration);
+            })
+            .catch((registrationError) => {
+              console.log('SW registration failed: ', registrationError);
+            });
+        });
+      }
+    </script>
   </head>
   <body>
     <!-- Google Tag Manager (noscript) -->

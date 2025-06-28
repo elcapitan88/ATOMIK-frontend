@@ -129,3 +129,23 @@ window.addEventListener('unhandledrejection', (event) => {
 window.addEventListener('error', (event) => {
   console.error('Global error:', event.error);
 });
+
+// Web Vitals reporting for Core Web Vitals monitoring
+import('./reportWebVitals').then(({ default: reportWebVitals }) => {
+  reportWebVitals((metric) => {
+    // Send to Google Analytics 4
+    if (typeof gtag !== 'undefined') {
+      gtag('event', metric.name, {
+        event_category: 'Web Vitals',
+        event_label: metric.id,
+        value: Math.round(metric.name === 'CLS' ? metric.value * 1000 : metric.value),
+        non_interaction: true,
+      });
+    }
+    
+    // Console log for development
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Web Vital:', metric);
+    }
+  });
+});

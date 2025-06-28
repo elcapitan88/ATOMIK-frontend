@@ -42,7 +42,31 @@ module.exports = {
           maxAsyncRequests: 30,
           minSize: 20000,
           maxSize: 244000,
+          cacheGroups: {
+            vendor: {
+              test: /[\\/]node_modules[\\/]/,
+              name: 'vendors',
+              chunks: 'all',
+              enforce: true,
+            },
+            common: {
+              minChunks: 2,
+              chunks: 'all',
+              enforce: true,
+            },
+          },
         };
+        
+        // Enable tree shaking
+        webpackConfig.optimization.usedExports = true;
+        webpackConfig.optimization.providedExports = true;
+        webpackConfig.optimization.sideEffects = false;
+        
+        // Bundle analyzer for development insights
+        if (process.env.ANALYZE) {
+          const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
+          webpackConfig.plugins.push(new BundleAnalyzerPlugin());
+        }
       }
       
       return webpackConfig;
