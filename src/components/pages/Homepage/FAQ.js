@@ -252,6 +252,7 @@ const FAQ = () => {
         </VStack>
       </Container>
     </Box>
+    </>
   );
 };
 
