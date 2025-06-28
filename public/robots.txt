@@ -1,5 +1,104 @@
-# robots.txt for Atomik Trading
+# robots.txt for Atomik Trading - Automated Trading Platform
 # https://www.atomiktrading.io/
+# Last Updated: 2025-06-28
+
+# ===========================================
+# AI CRAWLERS & LANGUAGE MODELS
+# ===========================================
+
+# OpenAI GPT crawlers
+User-agent: GPTBot
+Allow: /
+Allow: /pricing
+Allow: /start
+Disallow: /dashboard/
+Disallow: /settings/
+Disallow: /auth/
+Disallow: /payment/
+Disallow: /api/
+Crawl-delay: 2
+
+# OpenAI ChatGPT crawler
+User-agent: ChatGPT-User
+Allow: /
+Allow: /pricing
+Allow: /start
+Disallow: /dashboard/
+Disallow: /settings/
+Disallow: /auth/
+Disallow: /payment/
+Disallow: /api/
+Crawl-delay: 2
+
+# Google AI (Bard, Gemini)
+User-agent: Google-Extended
+Allow: /
+Allow: /pricing
+Allow: /start
+Disallow: /dashboard/
+Disallow: /settings/
+Disallow: /auth/
+Disallow: /payment/
+Disallow: /api/
+Crawl-delay: 1
+
+# Anthropic Claude crawler
+User-agent: Claude-Web
+Allow: /
+Allow: /pricing
+Allow: /start
+Disallow: /dashboard/
+Disallow: /settings/
+Disallow: /auth/
+Disallow: /payment/
+Disallow: /api/
+Crawl-delay: 2
+
+# Microsoft Bing AI
+User-agent: Bing-AI
+Allow: /
+Allow: /pricing
+Allow: /start
+Disallow: /dashboard/
+Disallow: /settings/
+Disallow: /auth/
+Disallow: /payment/
+Disallow: /api/
+Crawl-delay: 1
+
+# ===========================================
+# SEARCH ENGINE CRAWLERS
+# ===========================================
+
+# Google crawlers
+User-agent: Googlebot
+Allow: /
+Allow: /pricing
+Allow: /start
+Disallow: /dashboard/
+Disallow: /settings/
+Disallow: /auth/
+Disallow: /payment/
+Disallow: /marketplace/
+Disallow: /api/
+Crawl-delay: 1
+
+# Bing crawler
+User-agent: Bingbot
+Allow: /
+Allow: /pricing
+Allow: /start
+Disallow: /dashboard/
+Disallow: /settings/
+Disallow: /auth/
+Disallow: /payment/
+Disallow: /marketplace/
+Disallow: /api/
+Crawl-delay: 2
+
+# ===========================================
+# ALL OTHER CRAWLERS
+# ===========================================
 
 User-agent: *
 Allow: /
@@ -9,10 +108,27 @@ Disallow: /auth/
 Disallow: /payment/
 Disallow: /marketplace/
 Disallow: /api/
+Disallow: /admin/
+Disallow: /private/
 
-# Allow important pages to be crawled
+# Explicitly allow important pages for automated trading SEO
 Allow: /pricing
 Allow: /start
 
-# Sitemap
+# ===========================================
+# SITEMAPS
+# ===========================================
+
+# Main application sitemap
 Sitemap: https://www.atomiktrading.io/sitemap.xml
+
+# Documentation sitemap (Docusaurus)
+Sitemap: https://atomiktrading.io/docs/sitemap.xml
+
+# ===========================================
+# SPECIAL DIRECTIVES
+# ===========================================
+
+# Prevent aggressive crawling during peak hours
+# Crawl-delay helps with server performance
+# AI crawlers generally respect these directives

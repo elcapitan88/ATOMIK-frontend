@@ -9,12 +9,14 @@ const MotionBox = motion(Box);
 const Hero = () => {
   return (
     <Box
+      as="section"
       position="relative"
       minH="100vh"
       display="flex"
       alignItems="center"
       bg="black"
       overflow="hidden"
+      aria-label="Hero section - Automated Trading Platform"
     >
       {/* Particle Effect Background */}
       <ParticleBackground />
@@ -71,14 +73,14 @@ const Hero = () => {
                 color="white"
                 lineHeight="shorter"
               >
-                Automate Your Strategy with
+                Automated Trading for Beginners -
                 <Text
                   as="span"
                   bgGradient="linear(to-r, rgba(0,198,224,1), rgba(0,198,224,0.6))"
                   bgClip="text"
                   px={2}
                 >
-                  Precision
+                  No Coding Required
                 </Text>
               </Heading>
             </MotionBox>
@@ -95,7 +97,7 @@ const Hero = () => {
                 maxW="600px"
                 fontWeight="medium"
               >
-                Connect your favorite broker, set up webhooks, and automate your trading strategies with enterprise-grade reliability. Start trading smarter today.
+                Learn how to automate your trading by connecting TradingView alerts directly to your broker. Perfect for beginners, prop traders, and funded accounts. No programming skills needed.
               </Text>
             </MotionBox>
 
@@ -180,6 +182,9 @@ const Hero = () => {
                 height="100%"
                 objectFit="cover"
                 objectPosition="center"
+                htmlWidth="1745"
+                htmlHeight="914"
+                loading="eager"
               />
             </Box>
           </MotionBox>
