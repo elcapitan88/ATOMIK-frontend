@@ -98,20 +98,20 @@ const ProcessPath = () => {
 const HowToUse = () => {
   const steps = [
     {
-      title: 'Create or Subscribe',
-      description: 'Generate custom signals or subscribe to proven strategies. All webhooks are secured with enterprise-grade encryption.',
+      title: 'Connect Your Broker Account',
+      description: 'Link your trading account in minutes. Works with any broker, including prop firms. No coding or technical setup required.',
     },
     {
-      title: 'Connect Broker',
-      description: 'Link your preferred broker account seamlessly. We handle authentication and maintain secure connections.',
+      title: 'Set Up TradingView Alerts',
+      description: 'Connect your favorite TradingView strategies. Our simple webhook setup turns any alert into automated trades.',
     },
     {
-      title: 'Configure Strategy',
-      description: 'Set up your trading parameters, risk management rules, and customize automation preferences.',
+      title: 'Automate Your Trading Strategy',
+      description: 'Configure position sizing, risk management, and automation rules with our beginner-friendly interface.',
     },
     {
-      title: 'Start Trading',
-      description: 'Your strategy is now live! Monitor performance and receive real-time notifications from your dashboard.',
+      title: 'Monitor Performance & Scale',
+      description: 'Watch your automated trading in real-time. Track performance, copy successful strategies, and scale your profits.',
     },
   ];
 
@@ -146,18 +146,18 @@ const HowToUse = () => {
               color="white"
               fontWeight="bold"
             >
-              Start Trading in
+              How to Automate Your Trading in
               <Text
                 as="span"
                 bgGradient="linear(to-r, rgba(0,198,224,1), rgba(0,198,224,0.6))"
                 bgClip="text"
                 px={2}
               >
-                Minutes
+                4 Easy Steps
               </Text>
             </Heading>
             <Text color="whiteAlpha.800" fontSize="lg">
-              Follow these simple steps to automate your trading strategy
+              Perfect for beginners - no programming skills needed. Start automating your TradingView alerts today.
             </Text>
           </VStack>
 

@@ -11,6 +11,7 @@ import Footer from './Footer';
 const Statistics = lazy(() => import('./Statistics'));
 const Features = lazy(() => import('./Features'));
 const HowToUse = lazy(() => import('./HowToUse'));
+const FAQ = lazy(() => import('./FAQ'));
 const TrustSecurity = lazy(() => import('./TrustSecurity'));
 const IntegrationPartners = lazy(() => import('./IntegrationPartners'));
 
@@ -66,19 +67,19 @@ const Homepage = () => {
   return (
     <>
       <Helmet>
-        <title>Atomik Trading - Professional Trading Automation Platform</title>
-        <meta name="description" content="Professional-grade webhook-based trading automation platform. Connect your favorite broker and automate your trading strategies with ease." />
-        <meta name="keywords" content="trading automation, webhook trading, automated trading, trading signals, broker integration, algorithmic trading" />
+        <title>Automated Trading for Beginners - No Coding Required | Atomik Trading</title>
+        <meta name="description" content="Learn how to automate your trading with TradingView alerts. Perfect for beginners and prop traders. Connect any broker, no programming required. Start your 14-day free trial." />
+        <meta name="keywords" content="automated trading, how to automate trading, beginner automated trading, TradingView alerts, trading automation for beginners, no coding trading, prop trading automation" />
         
         {/* Open Graph / Facebook */}
         <meta property="og:type" content="website" />
-        <meta property="og:title" content="Atomik Trading - Professional Trading Automation Platform" />
-        <meta property="og:description" content="Professional-grade webhook-based trading automation platform. Connect your favorite broker and automate your trading strategies with ease." />
+        <meta property="og:title" content="Automated Trading for Beginners - No Coding Required | Atomik Trading" />
+        <meta property="og:description" content="Learn how to automate your trading with TradingView alerts. Perfect for beginners and prop traders. Connect any broker, no programming required." />
         
         {/* Twitter */}
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content="Atomik Trading - Professional Trading Automation Platform" />
-        <meta name="twitter:description" content="Professional-grade webhook-based trading automation platform. Connect your favorite broker and automate your trading strategies with ease." />
+        <meta name="twitter:title" content="Automated Trading for Beginners - No Coding Required" />
+        <meta name="twitter:description" content="Learn how to automate your trading with TradingView alerts. Perfect for beginners and prop traders. Connect any broker, no programming required." />
         
         {/* Additional SEO tags */}
         <meta name="robots" content="index, follow" />
@@ -112,6 +113,7 @@ const Homepage = () => {
           <LazyComponent component={Statistics} id="statistics-section" />
           <LazyComponent component={Features} id="features-section" />
           <LazyComponent component={HowToUse} id="how-to-use-section" />
+          <LazyComponent component={FAQ} id="faq-section" />
           <LazyComponent component={TrustSecurity} id="trust-security-section" />
           <LazyComponent component={IntegrationPartners} id="integration-partners-section" />
         </Box>

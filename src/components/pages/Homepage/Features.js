@@ -7,6 +7,7 @@ const MotionBox = motion(Box);
 
 const FeatureCard = ({ icon, title, description }) => (
   <MotionBox
+    as="article"
     whileHover={{ y: -5 }}
     p={6}
     bg="rgba(255, 255, 255, 0.1)"
@@ -24,10 +25,11 @@ const FeatureCard = ({ icon, title, description }) => (
         color="rgba(0, 198, 224, 1)"
         _groupHover={{ bg: 'rgba(0, 198, 224, 0.2)' }}
         transition="all 0.3s"
+        aria-hidden="true"
       >
         <Icon as={icon} boxSize={6} />
       </Box>
-      <Heading size="md" color="white">
+      <Heading as="h3" size="md" color="white">
         {title}
       </Heading>
       <Text color="whiteAlpha.800" fontSize="sm">
@@ -41,43 +43,45 @@ const Features = () => {
   const features = [
     {
       icon: Webhook,
-      title: 'Webhook Integration',
-      description: 'Easily integrate with any trading system using our reliable webhook endpoints. Receive and process signals in real-time.',
+      title: 'TradingView Alerts to Broker',
+      description: 'Connect TradingView alerts directly to your broker for automated trading. No coding required - just set up webhooks and start automating.',
     },
     {
       icon: Zap,
-      title: 'Lightning Fast Execution',
-      description: 'Execute trades with minimal latency. Our system is optimized for speed and reliability in volatile market conditions.',
+      title: 'Instant Trade Automation',
+      description: 'Execute automated trades in milliseconds. Perfect for beginners who want reliable automated trading without complex setups.',
     },
     {
       icon: Shield,
-      title: 'Enterprise Security',
-      description: 'Bank-grade encryption and security measures to protect your data and trading activities. Multi-factor authentication included.',
+      title: 'Secure Prop Trading Support',
+      description: 'Trade safely with funded accounts from TopStep, Apex, and other prop firms. Bank-grade security for your automated strategies.',
     },
     {
       icon: LineChart,
-      title: 'Advanced Analytics*',
-      description: 'Track your strategy performance with detailed analytics. Monitor success rates, profit/loss, and other key metrics.',
+      title: 'Copy Trading Analytics',
+      description: 'Track your automated trading performance in real-time. See which strategies work best for copy trading and optimization.',
     },
     {
       icon: Users,
-      title: 'Multi-Account Management',
-      description: 'Manage multiple trading accounts from a single dashboard. Perfect for professional traders and fund managers.',
+      title: 'Multi-Account Automation',
+      description: 'Automate trading across multiple accounts simultaneously. Ideal for prop traders managing funded accounts.',
     },
     {
       icon: Layers,
-      title: 'Strategy Marketplace',
-      description: 'Discover and subscribe to proven trading strategies from successful traders. Or share your own and earn.',
+      title: 'No Per-Trade Fees',
+      description: 'Simple, transparent pricing with no per-execution fees. Automate unlimited trades for one flat monthly price.',
     },
   ];
 
   return (
     <Box
+      as="section"
       id="features"
       py={20}
       bg="black"
       position="relative"
       overflow="hidden"
+      aria-label="Features section - Automated trading capabilities"
     >
       {/* Background Elements */}
       <Box
@@ -99,18 +103,18 @@ const Features = () => {
               color="white"
               fontWeight="bold"
             >
-              Powerful Features for
+              Why Choose Atomik for
               <Text
                 as="span"
                 bgGradient="linear(to-r, rgba(0,198,224,1), rgba(0,198,224,0.6))"
                 bgClip="text"
                 px={2}
               >
-                Professional Trading
+                Automated Trading
               </Text>
             </Heading>
             <Text color="whiteAlpha.800" fontSize="lg">
-              Everything you need to automate your trading strategies and scale your operations
+              The only platform beginners need to automate trading - no coding, no per-trade fees, works with prop firms
             </Text>
           </VStack>
 
