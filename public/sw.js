@@ -1,7 +1,7 @@
 // Service Worker for Atomik Trading - Performance Optimization
-const CACHE_NAME = 'atomik-trading-v1';
-const STATIC_CACHE = 'atomik-static-v1';
-const DYNAMIC_CACHE = 'atomik-dynamic-v1';
+const CACHE_NAME = 'atomik-trading-v2';
+const STATIC_CACHE = 'atomik-static-v2';
+const DYNAMIC_CACHE = 'atomik-dynamic-v2';
 
 // Assets to cache immediately
 const STATIC_ASSETS = [
@@ -65,7 +65,7 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Fetch event - serve from cache with network fallback
+// Fetch event - network-first for critical assets, cache-first for images
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
@@ -79,12 +79,40 @@ self.addEventListener('fetch', (event) => {
     return;
   }
   
+  // Network-first strategy for JS/CSS files to ensure updates are served
+  if (request.url.includes('.js') || request.url.includes('.css') || 
+      request.destination === 'document' || request.url.includes('/static/')) {
+    event.respondWith(
+      fetch(request)
+        .then((response) => {
+          // Clone response for caching
+          if (response && response.status === 200 && response.type === 'basic') {
+            const responseToCache = response.clone();
+            caches.open(STATIC_CACHE)
+              .then((cache) => {
+                cache.put(request, responseToCache);
+              });
+          }
+          return response;
+        })
+        .catch(() => {
+          // Fallback to cache if network fails
+          return caches.match(request);
+        })
+    );
+    return;
+  }
+  
+  // Cache-first strategy for images and other static assets
   event.respondWith(
     caches.match(request)
       .then((cachedResponse) => {
-        // Return cached version if available
-        if (cachedResponse) {
-          console.log('Service Worker: Serving from cache:', request.url);
+        // Return cached version if available for images
+        if (cachedResponse && (request.url.includes('.png') || 
+                               request.url.includes('.svg') ||
+                               request.url.includes('.jpg') ||
+                               request.url.includes('.jpeg') ||
+                               request.url.includes('.gif'))) {
           return cachedResponse;
         }
         
@@ -99,13 +127,10 @@ self.addEventListener('fetch', (event) => {
             // Clone response for caching
             const responseToCache = response.clone();
             
-            // Determine cache strategy
-            if (STATIC_ASSETS.some(asset => request.url.includes(asset)) ||
-                request.url.includes('.js') ||
-                request.url.includes('.css') ||
-                request.url.includes('.png') ||
-                request.url.includes('.svg')) {
-              // Cache static assets
+            // Cache images and static assets
+            if (request.url.includes('.png') || request.url.includes('.svg') ||
+                request.url.includes('.jpg') || request.url.includes('.jpeg') ||
+                request.url.includes('.gif')) {
               caches.open(STATIC_CACHE)
                 .then((cache) => {
                   cache.put(request, responseToCache);
@@ -122,6 +147,11 @@ self.addEventListener('fetch', (event) => {
           })
           .catch((error) => {
             console.error('Service Worker: Fetch failed:', error);
+            
+            // Return cached fallback
+            if (cachedResponse) {
+              return cachedResponse;
+            }
             
             // Return offline fallback for navigation requests
             if (request.destination === 'document') {
