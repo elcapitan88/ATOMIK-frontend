@@ -11,20 +11,43 @@ const TradingViewWidget = ({
   width = '100%'
 }) => {
   const containerRef = useRef(null);
+  const widgetRef = useRef(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const containerIdRef = useRef(`tradingview_widget_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`);
 
   useEffect(() => {
     let isMounted = true;
+    let initializationTimeout;
 
     const initializeWidget = () => {
-      if (!containerRef.current) return;
+      if (!containerRef.current || !isMounted) return;
 
-      // Clear previous content
+      // Ensure container is in the DOM and visible
+      if (!containerRef.current.offsetParent && containerRef.current.offsetHeight === 0) {
+        // Container might not be visible yet, retry after a short delay
+        initializationTimeout = setTimeout(() => {
+          if (isMounted) initializeWidget();
+        }, 100);
+        return;
+      }
+
+      // Clear previous content and widget
+      if (widgetRef.current) {
+        try {
+          widgetRef.current.remove();
+        } catch (e) {
+          console.warn('Error removing previous widget:', e);
+        }
+        widgetRef.current = null;
+      }
       containerRef.current.innerHTML = '';
 
       try {
-        new TradingView.widget({
+        // Set the container ID
+        containerRef.current.id = containerIdRef.current;
+
+        widgetRef.current = new TradingView.widget({
           symbol,
           interval,
           autosize,
@@ -40,7 +63,7 @@ const TradingViewWidget = ({
           hide_side_toolbar: true,
           allow_symbol_change: true,
           save_image: true,
-          container_id: "tradingview_widget",
+          container_id: containerIdRef.current,
           studies: [
             "MASimple@tv-basicstudies",
             
@@ -73,13 +96,15 @@ const TradingViewWidget = ({
           loading_screen: {
             backgroundColor: "#1C1C1C",
             foregroundColor: "#00C6E0"
+          },
+          onChartReady: () => {
+            if (isMounted) {
+              setIsLoading(false);
+              setError(null);
+            }
           }
         });
 
-        if (isMounted) {
-          setIsLoading(false);
-          setError(null);
-        }
       } catch (err) {
         console.error('Error creating TradingView widget:', err);
         if (isMounted) {
@@ -92,6 +117,21 @@ const TradingViewWidget = ({
     const loadScript = async () => {
       try {
         if (!window.TradingView) {
+          // Check if script is already being loaded
+          const existingScript = document.getElementById('tradingview-widget-loading-script');
+          if (existingScript) {
+            // Script is already loading, wait for it
+            const checkTradingViewReady = () => {
+              if (window.TradingView && isMounted) {
+                initializeWidget();
+              } else if (isMounted) {
+                setTimeout(checkTradingViewReady, 100);
+              }
+            };
+            checkTradingViewReady();
+            return;
+          }
+
           const script = document.createElement('script');
           script.id = 'tradingview-widget-loading-script';
           script.src = 'https://s3.tradingview.com/tv.js';
@@ -100,7 +140,10 @@ const TradingViewWidget = ({
           
           script.onload = () => {
             if (isMounted && window.TradingView) {
-              initializeWidget();
+              // Small delay to ensure TradingView is fully ready
+              setTimeout(() => {
+                if (isMounted) initializeWidget();
+              }, 50);
             }
           };
 
@@ -113,6 +156,7 @@ const TradingViewWidget = ({
 
           document.head.appendChild(script);
         } else {
+          // TradingView is already loaded, initialize immediately
           initializeWidget();
         }
       } catch (err) {
@@ -124,10 +168,23 @@ const TradingViewWidget = ({
       }
     };
 
-    loadScript();
+    // Small delay to ensure DOM is ready
+    const initTimeout = setTimeout(() => {
+      if (isMounted) loadScript();
+    }, 10);
 
     return () => {
       isMounted = false;
+      if (initializationTimeout) clearTimeout(initializationTimeout);
+      if (initTimeout) clearTimeout(initTimeout);
+      if (widgetRef.current) {
+        try {
+          widgetRef.current.remove();
+        } catch (e) {
+          console.warn('Error removing widget on cleanup:', e);
+        }
+        widgetRef.current = null;
+      }
       if (containerRef.current) {
         containerRef.current.innerHTML = '';
       }
