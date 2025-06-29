@@ -80,6 +80,7 @@ const Hero = () => {
                   bgGradient="linear(to-r, rgba(0,198,224,1), rgba(0,198,224,0.6))"
                   bgClip="text"
                   px={2}
+                  fontSize={{ base: "xl", md: "2xl", lg: "3xl" }}
                 >
                   No Coding Required
                 </Text>
