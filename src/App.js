@@ -5,7 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { initializeContracts } from './utils/formatting/tickerUtils';
 import affiliateService from './services/affiliateService';
 import { TradingLabProvider } from './contexts/TradingLabContext';
-import { initializeContracts } from './utils/formatting/tickerUtils';
+
 
 // Import components
 import Homepage from './components/pages/Homepage/Homepage';
