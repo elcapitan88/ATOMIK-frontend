@@ -66,9 +66,9 @@ const Hero = () => {
       <Container maxW="7xl" position="relative" px={{ base: 6, md: 8 }} zIndex={1}>
         <Stack
           direction={{ base: 'column', lg: 'row' }}
-          spacing={{ base: 16, lg: 0 }}
+          spacing={{ base: 16, lg: -20 }}
           align="center"
-          justify="space-between"
+          justify="flex-start"
           py={{ base: 16, md: 20 }}
           position="relative"
         >
@@ -77,9 +77,10 @@ const Hero = () => {
             spacing={8}
             align={{ base: 'center', lg: 'flex-start' }}
             textAlign={{ base: 'center', lg: 'left' }}
-            maxW={{ base: 'full', lg: '55%' }}
+            maxW={{ base: 'full', lg: '50%' }}
             zIndex={10}
-            position={{ base: 'static', lg: 'relative' }}
+            position="relative"
+            flex="0 0 50%"
           >
             <MotionBox
               initial={{ opacity: 0, y: 30 }}
@@ -232,12 +233,10 @@ const Hero = () => {
             initial={{ opacity: 0, scale: 0.9, rotateY: 10 }}
             animate={{ opacity: 1, scale: 1, rotateY: 0 }}
             transition={{ duration: 1.2, delay: 0.2, ease: "easeOut" }}
-            w={{ base: 'full', lg: '65%' }}
-            position={{ base: 'static', lg: 'fixed' }}
-            right={{ base: 'auto', lg: '2%' }}
-            top={{ base: 'auto', lg: '50%' }}
-            transform={{ base: 'none', lg: 'translateY(-50%)' }}
-            zIndex={{ base: 1, lg: 5 }}
+            w={{ base: 'full', lg: '70%' }}
+            flex={{ base: 'none', lg: '0 0 70%' }}
+            position="relative"
+            zIndex={5}
           >
             <Box
               width="100%"
