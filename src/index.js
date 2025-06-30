@@ -104,7 +104,12 @@ root.render(
         <QueryClientProvider client={queryClient}>
           <ChakraProvider theme={theme}>
             <ConfigCatProvider sdkKey={process.env.REACT_APP_CONFIGCAT_SDK_KEY}>
-              <BrowserRouter>
+              <BrowserRouter 
+                future={{
+                  v7_startTransition: true,
+                  v7_relativeSplatPath: true
+                }}
+              >
                 <AuthProvider>
                   <WebSocketProvider>
                   <App />
