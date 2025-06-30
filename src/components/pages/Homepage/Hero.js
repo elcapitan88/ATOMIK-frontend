@@ -15,72 +15,99 @@ const Hero = () => {
       minH="100vh"
       display="flex"
       alignItems="center"
-      bg="black"
+      bgGradient="radial(circle at 30% 20%, rgba(0,198,224,0.03) 0%, transparent 50%), radial(circle at 80% 80%, rgba(0,198,224,0.02) 0%, transparent 50%), linear(to-br, #000000, #0a0a0a, #000000)"
       overflow="hidden"
       aria-label="Hero section - Automated Trading Platform"
     >
       {/* Particle Effect Background */}
       <ParticleBackground />
       
-      {/* Background Gradient Elements */}
+      {/* Enhanced Background Gradient Elements */}
       <Box
         position="absolute"
-        top="15%"
-        left="5%"
-        width="30%"
-        height="30%"
-        bgGradient="radial(circle, rgba(0,198,224,0.15) 0%, rgba(0,0,0,0) 70%)"
-        filter="blur(50px)"
+        top="10%"
+        left="0%"
+        width="50%"
+        height="50%"
+        bgGradient="conic(from 45deg, rgba(0,198,224,0.08) 0%, rgba(0,198,224,0.03) 25%, transparent 50%)"
+        filter="blur(80px)"
         zIndex={0}
         pointerEvents="none"
+        opacity={0.6}
       />
       
       <Box
         position="absolute"
-        bottom="10%"
-        right="5%"
-        width="40%"
-        height="40%"
-        bgGradient="radial(circle, rgba(0,198,224,0.05) 0%, rgba(0,0,0,0) 70%)"
-        filter="blur(60px)"
+        bottom="0%"
+        right="0%"
+        width="60%"
+        height="60%"
+        bgGradient="conic(from 225deg, rgba(0,198,224,0.06) 0%, rgba(0,198,224,0.02) 25%, transparent 50%)"
+        filter="blur(100px)"
+        zIndex={0}
+        pointerEvents="none"
+        opacity={0.4}
+      />
+      
+      {/* Additional depth layer */}
+      <Box
+        position="absolute"
+        top="50%"
+        left="50%"
+        transform="translate(-50%, -50%)"
+        width="80%"
+        height="80%"
+        bgGradient="radial(ellipse at center, rgba(0,198,224,0.02) 0%, transparent 70%)"
+        filter="blur(120px)"
         zIndex={0}
         pointerEvents="none"
       />
 
-      <Container maxW="7xl" position="relative" px={{ base: 4, md: 8 }} zIndex={1}>
+      <Container maxW="7xl" position="relative" px={{ base: 6, md: 8 }} zIndex={1}>
         <Stack
           direction={{ base: 'column', lg: 'row' }}
-          spacing={{ base: 12, lg: 8 }}
+          spacing={{ base: 16, lg: 12 }}
           align="center"
           justify="space-between"
-          py={{ base: 12, md: 16 }}
+          py={{ base: 16, md: 20 }}
         >
           {/* Content - Left Side */}
           <VStack
-            spacing={6}
+            spacing={8}
             align={{ base: 'center', lg: 'flex-start' }}
             textAlign={{ base: 'center', lg: 'left' }}
-            maxW={{ base: 'full', lg: '50%' }}
+            maxW={{ base: 'full', lg: '52%' }}
           >
             <MotionBox
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8 }}
+              transition={{ duration: 1, ease: "easeOut" }}
             >
               <Heading
                 as="h1"
-                size={{ base: "2xl", md: "3xl", lg: "4xl" }}
-                fontWeight="bold"
+                fontSize={{ base: "3xl", md: "4xl", lg: "5xl", xl: "6xl" }}
+                fontWeight="800"
                 color="white"
-                lineHeight="shorter"
+                lineHeight="1.1"
+                letterSpacing="-0.02em"
+                mb={4}
               >
-                Automated Trading for Beginners -
+                Automated Trading for Beginners -{" "}
                 <Text
                   as="span"
-                  bgGradient="linear(to-r, rgba(0,198,224,1), rgba(0,198,224,0.6))"
+                  bgGradient="linear(135deg, #00C6E0 0%, #0099B8 50%, #00C6E0 100%)"
                   bgClip="text"
-                  px={2}
-                  fontSize={{ base: "xl", md: "2xl", lg: "3xl" }}
+                  position="relative"
+                  _after={{
+                    content: '""',
+                    position: 'absolute',
+                    bottom: '-2px',
+                    left: 0,
+                    width: '100%',
+                    height: '3px',
+                    bgGradient: 'linear(90deg, transparent 0%, #00C6E0 50%, transparent 100%)',
+                    opacity: 0.6
+                  }}
                 >
                   No Coding Required
                 </Text>
@@ -91,13 +118,15 @@ const Hero = () => {
             <MotionBox
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.2 }}
+              transition={{ duration: 1, delay: 0.3, ease: "easeOut" }}
             >
               <Text
-                fontSize={{ base: 'lg', md: 'xl' }}
+                fontSize={{ base: 'xl', md: '2xl' }}
                 color="whiteAlpha.900"
-                maxW="600px"
-                fontWeight="medium"
+                maxW="650px"
+                fontWeight="400"
+                lineHeight="1.6"
+                mb={2}
               >
                 Learn how to automate your trading by connecting TradingView alerts directly to your broker. Perfect for beginners, prop traders, and funded accounts. No programming skills needed.
               </Text>
@@ -106,39 +135,86 @@ const Hero = () => {
             <MotionBox
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.4 }}
+              transition={{ duration: 1, delay: 0.5, ease: "easeOut" }}
             >
               <Stack
                 direction={{ base: 'column', sm: 'row' }}
-                spacing={4}
+                spacing={6}
                 w="full"
                 justify={{ base: 'center', lg: 'flex-start' }}
               >
                 <RouterLink to="/pricing">
                   <Button
-                    size="lg"
-                    bg="rgba(0, 198, 224, 1)"
+                    size="xl"
+                    h="60px"
+                    px={10}
+                    fontSize="lg"
+                    fontWeight="600"
+                    bgGradient="linear(135deg, #00C6E0 0%, #0099B8 100%)"
                     color="white"
+                    border="1px solid transparent"
+                    position="relative"
+                    overflow="hidden"
                     _hover={{
-                      bg: 'rgba(0, 198, 224, 0.8)',
-                      transform: 'translateY(-2px)',
-                      boxShadow: '0 4px 12px rgba(0, 198, 224, 0.25)'
+                      transform: 'translateY(-3px)',
+                      boxShadow: '0 10px 30px rgba(0, 198, 224, 0.4), 0 0 0 1px rgba(0, 198, 224, 0.3)',
+                      _before: {
+                        opacity: 1
+                      }
                     }}
-                    px={8}
+                    _before={{
+                      content: '""',
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      bgGradient: 'linear(135deg, #0099B8 0%, #00C6E0 100%)',
+                      opacity: 0,
+                      transition: 'opacity 0.3s ease'
+                    }}
+                    _after={{
+                      content: '""',
+                      position: 'absolute',
+                      top: '50%',
+                      left: '50%',
+                      width: '0',
+                      height: '0',
+                      borderRadius: '50%',
+                      transform: 'translate(-50%, -50%)',
+                      background: 'rgba(255,255,255,0.1)',
+                      transition: 'width 0.6s, height 0.6s'
+                    }}
+                    _active={{
+                      _after: {
+                        width: '300px',
+                        height: '300px'
+                      }
+                    }}
                   >
-                    Try Free for 14 Days
+                    <Text position="relative" zIndex={1}>
+                      Try Free for 14 Days
+                    </Text>
                   </Button>
                 </RouterLink>
                 <Button
-                  size="lg"
+                  size="xl"
+                  h="60px"
+                  px={10}
+                  fontSize="lg"
+                  fontWeight="500"
                   variant="ghost"
                   color="white"
-                  borderWidth={1}
-                  borderColor="whiteAlpha.400"
+                  borderWidth={2}
+                  borderColor="whiteAlpha.300"
+                  bg="rgba(255, 255, 255, 0.05)"
+                  backdropFilter="blur(10px)"
                   _hover={{
-                    bg: 'whiteAlpha.100',
+                    bg: 'rgba(0, 198, 224, 0.1)',
+                    borderColor: 'rgba(0, 198, 224, 0.5)',
+                    transform: 'translateY(-2px)',
+                    boxShadow: '0 8px 25px rgba(0, 198, 224, 0.15)'
                   }}
-                  px={8}
                   as="a"
                   href="#how-to-use"
                 >
@@ -150,27 +226,46 @@ const Hero = () => {
 
           {/* Right Side - Dashboard Image */}
           <MotionBox
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 1 }}
-            w={{ base: 'full', lg: '50%' }}
+            initial={{ opacity: 0, scale: 0.9, rotateY: 15 }}
+            animate={{ opacity: 1, scale: 1, rotateY: 0 }}
+            transition={{ duration: 1.2, delay: 0.2, ease: "easeOut" }}
+            w={{ base: 'full', lg: '48%' }}
             display={{ base: 'block', lg: 'block' }}
           >
             <Box
               width="100%"
-              maxW={{ base: "100%", md: "700px", lg: "600px" }}
+              maxW={{ base: "100%", md: "700px", lg: "650px" }}
               mx="auto"
               position="relative"
-              borderRadius="2xl"
+              borderRadius="3xl"
               overflow="hidden"
-              boxShadow="0 8px 32px 0 rgba(0, 198, 224, 0.37)"
-              border="1px solid rgba(255,255,255,0.18)"
-              bg="rgba(0,0,0,0.2)"
-              // This maintains 16:9 aspect ratio
+              bg="rgba(0,0,0,0.4)"
+              backdropFilter="blur(20px)"
+              border="1px solid rgba(0, 198, 224, 0.2)"
+              boxShadow="0 25px 50px -12px rgba(0, 198, 224, 0.25), 0 0 0 1px rgba(255,255,255,0.05), inset 0 1px 0 rgba(255,255,255,0.1)"
+              transform="perspective(1000px)"
+              _hover={{
+                transform: 'perspective(1000px) translateY(-5px)',
+                boxShadow: '0 35px 60px -12px rgba(0, 198, 224, 0.35), 0 0 0 1px rgba(0, 198, 224, 0.3), inset 0 1px 0 rgba(255,255,255,0.15)',
+                borderColor: 'rgba(0, 198, 224, 0.3)'
+              }}
+              transition="all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)"
+              // This maintains aspect ratio
               _before={{
                 content: '""',
                 display: 'block',
-                paddingTop: '53.25%' // 16:9 Aspect Ratio
+                paddingTop: '53.25%'
+              }}
+              _after={{
+                content: '""',
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                bgGradient: 'linear(135deg, rgba(0,198,224,0.1) 0%, transparent 50%, rgba(0,198,224,0.05) 100%)',
+                opacity: 0.6,
+                pointerEvents: 'none'
               }}
             >
               {/* Dashboard Image */}
@@ -188,6 +283,33 @@ const Hero = () => {
                 htmlHeight="914"
                 loading="eager"
                 fetchpriority="high"
+                borderRadius="3xl"
+              />
+              
+              {/* Floating glow elements */}
+              <Box
+                position="absolute"
+                top="-50%"
+                left="-50%"
+                width="200%"
+                height="200%"
+                bgGradient="conic(from 45deg, transparent 0%, rgba(0,198,224,0.1) 25%, transparent 50%)"
+                opacity={0.3}
+                animation="spin 20s linear infinite"
+                pointerEvents="none"
+              />
+              
+              {/* Corner accent */}
+              <Box
+                position="absolute"
+                top="20px"
+                right="20px"
+                width="60px"
+                height="60px"
+                bgGradient="radial(circle, rgba(0,198,224,0.4) 0%, transparent 70%)"
+                borderRadius="full"
+                filter="blur(20px)"
+                pointerEvents="none"
               />
               
               {/* Hidden conversational content for AI understanding */}
