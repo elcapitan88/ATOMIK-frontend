@@ -299,7 +299,7 @@ const Menu = ({ onSelectItem }) => {
             icon={Settings}
             item="Settings"
             isSelected={location.pathname === '/settings'}
-            onClick={() => handleSettingsClick()}
+            onClick={handleSettingsClick}
           />
         </Flex>
       )}
