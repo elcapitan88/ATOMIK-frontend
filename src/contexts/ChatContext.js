@@ -4,6 +4,22 @@ import chatApi, { chatService } from '../services/api/chat';
 
 const ChatContext = createContext();
 
+// Logging control - set to false to disable all chat logs
+const ENABLE_CHAT_LOGS = false;
+
+// Custom logger that respects the logging flag
+const chatLog = (...args) => {
+  if (ENABLE_CHAT_LOGS) {
+    console.log(...args);
+  }
+};
+
+const chatError = (...args) => {
+  if (ENABLE_CHAT_LOGS) {
+    console.error(...args);
+  }
+};
+
 export const useChat = () => {
   const context = useContext(ChatContext);
   if (!context) {
