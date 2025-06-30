@@ -233,8 +233,8 @@ const Hero = () => {
             animate={{ opacity: 1, scale: 1, rotateY: 0 }}
             transition={{ duration: 1.2, delay: 0.2, ease: "easeOut" }}
             w={{ base: 'full', lg: '65%' }}
-            position={{ base: 'static', lg: 'absolute' }}
-            right={{ base: 'auto', lg: '-5%' }}
+            position={{ base: 'static', lg: 'fixed' }}
+            right={{ base: 'auto', lg: '2%' }}
             top={{ base: 'auto', lg: '50%' }}
             transform={{ base: 'none', lg: 'translateY(-50%)' }}
             zIndex={{ base: 1, lg: 5 }}
