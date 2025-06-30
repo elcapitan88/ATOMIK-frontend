@@ -26,8 +26,6 @@
     <link rel="dns-prefetch" href="https://www.google-analytics.com" />
     
     <!-- Preload Critical Assets for LCP -->
-    <link rel="preload" href="/images/dashboard.png" as="image" fetchpriority="high" />
-    <link rel="preload" href="/logos/atomik-logo.svg" as="image" fetchpriority="high" />
     <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" media="print" onload="this.media='all'" />
     <noscript>
@@ -139,12 +137,12 @@
     <!-- Production-Ready Content Security Policy -->
     <meta http-equiv="Content-Security-Policy" content="
       default-src 'self';
-      script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://r.wdfl.co https://fonts.googleapis.com https://www.google-analytics.com https://js.stripe.com https://s3.tradingview.com;
+      script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://r.wdfl.co https://fonts.googleapis.com https://www.google-analytics.com https://js.stripe.com https://s3.tradingview.com https://static.cloudflareinsights.com;
       style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
       font-src 'self' https://fonts.gstatic.com;
       img-src 'self' data: blob: https: http:;
-      connect-src 'self' https://atomiktrading.io https://api.atomiktrading.io wss://api.atomiktrading.io https://demo.tradovateapi.com https://live.tradovateapi.com wss://demo.tradovateapi.com wss://live.tradovateapi.com https://www.google-analytics.com https://api.stripe.com https://r.wdfl.co https://s3.tradingview.com https://charting-library.tradingview.com;
-      frame-src 'self' https://www.googletagmanager.com https://js.stripe.com https://hooks.stripe.com https://s.tradingview.com https://www.tradingview.com;
+      connect-src 'self' https://atomiktrading.io https://api.atomiktrading.io wss://api.atomiktrading.io https://demo.tradovateapi.com https://live.tradovateapi.com wss://demo.tradovateapi.com wss://live.tradovateapi.com https://www.google-analytics.com https://region1.google-analytics.com https://api.stripe.com https://r.wdfl.co https://s3.tradingview.com https://charting-library.tradingview.com https://cdn-api.configcat.com;
+      frame-src 'self' https://www.googletagmanager.com https://js.stripe.com https://hooks.stripe.com https://s.tradingview.com https://www.tradingview.com https://status.atomiktrading.io;
       object-src 'none';
       media-src 'self';
       worker-src 'self' blob:;
