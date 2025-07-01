@@ -1,4 +1,5 @@
 // src/components/features/trading/LiveTradesView.js
+// Cache busting update
 
 import React, { useState, useCallback } from 'react';
 import {
