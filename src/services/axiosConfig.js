@@ -5,7 +5,7 @@ import logger from '@/utils/logger';
 const API_URL = process.env.REACT_APP_API_URL || 
     (process.env.NODE_ENV === 'production' 
         ? 'https://api.atomiktrading.io'
-        : 'http://localhost:8000');
+        : 'https://atomik-dev-development.up.railway.app');
 
 const axiosInstance = axios.create({
     baseURL: API_URL,

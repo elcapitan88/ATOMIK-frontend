@@ -295,7 +295,7 @@ const LiveTradesView = () => {
       return (
         <Alert status="error">
           <AlertIcon />
-          Failed to load accounts: {accountsError.message}
+          Failed to load accounts: {accountsError?.message || 'Unknown error'}
         </Alert>
       );
     }
@@ -369,7 +369,7 @@ const LiveTradesView = () => {
       )}
       
       {/* Connection Health Alert */}
-      {connectionHealth && !connectionHealth.isHealthy && (
+      {connectionHealth && connectionHealth.isHealthy !== undefined && !connectionHealth.isHealthy && (
         <Alert status="error" mb={4} borderRadius="md">
           <AlertIcon />
           <VStack align="start" spacing={1} flex={1}>
@@ -401,7 +401,7 @@ const LiveTradesView = () => {
           {connectionStatus === 'connected' && lastUpdate && (
             <PositionStatusIndicator lastUpdate={lastUpdate} />
           )}
-          {updateStats && (updateStats.opened > 0 || updateStats.closed > 0) && (
+          {updateStats && updateStats.opened !== undefined && updateStats.closed !== undefined && (updateStats.opened > 0 || updateStats.closed > 0) && (
             <HStack spacing={2}>
               <Badge colorScheme="green" variant="subtle">
                 +{updateStats.opened} opened
