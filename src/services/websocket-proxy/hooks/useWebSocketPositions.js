@@ -347,13 +347,19 @@ const useWebSocketPositions = (brokerId, accountId) => {
         
         // Handle different update types
         if (type === 'snapshot' || type === 'positions_snapshot') {
-          // Full refresh from snapshot
+          // For snapshots, only clear and rebuild if we don't have positions or this is initial load
           const updatedPositions = positions || update.data || webSocketManager.getPositions(brokerId, accountId);
-          positionsMapRef.current.clear();
-          previousPnLRef.current.clear();
+          const hasExistingPositions = positionsMapRef.current.size > 0;
           
           if (envConfig.debugConfig.websocket.positions) {
             console.log('[useWebSocketPositions] Processing snapshot with', updatedPositions?.length || 0, 'positions');
+            console.log('[useWebSocketPositions] Has existing positions:', hasExistingPositions);
+          }
+          
+          // Only clear if this is initial load or we have no existing positions
+          if (!hasExistingPositions || loading) {
+            positionsMapRef.current.clear();
+            previousPnLRef.current.clear();
           }
           
           if (updatedPositions && Array.isArray(updatedPositions)) {
@@ -361,8 +367,16 @@ const useWebSocketPositions = (brokerId, accountId) => {
               const normalizedPos = normalizePosition(pos);
               if (normalizedPos) {
                 const key = normalizedPos.positionId;
-                positionsMapRef.current.set(key, { ...normalizedPos, lastUpdate: Date.now() });
-                previousPnLRef.current.set(key, normalizedPos.unrealizedPnL);
+                // Preserve existing PnL if we have it to avoid flickering
+                const existingPos = positionsMapRef.current.get(key);
+                const preservedPnL = existingPos ? existingPos.unrealizedPnL : normalizedPos.unrealizedPnL;
+                
+                positionsMapRef.current.set(key, { 
+                  ...normalizedPos, 
+                  lastUpdate: Date.now(),
+                  unrealizedPnL: preservedPnL 
+                });
+                previousPnLRef.current.set(key, preservedPnL);
               }
             });
           }
