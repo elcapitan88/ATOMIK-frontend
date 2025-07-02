@@ -436,6 +436,7 @@ const useWebSocketPositions = (brokerId, accountId) => {
           break;
           
         case 'priceUpdate':
+        case 'position_price_update':
           // Update market data health on price updates
           setMarketDataHealth(prev => ({
             ...prev,
@@ -447,12 +448,16 @@ const useWebSocketPositions = (brokerId, accountId) => {
           throttleUpdate(positionKey, () => {
             const existingPos = positionsMapRef.current.get(positionKey);
             if (existingPos) {
+              if (envConfig.debugConfig.websocket.positions) {
+                console.log('[useWebSocketPositions] Price update - old:', existingPos, 'new:', normalizedPosition);
+              }
               positionsMapRef.current.set(positionKey, {
                 ...existingPos,
                 ...normalizedPosition,
                 previousPrice: previousValues?.price,
                 previousPnL: previousValues?.pnl,
-                isPriceUpdating: true
+                isPriceUpdating: true,
+                lastUpdate: Date.now()
               });
               updatePositionsFromMap();
               
@@ -494,13 +499,18 @@ const useWebSocketPositions = (brokerId, accountId) => {
           break;
           
         case 'modified':
-          // General modifications
+        case 'position_update':
+          // General modifications and position updates (quantity changes, etc.)
           const posToModify = positionsMapRef.current.get(positionKey);
           if (posToModify) {
+            if (envConfig.debugConfig.websocket.positions) {
+              console.log('[useWebSocketPositions] Position update - old:', posToModify, 'new:', normalizedPosition);
+            }
             positionsMapRef.current.set(positionKey, {
               ...posToModify,
-              ...position,
-              isModified: true
+              ...normalizedPosition,
+              isModified: true,
+              lastUpdate: Date.now()
             });
             updatePositionsFromMap();
             setUpdateStats(prev => ({ ...prev, updated: prev.updated + 1 }));
