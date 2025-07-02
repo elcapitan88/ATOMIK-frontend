@@ -47,7 +47,6 @@ import { useAccounts } from '@/hooks/useAccounts';
 import { useTrades } from '@/hooks/useTrades';
 import { useMemo, useEffect } from 'react';
 import AnimatedPositionRow from './components/AnimatedPositionRow';
-import PositionStatusIndicator from './components/PositionStatusIndicator';
 import { useThrottledPositions } from '@/services/websocket-proxy/hooks/useThrottledPositions';
 
 const LiveTradesView = () => {
@@ -399,9 +398,6 @@ const LiveTradesView = () => {
           <Badge colorScheme="blue">
             {throttledPositions?.length || 0} Position{throttledPositions?.length !== 1 ? 's' : ''}
           </Badge>
-          {connectionStatus === 'connected' && lastUpdate && (
-            <PositionStatusIndicator lastUpdate={lastUpdate} />
-          )}
           {updateStats && updateStats.opened !== undefined && updateStats.closed !== undefined && (updateStats.opened > 0 || updateStats.closed > 0) && (
             <HStack spacing={2}>
               <Badge colorScheme="green" variant="subtle">
