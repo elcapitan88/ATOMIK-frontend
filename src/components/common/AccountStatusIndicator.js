@@ -14,35 +14,60 @@ const AccountStatusIndicator = ({ tokenValid, wsStatus, account }) => {
     //     return <InteractiveBrokersStatusIndicator account={account} />;
     // }
     
-    // ORIGINAL SIMPLE LOGIC - CURRENTLY ACTIVE
-    // Simplified function that only checks if token is valid
-    // WebSocket status checks temporarily disabled as requested
+    // ADVANCED LOGIC - RESTORED FOR PROPER STATUS INDICATION
+    // Maps WebSocket connection states to visual indicators
     const getConnectionState = () => {
-        console.log('AccountStatusIndicator state:', { tokenValid, wsStatus });
-        if (!tokenValid) return CONNECTION_STATE.DISCONNECTED;
-        // WebSocket connection checks are temporarily disabled
-        return CONNECTION_STATE.TOKEN_VALID;
+        console.log('[AccountStatusIndicator] State evaluation:', { 
+            tokenValid, 
+            wsStatus, 
+            account: account?.account_id 
+        });
+        
+        if (!tokenValid) {
+            console.log('[AccountStatusIndicator] → DISCONNECTED (no valid token)');
+            return CONNECTION_STATE.DISCONNECTED;
+        }
+        
+        // Map WebSocket status to connection states with enhanced logging
+        // Note: wsStatus comes from WebSocketManager's ConnectionState enum
+        switch (wsStatus) {
+            case 'disconnected':
+            case 'error':
+                console.log('[AccountStatusIndicator] → DISCONNECTED (WebSocket disconnected/error)');
+                return CONNECTION_STATE.DISCONNECTED;
+                
+            case 'connecting':
+            case 'reconnecting':
+                console.log('[AccountStatusIndicator] → WS_CONNECTING (WebSocket connecting)');
+                return CONNECTION_STATE.WS_CONNECTING;
+                
+            case 'validating_user':
+                console.log('[AccountStatusIndicator] → VALIDATING_USER (checking credentials)');
+                return CONNECTION_STATE.VALIDATING_USER;
+                
+            case 'checking_subscription':
+                console.log('[AccountStatusIndicator] → CHECKING_SUBSCRIPTION (validating subscription)');
+                return CONNECTION_STATE.CHECKING_SUBSCRIPTION;
+                
+            case 'checking_broker_access':
+                console.log('[AccountStatusIndicator] → CHECKING_BROKER_ACCESS (validating broker access)');
+                return CONNECTION_STATE.CHECKING_BROKER_ACCESS;
+                
+            case 'connecting_to_broker':
+                console.log('[AccountStatusIndicator] → CONNECTING_TO_BROKER (connecting to broker)');
+                return CONNECTION_STATE.CONNECTING_TO_BROKER;
+                
+            case 'connected':
+            case 'ready':
+                console.log('[AccountStatusIndicator] → FULLY_CONNECTED (ready for trading)');
+                return CONNECTION_STATE.FULLY_CONNECTED;
+                
+            default:
+                // Default to token valid if status is unknown or not provided
+                console.log(`[AccountStatusIndicator] → TOKEN_VALID (default - token valid but unknown WebSocket status: ${wsStatus})`);
+                return CONNECTION_STATE.TOKEN_VALID;
+        }
     };
-
-    // TODO: ADVANCED LOGIC COMMENTED OUT - RESTORE WHEN READY
-    // // Original logic for non-IB accounts (Tradovate, etc.)
-    // const getConnectionState = () => {
-    //     console.log('AccountStatusIndicator state:', { tokenValid, wsStatus });
-    //     
-    //     if (!tokenValid) return CONNECTION_STATE.DISCONNECTED;
-    //     
-    //     // Map WebSocket status to connection states
-    //     if (wsStatus === 'disconnected') return CONNECTION_STATE.DISCONNECTED;
-    //     if (wsStatus === 'connecting') return CONNECTION_STATE.WS_CONNECTING;
-    //     if (wsStatus === 'validating_user') return CONNECTION_STATE.VALIDATING_USER;
-    //     if (wsStatus === 'checking_subscription') return CONNECTION_STATE.CHECKING_SUBSCRIPTION;
-    //     if (wsStatus === 'checking_broker_access') return CONNECTION_STATE.CHECKING_BROKER_ACCESS;
-    //     if (wsStatus === 'connecting_to_broker') return CONNECTION_STATE.CONNECTING_TO_BROKER;
-    //     if (wsStatus === 'connected' || wsStatus === 'ready') return CONNECTION_STATE.FULLY_CONNECTED;
-    //     
-    //     // Default to token valid if status is unknown
-    //     return CONNECTION_STATE.TOKEN_VALID;
-    // };
 
     const state = getConnectionState();
     const color = CONNECTION_STATE_COLORS[state];
@@ -59,8 +84,7 @@ const AccountStatusIndicator = ({ tokenValid, wsStatus, account }) => {
                 bg={color}
                 boxShadow={`0 0 10px ${color}`}
                 transition="all 0.3s ease"
-                // TODO: RESTORE ANIMATION WHEN ADVANCED LOGIC IS ENABLED
-                // animation={state.includes('CHECKING') || state.includes('CONNECTING') ? 'pulse 1.5s infinite' : 'none'}
+                animation={state.includes('CHECKING') || state.includes('CONNECTING') ? 'pulse 1.5s infinite' : 'none'}
             />
         </Tooltip>
     );
