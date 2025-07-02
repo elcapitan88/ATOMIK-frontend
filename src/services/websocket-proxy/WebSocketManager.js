@@ -636,6 +636,16 @@ class WebSocketManager extends EventEmitter {
           fullMessage: JSON.stringify(message, null, 2)
         });
       }
+      
+      // Extra debug for position update messages
+      if (message?.type === 'position_update' || message?.type === 'position_price_update') {
+        console.log('[WebSocketManager] DEBUGGING: Position update message:', {
+          type: message.type,
+          hasData: !!message.data,
+          data: message.data,
+          willEmitPositionUpdate: true
+        });
+      }
     }
     
     // Handle connection state messages
@@ -730,14 +740,23 @@ class WebSocketManager extends EventEmitter {
       } else if (message.type === 'account_update' && message.data) {
         this.updateAccountData(brokerId, accountId, message.data);
       } else if (message.type === 'position_update' && message.data) {
+        if (envConfig.debugConfig.websocket.enabled) {
+          console.log('[WebSocketManager] Processing position_update message:', message.data);
+        }
         this.updatePositionData(brokerId, accountId, message.data);
       } else if (isPositionUpdateEvent(message.type) && message.data) {
         // Handle new position event types
+        if (envConfig.debugConfig.websocket.enabled) {
+          console.log('[WebSocketManager] Processing position event:', message.type, message.data);
+        }
         this.handlePositionEvent(brokerId, accountId, message);
       } else if (message.type === 'order_update' && message.data) {
         this.updateOrderData(brokerId, accountId, message.data);
       } else if (message.type === 'position_price_update' && message.data) {
         // Handle real-time position price updates
+        if (envConfig.debugConfig.websocket.enabled) {
+          console.log('[WebSocketManager] Processing position_price_update message:', message.data);
+        }
         this.handlePositionPriceUpdate(brokerId, accountId, message.data);
       } else if (message.type === 'user_data' && message.data) {
         // Handle initial sync data
@@ -933,6 +952,14 @@ class WebSocketManager extends EventEmitter {
     this.dataCache.positions.set(key, updatedData);
     
     // Emit position update event in the new format
+    if (envConfig.debugConfig.websocket.enabled) {
+      console.log('[WebSocketManager] Emitting positionUpdate event:', {
+        brokerId,
+        accountId,
+        type: 'update',
+        position: updatedData
+      });
+    }
     this.emit('positionUpdate', {
       brokerId,
       accountId,
@@ -1180,6 +1207,15 @@ class WebSocketManager extends EventEmitter {
       this.dataCache.positions.set(positionKey, updatedPosition);
       
       // Emit price update event
+      if (envConfig.debugConfig.websocket.enabled) {
+        console.log('[WebSocketManager] Emitting positionUpdate event (price update):', {
+          brokerId,
+          accountId,
+          type: 'priceUpdate',
+          position: updatedPosition,
+          previousValues: { price: previousPrice, pnl: previousPnL }
+        });
+      }
       this.emit('positionUpdate', {
         brokerId,
         accountId,
