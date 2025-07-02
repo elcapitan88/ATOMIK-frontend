@@ -62,7 +62,7 @@ const LiveTradesView = () => {
 
   const toast = useToast();
   const { data: accounts, isLoading: accountsLoading, error: accountsError } = useAccounts();
-  const { isConnected, sendMessage, connections, testMarketDataAccess } = useWebSocketContext();
+  const { isConnected, sendMessage, connections } = useWebSocketContext();
   
   // Use trades hook for database-backed live trades
   const { liveTrades, closeTrade: closeTradeApi, isLoading: tradesLoading } = useTrades();
@@ -415,34 +415,6 @@ const LiveTradesView = () => {
         </HStack>
 
         <HStack spacing={2}>
-          {/* Temporary Market Data Test Button */}
-          <Button
-            size="sm"
-            colorScheme="yellow"
-            onClick={async () => {
-              try {
-                const result = await testMarketDataAccess(selectedBroker, selectedAccount);
-                console.log('[MARKET_DATA_TEST] Test results:', result);
-                toast({
-                  title: 'Market Data Test Complete',
-                  description: 'Check console for results',
-                  status: 'info',
-                  duration: 5000,
-                });
-              } catch (error) {
-                console.error('[MARKET_DATA_TEST] Test failed:', error);
-                toast({
-                  title: 'Market Data Test Failed',
-                  description: error.message,
-                  status: 'error',
-                  duration: 5000,
-                });
-              }
-            }}
-          >
-            Test Market Data
-          </Button>
-          
           <Select
             size="sm"
             value={selectedAccount}
@@ -493,8 +465,6 @@ const LiveTradesView = () => {
             <Th color="whiteAlpha.600">Side</Th>
             <Th color="whiteAlpha.600" isNumeric>Qty</Th>
             <Th color="whiteAlpha.600" isNumeric>Entry</Th>
-            <Th color="whiteAlpha.600" isNumeric>Current</Th>
-            <Th color="whiteAlpha.600" isNumeric>P&L</Th>
             <Th color="whiteAlpha.600">Strategy</Th>
             <Th color="whiteAlpha.600" isNumeric>Account</Th>
             <Th width="50px"></Th>
@@ -503,7 +473,7 @@ const LiveTradesView = () => {
         <Tbody>
           {!throttledPositions || throttledPositions.length === 0 ? (
             <Tr>
-              <Td colSpan={11}>
+              <Td colSpan={9}>
                 <Flex justify="center" align="center" py={8}>
                   <VStack spacing={3}>
                     <Box

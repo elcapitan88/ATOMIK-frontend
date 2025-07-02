@@ -434,44 +434,6 @@ class WebSocketManager extends EventEmitter {
     return this.sendMessage(brokerId, accountId, message, category);
   }
   
-  /**
-   * Test market data access for debugging
-   * @param {string} brokerId - Broker identifier
-   * @param {string} accountId - Account identifier
-   * @returns {Promise<Object>} - Test results
-   */
-  async testMarketDataAccess(brokerId, accountId) {
-    return new Promise((resolve, reject) => {
-      const connectionId = `${brokerId}:${accountId}`;
-      
-      // Set up one-time listener for the response
-      const responseHandler = (data) => {
-        if (data.type === 'debug_test_market_data_response') {
-          this.off('message', responseHandler);
-          logger.info('[WebSocketManager] Market data test response:', data.data);
-          resolve(data.data);
-        }
-      };
-      
-      this.on('message', responseHandler);
-      
-      // Send the test message
-      const sent = this.sendMessage(brokerId, accountId, {
-        type: 'debug_test_market_data'
-      });
-      
-      if (!sent) {
-        this.off('message', responseHandler);
-        reject(new Error('Failed to send test message'));
-      }
-      
-      // Timeout after 10 seconds
-      setTimeout(() => {
-        this.off('message', responseHandler);
-        reject(new Error('Market data test timeout'));
-      }, 10000);
-    });
-  }
   
   /**
    * Apply rate limiting to message sending
