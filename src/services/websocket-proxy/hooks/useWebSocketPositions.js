@@ -346,23 +346,38 @@ const useWebSocketPositions = (brokerId, accountId) => {
         const { type, position, positions, previousValues } = update;
         
         // Handle different update types
-        if (type === 'snapshot') {
+        if (type === 'snapshot' || type === 'positions_snapshot') {
           // Full refresh from snapshot
-          const updatedPositions = positions || webSocketManager.getPositions(brokerId, accountId);
+          const updatedPositions = positions || update.data || webSocketManager.getPositions(brokerId, accountId);
           positionsMapRef.current.clear();
           previousPnLRef.current.clear();
           
-          updatedPositions.forEach(pos => {
-            const normalizedPos = normalizePosition(pos);
-            if (normalizedPos) {
-              const key = normalizedPos.positionId;
-              positionsMapRef.current.set(key, { ...normalizedPos, lastUpdate: Date.now() });
-              previousPnLRef.current.set(key, normalizedPos.unrealizedPnL);
-            }
-          });
+          if (envConfig.debugConfig.websocket.positions) {
+            console.log('[useWebSocketPositions] Processing snapshot with', updatedPositions?.length || 0, 'positions');
+          }
+          
+          if (updatedPositions && Array.isArray(updatedPositions)) {
+            updatedPositions.forEach(pos => {
+              const normalizedPos = normalizePosition(pos);
+              if (normalizedPos) {
+                const key = normalizedPos.positionId;
+                positionsMapRef.current.set(key, { ...normalizedPos, lastUpdate: Date.now() });
+                previousPnLRef.current.set(key, normalizedPos.unrealizedPnL);
+              }
+            });
+          }
           
           updatePositionsFromMap();
           setLoading(false);
+          
+          // Clear retry timeout since we received data
+          if (retryTimeoutRef.current) {
+            clearTimeout(retryTimeoutRef.current);
+            retryTimeoutRef.current = null;
+          }
+          retryAttemptsRef.current = 0; // Reset retry attempts
+          requestInFlightRef.current = false; // Clear request in flight flag
+          
           return;
         }
         
