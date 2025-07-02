@@ -282,7 +282,7 @@ const useWebSocketPositions = (brokerId, accountId) => {
   
   // Get initial positions and subscribe to updates
   useEffect(() => {
-    if (envConfig.debugConfig.positions.enabled) {
+    if (envConfig.debugConfig.websocket.positions) {
       console.log('[useWebSocketPositions] useEffect triggered - brokerId:', brokerId, 'accountId:', accountId);
     }
     
@@ -290,7 +290,7 @@ const useWebSocketPositions = (brokerId, accountId) => {
     requestInFlightRef.current = false;
     
     if (!brokerId || !accountId) {
-      if (envConfig.debugConfig.positions.enabled) {
+      if (envConfig.debugConfig.websocket.positions) {
         console.log('[useWebSocketPositions] Missing brokerId or accountId, setting empty positions');
       }
       setPositions([]);
@@ -300,7 +300,7 @@ const useWebSocketPositions = (brokerId, accountId) => {
     
     // Load from cache first
     const cachedPositions = webSocketManager.getPositions(brokerId, accountId);
-    if (envConfig.debugConfig.positions.enabled) {
+    if (envConfig.debugConfig.websocket.positions) {
       console.log('[useWebSocketPositions] Cached positions:', cachedPositions);
     }
     
@@ -320,24 +320,24 @@ const useWebSocketPositions = (brokerId, accountId) => {
     // Don't set loading to false yet if we have no cached positions
     // We'll set it to false after we get a response or timeout
     if (cachedPositions.length > 0) {
-      if (envConfig.debugConfig.positions.enabled) {
+      if (envConfig.debugConfig.websocket.positions) {
         console.log('[useWebSocketPositions] Have cached positions, setting loading to false');
       }
       setLoading(false);
     } else {
-      if (envConfig.debugConfig.positions.enabled) {
+      if (envConfig.debugConfig.websocket.positions) {
         console.log('[useWebSocketPositions] No cached positions, keeping loading state');
       }
     }
     
     // Enhanced position update handler with error handling
     const handlePositionUpdate = (update) => {
-      if (envConfig.debugConfig.positions.enabled) {
+      if (envConfig.debugConfig.websocket.positions) {
         console.log('[useWebSocketPositions] handlePositionUpdate received:', update);
       }
       try {
         if (update.brokerId !== brokerId || update.accountId !== accountId) {
-          if (envConfig.debugConfig.positions.enabled) {
+          if (envConfig.debugConfig.websocket.positions) {
             console.log('[useWebSocketPositions] Update for different broker/account, ignoring');
           }
           return;
