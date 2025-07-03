@@ -749,6 +749,23 @@ class WebSocketManager extends EventEmitter {
         // Handle positions snapshot
         console.log('[WebSocketManager] positions_snapshot received:', message.data);
         this.handlePositionSnapshot(brokerId, accountId, message.data);
+      } else if (message.type === 'positionUpdate') {
+        // Handle positionUpdate messages from backend (camelCase)
+        console.log('[WebSocketManager] 🔄 DEBUGGING: Position update message:', {
+          type: message.type,
+          type_detail: message.type_detail,
+          hasPosition: !!message.position,
+          position: message.position
+        });
+        
+        // Emit the position update with the type_detail preserved
+        this.emit('positionUpdate', {
+          brokerId,
+          accountId,
+          type: message.type_detail || 'update',
+          position: message.position,
+          type_detail: message.type_detail
+        });
       }
     }
   }
