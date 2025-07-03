@@ -20,7 +20,6 @@ const useWebSocketPositions = (brokerId, accountId) => {
   const [error, setError] = useState(null);
   const [totalPnl, setTotalPnl] = useState(0);
   const [lastUpdate, setLastUpdate] = useState(null);
-  const [updateStats, setUpdateStats] = useState({ opened: 0, closed: 0, updated: 0 });
   const [connectionHealth, setConnectionHealth] = useState({
     isHealthy: true,
     lastError: null,
@@ -102,7 +101,6 @@ const useWebSocketPositions = (brokerId, accountId) => {
       
       // Status fields
       lastUpdate: position.lastUpdate || Date.now(),
-      isNew: position.isNew || false,
       isClosed: position.isClosed || false,
       isPriceUpdating: position.isPriceUpdating || false,
       isPnLUpdating: position.isPnLUpdating || false,
@@ -449,20 +447,16 @@ const useWebSocketPositions = (brokerId, accountId) => {
       switch (type) {
         case 'opened':
           // New position - add immediately
-          positionsMapRef.current.set(positionKey, { ...normalizedPosition, isNew: true });
+          positionsMapRef.current.set(positionKey, normalizedPosition);
           previousPnLRef.current.set(positionKey, normalizedPosition.unrealizedPnL);
           updatePositionsFromMap();
-          setUpdateStats(prev => ({ ...prev, opened: prev.opened + 1 }));
           break;
           
         case 'closed':
-          // Mark as closed but don't remove immediately
-          const closedPos = positionsMapRef.current.get(positionKey);
-          if (closedPos) {
-            positionsMapRef.current.set(positionKey, { ...closedPos, isClosed: true });
-            updatePositionsFromMap();
-            setUpdateStats(prev => ({ ...prev, closed: prev.closed + 1 }));
-          }
+          // Remove closed position immediately
+          positionsMapRef.current.delete(positionKey);
+          previousPnLRef.current.delete(positionKey);
+          updatePositionsFromMap();
           break;
           
         case 'priceUpdate':
@@ -553,14 +547,14 @@ const useWebSocketPositions = (brokerId, accountId) => {
               if (envConfig.debugConfig.websocket.positions) {
                 console.log('[useWebSocketPositions] Position closed by quantity update:', updatedPosition);
               }
-              updatedPosition.isClosed = true;
-              updatedPosition.closedAt = Date.now();
-              setUpdateStats(prev => ({ ...prev, closed: prev.closed + 1 }));
+              // Remove closed position immediately instead of marking
+              positionsMapRef.current.delete(positionKey);
+              previousPnLRef.current.delete(positionKey);
+            } else {
+              positionsMapRef.current.set(positionKey, updatedPosition);
             }
             
-            positionsMapRef.current.set(positionKey, updatedPosition);
             updatePositionsFromMap();
-            setUpdateStats(prev => ({ ...prev, updated: prev.updated + 1 }));
           }
           break;
           
@@ -724,7 +718,6 @@ const useWebSocketPositions = (brokerId, accountId) => {
     refreshPositions,
     clearError,
     lastUpdate,
-    updateStats,
     connectionHealth,
     marketDataHealth,
     
