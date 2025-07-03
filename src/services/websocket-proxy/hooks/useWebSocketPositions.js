@@ -137,9 +137,9 @@ const useWebSocketPositions = (brokerId, accountId) => {
         if (pos.isClosed) return false;
         
         // Check for zero quantity in multiple ways (different broker formats)
+        // All conditions must indicate the position is truly closed for it to be filtered out
         const hasQuantity = pos.quantity > 0 || 
-                           Math.abs(pos.netPos || 0) > 0 || 
-                           (pos.side && pos.side !== 'FLAT');
+                           Math.abs(pos.netPos || 0) > 0;
         
         if (envConfig.debugConfig.websocket.positions) {
           console.log(`[updatePositionsFromMap] Position ${pos.positionId}: quantity=${pos.quantity}, netPos=${pos.netPos}, side=${pos.side}, hasQuantity=${hasQuantity}`);
@@ -350,6 +350,21 @@ const useWebSocketPositions = (brokerId, accountId) => {
     
     // Enhanced position update handler with error handling
     const handlePositionUpdate = (update) => {
+      // FORCED DEBUG LOGGING - Always log position updates for debugging
+      console.log('[useWebSocketPositions] 🔄 FORCED DEBUG - handlePositionUpdate received:', {
+        type: update.type,
+        brokerId: update.brokerId,
+        accountId: update.accountId,
+        hasPosition: !!update.position,
+        hasPositions: !!update.positions,
+        positionId: update.position?.positionId || update.position?.id,
+        quantity: update.position?.quantity,
+        netPos: update.position?.netPos,
+        type_detail: update.type_detail,
+        timestamp: new Date().toISOString(),
+        fullUpdate: update
+      });
+      
       if (envConfig.debugConfig.websocket.positions) {
         console.log('[useWebSocketPositions] 🔄 handlePositionUpdate received:', {
           type: update.type,
@@ -466,6 +481,34 @@ const useWebSocketPositions = (brokerId, accountId) => {
           updatePositionsFromMap();
           break;
           
+        case 'modified':
+          // Position quantity/size modified - update existing position
+          const existingPosition = positionsMapRef.current.get(positionKey);
+          if (existingPosition) {
+            const updatedPosition = {
+              ...existingPosition,
+              ...normalizedPosition,
+              isModified: true,
+              lastUpdate: Date.now()
+            };
+            
+            // Check if position is now closed (quantity became 0)
+            const isNowClosed = updatedPosition.quantity === 0 || 
+                               Math.abs(updatedPosition.netPos || 0) === 0 ||
+                               updatedPosition.side === 'FLAT';
+            
+            if (isNowClosed) {
+              // Remove closed position immediately
+              positionsMapRef.current.delete(positionKey);
+              previousPnLRef.current.delete(positionKey);
+            } else {
+              positionsMapRef.current.set(positionKey, updatedPosition);
+            }
+            
+            updatePositionsFromMap();
+          }
+          break;
+          
         case 'priceUpdate':
         case 'position_price_update':
           // Update market data health on price updates
@@ -529,9 +572,8 @@ const useWebSocketPositions = (brokerId, accountId) => {
           }
           break;
           
-        case 'modified':
         case 'position_update':
-          // General modifications and position updates (quantity changes, etc.)
+          // Legacy position update - fallback for older message formats
           const posToModify = positionsMapRef.current.get(positionKey);
           if (posToModify) {
             if (envConfig.debugConfig.websocket.positions) {
