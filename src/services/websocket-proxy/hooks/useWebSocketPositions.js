@@ -371,7 +371,7 @@ const useWebSocketPositions = (brokerId, accountId) => {
           return;
         }
         
-        const { type, position, positions, previousValues } = update;
+        const { type, position, positions, previousValues, type_detail } = update;
         
         // Handle different update types
         if (type === 'snapshot' || type === 'positions_snapshot') {
@@ -443,8 +443,15 @@ const useWebSocketPositions = (brokerId, accountId) => {
           console.error('[useWebSocketPositions] Position key is undefined after normalization:', normalizedPosition);
           return;
         }
+
+        // Determine the actual event type - use type_detail if available, otherwise fallback to type
+        const eventType = type_detail || type;
+        
+        if (envConfig.debugConfig.websocket.positions) {
+          console.log(`[useWebSocketPositions] Processing event type: ${eventType} for position ${positionKey}`);
+        }
       
-      switch (type) {
+      switch (eventType) {
         case 'opened':
           // New position - add immediately
           positionsMapRef.current.set(positionKey, normalizedPosition);
