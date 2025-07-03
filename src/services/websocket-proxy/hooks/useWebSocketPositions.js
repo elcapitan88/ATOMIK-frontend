@@ -78,8 +78,10 @@ const useWebSocketPositions = (brokerId, accountId) => {
       // Side - calculate from netPos if not provided
       side: position.side || (position.netPos > 0 ? 'LONG' : position.netPos < 0 ? 'SHORT' : 'FLAT'),
       
-      // Quantity - use quantity or absolute value of netPos
-      quantity: position.quantity !== undefined ? position.quantity : Math.abs(position.netPos || 0),
+      // Quantity - use quantity or absolute value of netPos, ensure it's a number
+      quantity: position.quantity !== undefined ? 
+                Math.abs(Number(position.quantity)) : 
+                Math.abs(Number(position.netPos || 0)),
       
       // Average price - use avgPrice or netPrice
       avgPrice: position.avgPrice || position.netPrice || 0,
@@ -132,8 +134,26 @@ const useWebSocketPositions = (brokerId, accountId) => {
   // Helper to update positions state from map
   const updatePositionsFromMap = useCallback(() => {
     const positionsArray = Array.from(positionsMapRef.current.values())
-      .filter(pos => !pos.isClosed) // Filter out closed positions
+      .filter(pos => {
+        // Filter out closed positions and positions with 0 quantity
+        if (pos.isClosed) return false;
+        
+        // Check for zero quantity in multiple ways (different broker formats)
+        const hasQuantity = pos.quantity > 0 || 
+                           Math.abs(pos.netPos || 0) > 0 || 
+                           (pos.side && pos.side !== 'FLAT');
+        
+        if (envConfig.debugConfig.websocket.positions) {
+          console.log(`[updatePositionsFromMap] Position ${pos.positionId}: quantity=${pos.quantity}, netPos=${pos.netPos}, side=${pos.side}, hasQuantity=${hasQuantity}`);
+        }
+        
+        return hasQuantity;
+      })
       .sort((a, b) => (b.lastUpdate || 0) - (a.lastUpdate || 0)); // Sort by last update
+    
+    if (envConfig.debugConfig.websocket.positions) {
+      console.log(`[updatePositionsFromMap] Filtered positions: ${positionsArray.length} out of ${positionsMapRef.current.size} total`);
+    }
     
     setPositions(positionsArray);
     
@@ -333,12 +353,22 @@ const useWebSocketPositions = (brokerId, accountId) => {
     // Enhanced position update handler with error handling
     const handlePositionUpdate = (update) => {
       if (envConfig.debugConfig.websocket.positions) {
-        console.log('[useWebSocketPositions] handlePositionUpdate received:', update);
+        console.log('[useWebSocketPositions] 🔄 handlePositionUpdate received:', {
+          type: update.type,
+          brokerId: update.brokerId,
+          accountId: update.accountId,
+          hasPosition: !!update.position,
+          hasPositions: !!update.positions,
+          positionId: update.position?.positionId || update.position?.id,
+          quantity: update.position?.quantity,
+          netPos: update.position?.netPos,
+          timestamp: new Date().toISOString()
+        });
       }
       try {
         if (update.brokerId !== brokerId || update.accountId !== accountId) {
           if (envConfig.debugConfig.websocket.positions) {
-            console.log('[useWebSocketPositions] Update for different broker/account, ignoring');
+            console.log('[useWebSocketPositions] ❌ Update for different broker/account, ignoring');
           }
           return;
         }
@@ -506,12 +536,29 @@ const useWebSocketPositions = (brokerId, accountId) => {
             if (envConfig.debugConfig.websocket.positions) {
               console.log('[useWebSocketPositions] Position update - old:', posToModify, 'new:', normalizedPosition);
             }
-            positionsMapRef.current.set(positionKey, {
+            
+            const updatedPosition = {
               ...posToModify,
               ...normalizedPosition,
               isModified: true,
               lastUpdate: Date.now()
-            });
+            };
+            
+            // Check if position is now closed (quantity is 0)
+            const isNowClosed = updatedPosition.quantity === 0 || 
+                               Math.abs(updatedPosition.netPos || 0) === 0 ||
+                               updatedPosition.side === 'FLAT';
+            
+            if (isNowClosed) {
+              if (envConfig.debugConfig.websocket.positions) {
+                console.log('[useWebSocketPositions] Position closed by quantity update:', updatedPosition);
+              }
+              updatedPosition.isClosed = true;
+              updatedPosition.closedAt = Date.now();
+              setUpdateStats(prev => ({ ...prev, closed: prev.closed + 1 }));
+            }
+            
+            positionsMapRef.current.set(positionKey, updatedPosition);
             updatePositionsFromMap();
             setUpdateStats(prev => ({ ...prev, updated: prev.updated + 1 }));
           }

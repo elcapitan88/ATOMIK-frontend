@@ -915,11 +915,17 @@ class WebSocketManager extends EventEmitter {
     
     // Emit position update event in the new format
     if (envConfig.debugConfig.websocket.enabled) {
-      console.log('[WebSocketManager] Emitting positionUpdate event:', {
+      console.log('[WebSocketManager] 📤 Emitting positionUpdate event:', {
         brokerId,
         accountId,
         type: 'update',
-        position: updatedData
+        position: {
+          positionId: updatedData.positionId,
+          quantity: updatedData.quantity,
+          netPos: updatedData.netPos,
+          side: updatedData.side
+        },
+        timestamp: new Date().toISOString()
       });
     }
     this.emit('positionUpdate', {
@@ -1125,17 +1131,22 @@ class WebSocketManager extends EventEmitter {
    * @returns {Object} - Transformed position
    */
   transformTradovatePosition(rawPosition, contractInfo) {
+    const netPos = Number(rawPosition.netPos || 0);
+    const quantity = Math.abs(netPos);
+    
     return {
       positionId: String(rawPosition.id),
       accountId: rawPosition.accountId,
       symbol: contractInfo?.name || rawPosition.symbol || `Contract-${rawPosition.contractId}`,
-      side: rawPosition.netPos > 0 ? 'LONG' : 'SHORT',
-      quantity: Math.abs(rawPosition.netPos),
-      avgPrice: rawPosition.netPrice || rawPosition.avgPrice,
-      currentPrice: rawPosition.currentPrice || rawPosition.netPrice || rawPosition.avgPrice,
+      side: netPos > 0 ? 'LONG' : netPos < 0 ? 'SHORT' : 'FLAT',
+      quantity: quantity,
+      avgPrice: rawPosition.netPrice || rawPosition.avgPrice || 0,
+      currentPrice: rawPosition.currentPrice || rawPosition.netPrice || rawPosition.avgPrice || 0,
       unrealizedPnL: rawPosition.unrealizedPnL || 0,
       timeEntered: rawPosition.timestamp || rawPosition.timeEntered,
       contractId: rawPosition.contractId,
+      netPos: netPos, // Keep original netPos for reference
+      netPrice: rawPosition.netPrice,
       // Keep original fields for debugging
       _original: rawPosition
     };
