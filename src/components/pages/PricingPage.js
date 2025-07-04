@@ -245,7 +245,7 @@ const PriceCard = ({ tier, billingInterval, onClick, isPopular, isLifetimeOnly }
   // Save calculation for yearly
   const monthlySavings = billingInterval === 'yearly' ? Math.round((pricingTier.monthlyPrice * 12 - pricingTier.yearlyPrice) / 12) : 0;
 
-  const cardBorderColor = isPopular ? pricingTier.color : 'whiteAlpha.200';
+  const cardBorderColor = isPopular ? (isLifetimeOnly ? '#00C6E0' : pricingTier.color) : 'whiteAlpha.200';
   const popularBadgeVisibility = isPopular ? 'visible' : 'hidden';
   
   // Show trial info only for subscription plans (not lifetime)
@@ -259,7 +259,7 @@ const PriceCard = ({ tier, billingInterval, onClick, isPopular, isLifetimeOnly }
     hover: { 
       scale: 1.02,
       boxShadow: `0px 0px 20px rgba(0, 198, 224, 0.2)`,
-      borderColor: pricingTier.color,
+      borderColor: isLifetimeOnly ? '#00C6E0' : pricingTier.color,
       transition: {
         duration: 0.3,
         ease: "easeInOut"
@@ -333,7 +333,7 @@ const PriceCard = ({ tier, billingInterval, onClick, isPopular, isLifetimeOnly }
           )}
           
           {billingInterval === 'lifetime' && (
-            <Text fontSize="xs" color="#9932CC" mt={0.5}>  {/* Changed from fontSize="sm" mt={1} */}
+            <Text fontSize="xs" color="#00C6E0" mt={0.5}>  {/* Changed from fontSize="sm" mt={1} */}
               One-time payment - Unlimited Everything
             </Text>
           )}
@@ -362,7 +362,7 @@ const PriceCard = ({ tier, billingInterval, onClick, isPopular, isLifetimeOnly }
               <ListItem key={index} display="flex" alignItems="flex-start">
                 <ListIcon 
                   as={feature.available ? Check : X} 
-                  color={feature.available ? (isPopular ? pricingTier.color : 'green.400') : 'gray.500'} 
+                  color={feature.available ? (isLifetimeOnly ? '#00C6E0' : (isPopular ? pricingTier.color : 'green.400')) : 'gray.500'} 
                   mt="2px"  /* Reduced from mt="3px" */
                   boxSize={3}  /* Added boxSize to make icons smaller */
                 />
@@ -381,10 +381,10 @@ const PriceCard = ({ tier, billingInterval, onClick, isPopular, isLifetimeOnly }
             mt="auto"
             size="md"  /* Changed from size="lg" */
             width="full"
-            bg={isPopular ? pricingTier.color : 'whiteAlpha.200'}
-            color={isPopular ? 'black' : 'white'}
+            bg={isLifetimeOnly ? 'gray.800' : (isPopular ? pricingTier.color : 'whiteAlpha.200')}
+            color={isLifetimeOnly ? '#00C6E0' : (isPopular ? 'black' : 'white')}
             _hover={{
-              bg: isPopular ? 'cyan.400' : 'whiteAlpha.300',
+              bg: isLifetimeOnly ? 'gray.700' : (isPopular ? 'cyan.400' : 'whiteAlpha.300'),
               transform: 'translateY(-2px)',
               boxShadow: 'lg'
             }}
