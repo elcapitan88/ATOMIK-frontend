@@ -216,7 +216,7 @@ const PricingToggle = ({ selectedInterval, onChange }) => {
 
 // Price card component
 // Update PriceCard component to display trial information
-const PriceCard = ({ tier, billingInterval, onClick, isPopular }) => {
+const PriceCard = ({ tier, billingInterval, onClick, isPopular, isLifetimeOnly }) => {
   const tierKey = tier.toLowerCase();
   const pricingTier = pricingData[tierKey];
   const price = 
@@ -225,6 +225,22 @@ const PriceCard = ({ tier, billingInterval, onClick, isPopular }) => {
       : billingInterval === 'yearly' 
         ? pricingTier.yearlyPrice
         : pricingTier.lifetimePrice;
+  
+  // For lifetime, show all features as available
+  const lifetimeFeatures = isLifetimeOnly ? [
+    { text: "Unlimited connected trading accounts", available: true },
+    { text: "Unlimited webhooks & configurations", available: true },
+    { text: "Enterprise-grade webhook system", available: true },
+    { text: "Advanced trade execution rules", available: true },
+    { text: "Funded and Live Account Functionality", available: true },
+    { text: "Full marketplace access", available: true },
+    { text: "Advanced position management", available: true },
+    { text: "Advanced analytics & reporting", available: true },
+    { text: "Priority technical support", available: true },
+    { text: "Custom strategy development", available: true },
+    { text: "Early access to all new features", available: true },
+    { text: "Lifetime updates included", available: true }
+  ] : pricingTier.features;
   
   // Save calculation for yearly
   const monthlySavings = billingInterval === 'yearly' ? Math.round((pricingTier.monthlyPrice * 12 - pricingTier.yearlyPrice) / 12) : 0;
@@ -289,10 +305,10 @@ const PriceCard = ({ tier, billingInterval, onClick, isPopular }) => {
         {/* Tier name and description */}
         <VStack spacing={1} align="center" mb={1}>  {/* Reduced from spacing={2} mb={2} */}
           <Heading size="md" fontWeight="bold" color="white">  {/* Changed from size="lg" */}
-            {pricingTier.name}
+            {isLifetimeOnly ? "Lifetime Access" : pricingTier.name}
           </Heading>
           <Text color="whiteAlpha.700" textAlign="center" fontSize="xs">  {/* Changed from fontSize="sm" */}
-            {pricingTier.description}
+            {isLifetimeOnly ? "Unlimited everything, forever" : pricingTier.description}
           </Text>
         </VStack>
 
@@ -342,7 +358,7 @@ const PriceCard = ({ tier, billingInterval, onClick, isPopular }) => {
         {/* Features - more compact list */}
         <VStack spacing={1} align="stretch" flex="1" mt={0}>  {/* Changed from spacing={3} */}
           <List spacing={1} styleType="none" flex="1">  {/* Changed from spacing={3} */}
-            {pricingTier.features.map((feature, index) => (
+            {(isLifetimeOnly ? lifetimeFeatures : pricingTier.features).map((feature, index) => (
               <ListItem key={index} display="flex" alignItems="flex-start">
                 <ListIcon 
                   as={feature.available ? Check : X} 
@@ -375,7 +391,7 @@ const PriceCard = ({ tier, billingInterval, onClick, isPopular }) => {
             onClick={() => onClick(tierKey, billingInterval)}
             rightIcon={<ArrowRight size={14} />}  /* Reduced from size={16} */
           >
-            {pricingTier.ctaText}
+            {isLifetimeOnly ? "Get Lifetime Access" : pricingTier.ctaText}
           </Button>
         </VStack>
       </VStack>
@@ -1056,32 +1072,48 @@ const PricingPage = () => {
           </MotionBox>
         </VStack>
         
-        {/* Pricing Cards - now with only 2 tiers */}
-        <SimpleGrid 
-        columns={pricingColumns > 2 ? 2 : pricingColumns} 
-        spacing={{ base: 4, md: 6 }}  /* Reduce spacing on smaller screens */
-        mb={8}  /* Reduced from mb={16} */
-        maxW="container.lg"
-        mx="auto"
-      >
-        <MotionBox variants={itemVariants}>
-          <PriceCard 
-            tier="pro"
-            billingInterval={selectedInterval} 
-            onClick={handleSelectPlan}
-            isPopular={true}
-          />
-        </MotionBox>
-        
-        <MotionBox variants={itemVariants}>
-          <PriceCard 
-            tier="elite"
-            billingInterval={selectedInterval} 
-            onClick={handleSelectPlan}
-            isPopular={false}
-          />
-        </MotionBox>
-      </SimpleGrid>
+        {/* Pricing Cards */}
+        {selectedInterval === 'lifetime' ? (
+          // Show single lifetime card
+          <Flex justify="center" mb={8}>
+            <MotionBox variants={itemVariants} maxW="500px" w="full">
+              <PriceCard 
+                tier="elite" // Using elite tier for lifetime as it has all features
+                billingInterval={selectedInterval} 
+                onClick={handleSelectPlan}
+                isPopular={true}
+                isLifetimeOnly={true}
+              />
+            </MotionBox>
+          </Flex>
+        ) : (
+          // Show both tiers for monthly/yearly
+          <SimpleGrid 
+            columns={pricingColumns > 2 ? 2 : pricingColumns} 
+            spacing={{ base: 4, md: 6 }}
+            mb={8}
+            maxW="container.lg"
+            mx="auto"
+          >
+            <MotionBox variants={itemVariants}>
+              <PriceCard 
+                tier="pro"
+                billingInterval={selectedInterval} 
+                onClick={handleSelectPlan}
+                isPopular={true}
+              />
+            </MotionBox>
+            
+            <MotionBox variants={itemVariants}>
+              <PriceCard 
+                tier="elite"
+                billingInterval={selectedInterval} 
+                onClick={handleSelectPlan}
+                isPopular={false}
+              />
+            </MotionBox>
+          </SimpleGrid>
+        )}
         
         {/* Feature Highlights */}
         <FeatureHighlights />
