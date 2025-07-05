@@ -40,31 +40,40 @@ const BrokerOption = ({ broker, onClick, isDisabled = false }) => (
       <Box 
         w="60px" 
         h="60px" 
-        bg="whiteAlpha.300" 
-        borderRadius="md" 
         display="flex"
         alignItems="center"
         justifyContent="center"
         fontSize="sm"
         color="whiteAlpha.900"
-        overflow="hidden"
       >
         <img 
           src={broker.logo} 
           alt={`${broker.name} logo`}
           style={{
-            maxWidth: '100%',
-            maxHeight: '100%',
-            objectFit: 'contain'
+            maxWidth: '50px',
+            maxHeight: '50px',
+            objectFit: 'contain',
+            filter: 'brightness(0.9)'
           }}
           onError={(e) => {
             e.target.style.display = 'none';
-            e.target.nextSibling.style.display = 'block';
+            e.target.nextSibling.style.display = 'flex';
           }}
         />
-        <Text display="none" fontSize="xs" textAlign="center">
+        <Box 
+          display="none" 
+          alignItems="center"
+          justifyContent="center"
+          w="50px"
+          h="50px"
+          bg="whiteAlpha.200"
+          borderRadius="md"
+          fontSize="xs" 
+          textAlign="center"
+          p={1}
+        >
           {broker.name}
-        </Text>
+        </Box>
       </Box>
     </Box>
     <Text fontSize="sm" color="whiteAlpha.900">
