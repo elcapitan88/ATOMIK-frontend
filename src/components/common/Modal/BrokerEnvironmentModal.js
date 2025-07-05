@@ -138,7 +138,7 @@ const BrokerEnvironmentModal = ({ isOpen, onClose, selectedBroker, onEnvironment
       <ModalContent 
         bg="rgba(255, 255, 255, 0.1)"
         backdropFilter="blur(10px)"
-        boxShadow="0 8px 32px 0 rgba(0, 198, 224, 0.37)"
+        boxShadow="0 8px 32px 0 rgba(255, 255, 255, 0.1)"
         border="1px solid rgba(255, 255, 255, 0.18)"
         borderRadius="xl"
         maxW="400px"

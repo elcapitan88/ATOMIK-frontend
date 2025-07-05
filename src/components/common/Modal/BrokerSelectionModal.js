@@ -47,8 +47,24 @@ const BrokerOption = ({ broker, onClick, isDisabled = false }) => (
         justifyContent="center"
         fontSize="sm"
         color="whiteAlpha.900"
+        overflow="hidden"
       >
-        {broker.name}
+        <img 
+          src={broker.logo} 
+          alt={`${broker.name} logo`}
+          style={{
+            maxWidth: '100%',
+            maxHeight: '100%',
+            objectFit: 'contain'
+          }}
+          onError={(e) => {
+            e.target.style.display = 'none';
+            e.target.nextSibling.style.display = 'block';
+          }}
+        />
+        <Text display="none" fontSize="xs" textAlign="center">
+          {broker.name}
+        </Text>
       </Box>
     </Box>
     <Text fontSize="sm" color="whiteAlpha.900">
@@ -70,7 +86,7 @@ const BrokerSelectionModal = ({ isOpen, onClose, onBrokerSelect }) => {
       <ModalContent 
         bg="rgba(255, 255, 255, 0.1)"
         backdropFilter="blur(10px)"
-        boxShadow="0 8px 32px 0 rgba(0, 198, 224, 0.37)"
+        boxShadow="0 8px 32px 0 rgba(255, 255, 255, 0.1)"
         border="1px solid rgba(255, 255, 255, 0.18)"
         borderRadius="xl"
         maxW="400px"
