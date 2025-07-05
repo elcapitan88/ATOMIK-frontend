@@ -15,6 +15,7 @@ import {
   Button,
   useToast,
   Flex,
+  HStack,
 } from '@chakra-ui/react';
 import { AlertTriangle, Info, Shield } from 'lucide-react';
 import { ENVIRONMENTS } from '@/utils/constants/brokers';
@@ -22,6 +23,7 @@ import { ENVIRONMENTS } from '@/utils/constants/brokers';
 const IBLoginModal = ({ isOpen, onClose, onConnect }) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [environment, setEnvironment] = useState(ENVIRONMENTS.PAPER); // Default to paper
   const [isSubmitting, setIsSubmitting] = useState(false);
   const toast = useToast();
 
@@ -42,10 +44,10 @@ const IBLoginModal = ({ isOpen, onClose, onConnect }) => {
     setIsSubmitting(true);
     
     try {
-      // Call the onConnect function with the credentials and default to demo environment
+      // Call the onConnect function with the credentials and selected environment
       await onConnect({
         broker: 'interactivebrokers',
-        environment: ENVIRONMENTS.DEMO, // Using demo as default
+        environment: environment,
         credentials: {
           type: 'credentials',
           username,
@@ -56,6 +58,7 @@ const IBLoginModal = ({ isOpen, onClose, onConnect }) => {
       // Clear form after successful submission
       setUsername('');
       setPassword('');
+      setEnvironment(ENVIRONMENTS.PAPER);
       
       // The modal will be closed by the parent component after successful connection
     } catch (error) {
@@ -82,8 +85,14 @@ const IBLoginModal = ({ isOpen, onClose, onConnect }) => {
       <ModalContent 
         bg="rgba(255, 255, 255, 0.1)"
         backdropFilter="blur(10px)"
-        boxShadow="0 8px 32px 0 rgba(0, 198, 224, 0.37)"
-        border="1px solid rgba(255, 255, 255, 0.18)"
+        boxShadow={environment === ENVIRONMENTS.PAPER 
+          ? "0 8px 32px 0 rgba(255, 0, 0, 0.37)" 
+          : "0 8px 32px 0 rgba(0, 123, 255, 0.37)"
+        }
+        border={environment === ENVIRONMENTS.PAPER 
+          ? "2px solid rgba(255, 0, 0, 0.6)" 
+          : "2px solid rgba(0, 123, 255, 0.6)"
+        }
         borderRadius="xl"
         maxW="400px"
         color="white"
@@ -123,18 +132,58 @@ const IBLoginModal = ({ isOpen, onClose, onConnect }) => {
                   _hover={{ borderColor: "rgba(255, 255, 255, 0.3)" }}
                 />
               </FormControl>
+
+              <FormControl>
+                <FormLabel>Trading Environment</FormLabel>
+                <HStack spacing={0} width="100%">
+                  <Button
+                    onClick={() => setEnvironment(ENVIRONMENTS.PAPER)}
+                    flex={1}
+                    size="md"
+                    variant={environment === ENVIRONMENTS.PAPER ? "solid" : "outline"}
+                    bg={environment === ENVIRONMENTS.PAPER ? "red.500" : "transparent"}
+                    color={environment === ENVIRONMENTS.PAPER ? "white" : "red.300"}
+                    borderColor="red.500"
+                    borderRightRadius={0}
+                    _hover={{
+                      bg: environment === ENVIRONMENTS.PAPER ? "red.600" : "red.500",
+                      color: "white"
+                    }}
+                  >
+                    Paper Trading
+                  </Button>
+                  <Button
+                    onClick={() => setEnvironment(ENVIRONMENTS.LIVE)}
+                    flex={1}
+                    size="md"
+                    variant={environment === ENVIRONMENTS.LIVE ? "solid" : "outline"}
+                    bg={environment === ENVIRONMENTS.LIVE ? "blue.500" : "transparent"}
+                    color={environment === ENVIRONMENTS.LIVE ? "white" : "blue.300"}
+                    borderColor="blue.500"
+                    borderLeftRadius={0}
+                    _hover={{
+                      bg: environment === ENVIRONMENTS.LIVE ? "blue.600" : "blue.500",
+                      color: "white"
+                    }}
+                  >
+                    Live Trading
+                  </Button>
+                </HStack>
+              </FormControl>
               
               <Box width="100%" pt={4}>
                 <Button
                   type="submit"
                   width="100%"
-                  colorScheme="blue"
+                  colorScheme={environment === ENVIRONMENTS.PAPER ? "red" : "blue"}
                   isLoading={isSubmitting}
                   loadingText="Connecting..."
-                  bg="rgba(0, 198, 224, 0.7)"
-                  _hover={{ bg: "rgba(0, 198, 224, 0.9)" }}
+                  bg={environment === ENVIRONMENTS.PAPER ? "red.500" : "blue.500"}
+                  _hover={{ 
+                    bg: environment === ENVIRONMENTS.PAPER ? "red.600" : "blue.600" 
+                  }}
                 >
-                  Connect Account
+                  Connect to {environment === ENVIRONMENTS.PAPER ? "Paper" : "Live"} Account
                 </Button>
               </Box>
             </VStack>
