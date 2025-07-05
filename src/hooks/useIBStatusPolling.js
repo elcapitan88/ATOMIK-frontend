@@ -1,6 +1,6 @@
 // hooks/useIBStatusPolling.js
 import { useEffect, useRef, useCallback } from 'react';
-import { axiosConfig } from '@/services/axiosConfig';
+import axiosInstance from '@/services/axiosConfig';
 
 // Polling intervals based on account state
 const POLLING_INTERVALS = {
@@ -30,7 +30,7 @@ export const useIBStatusPolling = (accounts, onStatusUpdate) => {
     if (!account.do_ip_address) return null;
     
     try {
-      const response = await axiosConfig.get(
+      const response = await axiosInstance.get(
         `/api/v1/brokers/interactivebrokers/accounts/${account.account_id}/ibeam-health`
       );
       return response.data?.authenticated || false;
@@ -43,7 +43,7 @@ export const useIBStatusPolling = (accounts, onStatusUpdate) => {
   // Get account status from backend
   const fetchAccountStatus = useCallback(async (account) => {
     try {
-      const response = await axiosConfig.get(
+      const response = await axiosInstance.get(
         `/api/v1/brokers/interactivebrokers/accounts/${account.account_id}/status`
       );
       
