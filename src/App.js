@@ -4,6 +4,7 @@ import { Box, Spinner } from '@chakra-ui/react';
 import { useAuth } from '@/contexts/AuthContext';
 import { initializeContracts } from './utils/formatting/tickerUtils';
 import affiliateService from './services/affiliateService';
+import ibStatusService from './services/brokers/interactivebrokers/IBStatusService';
 
 // Import components
 import Homepage from './components/pages/Homepage/Homepage';
@@ -176,7 +177,16 @@ function App() {
     }
   }, []);
   
-  // Add the new useEffect right here, before the return statement
+  // Initialize IB Status Service
+  useEffect(() => {
+    // Service will be started when Management component loads with IB accounts
+    // Just ensure it's available for cleanup on app unmount
+    return () => {
+      if (ibStatusService.getStatus().isActive) {
+        ibStatusService.stop();
+      }
+    };
+  }, []);
   useEffect(() => {
     // Check for stored credentials on app load
     const token = localStorage.getItem('access_token');

@@ -41,7 +41,7 @@ import logger from '@/utils/logger';
 import axiosInstance from '@/services/axiosConfig';
 import { useFeatureFlag } from 'configcat-react';
 import { useWebSocketContext } from '@/services/websocket-proxy/contexts/WebSocketContext';
-import { useIBStatusPolling } from '@/hooks/useIBStatusPolling';
+import ibStatusService from '@/services/brokers/interactivebrokers/IBStatusService';
 
 
 
@@ -222,8 +222,28 @@ const Management = () => {
         });
     }, []);
 
-    // Initialize IB status polling for IB accounts
-    const { refreshStatus: refreshIBStatus } = useIBStatusPolling(accounts, handleIBStatusUpdate);
+    // Subscribe to IB status updates
+    useEffect(() => {
+        const subscription = ibStatusService.getStatusUpdates().subscribe(({ accountId, statusData }) => {
+            logger.info(`IB Status Update: ${JSON.stringify({ accountId, statusData })}`);
+            handleIBStatusUpdate(accountId, statusData);
+        });
+
+        return () => subscription.unsubscribe();
+    }, [handleIBStatusUpdate]);
+
+    // Initialize IB accounts with the service
+    useEffect(() => {
+        const ibAccounts = accounts.filter(acc => acc.broker_id === 'interactivebrokers');
+        if (ibAccounts.length > 0 && !ibStatusService.getStatus().isActive) {
+            ibStatusService.start(accounts);
+        }
+
+        // Add any new IB accounts to the service
+        ibAccounts.forEach(account => {
+            ibStatusService.addAccount(account);
+        });
+    }, [accounts]);
 
     // Hooks
     const toast = useToast();
@@ -415,10 +435,7 @@ const Management = () => {
                 // Refresh accounts to get updated status
                 setTimeout(() => fetchAccounts(false), 2000);
                 
-                // Also trigger immediate IB status refresh
-                if (account.broker_id === 'interactivebrokers') {
-                    refreshIBStatus(account.account_id);
-                }
+                // IB status will be updated automatically by IBStatusService
             }
         } catch (error) {
             logger.error(`Error ${action}ing IB server:`, error);
@@ -451,8 +468,7 @@ const Management = () => {
                 // Refresh accounts to get updated status
                 setTimeout(() => fetchAccounts(false), 3000);
                 
-                // Also trigger immediate IB status refresh
-                refreshIBStatus(account.account_id);
+                // IB status will be updated automatically by IBStatusService
             }
         } catch (error) {
             logger.error('Error restarting IB server:', error);
