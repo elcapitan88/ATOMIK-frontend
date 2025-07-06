@@ -194,23 +194,31 @@ const Management = () => {
         console.log('IB Status Update:', { accountId, statusData });
         
         // Update account with new status information
-        setAccounts(prev => prev.map(account => {
-            if (account.account_id === accountId) {
-                return {
-                    ...account,
-                    digital_ocean_status: statusData.status,
-                    ibeam_authenticated: statusData.ibeamAuthenticated,
-                    last_status_check: statusData.lastChecked
-                };
-            }
-            return account;
-        }));
-
-        // Also update the account in AccountManager for persistence
-        accountManager.updateAccount(accountId, {
-            digital_ocean_status: statusData.status,
-            ibeam_authenticated: statusData.ibeamAuthenticated,
-            last_status_check: statusData.lastChecked
+        setAccounts(prev => {
+            const updatedAccounts = prev.map(account => {
+                if (account.account_id === accountId) {
+                    // Only update if status actually changed
+                    if (account.digital_ocean_status !== statusData.status ||
+                        account.ibeam_authenticated !== statusData.ibeamAuthenticated) {
+                        
+                        // Also update the account in AccountManager for persistence
+                        accountManager.updateAccount(accountId, {
+                            digital_ocean_status: statusData.status,
+                            ibeam_authenticated: statusData.ibeamAuthenticated,
+                            last_status_check: statusData.lastChecked
+                        });
+                        
+                        return {
+                            ...account,
+                            digital_ocean_status: statusData.status,
+                            ibeam_authenticated: statusData.ibeamAuthenticated,
+                            last_status_check: statusData.lastChecked
+                        };
+                    }
+                }
+                return account;
+            });
+            return updatedAccounts;
         });
     }, []);
 
