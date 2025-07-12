@@ -12,8 +12,13 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 const MotionBox = motion(Box);
 
+// Logging control - set to false to disable all chat logs
+const ENABLE_CHAT_LOGS = false;
+
 const DebugMemberChat = ({ isOpen, onClose }) => {
-  console.log('DebugMemberChat render:', { isOpen });
+  if (ENABLE_CHAT_LOGS) {
+    console.log('DebugMemberChat render:', { isOpen });
+  }
 
   return (
     <AnimatePresence>

@@ -40,7 +40,10 @@ export class TradesApi {
       if (filters.symbol) params.append('symbol', filters.symbol);
       if (filters.strategy_id) params.append('strategy_id', filters.strategy_id);
       if (filters.days_back) params.append('days_back', filters.days_back);
-      if (filters.profitable_only !== undefined) params.append('profitable_only', filters.profitable_only);
+      // Only add profitable_only if it's explicitly true or false, not null
+      if (filters.profitable_only !== null && filters.profitable_only !== undefined) {
+        params.append('profitable_only', filters.profitable_only);
+      }
       if (filters.page) params.append('page', filters.page);
       if (filters.per_page) params.append('per_page', filters.per_page);
 

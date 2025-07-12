@@ -4,6 +4,22 @@ import chatApi, { chatService } from '../services/api/chat';
 
 const ChatContext = createContext();
 
+// Logging control - set to false to disable all chat logs
+const ENABLE_CHAT_LOGS = false;
+
+// Custom logger that respects the logging flag
+const chatLog = (...args) => {
+  if (ENABLE_CHAT_LOGS) {
+    console.log(...args);
+  }
+};
+
+const chatError = (...args) => {
+  if (ENABLE_CHAT_LOGS) {
+    console.error(...args);
+  }
+};
+
 export const useChat = () => {
   const context = useContext(ChatContext);
   if (!context) {
@@ -31,7 +47,7 @@ export const ChatProvider = ({ children }) => {
     const checkToken = () => {
       const currentToken = localStorage.getItem('access_token');
       if (currentToken !== token) {
-        console.log('🔍 ChatContext: Token updated in localStorage');
+        chatLog('🔍 ChatContext: Token updated in localStorage');
         setToken(currentToken);
       }
     };
@@ -44,7 +60,7 @@ export const ChatProvider = ({ children }) => {
 
   // Load initial data when user is authenticated
   useEffect(() => {
-    console.log('🔍 ChatContext: useEffect triggered', { 
+    chatLog('🔍 ChatContext: useEffect triggered', { 
       user: !!user, 
       token: !!token, 
       hasUser: user ? user.id : 'no-user', 
@@ -53,19 +69,19 @@ export const ChatProvider = ({ children }) => {
       tokenValue: token ? token.substring(0, 20) + '...' : 'null'
     });
     if (user && token) {
-      console.log('🔍 ChatContext: User and token available - Loading initial data...');
+      chatLog('🔍 ChatContext: User and token available - Loading initial data...');
       loadChannels();
       loadSettings();
       connectToRealTime();
     } else {
-      console.log('🔍 ChatContext: User or token not available yet - skipping initialization', {
+      chatLog('🔍 ChatContext: User or token not available yet - skipping initialization', {
         userAvailable: !!user,
         tokenAvailable: !!token
       });
     }
     
     return () => {
-      console.log('🔍 ChatContext: useEffect cleanup - disconnecting SSE');
+      chatLog('🔍 ChatContext: useEffect cleanup - disconnecting SSE');
       chatService.disconnect();
     };
   }, [user, token]);
@@ -73,20 +89,20 @@ export const ChatProvider = ({ children }) => {
   // Load messages when chat opens with an active channel (safeguard)
   useEffect(() => {
     if (isOpen && activeChannelId && !messages[activeChannelId]) {
-      console.log('🔍 ChatContext: Loading messages for opened chat channel:', activeChannelId);
+      chatLog('🔍 ChatContext: Loading messages for opened chat channel:', activeChannelId);
       loadMessages(activeChannelId);
     }
   }, [isOpen, activeChannelId]);
 
   // Real-time connection
   const connectToRealTime = () => {
-    console.log('🔍 ChatContext: connectToRealTime called', { token: !!token });
+    chatLog('🔍 ChatContext: connectToRealTime called', { token: !!token });
     if (!token) {
-      console.log('❌ ChatContext: No token available for SSE connection');
+      chatLog('❌ ChatContext: No token available for SSE connection');
       return;
     }
 
-    console.log('🔍 ChatContext: Attempting to connect to SSE...');
+    chatLog('🔍 ChatContext: Attempting to connect to SSE...');
     chatService.connect(token);
     
     chatService.on('connected', () => {
@@ -98,13 +114,13 @@ export const ChatProvider = ({ children }) => {
     });
 
     chatService.on('error', (error) => {
-      console.error('Chat connection error:', error);
+      chatError('Chat connection error:', error);
       setIsConnected(false);
     });
 
     // Handle real-time message events
     chatService.on('new_message', (message) => {
-      console.log('🔍 ChatContext: Received new_message event:', message);
+      chatLog('🔍 ChatContext: Received new_message event:', message);
       setMessages(prev => {
         const currentMessages = prev[message.channel_id] || [];
         
@@ -157,33 +173,33 @@ export const ChatProvider = ({ children }) => {
   };
 
   const loadChannels = async () => {
-    console.log('🔍 ChatContext: Loading channels...');
+    chatLog('🔍 ChatContext: Loading channels...');
     try {
-      console.log('🔍 ChatContext: Calling getChannels API...');
+      chatLog('🔍 ChatContext: Calling getChannels API...');
       const channelsData = await chatApi.getChannels();
-      console.log('🔍 ChatContext: Channels received:', channelsData);
+      chatLog('🔍 ChatContext: Channels received:', channelsData);
       
       // If no channels exist, try to initialize the chat system
       if (channelsData.length === 0) {
-        console.log('🔍 ChatContext: No channels found, attempting to initialize chat system...');
+        chatLog('🔍 ChatContext: No channels found, attempting to initialize chat system...');
         try {
           const initResult = await chatApi.initializeChatSystem();
-          console.log('🔍 ChatContext: Chat system initialized:', initResult);
+          chatLog('🔍 ChatContext: Chat system initialized:', initResult);
           
           // Try loading channels again
-          console.log('🔍 ChatContext: Reloading channels after initialization...');
+          chatLog('🔍 ChatContext: Reloading channels after initialization...');
           const newChannelsData = await chatApi.getChannels();
-          console.log('🔍 ChatContext: New channels received:', newChannelsData);
+          chatLog('🔍 ChatContext: New channels received:', newChannelsData);
           setChannels(newChannelsData);
           
           if (newChannelsData.length > 0 && !activeChannelId) {
             const generalChannel = newChannelsData.find(c => c.name === 'general') || newChannelsData[0];
-            console.log('🔍 ChatContext: Setting active channel:', generalChannel);
+            chatLog('🔍 ChatContext: Setting active channel:', generalChannel);
             setActiveChannelId(generalChannel.id);
           }
         } catch (initError) {
-          console.error('❌ ChatContext: Failed to initialize chat system:', initError);
-          console.error('❌ ChatContext: Init error details:', {
+          chatError('❌ ChatContext: Failed to initialize chat system:', initError);
+          chatError('❌ ChatContext: Init error details:', {
             status: initError.response?.status,
             statusText: initError.response?.statusText,
             data: initError.response?.data,
@@ -192,19 +208,19 @@ export const ChatProvider = ({ children }) => {
           setError('Failed to initialize chat system. Please contact support.');
         }
       } else {
-        console.log('🔍 ChatContext: Setting channels:', channelsData);
+        chatLog('🔍 ChatContext: Setting channels:', channelsData);
         setChannels(channelsData);
         
         // Set default active channel to general
         if (channelsData.length > 0 && !activeChannelId) {
           const generalChannel = channelsData.find(c => c.name === 'general') || channelsData[0];
-          console.log('🔍 ChatContext: Setting active channel:', generalChannel);
+          chatLog('🔍 ChatContext: Setting active channel:', generalChannel);
           setActiveChannelId(generalChannel.id);
         }
       }
     } catch (error) {
-      console.error('❌ ChatContext: Error loading channels:', error);
-      console.error('❌ ChatContext: Error details:', {
+      chatError('❌ ChatContext: Error loading channels:', error);
+      chatError('❌ ChatContext: Error details:', {
         status: error.response?.status,
         statusText: error.response?.statusText,
         data: error.response?.data,
@@ -225,7 +241,7 @@ export const ChatProvider = ({ children }) => {
         [channelId]: messagesData.messages
       }));
     } catch (error) {
-      console.error('Error loading messages:', error);
+      chatError('Error loading messages:', error);
       setError('Failed to load messages');
     } finally {
       setIsLoading(false);
@@ -237,12 +253,12 @@ export const ChatProvider = ({ children }) => {
       const settingsData = await chatApi.getChatSettings();
       setSettings(settingsData);
     } catch (error) {
-      console.error('Error loading chat settings:', error);
+      chatError('Error loading chat settings:', error);
     }
   };
 
   const sendMessage = async (channelId, content, replyToId = null) => {
-    console.log('🔍 ChatContext: sendMessage called', { channelId, content, replyToId });
+    chatLog('🔍 ChatContext: sendMessage called', { channelId, content, replyToId });
     
     // Create optimistic message immediately
     const optimisticMessage = {
@@ -268,9 +284,9 @@ export const ChatProvider = ({ children }) => {
     }));
     
     try {
-      console.log('🔍 ChatContext: Calling chatApi.sendMessage...');
+      chatLog('🔍 ChatContext: Calling chatApi.sendMessage...');
       const result = await chatApi.sendMessage(channelId, { content, reply_to_id: replyToId });
-      console.log('🔍 ChatContext: Message sent successfully:', result);
+      chatLog('🔍 ChatContext: Message sent successfully:', result);
       
       // Replace optimistic message with real message
       if (result) {
@@ -284,8 +300,8 @@ export const ChatProvider = ({ children }) => {
       
       // Message will also be added via real-time event (which will be deduplicated)
     } catch (error) {
-      console.error('❌ ChatContext: Error sending message:', error);
-      console.error('❌ ChatContext: Error details:', {
+      chatError('❌ ChatContext: Error sending message:', error);
+      chatError('❌ ChatContext: Error details:', {
         status: error.response?.status,
         statusText: error.response?.statusText,
         data: error.response?.data,
@@ -307,7 +323,7 @@ export const ChatProvider = ({ children }) => {
       await chatApi.editMessage(messageId, content);
       // Message will be updated via real-time event
     } catch (error) {
-      console.error('Error editing message:', error);
+      chatError('Error editing message:', error);
       setError('Failed to edit message');
     }
   };
@@ -317,7 +333,7 @@ export const ChatProvider = ({ children }) => {
       await chatApi.deleteMessage(messageId);
       // Message will be removed via real-time event
     } catch (error) {
-      console.error('Error deleting message:', error);
+      chatError('Error deleting message:', error);
       setError('Failed to delete message');
     }
   };
@@ -327,7 +343,7 @@ export const ChatProvider = ({ children }) => {
       await chatApi.addReaction(messageId, emoji);
       // Reaction will be added via real-time event
     } catch (error) {
-      console.error('Error adding reaction:', error);
+      chatError('Error adding reaction:', error);
     }
   };
 
@@ -336,33 +352,33 @@ export const ChatProvider = ({ children }) => {
       await chatApi.removeReaction(messageId, emoji);
       // Reaction will be removed via real-time event
     } catch (error) {
-      console.error('Error removing reaction:', error);
+      chatError('Error removing reaction:', error);
     }
   };
 
   const selectChannel = (channelId) => {
-    console.log('🔍 ChatContext: selectChannel called', { channelId, existingMessages: !!messages[channelId] });
+    chatLog('🔍 ChatContext: selectChannel called', { channelId, existingMessages: !!messages[channelId] });
     setActiveChannelId(channelId);
     if (!messages[channelId]) {
-      console.log('🔍 ChatContext: Loading messages for channel:', channelId);
+      chatLog('🔍 ChatContext: Loading messages for channel:', channelId);
       loadMessages(channelId);
     }
   };
 
   const toggleChat = () => {
-    console.log('🔍 ChatContext: toggleChat called', { isOpen, channelsCount: channels.length });
+    chatLog('🔍 ChatContext: toggleChat called', { isOpen, channelsCount: channels.length });
     const newIsOpen = !isOpen;
     setIsOpen(newIsOpen);
     
     // If opening chat and no channels loaded, try to load them
     if (newIsOpen && channels.length === 0) {
-      console.log('🔍 ChatContext: No channels found on open, loading...');
+      chatLog('🔍 ChatContext: No channels found on open, loading...');
       loadChannels();
     }
     
     // If opening chat and not connected to SSE, connect now
     if (newIsOpen && !isConnected) {
-      console.log('🔍 ChatContext: Chat opening - checking SSE connection...', {
+      chatLog('🔍 ChatContext: Chat opening - checking SSE connection...', {
         hasUser: !!user,
         hasToken: !!token,
         isConnected: isConnected,
@@ -370,10 +386,10 @@ export const ChatProvider = ({ children }) => {
       });
       
       if (user && token) {
-        console.log('🔍 ChatContext: User and token available - establishing SSE connection...');
+        chatLog('🔍 ChatContext: User and token available - establishing SSE connection...');
         connectToRealTime();
       } else {
-        console.log('❌ ChatContext: Cannot establish SSE - missing auth data', {
+        chatLog('❌ ChatContext: Cannot establish SSE - missing auth data', {
           user: !!user,
           token: !!token
         });
@@ -382,7 +398,7 @@ export const ChatProvider = ({ children }) => {
     
     // If opening chat and we have an active channel but no messages, load them
     if (newIsOpen && activeChannelId && !messages[activeChannelId]) {
-      console.log('🔍 ChatContext: Loading messages for active channel on open:', activeChannelId);
+      chatLog('🔍 ChatContext: Loading messages for active channel on open:', activeChannelId);
       loadMessages(activeChannelId);
     }
   };
@@ -392,7 +408,7 @@ export const ChatProvider = ({ children }) => {
   };
 
   const refreshChannels = async () => {
-    console.log('🔍 ChatContext: Manual refresh channels called');
+    chatLog('🔍 ChatContext: Manual refresh channels called');
     await loadChannels();
   };
 

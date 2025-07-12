@@ -443,20 +443,6 @@ export const WebSocketProvider = ({ children }) => {
     }
   }, []);
   
-  /**
-   * Test market data access for debugging
-   * @param {string} brokerId - Broker identifier
-   * @param {string} accountId - Account identifier
-   * @returns {Promise<Object>} - Test results
-   */
-  const testMarketDataAccess = useCallback(async (brokerId, accountId) => {
-    try {
-      return await webSocketManager.testMarketDataAccess(brokerId, accountId);
-    } catch (err) {
-      console.error(`Error testing market data access for ${brokerId}:${accountId}:`, err);
-      throw err;
-    }
-  }, []);
   
   // Create context value with memoization
   const contextValue = useMemo(() => ({
@@ -479,7 +465,6 @@ export const WebSocketProvider = ({ children }) => {
     getAccountData,
     getPositions,
     getOrders,
-    testMarketDataAccess, // Add the test method
     
     // Data accessors (for direct use)
     getAllMarketData: () => {
@@ -529,7 +514,6 @@ export const WebSocketProvider = ({ children }) => {
     getAccountData,
     getPositions,
     getOrders,
-    testMarketDataAccess
   ]);
   
   return (

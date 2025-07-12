@@ -136,6 +136,76 @@ export const BROKERS = {
       scope: 'trading'
     }
   },
+
+  binance: {
+    id: 'binance',
+    name: 'Binance',
+    description: 'Binance Global - Crypto Exchange',
+    logo: '/logos/binance.svg',
+    connectionMethod: CONNECTION_METHODS.API_KEY,
+    environments: [ENVIRONMENTS.LIVE],
+    features: {
+      supportsWebSocket: true,
+      supportedOrderTypes: [
+        BROKER_FEATURES.ORDER_TYPES.MARKET,
+        BROKER_FEATURES.ORDER_TYPES.LIMIT,
+        BROKER_FEATURES.ORDER_TYPES.STOP,
+        BROKER_FEATURES.ORDER_TYPES.STOP_LIMIT
+      ],
+      realTimeData: true,
+      multipleAccounts: false,
+      supportedAssets: ['SPOT', 'FUTURES'],
+      supportedMarkets: ['spot', 'futures']
+    },
+    endpoints: {
+      live: {
+        base: 'https://api.binance.com',
+        websocket: 'wss://stream.binance.com:9443'
+      }
+    },
+    apiConfig: {
+      testEndpoint: '/api/v3/account',
+      rateLimits: {
+        requests: 1200,
+        period: 60000
+      }
+    }
+  },
+
+  binanceus: {
+    id: 'binanceus',
+    name: 'Binance.US',
+    description: 'Binance US - Crypto Exchange',
+    logo: '/logos/binance-us.svg',
+    connectionMethod: CONNECTION_METHODS.API_KEY,
+    environments: [ENVIRONMENTS.LIVE],
+    features: {
+      supportsWebSocket: true,
+      supportedOrderTypes: [
+        BROKER_FEATURES.ORDER_TYPES.MARKET,
+        BROKER_FEATURES.ORDER_TYPES.LIMIT,
+        BROKER_FEATURES.ORDER_TYPES.STOP,
+        BROKER_FEATURES.ORDER_TYPES.STOP_LIMIT
+      ],
+      realTimeData: true,
+      multipleAccounts: false,
+      supportedAssets: ['SPOT'],
+      supportedMarkets: ['spot']
+    },
+    endpoints: {
+      live: {
+        base: 'https://api.binance.us',
+        websocket: 'wss://stream.binance.us:9443'
+      }
+    },
+    apiConfig: {
+      testEndpoint: '/api/v3/account',
+      rateLimits: {
+        requests: 1200,
+        period: 60000
+      }
+    }
+  },
 };
 
 // Helper functions

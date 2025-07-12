@@ -1,4 +1,5 @@
 // src/components/features/trading/LiveTradesView.js
+// Cache busting update
 
 import React, { useState, useCallback } from 'react';
 import {
@@ -46,7 +47,6 @@ import { useAccounts } from '@/hooks/useAccounts';
 import { useTrades } from '@/hooks/useTrades';
 import { useMemo, useEffect } from 'react';
 import AnimatedPositionRow from './components/AnimatedPositionRow';
-import PositionStatusIndicator from './components/PositionStatusIndicator';
 import { useThrottledPositions } from '@/services/websocket-proxy/hooks/useThrottledPositions';
 
 const LiveTradesView = () => {
@@ -61,7 +61,7 @@ const LiveTradesView = () => {
 
   const toast = useToast();
   const { data: accounts, isLoading: accountsLoading, error: accountsError } = useAccounts();
-  const { isConnected, sendMessage, connections, testMarketDataAccess } = useWebSocketContext();
+  const { isConnected, sendMessage, connections } = useWebSocketContext();
   
   // Use trades hook for database-backed live trades
   const { liveTrades, closeTrade: closeTradeApi, isLoading: tradesLoading } = useTrades();
@@ -295,7 +295,7 @@ const LiveTradesView = () => {
       return (
         <Alert status="error">
           <AlertIcon />
-          Failed to load accounts: {accountsError.message}
+          Failed to load accounts: {accountsError?.message || 'Unknown error'}
         </Alert>
       );
     }
@@ -369,7 +369,7 @@ const LiveTradesView = () => {
       )}
       
       {/* Connection Health Alert */}
-      {connectionHealth && !connectionHealth.isHealthy && (
+      {connectionHealth && connectionHealth.isHealthy !== undefined && !connectionHealth.isHealthy && (
         <Alert status="error" mb={4} borderRadius="md">
           <AlertIcon />
           <VStack align="start" spacing={1} flex={1}>
@@ -398,10 +398,7 @@ const LiveTradesView = () => {
           <Badge colorScheme="blue">
             {throttledPositions?.length || 0} Position{throttledPositions?.length !== 1 ? 's' : ''}
           </Badge>
-          {connectionStatus === 'connected' && lastUpdate && (
-            <PositionStatusIndicator lastUpdate={lastUpdate} />
-          )}
-          {updateStats && (updateStats.opened > 0 || updateStats.closed > 0) && (
+          {updateStats && updateStats.opened !== undefined && updateStats.closed !== undefined && (updateStats.opened > 0 || updateStats.closed > 0) && (
             <HStack spacing={2}>
               <Badge colorScheme="green" variant="subtle">
                 +{updateStats.opened} opened
@@ -414,34 +411,6 @@ const LiveTradesView = () => {
         </HStack>
 
         <HStack spacing={2}>
-          {/* Temporary Market Data Test Button */}
-          <Button
-            size="sm"
-            colorScheme="yellow"
-            onClick={async () => {
-              try {
-                const result = await testMarketDataAccess(selectedBroker, selectedAccount);
-                console.log('[MARKET_DATA_TEST] Test results:', result);
-                toast({
-                  title: 'Market Data Test Complete',
-                  description: 'Check console for results',
-                  status: 'info',
-                  duration: 5000,
-                });
-              } catch (error) {
-                console.error('[MARKET_DATA_TEST] Test failed:', error);
-                toast({
-                  title: 'Market Data Test Failed',
-                  description: error.message,
-                  status: 'error',
-                  duration: 5000,
-                });
-              }
-            }}
-          >
-            Test Market Data
-          </Button>
-          
           <Select
             size="sm"
             value={selectedAccount}
@@ -492,8 +461,6 @@ const LiveTradesView = () => {
             <Th color="whiteAlpha.600">Side</Th>
             <Th color="whiteAlpha.600" isNumeric>Qty</Th>
             <Th color="whiteAlpha.600" isNumeric>Entry</Th>
-            <Th color="whiteAlpha.600" isNumeric>Current</Th>
-            <Th color="whiteAlpha.600" isNumeric>P&L</Th>
             <Th color="whiteAlpha.600">Strategy</Th>
             <Th color="whiteAlpha.600" isNumeric>Account</Th>
             <Th width="50px"></Th>
@@ -502,7 +469,7 @@ const LiveTradesView = () => {
         <Tbody>
           {!throttledPositions || throttledPositions.length === 0 ? (
             <Tr>
-              <Td colSpan={11}>
+              <Td colSpan={9}>
                 <Flex justify="center" align="center" py={8}>
                   <VStack spacing={3}>
                     <Box

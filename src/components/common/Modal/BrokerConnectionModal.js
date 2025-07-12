@@ -12,9 +12,12 @@ import {
   Box,
   Spinner,
   useToast,
+  Button,
 } from '@chakra-ui/react';
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle, Settings } from 'lucide-react';
 import { useOAuth } from '@/hooks/useOAuth';
+import { getBrokerById, CONNECTION_METHODS } from '@/utils/constants/brokers';
+import { useNavigate } from 'react-router-dom';
 
 const BrokerOption = ({ title, onClick, isDisabled = false }) => (
   <VStack spacing={2} align="center">
@@ -90,15 +93,19 @@ const LoadingDisplay = () => (
   </VStack>
 );
 
-const BrokerConnectionModal = ({ isOpen, onClose }) => {
+const BrokerConnectionModal = ({ isOpen, onClose, brokerId = 'tradovate' }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { initiateBrokerAuth } = useOAuth();
   const toast = useToast();
+  const navigate = useNavigate();
+  
+  const brokerConfig = getBrokerById(brokerId);
+  const isApiKeyBroker = brokerConfig?.connectionMethod === CONNECTION_METHODS.API_KEY;
 
   const handleBrokerSelection = async (environment) => {
     try {
       setIsSubmitting(true);
-      await initiateBrokerAuth('tradovate', environment);
+      await initiateBrokerAuth(brokerId, environment);
       
       // If successful, modal will be closed when redirection happens
       // No need to explicitly close here
@@ -112,6 +119,11 @@ const BrokerConnectionModal = ({ isOpen, onClose }) => {
       });
       setIsSubmitting(false);
     }
+  };
+
+  const handleGoToSettings = () => {
+    onClose();
+    navigate('/settings');
   };
 
   return (
@@ -135,13 +147,41 @@ const BrokerConnectionModal = ({ isOpen, onClose }) => {
           pb={4}
           color="white"
         >
-          Connect Trading Account
+          Connect {brokerConfig?.name || 'Trading'} Account
         </ModalHeader>
         {!isSubmitting && <ModalCloseButton color="white" />}
         
         <ModalBody pt={6} pb={8}>
           {isSubmitting ? (
             <LoadingDisplay />
+          ) : isApiKeyBroker ? (
+            <VStack spacing={6} align="center">
+              <VStack spacing={3} textAlign="center">
+                <Settings size={48} color="#00C6E0" />
+                <Text fontSize="lg" fontWeight="semibold" color="white">
+                  API Key Required
+                </Text>
+                <Text fontSize="sm" color="whiteAlpha.700" maxW="300px">
+                  {brokerConfig?.name} requires an API key for connection. Please add your API key in the settings page.
+                </Text>
+              </VStack>
+              
+              <Button
+                bg="#00C6E0"
+                color="white"
+                size="lg"
+                leftIcon={<Settings size={18} />}
+                onClick={handleGoToSettings}
+                _hover={{ bg: "#00A3B8" }}
+                _active={{ bg: "#008A9B" }}
+              >
+                Go to Settings
+              </Button>
+              
+              <Text fontSize="xs" color="whiteAlpha.500" textAlign="center">
+                Navigate to Settings → Broker Options to configure your API key
+              </Text>
+            </VStack>
           ) : (
             <>
               <HStack spacing={8} justify="center">

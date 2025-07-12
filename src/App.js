@@ -4,6 +4,7 @@ import { Box, Spinner } from '@chakra-ui/react';
 import { useAuth } from '@/contexts/AuthContext';
 import { initializeContracts } from './utils/formatting/tickerUtils';
 import affiliateService from './services/affiliateService';
+import { TradingLabProvider } from './contexts/TradingLabContext';
 import ibStatusService from './services/brokers/interactivebrokers/IBStatusService';
 
 // Import components
@@ -21,6 +22,18 @@ const StrategyBuilderPage = lazy(() => import('./components/pages/Builder/Strate
 const LandingPage = lazy(() => import('./components/pages/landing/LandingPage'));
 const ComingSoon = lazy(() => import('./components/common/ComingSoon'));
 
+// Trading Lab Entry Point
+const TradingLabEntry = lazy(() => import('./components/trading-lab/TradingLabEntry'));
+
+// Trading Lab PaymentSuccessLoading Component
+const PaymentSuccessLoading = lazy(() => import('./components/trading-lab/onboarding/PaymentSuccessLoading'));
+
+// Trading Lab Strategy Selection Component
+const CuratedStrategies = lazy(() => import('./components/trading-lab/strategy-selection/CuratedStrategies'));
+
+// Trading Lab Account Setup Component
+const CoreAccountSetup = lazy(() => import('./components/trading-lab/account-connection/CoreAccountSetup'));
+
 const AdminDashboard = lazy(() => import('./components/pages/Admin/AdminDashboard').then(module => ({ default: module.default })));
 const OverviewPage = lazy(() => import('./components/pages/Admin/Overview/OverviewPage').then(module => ({ default: module.default })));
 const UserManagement = lazy(() => import('./components/pages/Admin/UserManagement/UserManagement'));
@@ -33,6 +46,9 @@ const RouteTracker = () => {
   const location = useLocation();
   
   useEffect(() => {
+    // Debug logging for route changes
+    console.log('[RouteTracker] Route changed to:', location.pathname);
+    
     // Push to dataLayer whenever route changes
     if (window.dataLayer) {
       window.dataLayer.push({
@@ -73,13 +89,34 @@ const WithAuth = React.memo(({ children }) => {
   const isAuthRedirectInProgress = sessionStorage.getItem('auth_redirect_in_progress');
   const hasToken = localStorage.getItem('access_token');
 
+  // Debug logging for trading-lab route
+  if (location.pathname === '/trading-lab') {
+    console.log('[WithAuth] Trading Lab access check:', {
+      isAuthenticated,
+      isLoading,
+      hasToken: !!hasToken,
+      isAuthRedirectInProgress: !!isAuthRedirectInProgress,
+      pathname: location.pathname
+    });
+  }
+
   if (isLoading) {
+    if (location.pathname === '/trading-lab') {
+      console.log('[WithAuth] Still loading auth for trading-lab...');
+    }
     return <LoadingSpinner />;
   }
 
   // Critical change: check for token and redirect flag before bouncing to auth
   if (!isAuthenticated && !isAuthRedirectInProgress && !hasToken) {
+    if (location.pathname === '/trading-lab') {
+      console.log('[WithAuth] Redirecting trading-lab to auth - not authenticated');
+    }
     return <Navigate to="/auth" state={{ from: location }} replace />;
+  }
+
+  if (location.pathname === '/trading-lab') {
+    console.log('[WithAuth] Trading Lab access granted');
   }
 
   return children;
@@ -159,17 +196,23 @@ const AdminRoute = React.memo(({ children }) => {
 });
 
 function App() {
-  const { isAuthenticated, setAuthenticatedState } = useAuth();
-  
-  // Initialize futures contracts on app load
-  useEffect(() => {
-    initializeContracts().then(() => {
-      console.log('[App] Futures contracts initialized');
-    }).catch(error => {
-      console.error('[App] Failed to initialize contracts:', error);
-    });
-  }, []);
-  
+    const { isAuthenticated, setAuthenticatedState } = useAuth();
+
+    // Initialize futures contracts on app load
+    useEffect(() => {
+      initializeContracts().then(() => {
+        console.log('[App] Futures contracts initialized');
+      }).catch(error => {
+        console.error('[App] Failed to initialize contracts:', error);
+      });
+    }, []);
+
+    // Debug current location
+    useEffect(() => {
+      console.log('[App] Current location when App loads:', window.location.pathname);
+      console.log('[App] isAuthenticated:', isAuthenticated);
+    }, [isAuthenticated]);
+    
   // Import debug utilities in development
   useEffect(() => {
     if (process.env.NODE_ENV === 'development') {
@@ -318,6 +361,58 @@ function App() {
             <WithAuth>
               <DashboardLayout>
                 <StrategyBuilderPage />
+              </DashboardLayout>
+            </WithAuth>
+          }
+        />
+
+        {/* Trading Lab Route */}
+        <Route
+          path="/trading-lab"
+          element={
+            <WithAuth>
+              <DashboardLayout>
+                <TradingLabProvider>
+                  <TradingLabEntry />
+                </TradingLabProvider>
+              </DashboardLayout>
+            </WithAuth>
+          }
+        />
+
+        {/* Trading Lab Payment Success Loading Route */}
+        <Route
+          path="/trading-lab/payment-success-loading"
+          element={
+            <WithAuth>
+              <PaymentSuccessLoading />
+            </WithAuth>
+          }
+        />
+
+        {/* Trading Lab Account Connection Route - First step in account-first flow */}
+        <Route
+          path="/trading-lab/account-connection"
+          element={
+            <WithAuth>
+              <DashboardLayout>
+                <TradingLabProvider>
+                  <CoreAccountSetup />
+                </TradingLabProvider>
+              </DashboardLayout>
+            </WithAuth>
+          }
+        />
+
+        {/* Trading Lab Strategy Selection Route - Second step in account-first flow */}
+        <Route
+          path="/trading-lab/strategy-selection"
+          element={
+            <WithAuth>
+              <DashboardLayout>
+                <TradingLabProvider>
+                  <CuratedStrategies />
+                </TradingLabProvider>
               </DashboardLayout>
             </WithAuth>
           }

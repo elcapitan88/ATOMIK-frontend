@@ -20,7 +20,6 @@ const useWebSocketPositions = (brokerId, accountId) => {
   const [error, setError] = useState(null);
   const [totalPnl, setTotalPnl] = useState(0);
   const [lastUpdate, setLastUpdate] = useState(null);
-  const [updateStats, setUpdateStats] = useState({ opened: 0, closed: 0, updated: 0 });
   const [connectionHealth, setConnectionHealth] = useState({
     isHealthy: true,
     lastError: null,
@@ -78,8 +77,10 @@ const useWebSocketPositions = (brokerId, accountId) => {
       // Side - calculate from netPos if not provided
       side: position.side || (position.netPos > 0 ? 'LONG' : position.netPos < 0 ? 'SHORT' : 'FLAT'),
       
-      // Quantity - use quantity or absolute value of netPos
-      quantity: position.quantity !== undefined ? position.quantity : Math.abs(position.netPos || 0),
+      // Quantity - use quantity or absolute value of netPos, ensure it's a number
+      quantity: position.quantity !== undefined ? 
+                Math.abs(Number(position.quantity)) : 
+                Math.abs(Number(position.netPos || 0)),
       
       // Average price - use avgPrice or netPrice
       avgPrice: position.avgPrice || position.netPrice || 0,
@@ -100,7 +101,6 @@ const useWebSocketPositions = (brokerId, accountId) => {
       
       // Status fields
       lastUpdate: position.lastUpdate || Date.now(),
-      isNew: position.isNew || false,
       isClosed: position.isClosed || false,
       isPriceUpdating: position.isPriceUpdating || false,
       isPnLUpdating: position.isPnLUpdating || false,
@@ -132,8 +132,26 @@ const useWebSocketPositions = (brokerId, accountId) => {
   // Helper to update positions state from map
   const updatePositionsFromMap = useCallback(() => {
     const positionsArray = Array.from(positionsMapRef.current.values())
-      .filter(pos => !pos.isClosed) // Filter out closed positions
+      .filter(pos => {
+        // Filter out closed positions and positions with 0 quantity
+        if (pos.isClosed) return false;
+        
+        // Check for zero quantity in multiple ways (different broker formats)
+        // All conditions must indicate the position is truly closed for it to be filtered out
+        const hasQuantity = pos.quantity > 0 || 
+                           Math.abs(pos.netPos || 0) > 0;
+        
+        if (envConfig.debugConfig.websocket.positions) {
+          console.log(`[updatePositionsFromMap] Position ${pos.positionId}: quantity=${pos.quantity}, netPos=${pos.netPos}, side=${pos.side}, hasQuantity=${hasQuantity}`);
+        }
+        
+        return hasQuantity;
+      })
       .sort((a, b) => (b.lastUpdate || 0) - (a.lastUpdate || 0)); // Sort by last update
+    
+    if (envConfig.debugConfig.websocket.positions) {
+      console.log(`[updatePositionsFromMap] Filtered positions: ${positionsArray.length} out of ${positionsMapRef.current.size} total`);
+    }
     
     setPositions(positionsArray);
     
@@ -282,7 +300,7 @@ const useWebSocketPositions = (brokerId, accountId) => {
   
   // Get initial positions and subscribe to updates
   useEffect(() => {
-    if (envConfig.debugConfig.positions.enabled) {
+    if (envConfig.debugConfig.websocket.positions) {
       console.log('[useWebSocketPositions] useEffect triggered - brokerId:', brokerId, 'accountId:', accountId);
     }
     
@@ -290,7 +308,7 @@ const useWebSocketPositions = (brokerId, accountId) => {
     requestInFlightRef.current = false;
     
     if (!brokerId || !accountId) {
-      if (envConfig.debugConfig.positions.enabled) {
+      if (envConfig.debugConfig.websocket.positions) {
         console.log('[useWebSocketPositions] Missing brokerId or accountId, setting empty positions');
       }
       setPositions([]);
@@ -300,7 +318,7 @@ const useWebSocketPositions = (brokerId, accountId) => {
     
     // Load from cache first
     const cachedPositions = webSocketManager.getPositions(brokerId, accountId);
-    if (envConfig.debugConfig.positions.enabled) {
+    if (envConfig.debugConfig.websocket.positions) {
       console.log('[useWebSocketPositions] Cached positions:', cachedPositions);
     }
     
@@ -320,49 +338,103 @@ const useWebSocketPositions = (brokerId, accountId) => {
     // Don't set loading to false yet if we have no cached positions
     // We'll set it to false after we get a response or timeout
     if (cachedPositions.length > 0) {
-      if (envConfig.debugConfig.positions.enabled) {
+      if (envConfig.debugConfig.websocket.positions) {
         console.log('[useWebSocketPositions] Have cached positions, setting loading to false');
       }
       setLoading(false);
     } else {
-      if (envConfig.debugConfig.positions.enabled) {
+      if (envConfig.debugConfig.websocket.positions) {
         console.log('[useWebSocketPositions] No cached positions, keeping loading state');
       }
     }
     
     // Enhanced position update handler with error handling
     const handlePositionUpdate = (update) => {
-      if (envConfig.debugConfig.positions.enabled) {
-        console.log('[useWebSocketPositions] handlePositionUpdate received:', update);
+      // FORCED DEBUG LOGGING - Always log position updates for debugging
+      console.log('[useWebSocketPositions] 🔄 FORCED DEBUG - handlePositionUpdate received:', {
+        type: update.type,
+        brokerId: update.brokerId,
+        accountId: update.accountId,
+        hasPosition: !!update.position,
+        hasPositions: !!update.positions,
+        positionId: update.position?.positionId || update.position?.id,
+        quantity: update.position?.quantity,
+        netPos: update.position?.netPos,
+        type_detail: update.type_detail,
+        timestamp: new Date().toISOString(),
+        fullUpdate: update
+      });
+      
+      if (envConfig.debugConfig.websocket.positions) {
+        console.log('[useWebSocketPositions] 🔄 handlePositionUpdate received:', {
+          type: update.type,
+          brokerId: update.brokerId,
+          accountId: update.accountId,
+          hasPosition: !!update.position,
+          hasPositions: !!update.positions,
+          positionId: update.position?.positionId || update.position?.id,
+          quantity: update.position?.quantity,
+          netPos: update.position?.netPos,
+          timestamp: new Date().toISOString()
+        });
       }
       try {
         if (update.brokerId !== brokerId || update.accountId !== accountId) {
-          if (envConfig.debugConfig.positions.enabled) {
-            console.log('[useWebSocketPositions] Update for different broker/account, ignoring');
+          if (envConfig.debugConfig.websocket.positions) {
+            console.log('[useWebSocketPositions] ❌ Update for different broker/account, ignoring');
           }
           return;
         }
         
-        const { type, position, positions, previousValues } = update;
+        const { type, position, positions, previousValues, type_detail } = update;
         
         // Handle different update types
-        if (type === 'snapshot') {
-          // Full refresh from snapshot
-          const updatedPositions = positions || webSocketManager.getPositions(brokerId, accountId);
-          positionsMapRef.current.clear();
-          previousPnLRef.current.clear();
+        if (type === 'snapshot' || type === 'positions_snapshot') {
+          // For snapshots, only clear and rebuild if we don't have positions or this is initial load
+          const updatedPositions = positions || update.data || webSocketManager.getPositions(brokerId, accountId);
+          const hasExistingPositions = positionsMapRef.current.size > 0;
           
-          updatedPositions.forEach(pos => {
-            const normalizedPos = normalizePosition(pos);
-            if (normalizedPos) {
-              const key = normalizedPos.positionId;
-              positionsMapRef.current.set(key, { ...normalizedPos, lastUpdate: Date.now() });
-              previousPnLRef.current.set(key, normalizedPos.unrealizedPnL);
-            }
-          });
+          if (envConfig.debugConfig.websocket.positions) {
+            console.log('[useWebSocketPositions] Processing snapshot with', updatedPositions?.length || 0, 'positions');
+            console.log('[useWebSocketPositions] Has existing positions:', hasExistingPositions);
+          }
+          
+          // Only clear if this is initial load or we have no existing positions
+          if (!hasExistingPositions || loading) {
+            positionsMapRef.current.clear();
+            previousPnLRef.current.clear();
+          }
+          
+          if (updatedPositions && Array.isArray(updatedPositions)) {
+            updatedPositions.forEach(pos => {
+              const normalizedPos = normalizePosition(pos);
+              if (normalizedPos) {
+                const key = normalizedPos.positionId;
+                // Preserve existing PnL if we have it to avoid flickering
+                const existingPos = positionsMapRef.current.get(key);
+                const preservedPnL = existingPos ? existingPos.unrealizedPnL : normalizedPos.unrealizedPnL;
+                
+                positionsMapRef.current.set(key, { 
+                  ...normalizedPos, 
+                  lastUpdate: Date.now(),
+                  unrealizedPnL: preservedPnL 
+                });
+                previousPnLRef.current.set(key, preservedPnL);
+              }
+            });
+          }
           
           updatePositionsFromMap();
           setLoading(false);
+          
+          // Clear retry timeout since we received data
+          if (retryTimeoutRef.current) {
+            clearTimeout(retryTimeoutRef.current);
+            retryTimeoutRef.current = null;
+          }
+          retryAttemptsRef.current = 0; // Reset retry attempts
+          requestInFlightRef.current = false; // Clear request in flight flag
+          
           return;
         }
         
@@ -386,27 +458,59 @@ const useWebSocketPositions = (brokerId, accountId) => {
           console.error('[useWebSocketPositions] Position key is undefined after normalization:', normalizedPosition);
           return;
         }
+
+        // Determine the actual event type - use type_detail if available, otherwise fallback to type
+        const eventType = type_detail || type;
+        
+        if (envConfig.debugConfig.websocket.positions) {
+          console.log(`[useWebSocketPositions] Processing event type: ${eventType} for position ${positionKey}`);
+        }
       
-      switch (type) {
+      switch (eventType) {
         case 'opened':
           // New position - add immediately
-          positionsMapRef.current.set(positionKey, { ...normalizedPosition, isNew: true });
+          positionsMapRef.current.set(positionKey, normalizedPosition);
           previousPnLRef.current.set(positionKey, normalizedPosition.unrealizedPnL);
           updatePositionsFromMap();
-          setUpdateStats(prev => ({ ...prev, opened: prev.opened + 1 }));
           break;
           
         case 'closed':
-          // Mark as closed but don't remove immediately
-          const closedPos = positionsMapRef.current.get(positionKey);
-          if (closedPos) {
-            positionsMapRef.current.set(positionKey, { ...closedPos, isClosed: true });
+          // Remove closed position immediately
+          positionsMapRef.current.delete(positionKey);
+          previousPnLRef.current.delete(positionKey);
+          updatePositionsFromMap();
+          break;
+          
+        case 'modified':
+          // Position quantity/size modified - update existing position
+          const existingPosition = positionsMapRef.current.get(positionKey);
+          if (existingPosition) {
+            const updatedPosition = {
+              ...existingPosition,
+              ...normalizedPosition,
+              isModified: true,
+              lastUpdate: Date.now()
+            };
+            
+            // Check if position is now closed (quantity became 0)
+            const isNowClosed = updatedPosition.quantity === 0 || 
+                               Math.abs(updatedPosition.netPos || 0) === 0 ||
+                               updatedPosition.side === 'FLAT';
+            
+            if (isNowClosed) {
+              // Remove closed position immediately
+              positionsMapRef.current.delete(positionKey);
+              previousPnLRef.current.delete(positionKey);
+            } else {
+              positionsMapRef.current.set(positionKey, updatedPosition);
+            }
+            
             updatePositionsFromMap();
-            setUpdateStats(prev => ({ ...prev, closed: prev.closed + 1 }));
           }
           break;
           
         case 'priceUpdate':
+        case 'position_price_update':
           // Update market data health on price updates
           setMarketDataHealth(prev => ({
             ...prev,
@@ -418,12 +522,16 @@ const useWebSocketPositions = (brokerId, accountId) => {
           throttleUpdate(positionKey, () => {
             const existingPos = positionsMapRef.current.get(positionKey);
             if (existingPos) {
+              if (envConfig.debugConfig.websocket.positions) {
+                console.log('[useWebSocketPositions] Price update - old:', existingPos, 'new:', normalizedPosition);
+              }
               positionsMapRef.current.set(positionKey, {
                 ...existingPos,
                 ...normalizedPosition,
                 previousPrice: previousValues?.price,
                 previousPnL: previousValues?.pnl,
-                isPriceUpdating: true
+                isPriceUpdating: true,
+                lastUpdate: Date.now()
               });
               updatePositionsFromMap();
               
@@ -464,17 +572,38 @@ const useWebSocketPositions = (brokerId, accountId) => {
           }
           break;
           
-        case 'modified':
-          // General modifications
+        case 'position_update':
+          // Legacy position update - fallback for older message formats
           const posToModify = positionsMapRef.current.get(positionKey);
           if (posToModify) {
-            positionsMapRef.current.set(positionKey, {
+            if (envConfig.debugConfig.websocket.positions) {
+              console.log('[useWebSocketPositions] Position update - old:', posToModify, 'new:', normalizedPosition);
+            }
+            
+            const updatedPosition = {
               ...posToModify,
-              ...position,
-              isModified: true
-            });
+              ...normalizedPosition,
+              isModified: true,
+              lastUpdate: Date.now()
+            };
+            
+            // Check if position is now closed (quantity is 0)
+            const isNowClosed = updatedPosition.quantity === 0 || 
+                               Math.abs(updatedPosition.netPos || 0) === 0 ||
+                               updatedPosition.side === 'FLAT';
+            
+            if (isNowClosed) {
+              if (envConfig.debugConfig.websocket.positions) {
+                console.log('[useWebSocketPositions] Position closed by quantity update:', updatedPosition);
+              }
+              // Remove closed position immediately instead of marking
+              positionsMapRef.current.delete(positionKey);
+              previousPnLRef.current.delete(positionKey);
+            } else {
+              positionsMapRef.current.set(positionKey, updatedPosition);
+            }
+            
             updatePositionsFromMap();
-            setUpdateStats(prev => ({ ...prev, updated: prev.updated + 1 }));
           }
           break;
           
@@ -638,7 +767,6 @@ const useWebSocketPositions = (brokerId, accountId) => {
     refreshPositions,
     clearError,
     lastUpdate,
-    updateStats,
     connectionHealth,
     marketDataHealth,
     

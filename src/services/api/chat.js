@@ -3,6 +3,22 @@ import { envConfig } from '../../config/environment';
 
 const BASE_URL = '/api/v1/chat';
 
+// Logging control - set to false to disable all chat logs
+const ENABLE_CHAT_LOGS = false;
+
+// Custom logger that respects the logging flag
+const chatLog = (...args) => {
+  if (ENABLE_CHAT_LOGS) {
+    console.log(...args);
+  }
+};
+
+const chatError = (...args) => {
+  if (ENABLE_CHAT_LOGS) {
+    console.error(...args);
+  }
+};
+
 // Channel API calls
 export const getChannels = async () => {
   const response = await axiosInstance.get(`${BASE_URL}/channels`);
@@ -79,9 +95,9 @@ export const initializeChatSystem = async () => {
 export const createChatEventSource = (token) => {
   // Use direct backend URL for EventSource since Create React App proxy doesn't handle SSE properly
   const url = `${envConfig.apiBaseUrl}/api/v1/chat/events?token=${token}`;
-  console.log('🔍 ChatService: Creating EventSource with URL:', url);
+  chatLog('🔍 ChatService: Creating EventSource with URL:', url);
   const eventSource = new EventSource(url);
-  console.log('🔍 ChatService: EventSource created, readyState:', eventSource.readyState);
+  chatLog('🔍 ChatService: EventSource created, readyState:', eventSource.readyState);
   return eventSource;
 };
 
@@ -95,23 +111,23 @@ export class ChatService {
 
   // Connect to real-time events
   connect(token) {
-    console.log('🔍 ChatService: connect() called with token:', !!token);
+    chatLog('🔍 ChatService: connect() called with token:', !!token);
     if (this.eventSource) {
-      console.log('🔍 ChatService: Disconnecting existing connection...');
+      chatLog('🔍 ChatService: Disconnecting existing connection...');
       this.disconnect();
     }
 
     try {
-      console.log('🔍 ChatService: Creating EventSource connection...');
+      chatLog('🔍 ChatService: Creating EventSource connection...');
       this.eventSource = createChatEventSource(token);
       
-      console.log('🔍 ChatService: EventSource object created:', this.eventSource);
-      console.log('🔍 ChatService: Initial readyState:', this.eventSource.readyState);
-      console.log('🔍 ChatService: EventSource URL:', this.eventSource.url);
+      chatLog('🔍 ChatService: EventSource object created:', this.eventSource);
+      chatLog('🔍 ChatService: Initial readyState:', this.eventSource.readyState);
+      chatLog('🔍 ChatService: EventSource URL:', this.eventSource.url);
       
       // Monitor readyState changes
       const checkConnectionState = () => {
-        console.log('🔍 ChatService: readyState check:', {
+        chatLog('🔍 ChatService: readyState check:', {
           readyState: this.eventSource?.readyState,
           states: {
             0: 'CONNECTING',
@@ -129,29 +145,29 @@ export class ChatService {
       setTimeout(() => clearInterval(stateChecker), 10000);
 
       this.eventSource.onopen = (event) => {
-        console.log('✅ Chat SSE connected successfully!', event);
-        console.log('🔍 ChatService: onopen readyState:', this.eventSource.readyState);
+        chatLog('✅ Chat SSE connected successfully!', event);
+        chatLog('🔍 ChatService: onopen readyState:', this.eventSource.readyState);
         this.isConnected = true;
         this.emit('connected');
         clearInterval(stateChecker);
       };
 
       this.eventSource.onmessage = (event) => {
-        console.log('📨 Chat SSE message received:', event.data);
+        chatLog('📨 Chat SSE message received:', event.data);
         try {
           const data = JSON.parse(event.data);
-          console.log('📨 Parsed SSE data:', data);
+          chatLog('📨 Parsed SSE data:', data);
           this.handleEvent(data);
         } catch (error) {
-          console.error('❌ Error parsing SSE event:', error, 'Raw data:', event.data);
+          chatError('❌ Error parsing SSE event:', error, 'Raw data:', event.data);
         }
       };
 
       this.eventSource.onerror = (error) => {
-        console.error('❌ Chat SSE error:', error);
-        console.error('❌ EventSource readyState:', this.eventSource?.readyState);
-        console.error('❌ EventSource URL:', this.eventSource?.url);
-        console.error('❌ Error details:', {
+        chatError('❌ Chat SSE error:', error);
+        chatError('❌ EventSource readyState:', this.eventSource?.readyState);
+        chatError('❌ EventSource URL:', this.eventSource?.url);
+        chatError('❌ Error details:', {
           target: error.target,
           type: error.type,
           timeStamp: error.timeStamp
@@ -167,27 +183,27 @@ export class ChatService {
           1: 'OPEN', 
           2: 'CLOSED'
         };
-        console.error('❌ Connection failed at state:', readyStateMap[this.eventSource?.readyState] || 'Unknown');
+        chatError('❌ Connection failed at state:', readyStateMap[this.eventSource?.readyState] || 'Unknown');
         
         // Attempt to reconnect after a delay
         setTimeout(() => {
           if (!this.isConnected && this.eventSource?.readyState === 2) {
-            console.log('🔄 Attempting to reconnect to chat SSE...');
+            chatLog('🔄 Attempting to reconnect to chat SSE...');
             this.connect(token);
           }
         }, 5000);
       };
 
       this.eventSource.onclose = () => {
-        console.log('🔒 Chat SSE connection closed');
+        chatLog('🔒 Chat SSE connection closed');
         this.isConnected = false;
         this.emit('disconnected');
         clearInterval(stateChecker);
       };
 
     } catch (error) {
-      console.error('❌ Error creating chat SSE connection:', error);
-      console.error('❌ Error stack:', error.stack);
+      chatError('❌ Error creating chat SSE connection:', error);
+      chatError('❌ Error stack:', error.stack);
     }
   }
 
@@ -202,52 +218,52 @@ export class ChatService {
 
   // Handle incoming events
   handleEvent(event) {
-    console.log('🔍 ChatService: handleEvent called with:', event);
+    chatLog('🔍 ChatService: handleEvent called with:', event);
     const { type, data, channel_id } = event;
     
     switch (type) {
       case 'ping':
-        console.log('📡 ChatService: Received keepalive ping');
+        chatLog('📡 ChatService: Received keepalive ping');
         break;
       case 'connection_established':
-        console.log('✅ ChatService: Connection established confirmed');
+        chatLog('✅ ChatService: Connection established confirmed');
         break;
       case 'connection_refresh':
-        console.log('🔄 ChatService: Server requested connection refresh - reconnecting...');
-        console.log('🔄 Refresh reason:', event.reason || 'unknown');
+        chatLog('🔄 ChatService: Server requested connection refresh - reconnecting...');
+        chatLog('🔄 Refresh reason:', event.reason || 'unknown');
         // Force reconnection by disconnecting and letting the error handler reconnect
         this.disconnect();
         // Get current token from localStorage and reconnect
         const token = localStorage.getItem('token');
         if (token) {
           setTimeout(() => {
-            console.log('🔄 ChatService: Executing forced reconnection...');
+            chatLog('🔄 ChatService: Executing forced reconnection...');
             this.connect(token);
           }, 1000); // 1 second delay before reconnect
         }
         break;
       case 'new_message':
-        console.log('📨 ChatService: Emitting new_message event:', data);
+        chatLog('📨 ChatService: Emitting new_message event:', data);
         this.emit('new_message', data);
         break;
       case 'message_updated':
-        console.log('✏️ ChatService: Emitting message_updated event:', data);
+        chatLog('✏️ ChatService: Emitting message_updated event:', data);
         this.emit('message_updated', data);
         break;
       case 'message_deleted':
-        console.log('🗑️ ChatService: Emitting message_deleted event:', data);
+        chatLog('🗑️ ChatService: Emitting message_deleted event:', data);
         this.emit('message_deleted', data);
         break;
       case 'reaction_added':
-        console.log('😊 ChatService: Emitting reaction_added event:', data);
+        chatLog('😊 ChatService: Emitting reaction_added event:', data);
         this.emit('reaction_added', data);
         break;
       case 'reaction_removed':
-        console.log('😐 ChatService: Emitting reaction_removed event:', data);
+        chatLog('😐 ChatService: Emitting reaction_removed event:', data);
         this.emit('reaction_removed', data);
         break;
       default:
-        console.log('❓ ChatService: Unknown event type:', type, data);
+        chatLog('❓ ChatService: Unknown event type:', type, data);
     }
   }
 
@@ -271,7 +287,7 @@ export class ChatService {
         try {
           callback(data);
         } catch (error) {
-          console.error('Error in chat event callback:', error);
+          chatError('Error in chat event callback:', error);
         }
       });
     }
