@@ -1,25 +1,35 @@
 {
-  "short_name": "React App",
-  "name": "Create React App Sample",
+  "short_name": "Atomik",
+  "name": "Atomik Trading - Automated Trading Platform",
+  "description": "Learn how to automate your trading without coding. Connect TradingView alerts to brokers, copy trading strategies, and manage prop funded accounts with transparent pricing.",
   "icons": [
     {
-      "src": "favicon.ico",
+      "src": "logos/favicon.ico",
       "sizes": "64x64 32x32 24x24 16x16",
       "type": "image/x-icon"
     },
     {
-      "src": "logo192.png",
+      "src": "logos/Atomik-favicon.png",
       "type": "image/png",
       "sizes": "192x192"
     },
     {
-      "src": "logo512.png",
+      "src": "logos/Atomik-favicon.png",
       "type": "image/png",
-      "sizes": "512x512"
+      "sizes": "192x192",
+      "purpose": "any maskable"
     }
   ],
   "start_url": ".",
   "display": "standalone",
-  "theme_color": "#000000",
-  "background_color": "#ffffff"
+  "theme_color": "#2D3748",
+  "background_color": "#1A202C",
+  "orientation": "portrait-primary",
+  "categories": ["finance", "productivity", "business"],
+  "keywords": ["automated trading", "trading automation", "tradingview alerts", "copy trading", "prop trading"],
+  "lang": "en-US",
+  "dir": "ltr",
+  "iarc_rating_id": "e84b072d-71b3-4d3e-86ae-31a8ce4e53b7",
+  "related_applications": [],
+  "prefer_related_applications": false
 }

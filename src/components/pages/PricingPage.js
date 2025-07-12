@@ -89,15 +89,15 @@ const itemVariants = {
 // Helper function to get Stripe price IDs
 const get_price_id = (tier, interval) => {
   const price_mapping = {
-    // Pro tier
+    // Pro tier (displays as Starter)
     'pro_monthly': process.env.REACT_APP_STRIPE_PRICE_PRO_MONTHLY || 'price_1R1CX5Dw86VJEB1ab48KpdsV',
     'pro_yearly': process.env.REACT_APP_STRIPE_PRICE_PRO_YEARLY || 'price_1R1CXqDw86VJEB1arD41G8w4',
-    'pro_lifetime': process.env.REACT_APP_STRIPE_PRICE_PRO_LIFETIME || '',
+    'pro_lifetime': process.env.REACT_APP_STRIPE_PRICE_LIFETIME || 'price_1R1Cb5Dw86VJEB1ag4jgp4W5', // Single lifetime plan
     
-    // Elite tier
+    // Elite tier (displays as Pro)
     'elite_monthly': process.env.REACT_APP_STRIPE_PRICE_ELITE_MONTHLY || 'price_1R1CaDDw86VJEB1adLeC4qFL',
     'elite_yearly': process.env.REACT_APP_STRIPE_PRICE_ELITE_YEARLY || 'price_1R1CaaDw86VJEB1aFWp4yr9c',
-    'elite_lifetime': process.env.REACT_APP_STRIPE_PRICE_ELITE_LIFETIME || 'price_1R1Cb5Dw86VJEB1ag4jgp4W5',
+    'elite_lifetime': process.env.REACT_APP_STRIPE_PRICE_LIFETIME || 'price_1R1Cb5Dw86VJEB1ag4jgp4W5', // Same lifetime plan
   };
   
   const key = `${tier}_${interval}`;
@@ -109,9 +109,9 @@ const pricingData = {
   pro: { // Internal ID 'pro' is now marketed as "Starter"
     name: "Starter", // New marketing name (was "Pro")
     description: "For serious traders seeking automation and reliability",
-    monthlyPrice: 49,
-    yearlyPrice: 468, // $39/month billed annually
-    lifetimePrice: 990,
+    monthlyPrice: 129,
+    yearlyPrice: 1290, // $107.50/month billed annually
+    lifetimePrice: 2990,
     features: [
       { text: "Up to 5 connected trading accounts", available: true },
       { text: "5 active webhooks", available: true },
@@ -132,9 +132,9 @@ const pricingData = {
   elite: { // Internal ID 'elite' is now marketed as "Pro"
     name: "Pro", // New marketing name (was "Elite")
     description: "For professional traders and institutions",
-    monthlyPrice: 89,
-    yearlyPrice: 828, // $69/month billed annually
-    lifetimePrice: 1990,
+    monthlyPrice: 189,
+    yearlyPrice: 1890, // $157.50/month billed annually
+    lifetimePrice: 2990,
     features: [
       { text: "Unlimited connected accounts", available: true },
       { text: "Unlimited webhooks & configs", available: true },
@@ -216,7 +216,7 @@ const PricingToggle = ({ selectedInterval, onChange }) => {
 
 // Price card component
 // Update PriceCard component to display trial information
-const PriceCard = ({ tier, billingInterval, onClick, isPopular }) => {
+const PriceCard = ({ tier, billingInterval, onClick, isPopular, isLifetimeOnly }) => {
   const tierKey = tier.toLowerCase();
   const pricingTier = pricingData[tierKey];
   const price = 
@@ -226,10 +226,26 @@ const PriceCard = ({ tier, billingInterval, onClick, isPopular }) => {
         ? pricingTier.yearlyPrice
         : pricingTier.lifetimePrice;
   
+  // For lifetime, show all features as available
+  const lifetimeFeatures = isLifetimeOnly ? [
+    { text: "Unlimited connected trading accounts", available: true },
+    { text: "Unlimited webhooks & configurations", available: true },
+    { text: "Enterprise-grade webhook system", available: true },
+    { text: "Advanced trade execution rules", available: true },
+    { text: "Funded and Live Account Functionality", available: true },
+    { text: "Full marketplace access", available: true },
+    { text: "Advanced position management", available: true },
+    { text: "Advanced analytics & reporting", available: true },
+    { text: "Priority technical support", available: true },
+    { text: "Custom strategy development", available: true },
+    { text: "Early access to all new features", available: true },
+    { text: "Lifetime updates included", available: true }
+  ] : pricingTier.features;
+  
   // Save calculation for yearly
   const monthlySavings = billingInterval === 'yearly' ? Math.round((pricingTier.monthlyPrice * 12 - pricingTier.yearlyPrice) / 12) : 0;
 
-  const cardBorderColor = isPopular ? pricingTier.color : 'whiteAlpha.200';
+  const cardBorderColor = isPopular ? (isLifetimeOnly ? '#00C6E0' : pricingTier.color) : 'whiteAlpha.200';
   const popularBadgeVisibility = isPopular ? 'visible' : 'hidden';
   
   // Show trial info only for subscription plans (not lifetime)
@@ -243,7 +259,7 @@ const PriceCard = ({ tier, billingInterval, onClick, isPopular }) => {
     hover: { 
       scale: 1.02,
       boxShadow: `0px 0px 20px rgba(0, 198, 224, 0.2)`,
-      borderColor: pricingTier.color,
+      borderColor: isLifetimeOnly ? '#00C6E0' : pricingTier.color,
       transition: {
         duration: 0.3,
         ease: "easeInOut"
@@ -289,10 +305,10 @@ const PriceCard = ({ tier, billingInterval, onClick, isPopular }) => {
         {/* Tier name and description */}
         <VStack spacing={1} align="center" mb={1}>  {/* Reduced from spacing={2} mb={2} */}
           <Heading size="md" fontWeight="bold" color="white">  {/* Changed from size="lg" */}
-            {pricingTier.name}
+            {isLifetimeOnly ? "Lifetime Access" : pricingTier.name}
           </Heading>
           <Text color="whiteAlpha.700" textAlign="center" fontSize="xs">  {/* Changed from fontSize="sm" */}
-            {pricingTier.description}
+            {isLifetimeOnly ? "Unlimited everything, forever" : pricingTier.description}
           </Text>
         </VStack>
 
@@ -317,8 +333,8 @@ const PriceCard = ({ tier, billingInterval, onClick, isPopular }) => {
           )}
           
           {billingInterval === 'lifetime' && (
-            <Text fontSize="xs" color="#9932CC" mt={0.5}>  {/* Changed from fontSize="sm" mt={1} */}
-              One-time payment
+            <Text fontSize="xs" color="#00C6E0" mt={0.5}>  {/* Changed from fontSize="sm" mt={1} */}
+              One-time payment - Unlimited Everything
             </Text>
           )}
           
@@ -342,11 +358,11 @@ const PriceCard = ({ tier, billingInterval, onClick, isPopular }) => {
         {/* Features - more compact list */}
         <VStack spacing={1} align="stretch" flex="1" mt={0}>  {/* Changed from spacing={3} */}
           <List spacing={1} styleType="none" flex="1">  {/* Changed from spacing={3} */}
-            {pricingTier.features.map((feature, index) => (
+            {(isLifetimeOnly ? lifetimeFeatures : pricingTier.features).map((feature, index) => (
               <ListItem key={index} display="flex" alignItems="flex-start">
                 <ListIcon 
                   as={feature.available ? Check : X} 
-                  color={feature.available ? (isPopular ? pricingTier.color : 'green.400') : 'gray.500'} 
+                  color={feature.available ? (isLifetimeOnly ? '#00C6E0' : (isPopular ? pricingTier.color : 'green.400')) : 'gray.500'} 
                   mt="2px"  /* Reduced from mt="3px" */
                   boxSize={3}  /* Added boxSize to make icons smaller */
                 />
@@ -365,17 +381,17 @@ const PriceCard = ({ tier, billingInterval, onClick, isPopular }) => {
             mt="auto"
             size="md"  /* Changed from size="lg" */
             width="full"
-            bg={isPopular ? pricingTier.color : 'whiteAlpha.200'}
-            color={isPopular ? 'black' : 'white'}
+            bg={isLifetimeOnly ? 'gray.800' : (isPopular ? pricingTier.color : 'whiteAlpha.200')}
+            color={isLifetimeOnly ? '#00C6E0' : (isPopular ? 'black' : 'white')}
             _hover={{
-              bg: isPopular ? 'cyan.400' : 'whiteAlpha.300',
+              bg: isLifetimeOnly ? 'gray.700' : (isPopular ? 'cyan.400' : 'whiteAlpha.300'),
               transform: 'translateY(-2px)',
               boxShadow: 'lg'
             }}
             onClick={() => onClick(tierKey, billingInterval)}
             rightIcon={<ArrowRight size={14} />}  /* Reduced from size={16} */
           >
-            {pricingTier.ctaText}
+            {isLifetimeOnly ? "Get Lifetime Access" : pricingTier.ctaText}
           </Button>
         </VStack>
       </VStack>
@@ -1056,32 +1072,48 @@ const PricingPage = () => {
           </MotionBox>
         </VStack>
         
-        {/* Pricing Cards - now with only 2 tiers */}
-        <SimpleGrid 
-        columns={pricingColumns > 2 ? 2 : pricingColumns} 
-        spacing={{ base: 4, md: 6 }}  /* Reduce spacing on smaller screens */
-        mb={8}  /* Reduced from mb={16} */
-        maxW="container.lg"
-        mx="auto"
-      >
-        <MotionBox variants={itemVariants}>
-          <PriceCard 
-            tier="pro"
-            billingInterval={selectedInterval} 
-            onClick={handleSelectPlan}
-            isPopular={true}
-          />
-        </MotionBox>
-        
-        <MotionBox variants={itemVariants}>
-          <PriceCard 
-            tier="elite"
-            billingInterval={selectedInterval} 
-            onClick={handleSelectPlan}
-            isPopular={false}
-          />
-        </MotionBox>
-      </SimpleGrid>
+        {/* Pricing Cards */}
+        {selectedInterval === 'lifetime' ? (
+          // Show single lifetime card
+          <Flex justify="center" mb={8}>
+            <MotionBox variants={itemVariants} maxW="500px" w="full">
+              <PriceCard 
+                tier="elite" // Using elite tier for lifetime as it has all features
+                billingInterval={selectedInterval} 
+                onClick={handleSelectPlan}
+                isPopular={true}
+                isLifetimeOnly={true}
+              />
+            </MotionBox>
+          </Flex>
+        ) : (
+          // Show both tiers for monthly/yearly
+          <SimpleGrid 
+            columns={pricingColumns > 2 ? 2 : pricingColumns} 
+            spacing={{ base: 4, md: 6 }}
+            mb={8}
+            maxW="container.lg"
+            mx="auto"
+          >
+            <MotionBox variants={itemVariants}>
+              <PriceCard 
+                tier="pro"
+                billingInterval={selectedInterval} 
+                onClick={handleSelectPlan}
+                isPopular={true}
+              />
+            </MotionBox>
+            
+            <MotionBox variants={itemVariants}>
+              <PriceCard 
+                tier="elite"
+                billingInterval={selectedInterval} 
+                onClick={handleSelectPlan}
+                isPopular={false}
+              />
+            </MotionBox>
+          </SimpleGrid>
+        )}
         
         {/* Feature Highlights */}
         <FeatureHighlights />

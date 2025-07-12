@@ -8,11 +8,10 @@ import {
 } from '@/utils/constants/brokers';
 
 const AccountStatusIndicator = ({ tokenValid, wsStatus, account }) => {
-    // TODO: TEMPORARILY COMMENTED OUT - RESTORE WHEN READY FOR PRODUCTION
     // Interactive Brokers uses completely different status logic
-    // if (account?.broker_id === 'interactivebrokers') {
-    //     return <InteractiveBrokersStatusIndicator account={account} />;
-    // }
+    if (account?.broker_id === 'interactivebrokers') {
+        return <InteractiveBrokersStatusIndicator account={account} />;
+    }
     
     // ADVANCED LOGIC - RESTORED FOR PROPER STATUS INDICATION
     // Maps WebSocket connection states to visual indicators
@@ -90,95 +89,94 @@ const AccountStatusIndicator = ({ tokenValid, wsStatus, account }) => {
     );
 };
 
-// TODO: RESTORE WHEN INTERACTIVE BROKERS FEATURES ARE READY FOR PRODUCTION
-// // Separate component for Interactive Brokers status
-// const InteractiveBrokersStatusIndicator = ({ account }) => {
-//     const doStatus = account.digital_ocean_status || 'unknown';
-//     
-//     console.log('IB Status:', { doStatus, account });
-//     
-//     // Map Digital Ocean/IBEam statuses to visual states
-//     const getStatusConfig = () => {
-//         switch (doStatus) {
-//             case 'provisioning':
-//                 return {
-//                     color: 'yellow.400',
-//                     message: 'Server is being provisioned...',
-//                     animate: true
-//                 };
-//             case 'initializing':
-//                 return {
-//                     color: 'yellow.400',
-//                     message: 'IBEam service is starting...',
-//                     animate: true
-//                 };
-//             case 'starting':
-//                 return {
-//                     color: 'yellow.400',
-//                     message: 'Server is starting...',
-//                     animate: true
-//                 };
-//             case 'running':
-//                 return {
-//                     color: 'green.400',
-//                     message: 'Server is running and IBEam is connected',
-//                     animate: false
-//                 };
-//             case 'stopping':
-//                 return {
-//                     color: 'orange.400',
-//                     message: 'Server is stopping...',
-//                     animate: true
-//                 };
-//             case 'stopped':
-//             case 'off':
-//                 return {
-//                     color: 'gray.400',
-//                     message: 'Server is powered off',
-//                     animate: false
-//                 };
-//             case 'restarting':
-//                 return {
-//                     color: 'yellow.400',
-//                     message: 'Server is restarting...',
-//                     animate: true
-//                 };
-//             case 'error':
-//                 return {
-//                     color: 'red.400',
-//                     message: 'Server error - check Digital Ocean console',
-//                     animate: false
-//                 };
-//             case 'deleted':
-//                 return {
-//                     color: 'red.400',
-//                     message: 'Server has been deleted',
-//                     animate: false
-//                 };
-//             default:
-//                 return {
-//                     color: 'gray.400',
-//                     message: 'Server status unknown',
-//                     animate: false
-//                 };
-//         }
-//     };
-//     
-//     const { color, message, animate } = getStatusConfig();
-//     
-//     return (
-//         <Tooltip label={message}>
-//             <Box 
-//                 w="10px" 
-//                 h="10px" 
-//                 borderRadius="full" 
-//                 bg={color}
-//                 boxShadow={`0 0 10px ${color}`}
-//                 transition="all 0.3s ease"
-//                 animation={animate ? 'pulse 1.5s infinite' : 'none'}
-//             />
-//         </Tooltip>
-//     );
-// };
+// Separate component for Interactive Brokers status
+const InteractiveBrokersStatusIndicator = ({ account }) => {
+    const doStatus = account.digital_ocean_status || account.status || 'unknown';
+    
+    console.log('IB Status:', { doStatus, account });
+    
+    // Map Digital Ocean/IBEam statuses to visual states
+    const getStatusConfig = () => {
+        switch (doStatus) {
+            case 'provisioning':
+                return {
+                    color: 'blue.400',
+                    message: 'Server is being provisioned...',
+                    animate: true
+                };
+            case 'initializing':
+                return {
+                    color: 'blue.400',
+                    message: 'IBeam service is starting...',
+                    animate: true
+                };
+            case 'starting':
+                return {
+                    color: 'blue.400',
+                    message: 'Server is starting...',
+                    animate: true
+                };
+            case 'running':
+                return {
+                    color: 'green.400',
+                    message: 'Server is running and IBeam is connected',
+                    animate: false
+                };
+            case 'stopping':
+                return {
+                    color: 'orange.400',
+                    message: 'Server is stopping...',
+                    animate: true
+                };
+            case 'stopped':
+            case 'off':
+                return {
+                    color: 'gray.400',
+                    message: 'Server is powered off',
+                    animate: false
+                };
+            case 'restarting':
+                return {
+                    color: 'blue.400',
+                    message: 'Server is restarting...',
+                    animate: true
+                };
+            case 'error':
+                return {
+                    color: 'red.400',
+                    message: 'Server error - check Digital Ocean console',
+                    animate: false
+                };
+            case 'deleted':
+                return {
+                    color: 'red.400',
+                    message: 'Server has been deleted',
+                    animate: false
+                };
+            default:
+                return {
+                    color: 'gray.400',
+                    message: 'Server status unknown',
+                    animate: false
+                };
+        }
+    };
+    
+    const { color, message, animate } = getStatusConfig();
+    
+    return (
+        <Tooltip label={message}>
+            <Box 
+                w="10px" 
+                h="10px" 
+                borderRadius="full" 
+                bg={color}
+                boxShadow={`0 0 10px ${color}`}
+                transition="all 0.3s ease"
+                animation={animate ? 'pulse 1.5s infinite' : 'none'}
+            />
+        </Tooltip>
+    );
+};
 
 export default AccountStatusIndicator;

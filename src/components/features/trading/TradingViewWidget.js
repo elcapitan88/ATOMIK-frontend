@@ -13,15 +13,21 @@ const TradingViewWidget = ({
   const containerRef = useRef(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  
+  // Generate unique container ID to prevent conflicts
+  const containerIdRef = useRef(`tradingview_widget_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`);
 
   useEffect(() => {
     let isMounted = true;
 
     const initializeWidget = () => {
-      if (!containerRef.current) return;
+      if (!containerRef.current || !isMounted) return;
 
       // Clear previous content
       containerRef.current.innerHTML = '';
+      
+      // Set unique container ID
+      containerRef.current.id = containerIdRef.current;
 
       try {
         new TradingView.widget({
@@ -40,7 +46,7 @@ const TradingViewWidget = ({
           hide_side_toolbar: true,
           allow_symbol_change: true,
           save_image: true,
-          container_id: "tradingview_widget",
+          container_id: containerIdRef.current,
           studies: [
             "MASimple@tv-basicstudies",
             
@@ -89,9 +95,24 @@ const TradingViewWidget = ({
       }
     };
 
-    const loadScript = async () => {
+    const loadScript = () => {
       try {
         if (!window.TradingView) {
+          // Check if script is already being loaded
+          const existingScript = document.getElementById('tradingview-widget-loading-script');
+          if (existingScript) {
+            // Script already exists, wait for it to load
+            const checkLoaded = () => {
+              if (window.TradingView && isMounted) {
+                initializeWidget();
+              } else if (isMounted) {
+                setTimeout(checkLoaded, 100);
+              }
+            };
+            checkLoaded();
+            return;
+          }
+
           const script = document.createElement('script');
           script.id = 'tradingview-widget-loading-script';
           script.src = 'https://s3.tradingview.com/tv.js';
@@ -178,7 +199,6 @@ const TradingViewWidget = ({
 
       <Box 
         ref={containerRef}
-        id="tradingview_widget"
         style={{ 
           height: '100%', 
           width: '100%'

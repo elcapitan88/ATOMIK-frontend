@@ -49,7 +49,7 @@ const Navbar = () => {
         <RouterLink to="/">
           <Image
             src="/logos/atomik-logo.svg" 
-            alt="AtomikTrading Logo"
+            alt="Atomik Trading - Automated Trading Platform for Beginners"
             height="36px"
             width="180px"
             maxWidth="180px"

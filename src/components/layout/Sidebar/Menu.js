@@ -181,11 +181,6 @@ const Menu = ({ onSelectItem }) => {
         icon: Store,
         path: '/marketplace'
       },
-      { 
-        name: 'Stats',
-        icon: LifeBuoy,
-        path: '/stats'
-      }
     ];
 
     // Conditionally add admin menu item
@@ -272,6 +267,10 @@ const Menu = ({ onSelectItem }) => {
     navigate('/settings');
   };
 
+  const handleMobileSettingsClick = (item) => {
+    navigate('/settings');
+  };
+
   return (
     <>
       {/* Mobile Menu (Bottom Navigation) */}
@@ -304,7 +303,7 @@ const Menu = ({ onSelectItem }) => {
             icon={Settings}
             item="Settings"
             isSelected={location.pathname === '/settings'}
-            onClick={handleSettingsClick}
+            onClick={handleMobileSettingsClick}
           />
         </Flex>
       )}

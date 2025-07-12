@@ -14,44 +14,58 @@ import {
 import { getAvailableBrokers } from '@/utils/constants/brokers';
 
 const BrokerOption = ({ broker, onClick, isDisabled = false }) => (
-  <VStack spacing={2} align="center">
+  <VStack spacing={3} align="center">
     <Box
       as="button"
-      w="100px"
-      h="100px"
-      borderRadius="md"
-      border="1px solid rgba(255, 255, 255, 0.18)"
-      display="flex"
-      alignItems="center"
-      justifyContent="center"
       onClick={() => onClick(broker)}
       disabled={isDisabled}
-      bg="rgba(255, 255, 255, 0.05)"
-      _hover={{ 
-        bg: isDisabled ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.1)' 
-      }}
       _disabled={{ 
         opacity: 0.5, 
         cursor: 'not-allowed',
       }}
-      transition="all 0.3s"
-      backdropFilter="blur(5px)"
+      _hover={{ 
+        transform: isDisabled ? 'none' : 'scale(1.05)',
+        opacity: isDisabled ? 0.5 : 1
+      }}
+      transition="all 0.2s ease"
+      display="flex"
+      alignItems="center"
+      justifyContent="center"
+      bg="transparent"
+      border="none"
+      p={2}
     >
+      <img 
+        src={broker.logo} 
+        alt={`${broker.name} logo`}
+        style={{
+          width: '80px',
+          height: '80px',
+          objectFit: 'contain',
+          objectPosition: 'center'
+        }}
+        onError={(e) => {
+          e.target.style.display = 'none';
+          e.target.nextSibling.style.display = 'flex';
+        }}
+      />
       <Box 
-        w="60px" 
-        h="60px" 
-        bg="whiteAlpha.300" 
-        borderRadius="md" 
-        display="flex"
+        display="none" 
         alignItems="center"
         justifyContent="center"
-        fontSize="sm"
+        w="80px"
+        h="80px"
+        bg="whiteAlpha.200"
+        borderRadius="md"
+        fontSize="sm" 
+        textAlign="center"
         color="whiteAlpha.900"
+        p={2}
       >
         {broker.name}
       </Box>
     </Box>
-    <Text fontSize="sm" color="whiteAlpha.900">
+    <Text fontSize="sm" color="whiteAlpha.900" textAlign="center">
       {broker.description}
     </Text>
   </VStack>
@@ -70,7 +84,7 @@ const BrokerSelectionModal = ({ isOpen, onClose, onBrokerSelect }) => {
       <ModalContent 
         bg="rgba(255, 255, 255, 0.1)"
         backdropFilter="blur(10px)"
-        boxShadow="0 8px 32px 0 rgba(0, 198, 224, 0.37)"
+        boxShadow="0 8px 32px 0 rgba(255, 255, 255, 0.1)"
         border="1px solid rgba(255, 255, 255, 0.18)"
         borderRadius="xl"
         maxW="400px"

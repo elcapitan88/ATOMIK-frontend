@@ -54,8 +54,28 @@ const Footer = () => {
   // Organize all links into a single array for mobile
   const allLinks = [
     { 
-      label: "Features", 
+      label: "How to Automate Trading", 
+      href: "#how-to-use", 
+      group: "Automation" 
+    },
+    { 
+      label: "TradingView Integration", 
       href: "#features", 
+      group: "Automation" 
+    },
+    { 
+      label: "Beginner's Guide", 
+      href: "https://atomiktrading.io/docs/blog/automated-trading-beginners-guide", 
+      group: "Automation" 
+    },
+    { 
+      label: "Prop Trading Support", 
+      href: "#features", 
+      group: "Automation" 
+    },
+    { 
+      label: "Pricing", 
+      href: "/pricing", 
       group: "Product" 
     },
     { 
@@ -64,28 +84,23 @@ const Footer = () => {
       group: "Product" 
     },
     { 
-      label: "Pricing", 
-      href: "#pricing", 
-      group: "Product" 
-    },
-    { 
       label: "Contact", 
       href: `mailto:${encodeURIComponent('support@atomiktrading.io')}?subject=${encodeURIComponent('[AtomikTrading Support]')}`,
       group: "Company"
     },
     { 
-      label: "Partners", 
-      href: "/partners", 
+      label: "Documentation", 
+      href: "https://atomiktrading.io/docs/", 
       group: "Company" 
     },
     { 
       label: "Privacy Policy", 
-      href: "https://docs.atomiktrading.io/docs/legal/privacy-policy", 
+      href: "https://atomiktrading.io/docs/legal/privacy-policy", 
       group: "Legal" 
     },
     { 
       label: "Terms of Service", 
-      href: "https://docs.atomiktrading.io/docs/legal/terms-of-service", 
+      href: "https://atomiktrading.io/docs/legal/terms-of-service", 
       group: "Legal" 
     }
   ];
@@ -136,7 +151,7 @@ const Footer = () => {
               </Text>
             </RouterLink>
             <Text color="whiteAlpha.800" mb={4} fontSize={{ base: "sm", md: "md" }}>
-              Professional-grade webhook-based trading automation platform. Connect your favorite broker and automate your trading strategies with ease.
+              Learn how to automate your trading with TradingView alerts. Perfect for beginners and prop traders. No coding required - start your automated trading journey today.
             </Text>
             
             {/* Social Links */}
@@ -164,9 +179,19 @@ const Footer = () => {
           {/* Desktop Footer Links */}
           <SimpleGrid 
             display={{ base: 'none', md: 'grid' }}
-            columns={3} 
-            spacing={12}
+            columns={4} 
+            spacing={8}
           >
+            {/* Automation Links */}
+            <VStack align="flex-start" spacing={3}>
+              <Text fontWeight="medium" fontSize="md" mb={1} color="rgba(0, 198, 224, 1)">
+                Automated Trading
+              </Text>
+              {allLinks.filter(link => link.group === "Automation").map(link => (
+                <FooterLink key={link.label} {...link} />
+              ))}
+            </VStack>
+
             {/* Product Links */}
             <VStack align="flex-start" spacing={3}>
               <Text fontWeight="medium" fontSize="md" mb={1}>

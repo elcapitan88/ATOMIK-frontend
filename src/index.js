@@ -104,7 +104,12 @@ root.render(
         <QueryClientProvider client={queryClient}>
           <ChakraProvider theme={theme}>
             <ConfigCatProvider sdkKey={process.env.REACT_APP_CONFIGCAT_SDK_KEY}>
-              <BrowserRouter>
+              <BrowserRouter 
+                future={{
+                  v7_startTransition: true,
+                  v7_relativeSplatPath: true
+                }}
+              >
                 <AuthProvider>
                   <WebSocketProvider>
                   <App />
@@ -128,4 +133,24 @@ window.addEventListener('unhandledrejection', (event) => {
 // Handle global errors
 window.addEventListener('error', (event) => {
   console.error('Global error:', event.error);
+});
+
+// Web Vitals reporting for Core Web Vitals monitoring
+import('./reportWebVitals').then(({ default: reportWebVitals }) => {
+  reportWebVitals((metric) => {
+    // Send to Google Analytics 4 if available
+    if (typeof window !== 'undefined' && window.gtag) {
+      window.gtag('event', metric.name, {
+        event_category: 'Web Vitals',
+        event_label: metric.id,
+        value: Math.round(metric.name === 'CLS' ? metric.value * 1000 : metric.value),
+        non_interaction: true,
+      });
+    }
+    
+    // Console log for development
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Web Vital:', metric);
+    }
+  });
 });
