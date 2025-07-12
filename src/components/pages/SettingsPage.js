@@ -62,7 +62,9 @@ import {
   RefreshCw,
   ArrowLeft,
   DollarSign,
-  Calendar
+  Calendar,
+  Key,
+  TestTube
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
@@ -71,6 +73,8 @@ import axiosInstance from '@/services/axiosConfig';
 import { ProfilePicture } from '@/components/common/ProfilePicture';
 import { AffiliateDashboard, BecomeAffiliateModal } from '@/components/affiliate';
 import { useAffiliate } from '@/hooks/useAffiliate';
+import { BROKERS, getBrokerById, CONNECTION_METHODS } from '@/utils/constants/brokers';
+import { binanceApi, binanceUSApi } from '@/services/api/brokers/binance';
 
 const MotionBox = motion(Box);
 const MotionFlex = motion(Flex);
@@ -492,6 +496,10 @@ const SettingsPage = () => {
   const { isOpen: isAffiliateModalOpen, onOpen: onAffiliateModalOpen, onClose: onAffiliateModalClose } = useDisclosure();
   const { isAffiliate, becomeAffiliate, isBecomingAffiliate } = useAffiliate();
 
+  // Broker API key management
+  const [brokerApiKeys, setBrokerApiKeys] = useState({});
+  const [isTestingApiKey, setIsTestingApiKey] = useState({});
+
   // Handle joining affiliate program
   const handleJoinAffiliate = async () => {
     try {
@@ -502,10 +510,167 @@ const SettingsPage = () => {
     }
   };
 
+  // Handle API key operations
+  const handleApiKeyChange = (brokerId, value) => {
+    setBrokerApiKeys(prev => ({
+      ...prev,
+      [brokerId]: value
+    }));
+  };
+
+  const handleSaveApiKey = async (brokerId) => {
+    const apiKey = brokerApiKeys[brokerId];
+    if (!apiKey?.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter an API key",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+      return;
+    }
+
+    if (!apiKey.includes(':')) {
+      toast({
+        title: "Error",
+        description: "API key must be in format: key:secret",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+      return;
+    }
+
+    try {
+      let result;
+      
+      // Use the appropriate API service based on broker
+      if (brokerId === 'binance') {
+        result = await binanceApi.saveApiKey(apiKey.trim());
+      } else if (brokerId === 'binanceus') {
+        result = await binanceUSApi.saveApiKey(apiKey.trim());
+      } else {
+        // Fallback to generic endpoint for other brokers
+        result = await axiosInstance.post(`/api/v1/brokers/${brokerId}/api-key`, {
+          apiKey: apiKey.trim()
+        });
+      }
+
+      // Clear the input field after successful save
+      setBrokerApiKeys(prev => ({
+        ...prev,
+        [brokerId]: ''
+      }));
+
+      toast({
+        title: "Success",
+        description: "API key saved successfully",
+        status: "success",
+        duration: 3000,
+        isClosable: true,
+      });
+    } catch (error) {
+      console.error('Error saving API key:', error);
+      
+      // Enhanced error message handling
+      let errorMessage = "Failed to save API key";
+      if (typeof error === 'string') {
+        errorMessage = error;
+      } else if (error.response?.data?.detail) {
+        errorMessage = error.response.data.detail;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      toast({
+        title: "Error",
+        description: errorMessage,
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+    }
+  };
+
+  const handleTestApiKey = async (brokerId) => {
+    const apiKey = brokerApiKeys[brokerId];
+    if (!apiKey?.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter an API key to test",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+      return;
+    }
+
+    if (!apiKey.includes(':')) {
+      toast({
+        title: "Error",
+        description: "API key must be in format: key:secret",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+      return;
+    }
+
+    setIsTestingApiKey(prev => ({ ...prev, [brokerId]: true }));
+
+    try {
+      let result;
+      
+      // Use the appropriate API service based on broker
+      if (brokerId === 'binance') {
+        result = await binanceApi.testApiKey(apiKey.trim());
+      } else if (brokerId === 'binanceus') {
+        result = await binanceUSApi.testApiKey(apiKey.trim());
+      } else {
+        // Fallback to generic endpoint for other brokers
+        result = await axiosInstance.post(`/api/v1/brokers/${brokerId}/test-api-key`, {
+          apiKey: apiKey.trim()
+        });
+      }
+
+      toast({
+        title: "Success",
+        description: "API key is valid and working",
+        status: "success",
+        duration: 3000,
+        isClosable: true,
+      });
+    } catch (error) {
+      console.error('Error testing API key:', error);
+      
+      // Enhanced error message handling
+      let errorMessage = "API key test failed";
+      if (typeof error === 'string') {
+        errorMessage = error;
+      } else if (error.response?.data?.detail) {
+        errorMessage = error.response.data.detail;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      toast({
+        title: "Test Failed",
+        description: errorMessage,
+        status: "error",
+        duration: 5000,
+        isClosable: true,
+      });
+    } finally {
+      setIsTestingApiKey(prev => ({ ...prev, [brokerId]: false }));
+    }
+  };
+
   const menuItems = [
     { id: 'profile', label: 'Profile', icon: User },
     { id: 'billing', label: 'Billing', icon: CreditCard },
-    { id: 'affiliate', label: 'Affiliate', icon: DollarSign }
+    { id: 'affiliate', label: 'Affiliate', icon: DollarSign },
+    { id: 'brokers', label: 'Broker Options', icon: Key }
   ];
 
   // Handle back navigation
@@ -1533,6 +1698,155 @@ const SettingsPage = () => {
                 </VStack>
               </SectionContainer>
             )}
+          </VStack>
+        );
+
+      case 'brokers':
+        return (
+          <VStack spacing={8} align="stretch">
+            <SectionContainer icon={Key} title="Broker API Keys">
+              <VStack spacing={6} align="stretch">
+                <Text color="whiteAlpha.700" fontSize="sm">
+                  Manage your API keys for different brokers. Only add new keys - existing keys cannot be modified for security.
+                </Text>
+                
+                {/* Get all API key brokers */}
+                {Object.values(BROKERS)
+                  .filter(broker => broker.connectionMethod === CONNECTION_METHODS.API_KEY)
+                  .map((broker) => (
+                    <Box key={broker.id} bg="#1a1a1a" p={6} borderRadius="lg" border="1px solid #333">
+                      <VStack align="stretch" spacing={4}>
+                        {/* Broker Header */}
+                        <HStack spacing={3}>
+                          <Box
+                            bg="rgba(0, 198, 224, 0.2)"
+                            p={2}
+                            borderRadius="md"
+                          >
+                            <Key size={20} color="#00C6E0" />
+                          </Box>
+                          <VStack align="start" spacing={1}>
+                            <Text color="white" fontSize="lg" fontWeight="semibold">
+                              {broker.name}
+                            </Text>
+                            <Text color="whiteAlpha.600" fontSize="sm">
+                              {broker.description}
+                            </Text>
+                          </VStack>
+                        </HStack>
+
+                        {/* API Key Input */}
+                        <FormControl>
+                          <FormLabel color="whiteAlpha.900" fontSize="sm" fontWeight="medium">
+                            API Key & Secret
+                          </FormLabel>
+                          <InputGroup>
+                            <InputLeftElement pointerEvents="none">
+                              <Key size={16} color="rgba(255, 255, 255, 0.5)" />
+                            </InputLeftElement>
+                            <Input
+                              bg="#121212"
+                              border="1px solid #333"
+                              color="white"
+                              pl={10}
+                              placeholder="Enter your API key (key:secret format)"
+                              value={brokerApiKeys[broker.id] || ''}
+                              onChange={(e) => handleApiKeyChange(broker.id, e.target.value)}
+                              _hover={{ borderColor: "#444" }}
+                              _focus={{ 
+                                borderColor: "#00C6E0",
+                                boxShadow: "none"
+                              }}
+                            />
+                            <InputRightElement width="auto" pr={2}>
+                              <HStack spacing={2}>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  color="#00C6E0"
+                                  leftIcon={<TestTube size={14} />}
+                                  isLoading={isTestingApiKey[broker.id]}
+                                  onClick={() => handleTestApiKey(broker.id)}
+                                  _hover={{ bg: "rgba(0, 198, 224, 0.1)" }}
+                                >
+                                  Test
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  bg="#00C6E0"
+                                  color="white"
+                                  leftIcon={<Save size={14} />}
+                                  onClick={() => handleSaveApiKey(broker.id)}
+                                  _hover={{ bg: "#00A3B8" }}
+                                >
+                                  Save
+                                </Button>
+                              </HStack>
+                            </InputRightElement>
+                          </InputGroup>
+                          <FormHelperText color="whiteAlpha.600" fontSize="xs">
+                            Format: your_api_key:your_secret_key - This will be encrypted and stored securely
+                          </FormHelperText>
+                        </FormControl>
+
+                        {/* Information Box */}
+                        <Box
+                          bg="rgba(0, 198, 224, 0.05)"
+                          p={4}
+                          borderRadius="md"
+                          border="1px solid rgba(0, 198, 224, 0.2)"
+                        >
+                          <HStack spacing={3} align="start">
+                            <Box color="#00C6E0" mt={1}>
+                              <Shield size={16} />
+                            </Box>
+                            <VStack align="start" spacing={2}>
+                              <Text color="#00C6E0" fontSize="sm" fontWeight="medium">
+                                Security Information
+                              </Text>
+                              <VStack align="start" spacing={1}>
+                                <Text color="whiteAlpha.700" fontSize="xs">
+                                  • API keys are encrypted before storage
+                                </Text>
+                                <Text color="whiteAlpha.700" fontSize="xs">
+                                  • Only you can add new keys, existing keys cannot be viewed or modified
+                                </Text>
+                                <Text color="whiteAlpha.700" fontSize="xs">
+                                  • Use the Test button to verify your API key is working
+                                </Text>
+                                <Text color="whiteAlpha.700" fontSize="xs">
+                                  • Supports both {broker.features.supportedAssets?.join(' and ')} trading
+                                </Text>
+                              </VStack>
+                            </VStack>
+                          </HStack>
+                        </Box>
+                      </VStack>
+                    </Box>
+                  ))}
+
+                {/* No API Key Brokers */}
+                {Object.values(BROKERS).filter(broker => broker.connectionMethod === CONNECTION_METHODS.API_KEY).length === 0 && (
+                  <Box
+                    bg="rgba(255, 255, 255, 0.05)"
+                    p={8}
+                    borderRadius="lg"
+                    border="1px solid rgba(255, 255, 255, 0.1)"
+                    textAlign="center"
+                  >
+                    <VStack spacing={3}>
+                      <Key size={32} color="rgba(255, 255, 255, 0.5)" />
+                      <Text color="whiteAlpha.700" fontSize="md">
+                        No API key brokers configured
+                      </Text>
+                      <Text color="whiteAlpha.500" fontSize="sm">
+                        API key brokers will appear here when available
+                      </Text>
+                    </VStack>
+                  </Box>
+                )}
+              </VStack>
+            </SectionContainer>
           </VStack>
         );
 
