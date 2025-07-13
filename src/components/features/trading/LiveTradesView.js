@@ -336,7 +336,7 @@ const LiveTradesView = () => {
   }
 
   return (
-    <Box maxH="250px" overflowY="auto" className="custom-scrollbar">
+    <Box height="100%" overflow="hidden" display="flex" flexDirection="column">
       {/* Connection Status Alert */}
       {connectionStatus !== 'connected' && throttledPositions.length > 0 && (
         <Alert status="warning" mb={4} borderRadius="md">
@@ -419,20 +419,36 @@ const LiveTradesView = () => {
             <option value="SHORT">Short</option>
           </Select>
 
-          <IconButton
-            icon={<RefreshCw size={16} />}
-            variant="ghost"
-            size="sm"
-            isLoading={isRefreshing}
-            onClick={handleRefresh}
-            color="whiteAlpha.700"
-            _hover={{ color: 'white', bg: 'whiteAlpha.200' }}
-          />
         </HStack>
       </Flex>
 
       {/* Positions Table */}
-      <Table variant="unstyled" size="sm">
+      <Box 
+        flex="1" 
+        overflowY="auto"
+        px={4}
+        sx={{
+          '&::-webkit-scrollbar': {
+            width: '8px',
+            borderRadius: '8px',
+            backgroundColor: 'rgba(0, 0, 0, 0.05)',
+          },
+          '&::-webkit-scrollbar-thumb': {
+            backgroundColor: 'rgba(255, 255, 255, 0.1)',
+            borderRadius: '8px',
+            '&:hover': {
+              backgroundColor: 'rgba(255, 255, 255, 0.2)',
+            },
+          },
+          '&::-webkit-scrollbar-track': {
+            backgroundColor: 'transparent',
+            borderRadius: '8px',
+          },
+          scrollbarWidth: 'thin',
+          scrollbarColor: 'rgba(255, 255, 255, 0.1) transparent',
+        }}
+      >
+        <Table variant="unstyled" size="sm">
         <Thead>
           <Tr>
             <Th color="whiteAlpha.600">Time</Th>
@@ -471,33 +487,39 @@ const LiveTradesView = () => {
           )}
         </Tbody>
       </Table>
-
-      {/* Footer Stats */}
-      <Box mt={4} px={4}>
-        <HStack spacing={4} justify="space-between">
-          <HStack spacing={2}>
-            {lastUpdate && (
-              <Text fontSize="xs" color="whiteAlpha.500">
-                Last update: {new Date(lastUpdate).toLocaleTimeString()}
-              </Text>
-            )}
-          </HStack>
-          <HStack spacing={4}>
-            <Text fontSize="sm" color="whiteAlpha.600">
-              Total Positions: {throttledPositions?.length || 0}
-            </Text>
-            <Text fontSize="sm" color="whiteAlpha.600">
-              Status:{' '}
-              <Badge
-                colorScheme={connectionStatus === 'connected' ? 'green' : 'red'}
-                ml={1}
-              >
-                {connectionStatus === 'connected' ? 'Connected' : 'Disconnected'}
-              </Badge>
-            </Text>
-          </HStack>
-        </HStack>
       </Box>
+
+      {/* Fixed Footer Stats */}
+      <Flex 
+        justify="space-between" 
+        borderTop="1px solid" 
+        borderColor="whiteAlpha.200"
+        p={4}
+        bg="inherit"
+        alignItems="center"
+      >
+        <HStack spacing={2}>
+          {lastUpdate && (
+            <Text fontSize="xs" color="whiteAlpha.500">
+              Last update: {new Date(lastUpdate).toLocaleTimeString()}
+            </Text>
+          )}
+        </HStack>
+        <HStack spacing={4}>
+          <Text fontSize="sm" color="whiteAlpha.600">
+            Total Positions: {throttledPositions?.length || 0}
+          </Text>
+          <Text fontSize="sm" color="whiteAlpha.600">
+            Status:{' '}
+            <Badge
+              colorScheme={connectionStatus === 'connected' ? 'green' : 'red'}
+              ml={1}
+            >
+              {connectionStatus === 'connected' ? 'Connected' : 'Disconnected'}
+            </Badge>
+          </Text>
+        </HStack>
+      </Flex>
     </Box>
   );
 };
