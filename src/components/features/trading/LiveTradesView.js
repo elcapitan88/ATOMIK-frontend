@@ -83,12 +83,7 @@ const LiveTradesView = ({ selectedAccount, onAccountChange, selectedBroker, filt
   const { 
     checkPositions, 
     checkPositionChange, 
-    clearTrackedPositions,
-    testOpenAdd,
-    testCloseSubtract,
-    settings,
-    setVolume,
-    toggleEnabled
+    clearTrackedPositions
   } = useAudioAlerts(selectedAccount, selectedBroker);
   
   // Use only WebSocket positions for now (trade recording disabled in backend)
@@ -419,41 +414,6 @@ const LiveTradesView = ({ selectedAccount, onAccountChange, selectedBroker, filt
       </Table>
       </Box>
 
-      {/* Audio Test Controls - Temporary for testing */}
-      <Flex px={4} py={2} gap={2} borderTop="1px solid" borderColor="rgba(255, 255, 255, 0.1)">
-        <Text fontSize="xs" color="whiteAlpha.600">Audio Test:</Text>
-        <Button size="xs" onClick={testOpenAdd} colorScheme="green" variant="ghost">
-          Test Open/Add
-        </Button>
-        <Button size="xs" onClick={testCloseSubtract} colorScheme="red" variant="ghost">
-          Test Close/Sub
-        </Button>
-        <Text fontSize="xs" color="whiteAlpha.600">Volume: {Math.round(settings.volume * 100)}%</Text>
-        <Button 
-          size="xs" 
-          onClick={() => setVolume(settings.volume - 0.1)} 
-          isDisabled={settings.volume <= 0}
-          variant="ghost"
-        >
-          -
-        </Button>
-        <Button 
-          size="xs" 
-          onClick={() => setVolume(settings.volume + 0.1)} 
-          isDisabled={settings.volume >= 1}
-          variant="ghost"
-        >
-          +
-        </Button>
-        <Button 
-          size="xs" 
-          onClick={toggleEnabled}
-          colorScheme={settings.enabled ? "green" : "gray"}
-          variant="ghost"
-        >
-          {settings.enabled ? "ON" : "OFF"}
-        </Button>
-      </Flex>
       
       {/* Footer with Stats */}
       <VStack spacing={2} mt={2}>

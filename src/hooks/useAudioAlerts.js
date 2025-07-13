@@ -11,7 +11,7 @@ const AUDIO_FILES = {
 // Default settings
 const DEFAULT_SETTINGS = {
   enabled: true,
-  volume: 0.5,
+  volume: 0.3,
   alerts: {
     openAdd: true,
     closeSubtract: true,
@@ -150,15 +150,6 @@ export const useAudioAlerts = (selectedAccount, selectedBroker) => {
     previousQuantities.current.clear();
     isInitialized.current = false;
   }, []);
-  
-  // Test functions for volume adjustment
-  const testOpenAdd = useCallback(() => {
-    playSound('openAdd');
-  }, [playSound]);
-  
-  const testCloseSubtract = useCallback(() => {
-    playSound('closeSubtract');
-  }, [playSound]);
 
   // Update settings
   const updateSettings = useCallback((updates) => {
@@ -207,10 +198,6 @@ export const useAudioAlerts = (selectedAccount, selectedBroker) => {
     // Direct playback (if needed)
     playOpenAdd: () => playSound('openAdd'),
     playCloseSubtract: () => playSound('closeSubtract'),
-    
-    // Test functions
-    testOpenAdd,
-    testCloseSubtract,
     
     // Settings management
     setVolume,
