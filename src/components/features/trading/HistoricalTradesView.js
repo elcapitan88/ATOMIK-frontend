@@ -231,6 +231,8 @@ const HistoricalTradesView = () => {
 
   return (
     <Box height="100%" overflow="hidden" display="flex" flexDirection="column">
+      {/* Header with filters */}
+      <Flex justify="flex-end" px={4} pt={2} pb={2} gap={2}>
         <HStack spacing={3} flexWrap="wrap">
           {/* Time range selector */}
           <Select
@@ -347,6 +349,9 @@ const HistoricalTradesView = () => {
               minW="32px"
             />
           </Tooltip>
+        </HStack>
+      </Flex>
+
       {/* Trades table */}
       <Box 
         flex="1" 
