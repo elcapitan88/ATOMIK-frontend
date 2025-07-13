@@ -20,6 +20,7 @@ import Menu from '../layout/Sidebar/Menu';
 import TradingViewWidget from '../features/trading/TradingViewWidget';
 import MemberChatMenu from '../chat/MemberChatMenu';
 import MemberChatComponent from '../chat/MemberChat';
+import { ARIAAssistant } from '../ARIA';
 import logger from '@/utils/logger';
 
 // Lazy loaded components
@@ -473,6 +474,9 @@ const DashboardContent = () => {
                         borderRadius="xl" 
                         pointerEvents="none"
                     />
+                    
+                    {/* ARIA Assistant */}
+                    <ARIAAssistant />
                     
                     {/* Content */}
                     <Box position="relative" h="full" zIndex={1}>
