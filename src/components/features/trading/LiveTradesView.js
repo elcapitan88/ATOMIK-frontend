@@ -216,7 +216,7 @@ const LiveTradesView = ({ selectedAccount, onAccountChange, selectedBroker, filt
         isClosable: true
       });
     }
-  }, [selectedBroker, selectedAccount, sendMessage, closeTradeApi, toast]);
+  }, [selectedBroker, selectedAccount, sendMessage, toast]);
 
   const handleSetAlert = useCallback((position) => {
     toast({
