@@ -49,11 +49,9 @@ import { useMemo, useEffect } from 'react';
 import AnimatedPositionRow from './components/AnimatedPositionRow';
 import { useThrottledPositions } from '@/services/websocket-proxy/hooks/useThrottledPositions';
 
-const LiveTradesView = () => {
-  const [selectedAccount, setSelectedAccount] = useState(null);
-  const [selectedBroker, setSelectedBroker] = useState(null);
+const LiveTradesView = ({ selectedAccount, onAccountChange, selectedBroker, filters = {} }) => {
   const [sort, setSort] = useState({ field: 'timeEntered', direction: 'desc' });
-  const [filter, setFilter] = useState({ side: 'all', symbol: 'all' });
+  const [filter, setFilter] = useState({ side: filters.side || 'all', symbol: filters.symbol || 'all' });
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState('disconnected');
   
@@ -157,15 +155,14 @@ const LiveTradesView = () => {
     return filtered;
   }, [accounts, isConnected, connections]);
 
-  // Set initial account and monitor connection status
+  // Notify parent of account changes when needed
   useEffect(() => {
     console.log('[LiveTradesView] Connected accounts:', connectedAccounts);
-    if (connectedAccounts.length > 0 && !selectedAccount) {
+    if (connectedAccounts.length > 0 && !selectedAccount && onAccountChange) {
       console.log('[LiveTradesView] Setting initial account:', connectedAccounts[0]);
-      setSelectedAccount(connectedAccounts[0].account_id);
-      setSelectedBroker(connectedAccounts[0].broker_id);
+      onAccountChange(connectedAccounts[0].account_id, connectedAccounts[0].broker_id);
     }
-  }, [connectedAccounts, selectedAccount]);
+  }, [connectedAccounts, selectedAccount, onAccountChange]);
 
   // Monitor connection status
   useEffect(() => {
@@ -190,16 +187,10 @@ const LiveTradesView = () => {
     return `${Math.floor(diffInMinutes / 1440)}d ${Math.floor((diffInMinutes % 1440) / 60)}h`;
   }, []);
 
-  const handleAccountChange = useCallback((value) => {
-    if (!value || value === 'null') return;
-    
-    // Find the account to get broker info
-    const account = connectedAccounts.find(acc => acc.account_id === value);
-    if (account) {
-      setSelectedAccount(value);
-      setSelectedBroker(account.broker_id);
-    }
-  }, [connectedAccounts]);
+  // Update local filter state when filters prop changes
+  useEffect(() => {
+    setFilter({ side: filters.side || 'all', symbol: filters.symbol || 'all' });
+  }, [filters]);
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
@@ -369,58 +360,6 @@ const LiveTradesView = () => {
         </Alert>
       )}
       
-      {/* Header */}
-      <Flex justify="space-between" mb={4} px={4}>
-        <HStack spacing={4}>
-          <Text fontSize="lg" fontWeight="semibold" color="white">
-            Open Positions
-          </Text>
-          <Badge colorScheme="blue">
-            {throttledPositions?.length || 0} Position{throttledPositions?.length !== 1 ? 's' : ''}
-          </Badge>
-          {updateStats && updateStats.opened !== undefined && updateStats.closed !== undefined && (updateStats.opened > 0 || updateStats.closed > 0) && (
-            <HStack spacing={2}>
-              <Badge colorScheme="green" variant="subtle">
-                +{updateStats.opened} opened
-              </Badge>
-              <Badge colorScheme="red" variant="subtle">
-                -{updateStats.closed} closed
-              </Badge>
-            </HStack>
-          )}
-        </HStack>
-
-        <HStack spacing={2}>
-          <Select
-            size="sm"
-            value={selectedAccount}
-            onChange={(e) => handleAccountChange(e.target.value)}
-            bg="whiteAlpha.100"
-            borderColor="whiteAlpha.200"
-            width="120px"
-          >
-            {connectedAccounts.map((account) => (
-              <option key={account.account_id} value={account.account_id}>
-                {account.nickname || account.display_name || account.account_id}
-              </option>
-            ))}
-          </Select>
-
-          <Select
-            size="sm"
-            value={filter.side}
-            onChange={(e) => setFilter(prev => ({ ...prev, side: e.target.value }))}
-            bg="whiteAlpha.100"
-            borderColor="whiteAlpha.200"
-            width="120px"
-          >
-            <option value="all">All Sides</option>
-            <option value="LONG">Long</option>
-            <option value="SHORT">Short</option>
-          </Select>
-
-        </HStack>
-      </Flex>
 
       {/* Positions Table */}
       <Box 
@@ -489,37 +428,53 @@ const LiveTradesView = () => {
       </Table>
       </Box>
 
-      {/* Fixed Footer Stats */}
-      <Flex 
-        justify="space-between" 
-        borderTop="1px solid" 
-        borderColor="whiteAlpha.200"
-        p={4}
-        bg="inherit"
-        alignItems="center"
-      >
-        <HStack spacing={2}>
-          {lastUpdate && (
-            <Text fontSize="xs" color="whiteAlpha.500">
-              Last update: {new Date(lastUpdate).toLocaleTimeString()}
-            </Text>
-          )}
-        </HStack>
-        <HStack spacing={4}>
-          <Text fontSize="sm" color="whiteAlpha.600">
-            Total Positions: {throttledPositions?.length || 0}
-          </Text>
-          <Text fontSize="sm" color="whiteAlpha.600">
-            Status:{' '}
-            <Badge
-              colorScheme={connectionStatus === 'connected' ? 'green' : 'red'}
-              ml={1}
-            >
-              {connectionStatus === 'connected' ? 'Connected' : 'Disconnected'}
-            </Badge>
-          </Text>
-        </HStack>
-      </Flex>
+      {/* Footer with Stats */}
+      <VStack spacing={2} mt={2}>
+        {/* Stats Row */}
+        <Flex 
+          w="100%"
+          px={4}
+          py={2}
+          borderTop="1px solid"
+          borderColor="rgba(255, 255, 255, 0.1)"
+          justifyContent="space-between"
+          alignItems="center"
+        >
+          <HStack spacing={4} color="rgba(255, 255, 255, 0.6)" fontSize="sm">
+            <HStack>
+              <Text>Total Positions:</Text>
+              <Text color="white" fontWeight="medium">{throttledPositions?.length || 0}</Text>
+            </HStack>
+            <HStack>
+              <Text>Status:</Text>
+              <Badge
+                colorScheme={connectionStatus === 'connected' ? 'green' : 'red'}
+                fontSize="xs"
+              >
+                {connectionStatus === 'connected' ? 'Connected' : 'Disconnected'}
+              </Badge>
+            </HStack>
+            {updateStats && updateStats.opened !== undefined && updateStats.closed !== undefined && (updateStats.opened > 0 || updateStats.closed > 0) && (
+              <HStack spacing={2}>
+                <Badge colorScheme="green" variant="subtle" fontSize="xs">
+                  +{updateStats.opened} opened
+                </Badge>
+                <Badge colorScheme="red" variant="subtle" fontSize="xs">
+                  -{updateStats.closed} closed
+                </Badge>
+              </HStack>
+            )}
+          </HStack>
+          
+          <HStack>
+            {lastUpdate && (
+              <Text fontSize="sm" color="rgba(255, 255, 255, 0.6)">
+                Last update: {new Date(lastUpdate).toLocaleTimeString()}
+              </Text>
+            )}
+          </HStack>
+        </Flex>
+      </VStack>
     </Box>
   );
 };
