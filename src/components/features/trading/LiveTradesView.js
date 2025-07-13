@@ -48,6 +48,7 @@ import { useAccounts } from '@/hooks/useAccounts';
 import { useMemo, useEffect } from 'react';
 import AnimatedPositionRow from './components/AnimatedPositionRow';
 import { useThrottledPositions } from '@/services/websocket-proxy/hooks/useThrottledPositions';
+import { useAudioAlerts } from '@/hooks/useAudioAlerts';
 
 const LiveTradesView = ({ selectedAccount, onAccountChange, selectedBroker, filters = {} }) => {
   const [sort, setSort] = useState({ field: 'timeEntered', direction: 'desc' });
@@ -78,6 +79,18 @@ const LiveTradesView = ({ selectedAccount, onAccountChange, selectedBroker, filt
   
   console.log('[LiveTradesView] Positions data:', { positions, positionsLoading, error, connectionHealth });
   
+  // Initialize audio alerts
+  const { 
+    checkPositions, 
+    checkPositionChange, 
+    clearTrackedPositions,
+    testOpenAdd,
+    testCloseSubtract,
+    settings,
+    setVolume,
+    toggleEnabled
+  } = useAudioAlerts(selectedAccount, selectedBroker);
+  
   // Use only WebSocket positions for now (trade recording disabled in backend)
   const mergedPositions = useMemo(() => {
     return positions || [];
@@ -89,6 +102,23 @@ const LiveTradesView = ({ selectedAccount, onAccountChange, selectedBroker, filt
     pnlUpdateDelay: 250,
     bulkUpdateDelay: 1000
   });
+  
+  // Trigger audio alerts when positions change
+  useEffect(() => {
+    if (mergedPositions && mergedPositions.length > 0) {
+      // Check each position for changes
+      mergedPositions.forEach(position => {
+        checkPositionChange(position);
+      });
+    }
+  }, [mergedPositions, checkPositionChange]);
+  
+  // Clear tracked positions on account change or disconnect
+  useEffect(() => {
+    if (connectionStatus === 'disconnected') {
+      clearTrackedPositions();
+    }
+  }, [connectionStatus, clearTrackedPositions]);
 
   // Get connected accounts
   const connectedAccounts = useMemo(() => {
@@ -389,6 +419,44 @@ const LiveTradesView = ({ selectedAccount, onAccountChange, selectedBroker, filt
       </Table>
       </Box>
 
+      {/* Audio Test Button - Temporary for testing */}
+      {process.env.NODE_ENV === 'development' && (
+        <Flex px={4} py={2} gap={2} borderTop="1px solid" borderColor="rgba(255, 255, 255, 0.1)">
+          <Text fontSize="xs" color="whiteAlpha.600">Audio Test:</Text>
+          <Button size="xs" onClick={testOpenAdd} colorScheme="green" variant="ghost">
+            Test Open/Add
+          </Button>
+          <Button size="xs" onClick={testCloseSubtract} colorScheme="red" variant="ghost">
+            Test Close/Sub
+          </Button>
+          <Text fontSize="xs" color="whiteAlpha.600">Volume: {Math.round(settings.volume * 100)}%</Text>
+          <Button 
+            size="xs" 
+            onClick={() => setVolume(settings.volume - 0.1)} 
+            isDisabled={settings.volume <= 0}
+            variant="ghost"
+          >
+            -
+          </Button>
+          <Button 
+            size="xs" 
+            onClick={() => setVolume(settings.volume + 0.1)} 
+            isDisabled={settings.volume >= 1}
+            variant="ghost"
+          >
+            +
+          </Button>
+          <Button 
+            size="xs" 
+            onClick={toggleEnabled}
+            colorScheme={settings.enabled ? "green" : "gray"}
+            variant="ghost"
+          >
+            {settings.enabled ? "ON" : "OFF"}
+          </Button>
+        </Flex>
+      )}
+      
       {/* Footer with Stats */}
       <VStack spacing={2} mt={2}>
         {/* Stats Row */}
