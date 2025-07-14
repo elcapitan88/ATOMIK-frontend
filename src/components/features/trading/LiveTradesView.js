@@ -48,6 +48,7 @@ import { useMemo, useEffect } from 'react';
 import AnimatedPositionRow from './components/AnimatedPositionRow';
 import PositionStatusIndicator from './components/PositionStatusIndicator';
 import { useThrottledPositions } from '@/services/websocket-proxy/hooks/useThrottledPositions';
+import { useAudioAlerts } from '@/hooks/useAudioAlerts';
 
 const LiveTradesView = () => {
   const [selectedAccount, setSelectedAccount] = useState(null);
@@ -79,6 +80,12 @@ const LiveTradesView = () => {
   } = useWebSocketPositions(selectedBroker, selectedAccount);
   
   console.log('[LiveTradesView] Positions data:', { positions, positionsLoading, error, connectionHealth });
+  
+  // Initialize audio alerts
+  const { 
+    checkPositionChange, 
+    clearTrackedPositions
+  } = useAudioAlerts(selectedAccount, selectedBroker);
   
   // Merge database trades with WebSocket positions
   const mergedPositions = useMemo(() => {
@@ -130,6 +137,23 @@ const LiveTradesView = () => {
     pnlUpdateDelay: 250,
     bulkUpdateDelay: 1000
   });
+  
+  // Trigger audio alerts when positions change
+  useEffect(() => {
+    if (mergedPositions && mergedPositions.length > 0) {
+      // Check each position for changes
+      mergedPositions.forEach(position => {
+        checkPositionChange(position);
+      });
+    }
+  }, [mergedPositions, checkPositionChange]);
+  
+  // Clear tracked positions on account change or disconnect
+  useEffect(() => {
+    if (connectionStatus === 'disconnected') {
+      clearTrackedPositions();
+    }
+  }, [connectionStatus, clearTrackedPositions]);
 
   // Get connected accounts
   const connectedAccounts = useMemo(() => {
