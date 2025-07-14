@@ -9,8 +9,14 @@ import {
   Text,
   useToast,
   Icon,
+  Select,
+  InputGroup,
+  Input,
+  InputRightElement,
+  IconButton,
+  Tooltip,
 } from '@chakra-ui/react';
-import { Activity, Zap, Clock, Plus } from 'lucide-react';
+import { Activity, Zap, Clock, Plus, Search, RefreshCw } from 'lucide-react';
 import WebhooksView from '@/components/features/trading/WebhooksView';  // or whatever the correct path is
 import LiveTradesView from './LiveTradesView';
 import HistoricalTradesView from './HistoricalTradesView';
@@ -22,6 +28,9 @@ const TradesTable = () => {
   const [webhooksHandler, setWebhooksHandler] = useState(null);
   const [activeView, setActiveView] = useState('webhooks'); // 'positions' or 'webhooks'
   const [positionView, setPositionView] = useState('open'); // 'open' or 'historical'
+  const [selectedAccount, setSelectedAccount] = useState(null);
+  const [selectedBroker, setSelectedBroker] = useState(null);
+  const [liveFilters, setLiveFilters] = useState({ side: 'all', symbol: 'all' });
   const [newlyCreatedWebhook, setNewlyCreatedWebhook] = useState(null); // Store newly created webhook
   const toast = useToast();
   
@@ -156,7 +165,7 @@ const TradesTable = () => {
 
       {/* Sub-navigation for Positions */}
       {activeView === 'positions' && (
-        <Flex px={4} pb={3} justify="flex-start" align="center">
+        <Flex px={4} pb={3} justify="space-between" align="center">
           <ButtonGroup size="sm" variant="ghost" spacing={0}>
             <Button
               onClick={() => setPositionView('open')}
@@ -191,6 +200,147 @@ const TradesTable = () => {
               Historical Trades
             </Button>
           </ButtonGroup>
+          
+          {/* Filters for Live Trades */}
+          {positionView === 'open' && (
+            <HStack spacing={2}>
+              <Select
+                size="sm"
+                value={selectedAccount || ''}
+                onChange={(e) => {
+                  const accountId = e.target.value;
+                  if (accountId) {
+                    setSelectedAccount(accountId);
+                  }
+                }}
+                bg="rgba(0, 0, 0, 0.3)"
+                borderColor="rgba(255, 255, 255, 0.1)"
+                color="white"
+                width="120px"
+                h="32px"
+                fontSize="xs"
+                _hover={{ borderColor: "rgba(255, 255, 255, 0.2)" }}
+                _focus={{ borderColor: "#00C6E0", boxShadow: "0 0 0 1px #00C6E0" }}
+                placeholder="Select Account"
+              >
+                <option value="">All Accounts</option>
+              </Select>
+              
+              <Select
+                size="sm"
+                value={liveFilters.side}
+                onChange={(e) => setLiveFilters(prev => ({ ...prev, side: e.target.value }))}
+                bg="rgba(0, 0, 0, 0.3)"
+                borderColor="rgba(255, 255, 255, 0.1)"
+                color="white"
+                width="100px"
+                h="32px"
+                fontSize="xs"
+                _hover={{ borderColor: "rgba(255, 255, 255, 0.2)" }}
+                _focus={{ borderColor: "#00C6E0", boxShadow: "0 0 0 1px #00C6E0" }}
+              >
+                <option value="all">All Sides</option>
+                <option value="LONG">Long</option>
+                <option value="SHORT">Short</option>
+              </Select>
+            </HStack>
+          )}
+          
+          {/* Filters for Historical Trades */}
+          {positionView === 'historical' && (
+            <HStack spacing={2} flexWrap="wrap">
+              <Select
+                size="sm"
+                bg="rgba(0, 0, 0, 0.3)"
+                borderColor="rgba(255, 255, 255, 0.1)"
+                color="white"
+                width="120px"
+                h="32px"
+                fontSize="xs"
+                _hover={{ borderColor: "rgba(255, 255, 255, 0.2)" }}
+                _focus={{ borderColor: "#00C6E0", boxShadow: "0 0 0 1px #00C6E0" }}
+              >
+                <option value="1">Today</option>
+                <option value="7">Last 7 Days</option>
+                <option value="30">Last 30 Days</option>
+                <option value="90">Last 90 Days</option>
+                <option value="365">All Time</option>
+              </Select>
+              
+              <Select
+                size="sm"
+                bg="rgba(0, 0, 0, 0.3)"
+                borderColor="rgba(255, 255, 255, 0.1)"
+                color="white"
+                width="110px"
+                h="32px"
+                fontSize="xs"
+                _hover={{ borderColor: "rgba(255, 255, 255, 0.2)" }}
+                _focus={{ borderColor: "#00C6E0", boxShadow: "0 0 0 1px #00C6E0" }}
+              >
+                <option value="all">All Symbols</option>
+              </Select>
+              
+              <Select
+                size="sm"
+                bg="rgba(0, 0, 0, 0.3)"
+                borderColor="rgba(255, 255, 255, 0.1)"
+                color="white"
+                width="120px"
+                h="32px"
+                fontSize="xs"
+                _hover={{ borderColor: "rgba(255, 255, 255, 0.2)" }}
+                _focus={{ borderColor: "#00C6E0", boxShadow: "0 0 0 1px #00C6E0" }}
+              >
+                <option value="all">All Strategies</option>
+              </Select>
+              
+              <Select
+                size="sm"
+                bg="rgba(0, 0, 0, 0.3)"
+                borderColor="rgba(255, 255, 255, 0.1)"
+                color="white"
+                width="110px"
+                h="32px"
+                fontSize="xs"
+                _hover={{ borderColor: "rgba(255, 255, 255, 0.2)" }}
+                _focus={{ borderColor: "#00C6E0", boxShadow: "0 0 0 1px #00C6E0" }}
+              >
+                <option value="all">All Trades</option>
+                <option value="true">Profitable Only</option>
+                <option value="false">Losing Only</option>
+              </Select>
+              
+              <InputGroup size="sm" width="180px" h="32px">
+                <Input
+                  placeholder="Search trades..."
+                  bg="rgba(0, 0, 0, 0.3)"
+                  borderColor="rgba(255, 255, 255, 0.1)"
+                  color="white"
+                  fontSize="xs"
+                  _hover={{ borderColor: "rgba(255, 255, 255, 0.2)" }}
+                  _focus={{ borderColor: "#00C6E0", boxShadow: "0 0 0 1px #00C6E0" }}
+                />
+                <InputRightElement h="32px">
+                  <Search size={14} color="rgba(255, 255, 255, 0.4)" />
+                </InputRightElement>
+              </InputGroup>
+              
+              <Tooltip label="Refresh">
+                <IconButton
+                  icon={<RefreshCw size={16} />}
+                  variant="ghost"
+                  size="sm"
+                  aria-label="Refresh trades"
+                  color="rgba(255, 255, 255, 0.6)"
+                  _hover={{ color: 'white', bg: 'rgba(255, 255, 255, 0.1)' }}
+                  h="32px"
+                  w="32px"
+                  minW="32px"
+                />
+              </Tooltip>
+            </HStack>
+          )}
         </Flex>
       )}
 
@@ -203,7 +353,15 @@ const TradesTable = () => {
           />
         )}
         {activeView === 'positions' && positionView === 'open' && (
-          <LiveTradesView />
+          <LiveTradesView 
+            selectedAccount={selectedAccount}
+            selectedBroker={selectedBroker}
+            onAccountChange={(accountId, brokerId) => {
+              setSelectedAccount(accountId);
+              setSelectedBroker(brokerId);
+            }}
+            filters={liveFilters}
+          />
         )}
         {activeView === 'positions' && positionView === 'historical' && (
           <HistoricalTradesView />

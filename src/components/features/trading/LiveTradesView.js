@@ -1,4 +1,5 @@
 // src/components/features/trading/LiveTradesView.js
+// Cache busting update
 
 import React, { useState, useCallback } from 'react';
 import {
@@ -43,17 +44,15 @@ import { formatCurrency } from '@/utils/formatting/currency';
 import { formatDate } from '@/utils/formatting/date';
 import { useWebSocketPositions, useWebSocketContext } from '@/services/websocket-proxy';
 import { useAccounts } from '@/hooks/useAccounts';
-import { useTrades } from '@/hooks/useTrades';
+// import { useTrades } from '@/hooks/useTrades'; // TODO: Re-enable when trade recording is active
 import { useMemo, useEffect } from 'react';
 import AnimatedPositionRow from './components/AnimatedPositionRow';
 import { useThrottledPositions } from '@/services/websocket-proxy/hooks/useThrottledPositions';
 import { useAudioAlerts } from '@/hooks/useAudioAlerts';
 
-const LiveTradesView = () => {
-  const [selectedAccount, setSelectedAccount] = useState(null);
-  const [selectedBroker, setSelectedBroker] = useState(null);
+const LiveTradesView = ({ selectedAccount, onAccountChange, selectedBroker, filters = {} }) => {
   const [sort, setSort] = useState({ field: 'timeEntered', direction: 'desc' });
-  const [filter, setFilter] = useState({ side: 'all', symbol: 'all' });
+  const [filter, setFilter] = useState({ side: filters.side || 'all', symbol: filters.symbol || 'all' });
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState('disconnected');
   
@@ -61,10 +60,10 @@ const LiveTradesView = () => {
 
   const toast = useToast();
   const { data: accounts, isLoading: accountsLoading, error: accountsError } = useAccounts();
-  const { isConnected, sendMessage, connections, testMarketDataAccess } = useWebSocketContext();
+  const { isConnected, sendMessage, connections } = useWebSocketContext();
   
-  // Use trades hook for database-backed live trades
-  const { liveTrades, closeTrade: closeTradeApi, isLoading: tradesLoading } = useTrades();
+  // TODO: Re-enable when trade recording is active in backend
+  // const { liveTrades, closeTrade: closeTradeApi, isLoading: tradesLoading } = useTrades();
   const { 
     positions, 
     loading: positionsLoading, 
@@ -82,53 +81,15 @@ const LiveTradesView = () => {
   
   // Initialize audio alerts
   const { 
+    checkPositions, 
     checkPositionChange, 
     clearTrackedPositions
   } = useAudioAlerts(selectedAccount, selectedBroker);
   
-  // Merge database trades with WebSocket positions
+  // Use only WebSocket positions for now (trade recording disabled in backend)
   const mergedPositions = useMemo(() => {
-    // Start with WebSocket positions
-    const positionsMap = new Map();
-    
-    // Add WebSocket positions
-    if (positions && Array.isArray(positions)) {
-      positions.forEach(pos => {
-        const key = pos.positionId || pos.contractId;
-        positionsMap.set(key, { ...pos, source: 'websocket' });
-      });
-    }
-    
-    // Add or update with database trades
-    if (liveTrades && Array.isArray(liveTrades)) {
-      liveTrades.forEach(trade => {
-        const key = trade.position_id;
-        const existing = positionsMap.get(key);
-        
-        if (existing) {
-          // Merge data - WebSocket data takes precedence for real-time fields
-          positionsMap.set(key, {
-            ...existing,
-            ...trade,
-            // Keep real-time data from WebSocket
-            currentPrice: existing.currentPrice,
-            unrealizedPnl: existing.unrealizedPnl,
-            // Add database fields
-            strategy_id: trade.strategy_id,
-            strategy_name: trade.strategy_name,
-            max_unrealized_pnl: trade.max_unrealized_pnl,
-            max_adverse_pnl: trade.max_adverse_pnl,
-            source: 'both'
-          });
-        } else {
-          // Database-only trade (might be stale or WebSocket hasn't caught up)
-          positionsMap.set(key, { ...trade, source: 'database' });
-        }
-      });
-    }
-    
-    return Array.from(positionsMap.values());
-  }, [positions, liveTrades]);
+    return positions || [];
+  }, [positions]);
 
   // Use throttled positions for better performance
   const throttledPositions = useThrottledPositions(mergedPositions, {
@@ -180,15 +141,14 @@ const LiveTradesView = () => {
     return filtered;
   }, [accounts, isConnected, connections]);
 
-  // Set initial account and monitor connection status
+  // Notify parent of account changes when needed
   useEffect(() => {
     console.log('[LiveTradesView] Connected accounts:', connectedAccounts);
-    if (connectedAccounts.length > 0 && !selectedAccount) {
+    if (connectedAccounts.length > 0 && !selectedAccount && onAccountChange) {
       console.log('[LiveTradesView] Setting initial account:', connectedAccounts[0]);
-      setSelectedAccount(connectedAccounts[0].account_id);
-      setSelectedBroker(connectedAccounts[0].broker_id);
+      onAccountChange(connectedAccounts[0].account_id, connectedAccounts[0].broker_id);
     }
-  }, [connectedAccounts, selectedAccount]);
+  }, [connectedAccounts, selectedAccount, onAccountChange]);
 
   // Monitor connection status
   useEffect(() => {
@@ -213,16 +173,10 @@ const LiveTradesView = () => {
     return `${Math.floor(diffInMinutes / 1440)}d ${Math.floor((diffInMinutes % 1440) / 60)}h`;
   }, []);
 
-  const handleAccountChange = useCallback((value) => {
-    if (!value || value === 'null') return;
-    
-    // Find the account to get broker info
-    const account = connectedAccounts.find(acc => acc.account_id === value);
-    if (account) {
-      setSelectedAccount(value);
-      setSelectedBroker(account.broker_id);
-    }
-  }, [connectedAccounts]);
+  // Update local filter state when filters prop changes
+  useEffect(() => {
+    setFilter({ side: filters.side || 'all', symbol: filters.symbol || 'all' });
+  }, [filters]);
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
@@ -266,10 +220,10 @@ const LiveTradesView = () => {
       });
 
       if (success) {
-        // Also close the trade in the database
-        if (position.id && closeTradeApi) {
-          await closeTradeApi(position.id);
-        }
+        // TODO: Close trade in database when trade recording is enabled
+        // if (position.id && closeTradeApi) {
+        //   await closeTradeApi(position.id);
+        // }
         
         toast({
           title: "Close order submitted",
@@ -287,7 +241,7 @@ const LiveTradesView = () => {
         isClosable: true
       });
     }
-  }, [selectedBroker, selectedAccount, sendMessage, closeTradeApi, toast]);
+  }, [selectedBroker, selectedAccount, sendMessage, toast]);
 
   const handleSetAlert = useCallback((position) => {
     toast({
@@ -310,15 +264,15 @@ const LiveTradesView = () => {
   }, [toast]);
 
   // Loading state
-  if (accountsLoading || positionsLoading || tradesLoading || !accounts) {
-    console.log('[LiveTradesView] Loading state:', { accountsLoading, positionsLoading, tradesLoading, hasAccounts: !!accounts, accountsError });
+  if (accountsLoading || positionsLoading || !accounts) {
+    console.log('[LiveTradesView] Loading state:', { accountsLoading, positionsLoading, hasAccounts: !!accounts, accountsError });
     
     if (accountsError) {
       console.error('[LiveTradesView] Accounts loading error:', accountsError);
       return (
         <Alert status="error">
           <AlertIcon />
-          Failed to load accounts: {accountsError.message}
+          Failed to load accounts: {accountsError?.message || 'Unknown error'}
         </Alert>
       );
     }
@@ -333,34 +287,14 @@ const LiveTradesView = () => {
     );
   }
 
-  // Empty state - show coming soon instead of no connected accounts
+  // Empty state - no connected accounts
   if (connectedAccounts.length === 0) {
     return (
       <Flex justify="center" align="center" height="100%" width="100%">
-        <VStack spacing={4} textAlign="center" px={6}>
-          <Box
-            w="60px"
-            h="60px"
-            borderRadius="full"
-            bg="linear-gradient(135deg, rgba(0, 198, 224, 0.1), rgba(153, 50, 204, 0.1))"
-            border="2px solid"
-            borderColor="rgba(0, 198, 224, 0.3)"
-            display="flex"
-            alignItems="center"
-            justifyContent="center"
-            animation="pulse 2s infinite"
-          >
-            <Activity size={28} color="#00C6E0" />
-          </Box>
-          <VStack spacing={2}>
-            <Text color="white" fontSize="lg" fontWeight="bold">
-              Live Trading View Coming Soon!
-            </Text>
-            <Text color="whiteAlpha.700" fontSize="sm" maxW="300px">
-              We're building an amazing real-time trading experience with live positions, 
-              market data, and advanced analytics. Stay tuned!
-            </Text>
-          </VStack>
+        <VStack spacing={3}>
+          <Text color="whiteAlpha.600" fontSize="sm">
+            No open trades
+          </Text>
         </VStack>
       </Flex>
     );
@@ -379,7 +313,7 @@ const LiveTradesView = () => {
   }
 
   return (
-    <Box maxH="250px" overflowY="auto" className="custom-scrollbar">
+    <Box height="100%" overflow="hidden" display="flex" flexDirection="column">
       {/* Connection Status Alert */}
       {connectionStatus !== 'connected' && throttledPositions.length > 0 && (
         <Alert status="warning" mb={4} borderRadius="md">
@@ -392,7 +326,7 @@ const LiveTradesView = () => {
       )}
       
       {/* Connection Health Alert */}
-      {connectionHealth && !connectionHealth.isHealthy && (
+      {connectionHealth && connectionHealth.isHealthy !== undefined && !connectionHealth.isHealthy && (
         <Alert status="error" mb={4} borderRadius="md">
           <AlertIcon />
           <VStack align="start" spacing={1} flex={1}>
@@ -412,92 +346,34 @@ const LiveTradesView = () => {
         </Alert>
       )}
       
-      {/* Header - Simplified */}
-      <Flex justify="space-between" mb={4} px={4}>
-        <HStack spacing={4}>
-          {updateStats && (updateStats.opened > 0 || updateStats.closed > 0) && (
-            <HStack spacing={2}>
-              <Badge colorScheme="green" variant="subtle">
-                +{updateStats.opened} opened
-              </Badge>
-              <Badge colorScheme="red" variant="subtle">
-                -{updateStats.closed} closed
-              </Badge>
-            </HStack>
-          )}
-        </HStack>
-
-        <HStack spacing={2}>
-          {/* Temporary Market Data Test Button */}
-          <Button
-            size="sm"
-            colorScheme="yellow"
-            onClick={async () => {
-              try {
-                const result = await testMarketDataAccess(selectedBroker, selectedAccount);
-                console.log('[MARKET_DATA_TEST] Test results:', result);
-                toast({
-                  title: 'Market Data Test Complete',
-                  description: 'Check console for results',
-                  status: 'info',
-                  duration: 5000,
-                });
-              } catch (error) {
-                console.error('[MARKET_DATA_TEST] Test failed:', error);
-                toast({
-                  title: 'Market Data Test Failed',
-                  description: error.message,
-                  status: 'error',
-                  duration: 5000,
-                });
-              }
-            }}
-          >
-            Test Market Data
-          </Button>
-          
-          <Select
-            size="sm"
-            value={selectedAccount}
-            onChange={(e) => handleAccountChange(e.target.value)}
-            bg="whiteAlpha.100"
-            borderColor="whiteAlpha.200"
-            width="120px"
-          >
-            {connectedAccounts.map((account) => (
-              <option key={account.account_id} value={account.account_id}>
-                {account.nickname || account.display_name || account.account_id}
-              </option>
-            ))}
-          </Select>
-
-          <Select
-            size="sm"
-            value={filter.side}
-            onChange={(e) => setFilter(prev => ({ ...prev, side: e.target.value }))}
-            bg="whiteAlpha.100"
-            borderColor="whiteAlpha.200"
-            width="120px"
-          >
-            <option value="all">All Sides</option>
-            <option value="LONG">Long</option>
-            <option value="SHORT">Short</option>
-          </Select>
-
-          <IconButton
-            icon={<RefreshCw size={16} />}
-            variant="ghost"
-            size="sm"
-            isLoading={isRefreshing}
-            onClick={handleRefresh}
-            color="whiteAlpha.700"
-            _hover={{ color: 'white', bg: 'whiteAlpha.200' }}
-          />
-        </HStack>
-      </Flex>
 
       {/* Positions Table */}
-      <Table variant="unstyled" size="sm">
+      <Box 
+        flex="1" 
+        overflowY="auto"
+        px={4}
+        sx={{
+          '&::-webkit-scrollbar': {
+            width: '8px',
+            borderRadius: '8px',
+            backgroundColor: 'rgba(0, 0, 0, 0.05)',
+          },
+          '&::-webkit-scrollbar-thumb': {
+            backgroundColor: 'rgba(255, 255, 255, 0.1)',
+            borderRadius: '8px',
+            '&:hover': {
+              backgroundColor: 'rgba(255, 255, 255, 0.2)',
+            },
+          },
+          '&::-webkit-scrollbar-track': {
+            backgroundColor: 'transparent',
+            borderRadius: '8px',
+          },
+          scrollbarWidth: 'thin',
+          scrollbarColor: 'rgba(255, 255, 255, 0.1) transparent',
+        }}
+      >
+        <Table variant="unstyled" size="sm">
         <Thead>
           <Tr>
             <Th color="whiteAlpha.600">Time</Th>
@@ -506,8 +382,6 @@ const LiveTradesView = () => {
             <Th color="whiteAlpha.600">Side</Th>
             <Th color="whiteAlpha.600" isNumeric>Qty</Th>
             <Th color="whiteAlpha.600" isNumeric>Entry</Th>
-            <Th color="whiteAlpha.600" isNumeric>Current</Th>
-            <Th color="whiteAlpha.600" isNumeric>P&L</Th>
             <Th color="whiteAlpha.600">Strategy</Th>
             <Th color="whiteAlpha.600" isNumeric>Account</Th>
             <Th width="50px"></Th>
@@ -516,31 +390,11 @@ const LiveTradesView = () => {
         <Tbody>
           {!throttledPositions || throttledPositions.length === 0 ? (
             <Tr>
-              <Td colSpan={11}>
+              <Td colSpan={9}>
                 <Flex justify="center" align="center" py={8}>
-                  <VStack spacing={3}>
-                    <Box
-                      w="40px"
-                      h="40px"
-                      borderRadius="full"
-                      bg="rgba(0, 198, 224, 0.1)"
-                      border="1px solid"
-                      borderColor="rgba(0, 198, 224, 0.3)"
-                      display="flex"
-                      alignItems="center"
-                      justifyContent="center"
-                    >
-                      <Activity size={20} color="#00C6E0" />
-                    </Box>
-                    <VStack spacing={1}>
-                      <Text color="white" fontSize="md" fontWeight="semibold">
-                        Real-Time Positions Coming Soon!
-                      </Text>
-                      <Text color="whiteAlpha.600" fontSize="sm" textAlign="center">
-                        Live position tracking with real-time P&L updates
-                      </Text>
-                    </VStack>
-                  </VStack>
+                  <Text color="whiteAlpha.600" fontSize="sm">
+                    No open trades
+                  </Text>
                 </Flex>
               </Td>
             </Tr>
@@ -558,7 +412,9 @@ const LiveTradesView = () => {
           )}
         </Tbody>
       </Table>
+      </Box>
 
+      
       {/* Footer with Stats */}
       <VStack spacing={2} mt={2}>
         {/* Stats Row */}
@@ -599,7 +455,7 @@ const LiveTradesView = () => {
           
           <HStack>
             {lastUpdate && (
-              <Text fontSize="xs" color="whiteAlpha.500">
+              <Text fontSize="sm" color="rgba(255, 255, 255, 0.6)">
                 Last update: {new Date(lastUpdate).toLocaleTimeString()}
               </Text>
             )}

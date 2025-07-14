@@ -434,44 +434,6 @@ class WebSocketManager extends EventEmitter {
     return this.sendMessage(brokerId, accountId, message, category);
   }
   
-  /**
-   * Test market data access for debugging
-   * @param {string} brokerId - Broker identifier
-   * @param {string} accountId - Account identifier
-   * @returns {Promise<Object>} - Test results
-   */
-  async testMarketDataAccess(brokerId, accountId) {
-    return new Promise((resolve, reject) => {
-      const connectionId = `${brokerId}:${accountId}`;
-      
-      // Set up one-time listener for the response
-      const responseHandler = (data) => {
-        if (data.type === 'debug_test_market_data_response') {
-          this.off('message', responseHandler);
-          logger.info('[WebSocketManager] Market data test response:', data.data);
-          resolve(data.data);
-        }
-      };
-      
-      this.on('message', responseHandler);
-      
-      // Send the test message
-      const sent = this.sendMessage(brokerId, accountId, {
-        type: 'debug_test_market_data'
-      });
-      
-      if (!sent) {
-        this.off('message', responseHandler);
-        reject(new Error('Failed to send test message'));
-      }
-      
-      // Timeout after 10 seconds
-      setTimeout(() => {
-        this.off('message', responseHandler);
-        reject(new Error('Market data test timeout'));
-      }, 10000);
-    });
-  }
   
   /**
    * Apply rate limiting to message sending
@@ -636,6 +598,16 @@ class WebSocketManager extends EventEmitter {
           fullMessage: JSON.stringify(message, null, 2)
         });
       }
+      
+      // Extra debug for position update messages
+      if (message?.type === 'position_update' || message?.type === 'position_price_update') {
+        console.log('[WebSocketManager] DEBUGGING: Position update message:', {
+          type: message.type,
+          hasData: !!message.data,
+          data: message.data,
+          willEmitPositionUpdate: true
+        });
+      }
     }
     
     // Handle connection state messages
@@ -730,14 +702,23 @@ class WebSocketManager extends EventEmitter {
       } else if (message.type === 'account_update' && message.data) {
         this.updateAccountData(brokerId, accountId, message.data);
       } else if (message.type === 'position_update' && message.data) {
+        if (envConfig.debugConfig.websocket.enabled) {
+          console.log('[WebSocketManager] Processing position_update message:', message.data);
+        }
         this.updatePositionData(brokerId, accountId, message.data);
       } else if (isPositionUpdateEvent(message.type) && message.data) {
         // Handle new position event types
+        if (envConfig.debugConfig.websocket.enabled) {
+          console.log('[WebSocketManager] Processing position event:', message.type, message.data);
+        }
         this.handlePositionEvent(brokerId, accountId, message);
       } else if (message.type === 'order_update' && message.data) {
         this.updateOrderData(brokerId, accountId, message.data);
       } else if (message.type === 'position_price_update' && message.data) {
         // Handle real-time position price updates
+        if (envConfig.debugConfig.websocket.enabled) {
+          console.log('[WebSocketManager] Processing position_price_update message:', message.data);
+        }
         this.handlePositionPriceUpdate(brokerId, accountId, message.data);
       } else if (message.type === 'user_data' && message.data) {
         // Handle initial sync data
@@ -950,6 +931,20 @@ class WebSocketManager extends EventEmitter {
     this.dataCache.positions.set(key, updatedData);
     
     // Emit position update event in the new format
+    if (envConfig.debugConfig.websocket.enabled) {
+      console.log('[WebSocketManager] 📤 Emitting positionUpdate event:', {
+        brokerId,
+        accountId,
+        type: 'update',
+        position: {
+          positionId: updatedData.positionId,
+          quantity: updatedData.quantity,
+          netPos: updatedData.netPos,
+          side: updatedData.side
+        },
+        timestamp: new Date().toISOString()
+      });
+    }
     this.emit('positionUpdate', {
       brokerId,
       accountId,
@@ -1153,17 +1148,22 @@ class WebSocketManager extends EventEmitter {
    * @returns {Object} - Transformed position
    */
   transformTradovatePosition(rawPosition, contractInfo) {
+    const netPos = Number(rawPosition.netPos || 0);
+    const quantity = Math.abs(netPos);
+    
     return {
       positionId: String(rawPosition.id),
       accountId: rawPosition.accountId,
       symbol: contractInfo?.name || rawPosition.symbol || `Contract-${rawPosition.contractId}`,
-      side: rawPosition.netPos > 0 ? 'LONG' : 'SHORT',
-      quantity: Math.abs(rawPosition.netPos),
-      avgPrice: rawPosition.netPrice || rawPosition.avgPrice,
-      currentPrice: rawPosition.currentPrice || rawPosition.netPrice || rawPosition.avgPrice,
+      side: netPos > 0 ? 'LONG' : netPos < 0 ? 'SHORT' : 'FLAT',
+      quantity: quantity,
+      avgPrice: rawPosition.netPrice || rawPosition.avgPrice || 0,
+      currentPrice: rawPosition.currentPrice || rawPosition.netPrice || rawPosition.avgPrice || 0,
       unrealizedPnL: rawPosition.unrealizedPnL || 0,
       timeEntered: rawPosition.timestamp || rawPosition.timeEntered,
       contractId: rawPosition.contractId,
+      netPos: netPos, // Keep original netPos for reference
+      netPrice: rawPosition.netPrice,
       // Keep original fields for debugging
       _original: rawPosition
     };
@@ -1197,6 +1197,15 @@ class WebSocketManager extends EventEmitter {
       this.dataCache.positions.set(positionKey, updatedPosition);
       
       // Emit price update event
+      if (envConfig.debugConfig.websocket.enabled) {
+        console.log('[WebSocketManager] Emitting positionUpdate event (price update):', {
+          brokerId,
+          accountId,
+          type: 'priceUpdate',
+          position: updatedPosition,
+          previousValues: { price: previousPrice, pnl: previousPnL }
+        });
+      }
       this.emit('positionUpdate', {
         brokerId,
         accountId,
