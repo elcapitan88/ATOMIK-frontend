@@ -46,7 +46,6 @@ import { useAccounts } from '@/hooks/useAccounts';
 import { useTrades } from '@/hooks/useTrades';
 import { useMemo, useEffect } from 'react';
 import AnimatedPositionRow from './components/AnimatedPositionRow';
-import PositionStatusIndicator from './components/PositionStatusIndicator';
 import { useThrottledPositions } from '@/services/websocket-proxy/hooks/useThrottledPositions';
 import { useAudioAlerts } from '@/hooks/useAudioAlerts';
 
@@ -413,18 +412,9 @@ const LiveTradesView = () => {
         </Alert>
       )}
       
-      {/* Header */}
+      {/* Header - Simplified */}
       <Flex justify="space-between" mb={4} px={4}>
         <HStack spacing={4}>
-          <Text fontSize="lg" fontWeight="semibold" color="white">
-            Open Positions
-          </Text>
-          <Badge colorScheme="blue">
-            {throttledPositions?.length || 0} Position{throttledPositions?.length !== 1 ? 's' : ''}
-          </Badge>
-          {connectionStatus === 'connected' && lastUpdate && (
-            <PositionStatusIndicator lastUpdate={lastUpdate} />
-          )}
           {updateStats && (updateStats.opened > 0 || updateStats.closed > 0) && (
             <HStack spacing={2}>
               <Badge colorScheme="green" variant="subtle">
@@ -569,32 +559,53 @@ const LiveTradesView = () => {
         </Tbody>
       </Table>
 
-      {/* Footer Stats */}
-      <Box mt={4} px={4}>
-        <HStack spacing={4} justify="space-between">
-          <HStack spacing={2}>
+      {/* Footer with Stats */}
+      <VStack spacing={2} mt={2}>
+        {/* Stats Row */}
+        <Flex 
+          w="100%"
+          px={4}
+          py={2}
+          borderTop="1px solid"
+          borderColor="rgba(255, 255, 255, 0.1)"
+          justifyContent="space-between"
+          alignItems="center"
+        >
+          <HStack spacing={4} color="rgba(255, 255, 255, 0.6)" fontSize="sm">
+            <HStack>
+              <Text>Total Positions:</Text>
+              <Text color="white" fontWeight="medium">{throttledPositions?.length || 0}</Text>
+            </HStack>
+            <HStack>
+              <Text>Status:</Text>
+              <Badge
+                colorScheme={connectionStatus === 'connected' ? 'green' : 'red'}
+                fontSize="xs"
+              >
+                {connectionStatus === 'connected' ? 'Connected' : 'Disconnected'}
+              </Badge>
+            </HStack>
+            {updateStats && updateStats.opened !== undefined && updateStats.closed !== undefined && (updateStats.opened > 0 || updateStats.closed > 0) && (
+              <HStack spacing={2}>
+                <Badge colorScheme="green" variant="subtle" fontSize="xs">
+                  +{updateStats.opened} opened
+                </Badge>
+                <Badge colorScheme="red" variant="subtle" fontSize="xs">
+                  -{updateStats.closed} closed
+                </Badge>
+              </HStack>
+            )}
+          </HStack>
+          
+          <HStack>
             {lastUpdate && (
               <Text fontSize="xs" color="whiteAlpha.500">
                 Last update: {new Date(lastUpdate).toLocaleTimeString()}
               </Text>
             )}
           </HStack>
-          <HStack spacing={4}>
-            <Text fontSize="sm" color="whiteAlpha.600">
-              Total Positions: {throttledPositions?.length || 0}
-            </Text>
-            <Text fontSize="sm" color="whiteAlpha.600">
-              Status:{' '}
-              <Badge
-                colorScheme={connectionStatus === 'connected' ? 'green' : 'red'}
-                ml={1}
-              >
-                {connectionStatus === 'connected' ? 'Connected' : 'Disconnected'}
-              </Badge>
-            </Text>
-          </HStack>
-        </HStack>
-      </Box>
+        </Flex>
+      </VStack>
     </Box>
   );
 };
