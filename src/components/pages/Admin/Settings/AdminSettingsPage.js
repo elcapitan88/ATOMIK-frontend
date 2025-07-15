@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Flex,
@@ -69,6 +69,7 @@ import {
   Edit,
   Send
 } from 'lucide-react';
+import AdminService from '../../../../services/api/admin';
 
 // Mock settings data
 const mockSettings = {
@@ -588,29 +589,68 @@ const BackupManagement = () => {
 const AdminSettingsPage = () => {
   // State for settings
   const [settings, setSettings] = useState(mockSettings);
+  const [maintenanceSettings, setMaintenanceSettings] = useState({ is_enabled: false, message: '' });
   const [isDirty, setIsDirty] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isLoadingMaintenance, setIsLoadingMaintenance] = useState(true);
   const toast = useToast();
   
+  // Load maintenance settings on component mount
+  useEffect(() => {
+    loadMaintenanceSettings();
+  }, []);
+
+  const loadMaintenanceSettings = async () => {
+    try {
+      setIsLoadingMaintenance(true);
+      const data = await AdminService.getMaintenanceSettings();
+      setMaintenanceSettings({
+        is_enabled: data.is_enabled,
+        message: data.message || ''
+      });
+    } catch (error) {
+      console.error('Error loading maintenance settings:', error);
+      toast({
+        title: "Error loading maintenance settings",
+        description: "Failed to load current maintenance settings",
+        status: "error",
+        duration: 5000,
+      });
+    } finally {
+      setIsLoadingMaintenance(false);
+    }
+  };
+
   // Handle input change
   const handleChange = (section, field, value) => {
-    setSettings({
-      ...settings,
-      [section]: {
-        ...settings[section],
+    if (section === 'maintenance') {
+      setMaintenanceSettings({
+        ...maintenanceSettings,
         [field]: value
-      }
-    });
-    setIsDirty(true);
+      });
+      setIsDirty(true);
+    } else {
+      setSettings({
+        ...settings,
+        [section]: {
+          ...settings[section],
+          [field]: value
+        }
+      });
+      setIsDirty(true);
+    }
   };
   
   // Save settings
-  const saveSettings = () => {
+  const saveSettings = async () => {
     setIsSaving(true);
     
-    // Simulate API call to save settings
-    setTimeout(() => {
-      setIsSaving(false);
+    try {
+      // Save maintenance settings if they were changed
+      if (isDirty) {
+        await AdminService.updateMaintenanceSettings(maintenanceSettings);
+      }
+      
       setIsDirty(false);
       
       toast({
@@ -620,7 +660,18 @@ const AdminSettingsPage = () => {
         duration: 3000,
         isClosable: true,
       });
-    }, 1000);
+    } catch (error) {
+      console.error('Error saving settings:', error);
+      toast({
+        title: "Error saving settings",
+        description: "Failed to save settings. Please try again.",
+        status: "error",
+        duration: 5000,
+        isClosable: true,
+      });
+    } finally {
+      setIsSaving(false);
+    }
   };
   
   return (
@@ -732,10 +783,26 @@ const AdminSettingsPage = () => {
                     </FormLabel>
                     <Switch
                       id="maintenance-mode"
-                      isChecked={settings.general.maintenanceMode}
-                      onChange={(e) => handleChange('general', 'maintenanceMode', e.target.checked)}
+                      isChecked={maintenanceSettings.is_enabled}
+                      onChange={(e) => handleChange('maintenance', 'is_enabled', e.target.checked)}
                       colorScheme="blue"
+                      isDisabled={isLoadingMaintenance}
                     />
+                  </FormControl>
+                  
+                  <FormControl>
+                    <FormLabel>Maintenance Message</FormLabel>
+                    <Textarea 
+                      value={maintenanceSettings.message}
+                      onChange={(e) => handleChange('maintenance', 'message', e.target.value)}
+                      placeholder="Enter a message to display to users during maintenance..."
+                      bg="whiteAlpha.100"
+                      rows={3}
+                      isDisabled={isLoadingMaintenance}
+                    />
+                    <Text fontSize="xs" color="whiteAlpha.600" mt={1}>
+                      This message will be shown to users when maintenance mode is enabled
+                    </Text>
                   </FormControl>
                 </VStack>
               </Box>

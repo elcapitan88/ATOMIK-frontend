@@ -8,6 +8,7 @@ import ibStatusService from './services/brokers/interactivebrokers/IBStatusServi
 
 // Import components
 import Homepage from './components/pages/Homepage/Homepage';
+import MaintenanceBanner from './components/common/MaintenanceBanner';
 
 // Lazy load non-homepage routes
 const PaymentSuccess = lazy(() => import('./components/pages/PaymentSuccess'));
@@ -229,6 +230,7 @@ function App() {
   return (
     <Suspense fallback={<LoadingSpinner />}>
       <RouteTracker />
+      <MaintenanceBanner />
       <Routes>
         {/* Public Routes */}
         <Route path="/" element={<Homepage />} />

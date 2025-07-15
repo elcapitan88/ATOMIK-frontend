@@ -176,6 +176,52 @@ class AdminService {
       throw error;
     }
   }
+
+  /**
+   * Get current maintenance mode settings
+   * @returns {Promise} Maintenance settings
+   */
+  async getMaintenanceSettings() {
+    try {
+      const response = await axiosInstance.get('/api/v1/admin/maintenance');
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching maintenance settings:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Update maintenance mode settings
+   * @param {Object} settings - Maintenance settings
+   * @param {boolean} settings.is_enabled - Whether maintenance mode is enabled
+   * @param {string} settings.message - Maintenance message for users
+   * @returns {Promise} Updated maintenance settings
+   */
+  async updateMaintenanceSettings(settings) {
+    try {
+      const response = await axiosInstance.put('/api/v1/admin/maintenance', settings);
+      return response.data;
+    } catch (error) {
+      console.error('Error updating maintenance settings:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Check maintenance status (public endpoint, no auth required)
+   * @returns {Promise} Maintenance status
+   */
+  async checkMaintenanceStatus() {
+    try {
+      const response = await axiosInstance.get('/api/v1/admin/maintenance/status');
+      return response.data;
+    } catch (error) {
+      console.error('Error checking maintenance status:', error);
+      // Return default status if check fails
+      return { is_enabled: false, message: null };
+    }
+  }
 }
 
 export default new AdminService(); 

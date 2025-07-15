@@ -26,6 +26,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Eye, EyeOff, LogIn, ArrowRight, ChevronRight, Shield, Lock } from 'lucide-react';
 import logger from '@/utils/logger';
 import axiosInstance from '@/services/axiosConfig';
+import AdminService from '@/services/api/admin';
 
 
 
@@ -97,6 +98,29 @@ const AuthPage = () => {
       navigate('/dashboard', { replace: true });
     }
   }, [isAuthenticated, navigate]);
+
+  // Check maintenance mode status on page load
+  useEffect(() => {
+    const checkMaintenance = async () => {
+      try {
+        const status = await AdminService.checkMaintenanceStatus();
+        if (status.is_enabled) {
+          toast({
+            title: "Maintenance Mode",
+            description: status.message || "The application is currently under maintenance. Please try again later.",
+            status: "warning",
+            duration: 8000,
+            isClosable: true,
+            position: "top"
+          });
+        }
+      } catch (error) {
+        console.error('Error checking maintenance status:', error);
+      }
+    };
+
+    checkMaintenance();
+  }, [toast]);
 
   // Form validation
   const validateForm = () => {

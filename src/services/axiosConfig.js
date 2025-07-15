@@ -130,6 +130,18 @@ axiosInstance.interceptors.response.use(
                 case 500:
                     logger.error('Server Error:', error.response.data);
                     break;
+                case 503:
+                    // Handle maintenance mode
+                    if (error.response.data?.maintenance_mode) {
+                        logger.info('Application is in maintenance mode');
+                        // Dispatch custom event for maintenance mode
+                        window.dispatchEvent(new CustomEvent('maintenanceMode', {
+                            detail: {
+                                message: error.response.data?.message || 'Application is currently under maintenance'
+                            }
+                        }));
+                    }
+                    break;
                 default:
                     break;
             }

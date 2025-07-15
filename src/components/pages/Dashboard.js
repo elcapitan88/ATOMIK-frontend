@@ -16,6 +16,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { ChatProvider, useChat } from '@/contexts/ChatContext';
 import axiosInstance from '@/services/axiosConfig';
 import useFeatureFlags from '@/hooks/useFeatureFlags';
+import AdminService from '@/services/api/admin';
 import Menu from '../layout/Sidebar/Menu';
 import TradingViewWidget from '../features/trading/TradingViewWidget';
 import MemberChatMenu from '../chat/MemberChatMenu';
@@ -270,6 +271,31 @@ const DashboardContent = () => {
             navigate('/auth', { replace: true });
         }
     }, [isAuthenticated, navigate]);
+
+    // Check maintenance mode status on page load
+    useEffect(() => {
+        const checkMaintenance = async () => {
+            try {
+                const status = await AdminService.checkMaintenanceStatus();
+                if (status.is_enabled) {
+                    toast({
+                        title: "Maintenance Mode",
+                        description: status.message || "The application is currently under maintenance. Please try again later.",
+                        status: "warning",
+                        duration: 8000,
+                        isClosable: true,
+                        position: "top"
+                    });
+                }
+            } catch (error) {
+                console.error('Error checking maintenance status:', error);
+            }
+        };
+
+        if (isAuthenticated) {
+            checkMaintenance();
+        }
+    }, [isAuthenticated, toast]);
 
     const handleAccountSelect = (accountId) => {
         setDashboardData(prev => ({
