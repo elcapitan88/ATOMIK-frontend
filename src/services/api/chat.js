@@ -1,7 +1,7 @@
 // Chat API service for REST operations
 // Real-time functionality handled by Application WebSocket
 
-import axiosInstance from '../axiosInstance';
+import axiosInstance from '../axiosConfig';
 import { envConfig } from '@/config/environment';
 
 const BASE_URL = `${envConfig.apiBaseUrl}/api/v1/chat`;
