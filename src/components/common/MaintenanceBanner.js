@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Text, useToast } from '@chakra-ui/react';
 import { AlertTriangle } from 'lucide-react';
-import { checkMaintenanceStatus } from '../../services/api/admin';
+import adminService from '../../services/api/admin';
 
 const MaintenanceBanner = () => {
   const [isVisible, setIsVisible] = useState(false);
@@ -11,7 +11,7 @@ const MaintenanceBanner = () => {
   // Function to check maintenance status
   const checkMaintenance = async () => {
     try {
-      const status = await checkMaintenanceStatus();
+      const status = await adminService.checkMaintenanceStatus();
       if (status.is_enabled && status.message) {
         setMaintenanceMessage(status.message);
         setIsVisible(true);
