@@ -21,6 +21,7 @@ import Menu from '../layout/Sidebar/Menu';
 import TradingViewWidget from '../features/trading/TradingViewWidget';
 import MemberChatMenu from '../chat/MemberChatMenu';
 import MemberChatComponent from '../chat/MemberChat';
+import MaintenanceBanner from '@/components/common/MaintenanceBanner';
 import logger from '@/utils/logger';
 
 // Lazy loaded components
@@ -272,30 +273,6 @@ const DashboardContent = () => {
         }
     }, [isAuthenticated, navigate]);
 
-    // Check maintenance mode status on page load
-    useEffect(() => {
-        const checkMaintenance = async () => {
-            try {
-                const status = await AdminService.checkMaintenanceStatus();
-                if (status.is_enabled) {
-                    toast({
-                        title: "Maintenance Mode",
-                        description: status.message || "The application is currently under maintenance. Please try again later.",
-                        status: "warning",
-                        duration: 8000,
-                        isClosable: true,
-                        position: "top"
-                    });
-                }
-            } catch (error) {
-                console.error('Error checking maintenance status:', error);
-            }
-        };
-
-        if (isAuthenticated) {
-            checkMaintenance();
-        }
-    }, [isAuthenticated, toast]);
 
     const handleAccountSelect = (accountId) => {
         setDashboardData(prev => ({
@@ -455,15 +432,17 @@ const DashboardContent = () => {
     };
 
     return (
-        <Flex 
-            minH="100vh" 
-            bg="background" 
-            color="text.primary" 
-            fontFamily="body"
-            flexDirection="column"
-        >
-            <ErrorBoundary>
-                <Menu onSelectItem={setSelectedItem} />
+        <>
+            <MaintenanceBanner />
+            <Flex 
+                minH="100vh" 
+                bg="background" 
+                color="text.primary" 
+                fontFamily="body"
+                flexDirection="column"
+            >
+                <ErrorBoundary>
+                    <Menu onSelectItem={setSelectedItem} />
             </ErrorBoundary>
             
             <Box 
@@ -541,6 +520,7 @@ const DashboardContent = () => {
                 </>
             )}
         </Flex>
+        </>
     );
 };
 

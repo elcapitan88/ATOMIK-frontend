@@ -27,6 +27,7 @@ import { Eye, EyeOff, LogIn, ArrowRight, ChevronRight, Shield, Lock } from 'luci
 import logger from '@/utils/logger';
 import axiosInstance from '@/services/axiosConfig';
 import AdminService from '@/services/api/admin';
+import MaintenanceBanner from '@/components/common/MaintenanceBanner';
 
 
 
@@ -99,28 +100,6 @@ const AuthPage = () => {
     }
   }, [isAuthenticated, navigate]);
 
-  // Check maintenance mode status on page load
-  useEffect(() => {
-    const checkMaintenance = async () => {
-      try {
-        const status = await AdminService.checkMaintenanceStatus();
-        if (status.is_enabled) {
-          toast({
-            title: "Maintenance Mode",
-            description: status.message || "The application is currently under maintenance. Please try again later.",
-            status: "warning",
-            duration: 8000,
-            isClosable: true,
-            position: "top"
-          });
-        }
-      } catch (error) {
-        console.error('Error checking maintenance status:', error);
-      }
-    };
-
-    checkMaintenance();
-  }, [toast]);
 
   // Form validation
   const validateForm = () => {
@@ -241,11 +220,13 @@ const AuthPage = () => {
   };
 
   return (
-    <MotionBox 
-      minH="100vh" 
-      bg="black" 
-      py={16} 
-      px={4}
+    <>
+      <MaintenanceBanner />
+      <MotionBox 
+        minH="100vh" 
+        bg="black" 
+        py={16} 
+        px={4}
       initial="hidden"
       animate="visible"
       variants={containerVariants}
@@ -467,6 +448,7 @@ const AuthPage = () => {
         </Flex>
       </Container>
     </MotionBox>
+    </>
   );
 };
 
