@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useAuth } from './AuthContext';
-import chatApi, { chatService } from '../services/api/chat';
+import chatApi from '../services/api/chat';
+// Note: chatService removed - WebSocket implementation will replace SSE functionality
 
 const ChatContext = createContext();
 
@@ -65,8 +66,8 @@ export const ChatProvider = ({ children }) => {
     }
     
     return () => {
-      console.log('🔍 ChatContext: useEffect cleanup - disconnecting SSE');
-      chatService.disconnect();
+      console.log('🔍 ChatContext: useEffect cleanup - real-time disconnect removed');
+      // chatService.disconnect(); // Removed during WebSocket migration
     };
   }, [user, token]);
 
@@ -82,78 +83,78 @@ export const ChatProvider = ({ children }) => {
   const connectToRealTime = () => {
     console.log('🔍 ChatContext: connectToRealTime called', { token: !!token });
     if (!token) {
-      console.log('❌ ChatContext: No token available for SSE connection');
+      console.log('❌ ChatContext: No token available for real-time connection');
       return;
     }
 
-    console.log('🔍 ChatContext: Attempting to connect to SSE...');
-    chatService.connect(token);
+    console.log('🔍 ChatContext: Real-time connection disabled during WebSocket migration');
+    // TODO: Implement WebSocket connection
     
-    chatService.on('connected', () => {
-      setIsConnected(true);
-    });
+    // chatService.on('connected', () => {
+    //   setIsConnected(true);
+    // }); // Removed during WebSocket migration
 
-    chatService.on('disconnected', () => {
-      setIsConnected(false);
-    });
+    // chatService.on('disconnected', () => {
+    //   setIsConnected(false);
+    // }); // Removed during WebSocket migration
 
-    chatService.on('error', (error) => {
-      console.error('Chat connection error:', error);
-      setIsConnected(false);
-    });
+    // chatService.on('error', (error) => {
+    //   console.error('Chat connection error:', error);
+    //   setIsConnected(false);
+    // }); // Removed during WebSocket migration
 
-    // Handle real-time message events
-    chatService.on('new_message', (message) => {
-      console.log('🔍 ChatContext: Received new_message event:', message);
-      setMessages(prev => {
-        const currentMessages = prev[message.channel_id] || [];
-        
-        // Check if message already exists (deduplicate)
-        const existingMessage = currentMessages.find(msg => 
-          msg.id === message.id || 
-          (msg.is_optimistic && msg.content === message.content && msg.user_id === message.user_id)
-        );
-        
-        if (existingMessage) {
-          // Replace optimistic message or ignore duplicate
-          return {
-            ...prev,
-            [message.channel_id]: currentMessages.map(msg =>
-              (msg.id === message.id || (msg.is_optimistic && msg.content === message.content && msg.user_id === message.user_id))
-                ? { ...message, isOptimistic: false }
-                : msg
-            )
-          };
-        } else {
-          // Add new message
-          return {
-            ...prev,
-            [message.channel_id]: [
-              ...currentMessages,
-              message
-            ]
-          };
-        }
-      });
-    });
+    // TODO: Handle real-time message events via WebSocket
+    // chatService.on('new_message', (message) => {
+    //   console.log('🔍 ChatContext: Received new_message event:', message);
+    //   setMessages(prev => {
+    //     const currentMessages = prev[message.channel_id] || [];
+    //     
+    //     // Check if message already exists (deduplicate)
+    //     const existingMessage = currentMessages.find(msg => 
+    //       msg.id === message.id || 
+    //       (msg.is_optimistic && msg.content === message.content && msg.user_id === message.user_id)
+    //     );
+    //     
+    //     if (existingMessage) {
+    //       // Replace optimistic message or ignore duplicate
+    //       return {
+    //         ...prev,
+    //         [message.channel_id]: currentMessages.map(msg =>
+    //           (msg.id === message.id || (msg.is_optimistic && msg.content === message.content && msg.user_id === message.user_id))
+    //             ? { ...message, isOptimistic: false }
+    //             : msg
+    //         )
+    //       };
+    //     } else {
+    //       // Add new message
+    //       return {
+    //         ...prev,
+    //         [message.channel_id]: [
+    //           ...currentMessages,
+    //           message
+    //         ]
+    //       };
+    //     }
+    //   });
+    // }); // Removed during WebSocket migration
 
-    chatService.on('message_updated', (message) => {
-      setMessages(prev => ({
-        ...prev,
-        [message.channel_id]: (prev[message.channel_id] || []).map(msg =>
-          msg.id === message.id ? message : msg
-        )
-      }));
-    });
+    // chatService.on('message_updated', (message) => {
+    //   setMessages(prev => ({
+    //     ...prev,
+    //     [message.channel_id]: (prev[message.channel_id] || []).map(msg =>
+    //       msg.id === message.id ? message : msg
+    //     )
+    //   }));
+    // }); // Removed during WebSocket migration
 
-    chatService.on('message_deleted', (data) => {
-      setMessages(prev => ({
-        ...prev,
-        [data.channel_id]: (prev[data.channel_id] || []).filter(msg =>
-          msg.id !== data.id
-        )
-      }));
-    });
+    // chatService.on('message_deleted', (data) => {
+    //   setMessages(prev => ({
+    //     ...prev,
+    //     [data.channel_id]: (prev[data.channel_id] || []).filter(msg =>
+    //       msg.id !== data.id
+    //     )
+    //   }));
+    // }); // Removed during WebSocket migration
   };
 
   const loadChannels = async () => {
@@ -360,9 +361,9 @@ export const ChatProvider = ({ children }) => {
       loadChannels();
     }
     
-    // If opening chat and not connected to SSE, connect now
+    // If opening chat and not connected to real-time, connect now  
     if (newIsOpen && !isConnected) {
-      console.log('🔍 ChatContext: Chat opening - checking SSE connection...', {
+      console.log('🔍 ChatContext: Chat opening - checking real-time connection...', {
         hasUser: !!user,
         hasToken: !!token,
         isConnected: isConnected,
@@ -370,10 +371,10 @@ export const ChatProvider = ({ children }) => {
       });
       
       if (user && token) {
-        console.log('🔍 ChatContext: User and token available - establishing SSE connection...');
+        console.log('🔍 ChatContext: User and token available - establishing real-time connection...');
         connectToRealTime();
       } else {
-        console.log('❌ ChatContext: Cannot establish SSE - missing auth data', {
+        console.log('❌ ChatContext: Cannot establish real-time connection - missing auth data', {
           user: !!user,
           token: !!token
         });
