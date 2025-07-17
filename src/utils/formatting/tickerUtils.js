@@ -54,12 +54,57 @@ const calculateCurrentContracts = () => {
   const monthCode = contractMonths[contractMonth];
   const yearSuffix = contractYear.toString().slice(-1);
   
-  // Generate contracts for all symbols
-  const symbols = ['ES', 'NQ', 'CL', 'GC', 'MES', 'MNQ', 'RTY', 'YM'];
+  // Generate contracts for quarterly symbols
+  const quarterlySymbols = ['ES', 'NQ', 'CL', 'GC', 'MES', 'MNQ', 'RTY', 'YM'];
   const contracts = {};
   
-  symbols.forEach(symbol => {
+  quarterlySymbols.forEach(symbol => {
     contracts[symbol] = `${symbol}${monthCode}${yearSuffix}`;
+  });
+  
+  // Handle monthly contracts (MBT)
+  const monthlySymbols = ['MBT'];
+  const monthlyMonthCodes = {
+    1: 'F', 2: 'G', 3: 'H', 4: 'J', 5: 'K', 6: 'M',
+    7: 'N', 8: 'Q', 9: 'U', 10: 'V', 11: 'X', 12: 'Z'
+  };
+  
+  // Calculate Monday before third Friday for monthly contracts
+  const getMondayBeforeThirdFriday = (year, month) => {
+    const firstDay = new Date(year, month - 1, 1);
+    const dayOfWeek = firstDay.getDay();
+    const daysUntilFriday = (5 - dayOfWeek + 7) % 7;
+    const firstFriday = new Date(year, month - 1, 1 + daysUntilFriday);
+    const thirdFriday = new Date(firstFriday);
+    thirdFriday.setDate(firstFriday.getDate() + 14);
+    
+    // Go back to preceding Monday
+    const mondayBefore = new Date(thirdFriday);
+    mondayBefore.setDate(thirdFriday.getDate() - 4);
+    return mondayBefore;
+  };
+  
+  const currentMonthRollover = getMondayBeforeThirdFriday(year, month);
+  let monthlyContractMonth, monthlyContractYear;
+  
+  if (now < currentMonthRollover) {
+    monthlyContractMonth = month;
+    monthlyContractYear = year;
+  } else {
+    if (month === 12) {
+      monthlyContractMonth = 1;
+      monthlyContractYear = year + 1;
+    } else {
+      monthlyContractMonth = month + 1;
+      monthlyContractYear = year;
+    }
+  }
+  
+  const monthlyMonthCode = monthlyMonthCodes[monthlyContractMonth];
+  const monthlyYearSuffix = monthlyContractYear.toString().slice(-1);
+  
+  monthlySymbols.forEach(symbol => {
+    contracts[symbol] = `${symbol}${monthlyMonthCode}${monthlyYearSuffix}`;
   });
   
   return contracts;
