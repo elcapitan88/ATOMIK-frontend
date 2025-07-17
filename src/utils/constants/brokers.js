@@ -77,7 +77,7 @@ export const BROKERS = {
       ],
       realTimeData: true,
       multipleAccounts: true,
-      supportedAssets: ['ES', 'NQ', 'CL', 'GC', 'SI', 'ZB', 'RTY', 'YM']
+      supportedAssets: ['ES', 'NQ', 'CL', 'GC', 'SI', 'ZB', 'RTY', 'YM', 'MBT']
     },
     endpoints: {
       demo: {
