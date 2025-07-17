@@ -33,8 +33,8 @@ const AccountStatusIndicator = ({ tokenValid, wsStatus, account }) => {
         switch (wsStatus) {
             case 'disconnected':
             case 'error':
-                console.log('[AccountStatusIndicator] → DISCONNECTED (WebSocket disconnected/error)');
-                return CONNECTION_STATE.DISCONNECTED;
+                console.log('[AccountStatusIndicator] → TOKEN_VALID (WebSocket disconnected/error but token still valid)');
+                return CONNECTION_STATE.TOKEN_VALID;
                 
             case 'connecting':
             case 'reconnecting':
