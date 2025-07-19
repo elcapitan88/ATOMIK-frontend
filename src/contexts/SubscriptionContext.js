@@ -50,14 +50,13 @@ export const SubscriptionProvider = ({ children }) => {
         logger.info('Payment status fetched successfully', paymentResponse.data);
       }
         
-        if (showToast) {
-          toast({
-            title: "Subscription updated",
-            description: "Your subscription information has been refreshed",
-            status: "success",
-            duration: 3000,
-          });
-        }
+      if (showToast) {
+        toast({
+          title: "Subscription updated",
+          description: "Your subscription information has been refreshed",
+          status: "success",
+          duration: 3000,
+        });
       }
     } catch (error) {
       logger.error('Error fetching subscription data:', error);
