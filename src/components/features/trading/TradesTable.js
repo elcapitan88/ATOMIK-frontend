@@ -50,37 +50,25 @@ const TradesTable = () => {
 
   // Handler for webhook creation
   const handleCreateWebhook = async (webhookData) => {
-    try {
-      console.log('Creating webhook...', webhookData);
-      const createdWebhook = await webhookApi.generateWebhook(webhookData);
-      
-      // Store the newly created webhook with all its data including secret
-      setNewlyCreatedWebhook(createdWebhook);
-      
-      console.log('Webhook created, handler:', webhooksHandler);
-      if (webhooksHandler?.refreshData) {
-        console.log('Refreshing webhooks...');
-        await webhooksHandler.refreshData();
-      } else {
-        console.warn('No refresh handler available');
-      }
-
-      // Close the creation modal
-      onWebhookModalClose();
-      
-      // Open the details modal to show the webhook with secret
-      onDetailsModalOpen();
-      
-    } catch (error) {
-      console.error('Webhook creation error:', error);
-      toast({
-        title: "Error Creating Webhook",
-        description: error.message,
-        status: "error",
-        duration: 5000,
-        isClosable: true,
-      });
+    console.log('Creating webhook...', webhookData);
+    const createdWebhook = await webhookApi.generateWebhook(webhookData);
+    
+    // Store the newly created webhook with all its data including secret
+    setNewlyCreatedWebhook(createdWebhook);
+    
+    console.log('Webhook created, handler:', webhooksHandler);
+    if (webhooksHandler?.refreshData) {
+      console.log('Refreshing webhooks...');
+      await webhooksHandler.refreshData();
+    } else {
+      console.warn('No refresh handler available');
     }
+
+    // Close the creation modal
+    onWebhookModalClose();
+    
+    // Open the details modal to show the webhook with secret
+    onDetailsModalOpen();
   };
 
   return (
