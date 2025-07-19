@@ -117,13 +117,6 @@ const WebhookModal = ({ isOpen, onClose, onSubmit, webhook = null }) => {
         errorMessage = error.message;
       }
 
-      toast({
-        title: errorTitle,
-        description: errorMessage,
-        status: "error",
-        duration: 5000,
-        isClosable: true,
-      });
       
       setTestResult({
         success: false,
@@ -260,6 +253,9 @@ const WebhookModal = ({ isOpen, onClose, onSubmit, webhook = null }) => {
                 status={testResult.success ? "success" : "warning"}
                 variant="subtle"
                 borderRadius="md"
+                bg={testResult.success ? "green.100" : "orange.400"}
+                color={testResult.success ? "green.800" : "white"}
+                borderColor={testResult.success ? "green.200" : "orange.500"}
               >
                 <AlertIcon />
                 {testResult.message}
