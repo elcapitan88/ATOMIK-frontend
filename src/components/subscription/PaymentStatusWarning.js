@@ -14,7 +14,8 @@ import {
   Flex,
   Box,
   Collapse,
-  useDisclosure
+  useDisclosure,
+  Icon
 } from '@chakra-ui/react';
 import { 
   CreditCard, 
