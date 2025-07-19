@@ -17,6 +17,7 @@ import {
 import { useSubscription } from '@/contexts/SubscriptionContext';
 import { CircleAlert, Zap, Award, Clock, RefreshCw, ChevronRight } from 'lucide-react';
 import { Link as RouterLink } from 'react-router-dom';
+import PaymentStatusWarning from './PaymentStatusWarning';
 
 // Helper to format resource limits for display
 const formatLimit = (limit) => {
@@ -34,6 +35,7 @@ const SubscriptionStatus = () => {
     status,
     subscriptionData,
     resourceUsage,
+    paymentStatus,
     refreshSubscription,
     getNextTier
   } = useSubscription();
@@ -80,16 +82,20 @@ const SubscriptionStatus = () => {
   const nextTier = getNextTier();
 
   return (
-    <Box
-      bg="whiteAlpha.100"
-      borderRadius="xl"
-      p={4}
-      borderWidth="1px"
-      borderColor={hasWarnings ? "yellow.400" : "whiteAlpha.200"}
-      boxShadow={hasWarnings ? "0 0 0 1px rgba(236, 201, 75, 0.3)" : "none"}
-      transition="all 0.3s ease"
-    >
-      <VStack spacing={4} align="stretch">
+    <VStack spacing={4} align="stretch">
+      {/* Payment Status Warning - Show first if there are payment issues */}
+      <PaymentStatusWarning />
+      
+      <Box
+        bg="whiteAlpha.100"
+        borderRadius="xl"
+        p={4}
+        borderWidth="1px"
+        borderColor={hasWarnings ? "yellow.400" : "whiteAlpha.200"}
+        boxShadow={hasWarnings ? "0 0 0 1px rgba(236, 201, 75, 0.3)" : "none"}
+        transition="all 0.3s ease"
+      >
+        <VStack spacing={4} align="stretch">
         {/* Header with status */}
         <Flex justify="space-between" align="center">
           <HStack>
@@ -270,8 +276,9 @@ const SubscriptionStatus = () => {
             </HStack>
           </Box>
         )}
-      </VStack>
-    </Box>
+        </VStack>
+      </Box>
+    </VStack>
   );
 };
 

@@ -22,6 +22,7 @@ import TradingViewWidget from '../features/trading/TradingViewWidget';
 import MemberChatMenu from '../chat/MemberChatMenu';
 import MemberChatComponent from '../chat/MemberChat';
 import MaintenanceBanner from '@/components/common/MaintenanceBanner';
+import PaymentStatusWarning from '@/components/subscription/PaymentStatusWarning';
 import logger from '@/utils/logger';
 
 // Lazy loaded components
@@ -302,14 +303,18 @@ const DashboardContent = () => {
             case 'Dashboard':
                 return (
                     <ErrorBoundary>
-                        <Flex 
-                            position="relative" 
-                            h="full" 
-                            p={4} 
-                            zIndex={2} 
-                            gap={4}
-                            direction={{ base: "column", lg: "row" }}
-                        >
+                        <VStack spacing={4} align="stretch" h="full">
+                            {/* Payment Status Warning - Global Dashboard Warning */}
+                            <PaymentStatusWarning />
+                            
+                            <Flex 
+                                position="relative" 
+                                h="full" 
+                                p={4} 
+                                zIndex={2} 
+                                gap={4}
+                                direction={{ base: "column", lg: "row" }}
+                            >
                             {/* Left Column */}
                             <Flex 
                                 flexDirection="column" 
@@ -408,6 +413,7 @@ const DashboardContent = () => {
                                 </Box>
                             </Flex>
                         </Flex>
+                        </VStack>
                     </ErrorBoundary>
                 );
 

@@ -12,6 +12,7 @@ export const SubscriptionProvider = ({ children }) => {
   // State management
   const [subscriptionData, setSubscriptionData] = useState(null);
   const [resourceUsage, setResourceUsage] = useState(null);
+  const [paymentStatus, setPaymentStatus] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [lastUpdated, setLastUpdated] = useState(null);
@@ -31,14 +32,23 @@ export const SubscriptionProvider = ({ children }) => {
       setIsLoading(true);
       setError(null);
       
-      const response = await axiosInstance.get('/api/v1/subscriptions/status');
+      const [statusResponse, paymentResponse] = await Promise.all([
+        axiosInstance.get('/api/v1/subscriptions/status'),
+        axiosInstance.get('/api/v1/subscriptions/payment-status')
+      ]);
       
-      if (response.data) {
-        setSubscriptionData(response.data.subscription);
-        setResourceUsage(response.data.resources);
+      if (statusResponse.data) {
+        setSubscriptionData(statusResponse.data.subscription);
+        setResourceUsage(statusResponse.data.resources);
         setLastUpdated(new Date());
         
-        logger.info('Subscription data fetched successfully', response.data);
+        logger.info('Subscription data fetched successfully', statusResponse.data);
+      }
+      
+      if (paymentResponse.data) {
+        setPaymentStatus(paymentResponse.data);
+        logger.info('Payment status fetched successfully', paymentResponse.data);
+      }
         
         if (showToast) {
           toast({
@@ -74,6 +84,7 @@ export const SubscriptionProvider = ({ children }) => {
       // Reset state when logged out
       setSubscriptionData(null);
       setResourceUsage(null);
+      setPaymentStatus(null);
       setError(null);
       setIsLoading(false);
     }
@@ -244,6 +255,7 @@ export const SubscriptionProvider = ({ children }) => {
     error,
     subscriptionData,
     resourceUsage,
+    paymentStatus,
     lastUpdated,
     currentTier: subscriptionData?.tier || 'starter',
     isLifetime: subscriptionData?.is_lifetime || false,

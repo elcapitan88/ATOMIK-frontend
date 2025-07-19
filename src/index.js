@@ -8,6 +8,7 @@ import { BrowserRouter } from 'react-router-dom';
 import TagManager from 'react-gtm-module'; // Added GTM import
 import App from './App';
 import { AuthProvider } from './contexts/AuthContext';
+import { SubscriptionProvider } from './contexts/SubscriptionContext';
 import theme from './styles/theme';
 import { ConfigCatProvider } from 'configcat-react';
 import { WebSocketProvider } from './services/websocket-proxy/contexts/WebSocketContext';
@@ -111,9 +112,11 @@ root.render(
                 }}
               >
                 <AuthProvider>
-                  <WebSocketProvider>
-                  <App />
-                  </WebSocketProvider>
+                  <SubscriptionProvider>
+                    <WebSocketProvider>
+                      <App />
+                    </WebSocketProvider>
+                  </SubscriptionProvider>
                 </AuthProvider>
               </BrowserRouter>
             </ConfigCatProvider>

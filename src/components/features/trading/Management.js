@@ -42,6 +42,7 @@ import axiosInstance from '@/services/axiosConfig';
 import { useFeatureFlag } from 'configcat-react';
 import { useWebSocketContext } from '@/services/websocket-proxy/contexts/WebSocketContext';
 import ibStatusService from '@/services/brokers/interactivebrokers/IBStatusService';
+import PaymentStatusWarning from '@/components/subscription/PaymentStatusWarning';
 
 
 
@@ -948,6 +949,9 @@ const Management = () => {
         >
             {/* Update this outer VStack */}
             <VStack p={3} color="white" spacing={4} align="stretch">
+                {/* Payment Status Warning */}
+                <PaymentStatusWarning showCompact={true} />
+                
                 {/* Header */}
                 <HStack justify="space-between" flex="0 0 auto">
                     <Box
