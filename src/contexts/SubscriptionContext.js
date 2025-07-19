@@ -46,6 +46,9 @@ export const SubscriptionProvider = ({ children }) => {
       }
       
       if (paymentResponse.data) {
+        console.log('Payment status response:', paymentResponse.data);
+        console.log('has_payment_issues:', paymentResponse.data.has_payment_issues);
+        console.log('dunning_stage:', paymentResponse.data.dunning_stage);
         setPaymentStatus(paymentResponse.data);
         logger.info('Payment status fetched successfully', paymentResponse.data);
       }
