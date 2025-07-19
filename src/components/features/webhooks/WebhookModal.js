@@ -83,6 +83,7 @@ const WebhookModal = ({ isOpen, onClose, onSubmit, webhook = null }) => {
       setIsSubmitting(true);
       await onSubmit(formData);
       
+      // Only show success toast if we get here without error
       toast({
         title: webhook ? "Webhook Updated" : "Webhook Created",
         description: `Your webhook has been ${webhook ? 'updated' : 'created'} successfully.`,
@@ -98,16 +99,35 @@ const WebhookModal = ({ isOpen, onClose, onSubmit, webhook = null }) => {
 
       onClose();
     } catch (error) {
+      console.error('Webhook creation error:', error);
+      
+      // Extract proper error message from API response
+      let errorMessage = "Failed to create webhook";
+      let errorTitle = "Error";
+      
+      if (error.response?.data?.detail) {
+        const detail = error.response.data.detail;
+        if (typeof detail === 'string') {
+          errorMessage = detail;
+        } else if (detail.message) {
+          errorMessage = detail.message;
+          errorTitle = detail.title || "Upgrade Required";
+        }
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+
       toast({
-        title: "Error",
-        description: error.message,
+        title: errorTitle,
+        description: errorMessage,
         status: "error",
         duration: 5000,
         isClosable: true,
       });
+      
       setTestResult({
         success: false,
-        message: error.message
+        message: errorMessage
       });
     } finally {
       setIsSubmitting(false);
