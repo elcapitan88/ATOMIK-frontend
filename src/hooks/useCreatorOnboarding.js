@@ -70,7 +70,7 @@ export const useCreatorOnboarding = () => {
         ...initialOnboardingData,
         profile: {
           ...initialOnboardingData.profile,
-          displayName: user.full_name || user.username || '',
+          displayName: user.username || user.full_name || '',
           website: user.website || '',
           socialLinks: {
             twitter: user.x_handle || '',

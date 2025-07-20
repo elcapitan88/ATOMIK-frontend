@@ -145,6 +145,25 @@ const CreatorOnboardingModal = ({ isOpen, onClose }) => {
           max-height: calc(90vh - 120px);
         }
 
+        .step-content::-webkit-scrollbar {
+          width: 6px;
+        }
+
+        .step-content::-webkit-scrollbar-track {
+          background: rgba(255, 255, 255, 0.1);
+          border-radius: 3px;
+        }
+
+        .step-content::-webkit-scrollbar-thumb {
+          background: rgba(0, 198, 224, 0.4);
+          border-radius: 3px;
+          transition: background 0.2s ease;
+        }
+
+        .step-content::-webkit-scrollbar-thumb:hover {
+          background: rgba(0, 198, 224, 0.6);
+        }
+
         .creator-onboarding-modal {
           backdrop-filter: blur(20px);
         }
@@ -157,6 +176,8 @@ const CreatorOnboardingModal = ({ isOpen, onClose }) => {
           .step-content {
             padding: 16px;
             max-height: calc(100vh - 100px);
+            scrollbar-width: thin;
+            scrollbar-color: rgba(0, 198, 224, 0.4) rgba(255, 255, 255, 0.1);
           }
           
           .step-indicator {
