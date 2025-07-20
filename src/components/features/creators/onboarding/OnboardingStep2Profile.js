@@ -139,7 +139,7 @@ const OnboardingStep2Profile = ({ data, onNext, onBack, isSubmitting }) => {
             label="Username *"
             placeholder="Your creator username"
             value={formData.username}
-            onChange={(value) => handleInputChange('username', value)}
+            onChange={(e) => handleInputChange('username', e.target.value)}
             error={errors.username}
             maxLength={30}
           />
@@ -169,7 +169,7 @@ const OnboardingStep2Profile = ({ data, onNext, onBack, isSubmitting }) => {
             label="Website"
             placeholder="https://yourwebsite.com"
             value={formData.website}
-            onChange={(value) => handleInputChange('website', value)}
+            onChange={(e) => handleInputChange('website', e.target.value)}
             error={errors.website}
           />
         </div>
@@ -183,7 +183,7 @@ const OnboardingStep2Profile = ({ data, onNext, onBack, isSubmitting }) => {
               label="X (Twitter) Handle"
               placeholder="username (without @)"
               value={formData.socialLinks.twitter}
-              onChange={(value) => handleInputChange('socialLinks.twitter', value)}
+              onChange={(e) => handleInputChange('socialLinks.twitter', e.target.value)}
               error={errors.twitter}
               prefix="@"
             />
@@ -192,7 +192,7 @@ const OnboardingStep2Profile = ({ data, onNext, onBack, isSubmitting }) => {
               label="TikTok Handle"
               placeholder="username (without @)"
               value={formData.socialLinks.tiktok}
-              onChange={(value) => handleInputChange('socialLinks.tiktok', value)}
+              onChange={(e) => handleInputChange('socialLinks.tiktok', e.target.value)}
               error={errors.tiktok}
               prefix="@"
             />
@@ -201,7 +201,7 @@ const OnboardingStep2Profile = ({ data, onNext, onBack, isSubmitting }) => {
               label="Instagram Handle"
               placeholder="username (without @)"
               value={formData.socialLinks.instagram}
-              onChange={(value) => handleInputChange('socialLinks.instagram', value)}
+              onChange={(e) => handleInputChange('socialLinks.instagram', e.target.value)}
               error={errors.instagram}
               prefix="@"
             />
@@ -210,7 +210,7 @@ const OnboardingStep2Profile = ({ data, onNext, onBack, isSubmitting }) => {
               label="YouTube Channel"
               placeholder="@channel or youtube.com/c/channel"
               value={formData.socialLinks.youtube}
-              onChange={(value) => handleInputChange('socialLinks.youtube', value)}
+              onChange={(e) => handleInputChange('socialLinks.youtube', e.target.value)}
               error={errors.youtube}
             />
 
@@ -218,7 +218,7 @@ const OnboardingStep2Profile = ({ data, onNext, onBack, isSubmitting }) => {
               label="Discord"
               placeholder="username#1234 or username"
               value={formData.socialLinks.discord}
-              onChange={(value) => handleInputChange('socialLinks.discord', value)}
+              onChange={(e) => handleInputChange('socialLinks.discord', e.target.value)}
               error={errors.discord}
             />
           </div>
