@@ -127,7 +127,7 @@ export const useCreatorOnboarding = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [onboardingData, completedSteps, currentStep, saveProgress, updateCreatorProfile, createStripeAccount]);
+  }, [onboardingData, completedSteps, currentStep, saveProgress, updateProfileMutation]);
 
   const nextStep = useCallback(() => {
     const newStep = Math.min(currentStep + 1, 6);

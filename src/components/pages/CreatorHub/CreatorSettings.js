@@ -85,7 +85,7 @@ const CreatorSettings = ({ creatorProfile }) => {
           onChange={(e) => handleInputChange('tradingExperience', e.target.value)}
         >
           <option value="">Select experience level</option>
-          <option value="beginner">Beginner (< 1 year)</option>
+          <option value="beginner">Beginner (&lt; 1 year)</option>
           <option value="intermediate">Intermediate (1-3 years)</option>
           <option value="experienced">Experienced (3-5 years)</option>
           <option value="expert">Expert (5+ years)</option>

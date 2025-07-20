@@ -72,9 +72,9 @@ const CreatorAnalytics = ({ creatorProfile }) => {
             <span className="metric-icon">💰</span>
             <span className="metric-title">Total Revenue</span>
           </div>
-          <div className="metric-value">${mockData.revenue.total.toLocaleString()}</div>
+          <div className="metric-value">${analyticsData.revenue.total.toLocaleString()}</div>
           <div className="metric-change positive">
-            +{mockData.revenue.growth}% vs last period
+            +{analyticsData.revenue.growth}% vs last period
           </div>
         </div>
 
@@ -83,9 +83,9 @@ const CreatorAnalytics = ({ creatorProfile }) => {
             <span className="metric-icon">👥</span>
             <span className="metric-title">Total Subscribers</span>
           </div>
-          <div className="metric-value">{mockData.subscribers.total}</div>
+          <div className="metric-value">{analyticsData.subscribers.total}</div>
           <div className="metric-change positive">
-            +{mockData.subscribers.newThisMonth} this month
+            +{analyticsData.subscribers.newThisMonth} this month
           </div>
         </div>
 
@@ -94,7 +94,7 @@ const CreatorAnalytics = ({ creatorProfile }) => {
             <span className="metric-icon">📊</span>
             <span className="metric-title">Conversion Rate</span>
           </div>
-          <div className="metric-value">{mockData.conversions.trialToSubscriber}%</div>
+          <div className="metric-value">{analyticsData.conversions.trialToSubscriber}%</div>
           <div className="metric-change neutral">
             Trial to subscriber
           </div>
@@ -105,7 +105,7 @@ const CreatorAnalytics = ({ creatorProfile }) => {
             <span className="metric-icon">💵</span>
             <span className="metric-title">Avg. Order Value</span>
           </div>
-          <div className="metric-value">${mockData.conversions.averageOrderValue}</div>
+          <div className="metric-value">${analyticsData.conversions.averageOrderValue}</div>
           <div className="metric-change neutral">
             Per subscription
           </div>
@@ -145,9 +145,9 @@ const CreatorAnalytics = ({ creatorProfile }) => {
       {/* Top Performing Strategies */}
       <div className="top-strategies-section">
         <h3>Top Performing Strategies</h3>
-        {mockData.topStrategies.length > 0 ? (
+        {analyticsData.topStrategies.length > 0 ? (
           <div className="strategies-list">
-            {mockData.topStrategies.map((strategy, index) => (
+            {analyticsData.topStrategies.map((strategy, index) => (
               <div key={index} className="strategy-performance">
                 <div className="strategy-rank">#{index + 1}</div>
                 <div className="strategy-info">
