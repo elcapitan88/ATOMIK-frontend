@@ -158,30 +158,38 @@ const OnboardingStep1Welcome = ({ onNext }) => {
         }
 
         .steps-preview {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 12px;
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+          max-width: 300px;
+          margin: 0 auto;
         }
 
         .step-preview {
           display: flex;
           align-items: center;
-          gap: 6px;
-          color: rgba(255, 255, 255, 0.7);
-          font-size: 12px;
+          gap: 10px;
+          color: rgba(255, 255, 255, 0.8);
+          font-size: 13px;
+          padding: 8px 12px;
+          background: rgba(255, 255, 255, 0.03);
+          border-radius: 8px;
+          border: 1px solid rgba(255, 255, 255, 0.08);
         }
 
         .step-number {
           display: flex;
           align-items: center;
           justify-content: center;
-          width: 20px;
-          height: 20px;
-          background: rgba(99, 102, 241, 0.2);
-          color: #6366f1;
+          width: 24px;
+          height: 24px;
+          background: linear-gradient(135deg, #00C6E0, #00D7F2);
+          color: #000000;
           border-radius: 50%;
-          font-weight: 600;
-          font-size: 10px;
+          font-weight: 700;
+          font-size: 11px;
+          flex-shrink: 0;
+          box-shadow: 0 2px 8px rgba(0, 198, 224, 0.3);
         }
 
         .step-actions {
@@ -190,20 +198,29 @@ const OnboardingStep1Welcome = ({ onNext }) => {
         }
 
         .primary-button {
-          background: linear-gradient(135deg, #6366f1, #8b5cf6);
-          color: white;
+          background: linear-gradient(135deg, #00C6E0, #00D7F2);
+          color: #000000;
           border: none;
-          border-radius: 8px;
-          padding: 10px 28px;
-          font-size: 14px;
-          font-weight: 600;
+          border-radius: 12px;
+          padding: 14px 36px;
+          font-size: 15px;
+          font-weight: 700;
           cursor: pointer;
-          transition: all 0.2s ease;
+          transition: all 0.3s ease;
+          box-shadow: 0 4px 16px rgba(0, 198, 224, 0.25);
+          letter-spacing: 0.5px;
+          text-transform: uppercase;
         }
 
         .primary-button:hover {
-          transform: translateY(-1px);
-          box-shadow: 0 8px 25px rgba(99, 102, 241, 0.3);
+          transform: translateY(-2px);
+          box-shadow: 0 8px 32px rgba(0, 198, 224, 0.4);
+          background: linear-gradient(135deg, #00D7F2, #00E8FF);
+        }
+
+        .primary-button:active {
+          transform: translateY(0px);
+          box-shadow: 0 4px 16px rgba(0, 198, 224, 0.3);
         }
       `}</style>
     </div>
