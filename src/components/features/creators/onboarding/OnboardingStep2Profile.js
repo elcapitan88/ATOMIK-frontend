@@ -3,7 +3,6 @@ import FormInput from '../../../common/Form/FormInput';
 
 const OnboardingStep2Profile = ({ data, onNext, onBack, isSubmitting }) => {
   const [formData, setFormData] = useState({
-    displayName: data?.profile?.displayName || '',
     bio: data?.profile?.bio || '',
     website: data?.profile?.website || '',
     socialLinks: {
@@ -19,14 +18,6 @@ const OnboardingStep2Profile = ({ data, onNext, onBack, isSubmitting }) => {
 
   const validateForm = () => {
     const newErrors = {};
-
-    if (!formData.displayName.trim()) {
-      newErrors.displayName = 'Display name is required';
-    } else if (formData.displayName.length < 2) {
-      newErrors.displayName = 'Display name must be at least 2 characters';
-    } else if (formData.displayName.length > 50) {
-      newErrors.displayName = 'Display name must be less than 50 characters';
-    }
 
     if (!formData.bio.trim()) {
       newErrors.bio = 'Bio is required';
@@ -122,29 +113,16 @@ const OnboardingStep2Profile = ({ data, onNext, onBack, isSubmitting }) => {
     }
   };
 
-  const isFormValid = formData.displayName.trim() && formData.bio.trim();
+  const isFormValid = formData.bio.trim();
 
   return (
     <div className="profile-step">
       <div className="step-header">
         <h2>Create Your Profile</h2>
-        <p>Tell potential subscribers about yourself and your trading expertise</p>
+        <p>Your username will be your creator name. Tell potential subscribers about yourself and your trading expertise</p>
       </div>
 
       <form onSubmit={handleSubmit} className="profile-form">
-        <div className="form-section">
-          <FormInput
-            label="Display Name *"
-            placeholder="Your professional name"
-            value={formData.displayName}
-            onChange={(value) => handleInputChange('displayName', value)}
-            error={errors.displayName}
-            maxLength={50}
-          />
-          <div className="char-count">
-            {formData.displayName.length}/50
-          </div>
-        </div>
 
         <div className="form-section">
           <label className="form-label">Bio *</label>

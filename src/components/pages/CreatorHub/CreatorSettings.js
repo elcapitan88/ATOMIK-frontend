@@ -6,7 +6,7 @@ const CreatorSettings = ({ creatorProfile }) => {
   const [activeSection, setActiveSection] = useState('profile');
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
-    displayName: creatorProfile?.displayName || '',
+    username: creatorProfile?.username || '',
     bio: creatorProfile?.bio || '',
     tradingExperience: creatorProfile?.tradingExperience || '',
     website: creatorProfile?.website || '',
@@ -58,12 +58,12 @@ const CreatorSettings = ({ creatorProfile }) => {
       <p>Manage your public creator profile information</p>
 
       <div className="form-group">
-        <label>Display Name</label>
+        <label>Username</label>
         <input
           type="text"
-          value={formData.displayName}
-          onChange={(e) => handleInputChange('displayName', e.target.value)}
-          placeholder="Your creator name"
+          value={formData.username}
+          onChange={(e) => handleInputChange('username', e.target.value)}
+          placeholder="Your username"
         />
       </div>
 

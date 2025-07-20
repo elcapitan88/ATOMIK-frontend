@@ -6,7 +6,7 @@ const ONBOARDING_STORAGE_KEY = 'creator_onboarding_progress';
 
 const initialOnboardingData = {
   profile: {
-    displayName: '',
+    username: '',
     bio: '',
     website: '',
     socialLinks: {
@@ -70,7 +70,6 @@ export const useCreatorOnboarding = () => {
         ...initialOnboardingData,
         profile: {
           ...initialOnboardingData.profile,
-          displayName: user.username || user.full_name || '',
           website: user.website || '',
           socialLinks: {
             twitter: user.x_handle || '',
@@ -108,7 +107,6 @@ export const useCreatorOnboarding = () => {
       if (currentStep === 2 && stepData.profile) {
         // Save profile data including social links to user profile
         const profileUpdateData = {
-          full_name: stepData.profile.displayName,
           website: stepData.profile.website,
           socialMedia: stepData.profile.socialLinks
         };
@@ -153,7 +151,7 @@ export const useCreatorOnboarding = () => {
     try {
       // Create the creator profile (social links are already saved to user profile)
       await becomeCreatorMutation.mutateAsync({
-        display_name: onboardingData.profile.displayName,
+        username: onboardingData.profile.username,
         bio: onboardingData.profile.bio,
         trading_experience: 'intermediate' // Default value
       });
@@ -193,7 +191,7 @@ export const useCreatorOnboarding = () => {
       case 1:
         return true;
       case 2:
-        return onboardingData.profile.displayName && onboardingData.profile.bio;
+        return onboardingData.profile.username && onboardingData.profile.bio;
       case 3:
         return onboardingData.taxInfo.businessType && 
                onboardingData.taxInfo.address.street &&

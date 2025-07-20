@@ -81,10 +81,10 @@ const CreatorHubPage = () => {
         <div className="header-content">
           <div className="creator-info">
             <div className="creator-avatar">
-              {creatorProfile.displayName?.charAt(0) || 'C'}
+              {creatorProfile.username?.charAt(0) || user?.username?.charAt(0) || 'C'}
             </div>
             <div className="creator-details">
-              <h1>Welcome back, {creatorProfile.displayName}</h1>
+              <h1>Welcome back, {creatorProfile.username || user?.username}</h1>
               <div className="creator-status">
                 <span className={`tier-badge ${creatorProfile.currentTier}`}>
                   {creatorProfile.currentTier?.toUpperCase()} TIER
