@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FormInput } from '../../../common/Form/FormInput';
+import FormInput from '../../../common/Form/FormInput';
 
 const OnboardingStep2Profile = ({ data, onNext, onBack, isSubmitting }) => {
   const [formData, setFormData] = useState({

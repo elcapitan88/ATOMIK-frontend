@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { FormInput } from '../../../common/Form/FormInput';
-import { FormSelect } from '../../../common/Form/FormSelect';
+import FormInput from '../../../common/Form/FormInput';
+import FormSelect from '../../../common/Form/FormSelect';
 
 const OnboardingStep3TaxInfo = ({ data, onNext, onBack, isSubmitting }) => {
   const [formData, setFormData] = useState({
