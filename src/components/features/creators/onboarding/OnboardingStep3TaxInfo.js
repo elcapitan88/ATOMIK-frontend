@@ -288,42 +288,43 @@ const OnboardingStep3TaxInfo = ({ data, onNext, onBack, isSubmitting }) => {
 
         .step-header {
           text-align: center;
-          margin-bottom: 32px;
+          margin-bottom: 20px;
         }
 
         .step-header h2 {
           color: white;
-          font-size: 24px;
+          font-size: 20px;
           font-weight: 600;
-          margin: 0 0 8px 0;
+          margin: 0 0 6px 0;
         }
 
         .step-header p {
           color: rgba(255, 255, 255, 0.7);
-          margin: 0 0 16px 0;
+          margin: 0 0 12px 0;
+          font-size: 14px;
         }
 
         .security-note {
           display: flex;
           align-items: center;
           justify-content: center;
-          gap: 8px;
+          gap: 6px;
           color: rgba(255, 255, 255, 0.6);
-          font-size: 14px;
+          font-size: 12px;
           background: rgba(34, 197, 94, 0.1);
           border: 1px solid rgba(34, 197, 94, 0.2);
-          border-radius: 8px;
-          padding: 8px 16px;
+          border-radius: 6px;
+          padding: 6px 12px;
         }
 
         .security-icon {
-          font-size: 16px;
+          font-size: 14px;
         }
 
         .tax-form {
           display: flex;
           flex-direction: column;
-          gap: 24px;
+          gap: 16px;
         }
 
         .form-section {
@@ -332,15 +333,15 @@ const OnboardingStep3TaxInfo = ({ data, onNext, onBack, isSubmitting }) => {
 
         .address-section h4 {
           color: white;
-          font-size: 16px;
+          font-size: 14px;
           font-weight: 600;
-          margin: 0 0 16px 0;
+          margin: 0 0 12px 0;
         }
 
         .address-grid {
           display: grid;
           grid-template-columns: 1fr 1fr;
-          gap: 16px;
+          gap: 12px;
         }
 
         .full-width {
@@ -351,12 +352,12 @@ const OnboardingStep3TaxInfo = ({ data, onNext, onBack, isSubmitting }) => {
           display: flex;
           gap: 12px;
           justify-content: space-between;
-          margin-top: 32px;
+          margin-top: 20px;
         }
 
         .primary-button, .secondary-button {
-          padding: 12px 24px;
-          border-radius: 8px;
+          padding: 10px 20px;
+          border-radius: 6px;
           font-size: 14px;
           font-weight: 600;
           cursor: pointer;

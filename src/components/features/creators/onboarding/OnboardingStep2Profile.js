@@ -249,25 +249,26 @@ const OnboardingStep2Profile = ({ data, onNext, onBack, isSubmitting }) => {
 
         .step-header {
           text-align: center;
-          margin-bottom: 32px;
+          margin-bottom: 20px;
         }
 
         .step-header h2 {
           color: white;
-          font-size: 24px;
+          font-size: 20px;
           font-weight: 600;
-          margin: 0 0 8px 0;
+          margin: 0 0 6px 0;
         }
 
         .step-header p {
           color: rgba(255, 255, 255, 0.7);
           margin: 0;
+          font-size: 14px;
         }
 
         .profile-form {
           display: flex;
           flex-direction: column;
-          gap: 24px;
+          gap: 16px;
         }
 
         .form-section {
@@ -286,11 +287,11 @@ const OnboardingStep2Profile = ({ data, onNext, onBack, isSubmitting }) => {
           background: rgba(255, 255, 255, 0.05);
           border: 1px solid rgba(255, 255, 255, 0.1);
           border-radius: 8px;
-          padding: 12px;
+          padding: 10px;
           color: white;
           font-size: 14px;
           resize: vertical;
-          min-height: 100px;
+          min-height: 80px;
         }
 
         .form-textarea:focus {
@@ -324,40 +325,40 @@ const OnboardingStep2Profile = ({ data, onNext, onBack, isSubmitting }) => {
 
         .social-section {
           background: rgba(255, 255, 255, 0.03);
-          border-radius: 12px;
-          padding: 20px;
+          border-radius: 8px;
+          padding: 16px;
         }
 
         .social-section h4 {
           color: white;
-          font-size: 16px;
+          font-size: 15px;
           font-weight: 600;
-          margin: 0 0 4px 0;
+          margin: 0 0 3px 0;
         }
 
         .section-subtitle {
           color: rgba(255, 255, 255, 0.6);
-          font-size: 14px;
-          margin: 0 0 16px 0;
+          font-size: 12px;
+          margin: 0 0 12px 0;
         }
 
         .social-inputs {
           display: flex;
           flex-direction: column;
-          gap: 16px;
+          gap: 12px;
         }
 
         .step-actions {
           display: flex;
-          gap: 12px;
+          gap: 10px;
           justify-content: space-between;
-          margin-top: 32px;
+          margin-top: 20px;
         }
 
         .primary-button, .secondary-button {
-          padding: 12px 24px;
+          padding: 10px 20px;
           border-radius: 8px;
-          font-size: 14px;
+          font-size: 13px;
           font-weight: 600;
           cursor: pointer;
           transition: all 0.2s ease;

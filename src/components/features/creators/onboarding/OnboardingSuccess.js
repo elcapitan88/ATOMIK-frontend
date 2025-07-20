@@ -124,9 +124,9 @@ const OnboardingSuccess = ({ onClose }) => {
         .success-container {
           position: relative;
           text-align: center;
-          max-width: 600px;
+          max-width: 500px;
           margin: 0 auto;
-          padding: 20px;
+          padding: 16px;
         }
 
         .fireworks {
@@ -187,8 +187,8 @@ const OnboardingSuccess = ({ onClose }) => {
         }
 
         .success-icon {
-          font-size: 80px;
-          margin-bottom: 24px;
+          font-size: 60px;
+          margin-bottom: 16px;
           animation: bounce 1s ease-out;
         }
 
@@ -206,119 +206,119 @@ const OnboardingSuccess = ({ onClose }) => {
 
         .success-content h2 {
           color: white;
-          font-size: 32px;
+          font-size: 24px;
           font-weight: 700;
-          margin: 0 0 16px 0;
+          margin: 0 0 12px 0;
         }
 
         .success-message {
           color: rgba(255, 255, 255, 0.8);
-          font-size: 18px;
-          line-height: 1.6;
-          margin: 0 0 40px 0;
+          font-size: 14px;
+          line-height: 1.4;
+          margin: 0 0 24px 0;
         }
 
         .next-steps {
           background: rgba(255, 255, 255, 0.03);
-          border-radius: 16px;
-          padding: 32px;
-          margin-bottom: 32px;
+          border-radius: 12px;
+          padding: 20px;
+          margin-bottom: 20px;
         }
 
         .next-steps h3 {
-          color: white;
-          font-size: 20px;
-          font-weight: 600;
-          margin: 0 0 24px 0;
-        }
-
-        .steps-grid {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 20px;
-        }
-
-        .step-item {
-          display: flex;
-          align-items: flex-start;
-          gap: 12px;
-          text-align: left;
-        }
-
-        .step-icon {
-          font-size: 20px;
-          margin-top: 2px;
-        }
-
-        .step-content h4 {
-          color: white;
-          font-size: 14px;
-          font-weight: 600;
-          margin: 0 0 4px 0;
-        }
-
-        .step-content p {
-          color: rgba(255, 255, 255, 0.7);
-          font-size: 12px;
-          margin: 0;
-          line-height: 1.4;
-        }
-
-        .quick-stats {
-          background: rgba(255, 255, 255, 0.05);
-          border-radius: 12px;
-          padding: 24px;
-          margin-bottom: 32px;
-        }
-
-        .quick-stats h4 {
           color: white;
           font-size: 16px;
           font-weight: 600;
           margin: 0 0 16px 0;
         }
 
+        .steps-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 12px;
+        }
+
+        .step-item {
+          display: flex;
+          align-items: flex-start;
+          gap: 8px;
+          text-align: left;
+        }
+
+        .step-icon {
+          font-size: 16px;
+          margin-top: 1px;
+        }
+
+        .step-content h4 {
+          color: white;
+          font-size: 12px;
+          font-weight: 600;
+          margin: 0 0 3px 0;
+        }
+
+        .step-content p {
+          color: rgba(255, 255, 255, 0.7);
+          font-size: 11px;
+          margin: 0;
+          line-height: 1.3;
+        }
+
+        .quick-stats {
+          background: rgba(255, 255, 255, 0.05);
+          border-radius: 8px;
+          padding: 16px;
+          margin-bottom: 20px;
+        }
+
+        .quick-stats h4 {
+          color: white;
+          font-size: 14px;
+          font-weight: 600;
+          margin: 0 0 12px 0;
+        }
+
         .stats-row {
           display: flex;
           justify-content: space-around;
-          gap: 16px;
+          gap: 12px;
         }
 
         .stat-box {
           display: flex;
           flex-direction: column;
           align-items: center;
-          gap: 4px;
+          gap: 2px;
         }
 
         .stat-number {
           color: #6366f1;
-          font-size: 24px;
+          font-size: 20px;
           font-weight: 700;
         }
 
         .stat-label {
           color: rgba(255, 255, 255, 0.7);
-          font-size: 12px;
+          font-size: 10px;
           text-align: center;
         }
 
         .action-buttons {
           display: flex;
-          gap: 16px;
+          gap: 12px;
           justify-content: center;
-          margin-bottom: 24px;
+          margin-bottom: 16px;
         }
 
         .primary-button, .secondary-button {
-          padding: 16px 32px;
-          border-radius: 8px;
-          font-size: 16px;
+          padding: 12px 24px;
+          border-radius: 6px;
+          font-size: 14px;
           font-weight: 600;
           cursor: pointer;
           transition: all 0.2s ease;
           border: none;
-          min-width: 160px;
+          min-width: 120px;
         }
 
         .primary-button {
@@ -343,14 +343,14 @@ const OnboardingSuccess = ({ onClose }) => {
         }
 
         .close-action {
-          margin-top: 16px;
+          margin-top: 12px;
         }
 
         .close-button {
           background: none;
           border: none;
           color: rgba(255, 255, 255, 0.5);
-          font-size: 14px;
+          font-size: 12px;
           cursor: pointer;
           transition: color 0.2s ease;
         }

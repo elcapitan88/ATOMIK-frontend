@@ -203,25 +203,26 @@ const OnboardingStep5Strategy = ({ data, onNext, onBack, isSubmitting }) => {
 
         .step-header {
           text-align: center;
-          margin-bottom: 32px;
+          margin-bottom: 20px;
         }
 
         .step-header h2 {
           color: white;
-          font-size: 24px;
+          font-size: 20px;
           font-weight: 600;
-          margin: 0 0 8px 0;
+          margin: 0 0 6px 0;
         }
 
         .step-header p {
           color: rgba(255, 255, 255, 0.7);
           margin: 0;
+          font-size: 14px;
         }
 
         .strategy-form {
           display: flex;
           flex-direction: column;
-          gap: 24px;
+          gap: 16px;
         }
 
         .form-section {
@@ -231,37 +232,37 @@ const OnboardingStep5Strategy = ({ data, onNext, onBack, isSubmitting }) => {
         .no-strategies-notice {
           background: rgba(255, 193, 7, 0.1);
           border: 1px solid rgba(255, 193, 7, 0.3);
-          border-radius: 12px;
-          padding: 24px;
+          border-radius: 8px;
+          padding: 16px;
           display: flex;
-          gap: 16px;
-          margin-top: 16px;
+          gap: 12px;
+          margin-top: 12px;
         }
 
         .notice-icon {
-          font-size: 24px;
+          font-size: 20px;
         }
 
         .notice-content h4 {
           color: #fbbf24;
-          font-size: 16px;
+          font-size: 14px;
           font-weight: 600;
-          margin: 0 0 8px 0;
+          margin: 0 0 6px 0;
         }
 
         .notice-content p {
           color: rgba(255, 255, 255, 0.8);
-          margin: 0 0 16px 0;
-          font-size: 14px;
+          margin: 0 0 12px 0;
+          font-size: 12px;
         }
 
         .create-strategy-button {
           background: linear-gradient(135deg, #f59e0b, #d97706);
           color: white;
           border: none;
-          border-radius: 6px;
-          padding: 8px 16px;
-          font-size: 12px;
+          border-radius: 4px;
+          padding: 6px 12px;
+          font-size: 11px;
           font-weight: 600;
           cursor: pointer;
           transition: all 0.2s ease;
@@ -273,50 +274,50 @@ const OnboardingStep5Strategy = ({ data, onNext, onBack, isSubmitting }) => {
 
         .strategy-preview {
           background: rgba(255, 255, 255, 0.03);
-          border-radius: 12px;
-          padding: 20px;
-        }
-
-        .strategy-preview h4 {
-          color: white;
-          font-size: 16px;
-          font-weight: 600;
-          margin: 0 0 16px 0;
-        }
-
-        .strategy-card {
-          background: rgba(255, 255, 255, 0.05);
           border-radius: 8px;
           padding: 16px;
         }
 
+        .strategy-preview h4 {
+          color: white;
+          font-size: 14px;
+          font-weight: 600;
+          margin: 0 0 12px 0;
+        }
+
+        .strategy-card {
+          background: rgba(255, 255, 255, 0.05);
+          border-radius: 6px;
+          padding: 12px;
+        }
+
         .strategy-info h5 {
           color: white;
-          font-size: 16px;
+          font-size: 14px;
           font-weight: 600;
-          margin: 0 0 8px 0;
+          margin: 0 0 6px 0;
         }
 
         .strategy-info p {
           color: rgba(255, 255, 255, 0.7);
-          font-size: 14px;
-          margin: 0 0 16px 0;
+          font-size: 12px;
+          margin: 0 0 12px 0;
         }
 
         .strategy-stats {
           display: flex;
-          gap: 24px;
+          gap: 16px;
         }
 
         .stat-item {
           display: flex;
           flex-direction: column;
-          gap: 4px;
+          gap: 2px;
         }
 
         .stat-label {
           color: rgba(255, 255, 255, 0.6);
-          font-size: 12px;
+          font-size: 10px;
           text-transform: uppercase;
           font-weight: 500;
         }
@@ -324,7 +325,7 @@ const OnboardingStep5Strategy = ({ data, onNext, onBack, isSubmitting }) => {
         .stat-value {
           color: white;
           font-weight: 600;
-          font-size: 14px;
+          font-size: 12px;
         }
 
         .stat-value.positive {
@@ -333,48 +334,48 @@ const OnboardingStep5Strategy = ({ data, onNext, onBack, isSubmitting }) => {
 
         .pricing-section {
           background: rgba(255, 255, 255, 0.03);
-          border-radius: 12px;
-          padding: 24px;
-        }
-
-        .pricing-section h4 {
-          color: white;
-          font-size: 16px;
-          font-weight: 600;
-          margin: 0 0 4px 0;
-        }
-
-        .pricing-subtitle {
-          color: rgba(255, 255, 255, 0.7);
-          font-size: 14px;
-          margin: 0 0 24px 0;
-        }
-
-        .earnings-preview {
-          margin-top: 24px;
-          background: rgba(255, 255, 255, 0.05);
           border-radius: 8px;
           padding: 16px;
         }
 
-        .earnings-preview h5 {
+        .pricing-section h4 {
           color: white;
           font-size: 14px;
           font-weight: 600;
-          margin: 0 0 12px 0;
+          margin: 0 0 3px 0;
+        }
+
+        .pricing-subtitle {
+          color: rgba(255, 255, 255, 0.7);
+          font-size: 12px;
+          margin: 0 0 16px 0;
+        }
+
+        .earnings-preview {
+          margin-top: 16px;
+          background: rgba(255, 255, 255, 0.05);
+          border-radius: 6px;
+          padding: 12px;
+        }
+
+        .earnings-preview h5 {
+          color: white;
+          font-size: 12px;
+          font-weight: 600;
+          margin: 0 0 8px 0;
         }
 
         .earnings-breakdown {
           display: flex;
           flex-direction: column;
-          gap: 8px;
+          gap: 6px;
         }
 
         .earnings-item {
           display: flex;
           justify-content: space-between;
           align-items: center;
-          font-size: 13px;
+          font-size: 11px;
         }
 
         .earnings-item span:first-child {
@@ -388,8 +389,8 @@ const OnboardingStep5Strategy = ({ data, onNext, onBack, isSubmitting }) => {
 
         .earnings-item.total {
           border-top: 1px solid rgba(255, 255, 255, 0.1);
-          padding-top: 8px;
-          margin-top: 4px;
+          padding-top: 6px;
+          margin-top: 3px;
           font-weight: 600;
         }
 
@@ -401,12 +402,12 @@ const OnboardingStep5Strategy = ({ data, onNext, onBack, isSubmitting }) => {
           display: flex;
           gap: 12px;
           justify-content: space-between;
-          margin-top: 32px;
+          margin-top: 20px;
         }
 
         .primary-button, .secondary-button {
-          padding: 12px 24px;
-          border-radius: 8px;
+          padding: 10px 20px;
+          border-radius: 6px;
           font-size: 14px;
           font-weight: 600;
           cursor: pointer;

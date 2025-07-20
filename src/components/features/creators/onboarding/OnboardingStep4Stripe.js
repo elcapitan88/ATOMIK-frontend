@@ -204,62 +204,63 @@ const OnboardingStep4Stripe = ({ data, onNext, onBack, isSubmitting }) => {
 
         .step-header {
           text-align: center;
-          margin-bottom: 32px;
+          margin-bottom: 20px;
         }
 
         .step-header h2 {
           color: white;
-          font-size: 24px;
+          font-size: 20px;
           font-weight: 600;
-          margin: 0 0 8px 0;
+          margin: 0 0 6px 0;
         }
 
         .step-header p {
           color: rgba(255, 255, 255, 0.7);
           margin: 0;
+          font-size: 14px;
         }
 
         .stripe-content {
           text-align: center;
-          margin-bottom: 40px;
+          margin-bottom: 24px;
         }
 
         .stripe-pending, .stripe-connecting, .stripe-connected, .stripe-error {
           background: rgba(255, 255, 255, 0.03);
-          border-radius: 16px;
-          padding: 40px 32px;
+          border-radius: 12px;
+          padding: 24px 20px;
         }
 
         .stripe-icon, .success-icon, .error-icon {
-          margin-bottom: 24px;
+          margin-bottom: 16px;
         }
 
         .success-icon {
-          width: 60px;
-          height: 60px;
+          width: 48px;
+          height: 48px;
           background: linear-gradient(135deg, #10b981, #059669);
           border-radius: 50%;
           display: flex;
           align-items: center;
           justify-content: center;
-          font-size: 24px;
+          font-size: 20px;
           color: white;
-          margin: 0 auto 24px;
+          margin: 0 auto 16px;
         }
 
         .error-icon {
-          font-size: 48px;
-          margin-bottom: 24px;
+          font-size: 36px;
+          margin-bottom: 16px;
         }
 
         .loading-spinner {
-          width: 40px;
-          height: 40px;
-          border: 3px solid rgba(255, 255, 255, 0.1);
-          border-top: 3px solid #6366f1;
+          width: 32px;
+          height: 32px;
+          border: 2px solid rgba(255, 255, 255, 0.1);
+          border-top: 2px solid #6366f1;
           border-radius: 50%;
           animation: spin 1s linear infinite;
-          margin: 0 auto 24px;
+          margin: 0 auto 16px;
         }
 
         @keyframes spin {
@@ -269,56 +270,59 @@ const OnboardingStep4Stripe = ({ data, onNext, onBack, isSubmitting }) => {
 
         .stripe-content h3 {
           color: white;
-          font-size: 20px;
+          font-size: 18px;
           font-weight: 600;
-          margin: 0 0 12px 0;
+          margin: 0 0 8px 0;
         }
 
         .stripe-content p {
           color: rgba(255, 255, 255, 0.7);
-          margin: 0 0 24px 0;
-          line-height: 1.5;
+          margin: 0 0 16px 0;
+          line-height: 1.4;
+          font-size: 14px;
         }
 
         .benefits-list {
           display: flex;
           flex-direction: column;
-          gap: 12px;
-          margin-bottom: 32px;
+          gap: 8px;
+          margin-bottom: 20px;
           text-align: left;
         }
 
         .benefit-item {
           display: flex;
           align-items: center;
-          gap: 12px;
+          gap: 8px;
           color: rgba(255, 255, 255, 0.8);
+          font-size: 13px;
         }
 
         .check-icon {
-          width: 20px;
-          height: 20px;
+          width: 16px;
+          height: 16px;
           background: linear-gradient(135deg, #10b981, #059669);
           border-radius: 50%;
           display: flex;
           align-items: center;
           justify-content: center;
-          font-size: 12px;
+          font-size: 10px;
           color: white;
           font-weight: bold;
+          flex-shrink: 0;
         }
 
         .stripe-connect-button {
           display: flex;
           align-items: center;
           justify-content: center;
-          gap: 12px;
+          gap: 8px;
           background: #635bff;
           color: white;
           border: none;
-          border-radius: 8px;
-          padding: 16px 32px;
-          font-size: 16px;
+          border-radius: 6px;
+          padding: 12px 24px;
+          font-size: 14px;
           font-weight: 600;
           cursor: pointer;
           transition: all 0.2s ease;
@@ -337,27 +341,27 @@ const OnboardingStep4Stripe = ({ data, onNext, onBack, isSubmitting }) => {
 
         .account-details {
           background: rgba(255, 255, 255, 0.05);
-          border-radius: 8px;
-          padding: 16px;
-          margin-top: 24px;
+          border-radius: 6px;
+          padding: 12px;
+          margin-top: 16px;
         }
 
         .detail-item {
           display: flex;
           justify-content: space-between;
           align-items: center;
-          padding: 8px 0;
+          padding: 6px 0;
         }
 
         .detail-label {
           color: rgba(255, 255, 255, 0.7);
-          font-size: 14px;
+          font-size: 12px;
         }
 
         .detail-value {
           color: white;
           font-weight: 500;
-          font-size: 14px;
+          font-size: 12px;
         }
 
         .status-active {
@@ -366,15 +370,15 @@ const OnboardingStep4Stripe = ({ data, onNext, onBack, isSubmitting }) => {
 
         .error-message {
           color: #ef4444 !important;
-          margin-bottom: 24px !important;
+          margin-bottom: 16px !important;
         }
 
         .retry-button {
           background: rgba(255, 255, 255, 0.1);
           color: white;
           border: 1px solid rgba(255, 255, 255, 0.2);
-          border-radius: 8px;
-          padding: 12px 24px;
+          border-radius: 6px;
+          padding: 10px 20px;
           font-size: 14px;
           font-weight: 600;
           cursor: pointer;
@@ -392,8 +396,8 @@ const OnboardingStep4Stripe = ({ data, onNext, onBack, isSubmitting }) => {
         }
 
         .primary-button, .secondary-button {
-          padding: 12px 24px;
-          border-radius: 8px;
+          padding: 10px 20px;
+          border-radius: 6px;
           font-size: 14px;
           font-weight: 600;
           cursor: pointer;

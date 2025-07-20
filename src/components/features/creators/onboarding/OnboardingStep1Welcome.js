@@ -88,32 +88,32 @@ const OnboardingStep1Welcome = ({ onNext }) => {
         }
 
         .welcome-header {
-          margin-bottom: 40px;
+          margin-bottom: 24px;
         }
 
         .welcome-icon {
-          font-size: 64px;
-          margin-bottom: 16px;
+          font-size: 48px;
+          margin-bottom: 12px;
         }
 
         .welcome-header h2 {
           color: white;
-          font-size: 32px;
+          font-size: 24px;
           font-weight: 700;
-          margin: 0 0 12px 0;
+          margin: 0 0 8px 0;
         }
 
         .welcome-subtitle {
           color: rgba(255, 255, 255, 0.7);
-          font-size: 18px;
+          font-size: 16px;
           margin: 0;
         }
 
         .benefits-grid {
           display: grid;
           grid-template-columns: 1fr 1fr;
-          gap: 24px;
-          margin-bottom: 40px;
+          gap: 16px;
+          margin-bottom: 24px;
           text-align: left;
         }
 
@@ -124,62 +124,64 @@ const OnboardingStep1Welcome = ({ onNext }) => {
         }
 
         .benefit-icon {
-          font-size: 24px;
-          margin-top: 4px;
+          font-size: 20px;
+          margin-top: 2px;
+          flex-shrink: 0;
         }
 
         .benefit-content h4 {
           color: white;
-          font-size: 16px;
+          font-size: 14px;
           font-weight: 600;
-          margin: 0 0 4px 0;
+          margin: 0 0 2px 0;
         }
 
         .benefit-content p {
           color: rgba(255, 255, 255, 0.6);
-          font-size: 14px;
+          font-size: 12px;
           margin: 0;
+          line-height: 1.3;
         }
 
         .onboarding-preview {
           background: rgba(255, 255, 255, 0.05);
-          border-radius: 12px;
-          padding: 24px;
-          margin-bottom: 32px;
+          border-radius: 8px;
+          padding: 16px;
+          margin-bottom: 20px;
         }
 
         .onboarding-preview h4 {
           color: white;
-          font-size: 18px;
+          font-size: 16px;
           font-weight: 600;
-          margin: 0 0 16px 0;
+          margin: 0 0 12px 0;
         }
 
         .steps-preview {
           display: grid;
           grid-template-columns: 1fr 1fr;
-          gap: 16px;
+          gap: 12px;
         }
 
         .step-preview {
           display: flex;
           align-items: center;
-          gap: 8px;
+          gap: 6px;
           color: rgba(255, 255, 255, 0.7);
-          font-size: 14px;
+          font-size: 12px;
         }
 
         .step-number {
           display: flex;
           align-items: center;
           justify-content: center;
-          width: 24px;
-          height: 24px;
+          width: 20px;
+          height: 20px;
           background: rgba(99, 102, 241, 0.2);
           color: #6366f1;
           border-radius: 50%;
           font-weight: 600;
-          font-size: 12px;
+          font-size: 10px;
         }
 
         .step-actions {
@@ -192,8 +194,8 @@ const OnboardingStep1Welcome = ({ onNext }) => {
           color: white;
           border: none;
           border-radius: 8px;
-          padding: 12px 32px;
-          font-size: 16px;
+          padding: 10px 28px;
+          font-size: 14px;
           font-weight: 600;
           cursor: pointer;
           transition: all 0.2s ease;
