@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useCreator } from './useCreator';
 import { useAuth } from '@/contexts/AuthContext';
+import axiosInstance from '@/services/api/axiosConfig';
 
 const ONBOARDING_STORAGE_KEY = 'creator_onboarding_progress';
 
@@ -40,9 +41,8 @@ const initialOnboardingData = {
 };
 
 export const useCreatorOnboarding = () => {
-  const { useUpdateProfile, useBecomeCreator } = useCreator();
-  const { user } = useAuth();
-  const updateProfileMutation = useUpdateProfile();
+  const { useBecomeCreator } = useCreator();
+  const { user, updateUserProfile } = useAuth();
   const becomeCreatorMutation = useBecomeCreator();
   const [currentStep, setCurrentStep] = useState(1);
   const [completedSteps, setCompletedSteps] = useState(new Set());
@@ -105,13 +105,25 @@ export const useCreatorOnboarding = () => {
       saveProgress(currentStep, newCompletedSteps, updatedData);
 
       if (currentStep === 2 && stepData.profile) {
-        // Save profile data including social links to user profile
-        const profileUpdateData = {
-          username: stepData.profile.username,
-          website: stepData.profile.website,
-          socialMedia: stepData.profile.socialLinks
-        };
-        await updateProfileMutation.mutateAsync(profileUpdateData);
+        // Save profile data including social links to user profile (not creator profile)
+        try {
+          const profileUpdateData = {
+            username: stepData.profile.username,
+            website: stepData.profile.website,
+            socialMedia: stepData.profile.socialLinks
+          };
+          
+          // Use user profile API instead of creator profile API
+          const response = await axiosInstance.patch('/api/v1/auth/profile', profileUpdateData);
+          
+          // Update local auth context with new data
+          if (updateUserProfile) {
+            updateUserProfile(response.data);
+          }
+        } catch (error) {
+          console.error('Failed to update user profile during onboarding:', error);
+          // Don't throw error to allow onboarding to continue
+        }
       }
 
       if (currentStep === 4 && stepData.stripe) {
@@ -126,7 +138,7 @@ export const useCreatorOnboarding = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [onboardingData, completedSteps, currentStep, saveProgress, updateProfileMutation]);
+  }, [onboardingData, completedSteps, currentStep, saveProgress, updateUserProfile]);
 
   const nextStep = useCallback(() => {
     const newStep = Math.min(currentStep + 1, 6);
