@@ -152,7 +152,7 @@ export const useCreatorOnboarding = () => {
     try {
       // Create the creator profile (social links are already saved to user profile)
       await becomeCreatorMutation.mutateAsync({
-        username: onboardingData.profile.username,
+        username: user?.username || '',
         bio: onboardingData.profile.bio,
         trading_experience: 'intermediate' // Default value
       });
@@ -169,7 +169,7 @@ export const useCreatorOnboarding = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [onboardingData, becomeCreatorMutation, saveProgress]);
+  }, [onboardingData, becomeCreatorMutation, saveProgress, user]);
 
   const resetOnboarding = useCallback(() => {
     setCurrentStep(1);
