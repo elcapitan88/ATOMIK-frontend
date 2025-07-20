@@ -33,10 +33,14 @@ const GlassModal = ({
       <ModalContent 
         bg="rgba(255, 255, 255, 0.1)"
         backdropFilter="blur(10px)"
-        boxShadow="0 8px 32px 0 rgba(0, 198, 224, 0.37)"
+        boxShadow="0 8px 32px 0 rgba(31, 41, 55, 0.3)"
         border="1px solid rgba(255, 255, 255, 0.18)"
         borderRadius="xl"
         color="white"
+        mx={{ base: 4, md: 0 }}
+        my={{ base: 4, md: 0 }}
+        maxH={{ base: "calc(100vh - 2rem)", md: "90vh" }}
+        overflow="hidden"
       >
         {title && (
           <ModalHeader borderBottom="1px solid rgba(255, 255, 255, 0.18)">

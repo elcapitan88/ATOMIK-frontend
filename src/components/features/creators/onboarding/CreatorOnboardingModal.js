@@ -79,7 +79,7 @@ const CreatorOnboardingModal = ({ isOpen, onClose }) => {
       isOpen={isOpen} 
       onClose={handleClose}
       className="creator-onboarding-modal"
-      maxWidth="600px"
+      size={{ base: "full", sm: "xl", md: "2xl" }}
     >
       <div className="onboarding-container">
         {currentStep < 6 && (
@@ -104,21 +104,25 @@ const CreatorOnboardingModal = ({ isOpen, onClose }) => {
       <style jsx>{`
         .onboarding-container {
           padding: 0;
-          min-height: 500px;
+          min-height: auto;
+          display: flex;
+          flex-direction: column;
+          height: 100%;
         }
 
         .progress-header {
-          padding: 24px 32px 16px;
+          padding: 16px 20px 12px;
           border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+          flex-shrink: 0;
         }
 
         .progress-bar {
           width: 100%;
-          height: 4px;
+          height: 3px;
           background: rgba(255, 255, 255, 0.1);
           border-radius: 2px;
           overflow: hidden;
-          margin-bottom: 12px;
+          margin-bottom: 8px;
         }
 
         .progress-fill {
@@ -130,17 +134,34 @@ const CreatorOnboardingModal = ({ isOpen, onClose }) => {
 
         .step-indicator {
           color: rgba(255, 255, 255, 0.7);
-          font-size: 14px;
+          font-size: 13px;
           font-weight: 500;
         }
 
         .step-content {
-          padding: 32px;
+          padding: 20px;
           flex: 1;
+          overflow-y: auto;
+          max-height: calc(90vh - 120px);
         }
 
         .creator-onboarding-modal {
           backdrop-filter: blur(20px);
+        }
+
+        @media (max-width: 768px) {
+          .progress-header {
+            padding: 12px 16px 8px;
+          }
+          
+          .step-content {
+            padding: 16px;
+            max-height: calc(100vh - 100px);
+          }
+          
+          .step-indicator {
+            font-size: 12px;
+          }
         }
       `}</style>
     </GlassModal>
