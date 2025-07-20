@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { FormSelect } from '../../../common/Form/FormSelect';
+import FormSelect from '../../../common/Form/FormSelect';
 import { useStrategies } from '../../../../hooks/useStrategies';
-import { PricingSetupForm } from '../pricing/PricingSetupForm';
+import PricingSetupForm from '../pricing/PricingSetupForm';
 
 const OnboardingStep5Strategy = ({ data, onNext, onBack, isSubmitting }) => {
   const { strategies, loading: strategiesLoading, fetchUserStrategies } = useStrategies();
