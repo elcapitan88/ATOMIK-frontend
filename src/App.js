@@ -20,6 +20,7 @@ const PricingPage = lazy(() => import('./components/pages/PricingPage'));
 const StrategyBuilderPage = lazy(() => import('./components/pages/Builder/StrategyBuilderPage'));
 const LandingPage = lazy(() => import('./components/pages/landing/LandingPage'));
 const ComingSoon = lazy(() => import('./components/common/ComingSoon'));
+const CreatorHubPage = lazy(() => import('./components/pages/CreatorHub/CreatorHubPage'));
 
 const AdminDashboard = lazy(() => import('./components/pages/Admin/AdminDashboard').then(module => ({ default: module.default })));
 const OverviewPage = lazy(() => import('./components/pages/Admin/Overview/OverviewPage').then(module => ({ default: module.default })));
@@ -318,6 +319,17 @@ function App() {
             <WithAuth>
               <DashboardLayout>
                 <StrategyBuilderPage />
+              </DashboardLayout>
+            </WithAuth>
+          }
+        />
+
+        <Route
+          path="/creator-hub"
+          element={
+            <WithAuth>
+              <DashboardLayout>
+                <CreatorHubPage />
               </DashboardLayout>
             </WithAuth>
           }

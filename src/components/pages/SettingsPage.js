@@ -53,6 +53,8 @@ import {
   AtSign,
   Twitter,
   Youtube,
+  Instagram,
+  MessageCircle,
   ExternalLink,
   CheckCircle,
   Info,
@@ -475,8 +477,10 @@ const SettingsPage = () => {
     phone: '',
     socialMedia: {
       twitter: '',
+      tiktok: '',
+      instagram: '',
       youtube: '',
-      tiktok: ''
+      discord: ''
     },
     preferences: {
       emailNotifications: true,
@@ -627,10 +631,12 @@ const SettingsPage = () => {
         username: user.username || '',
         email: user.email || '',
         phone: user.phone || '',
-        socialMedia: user.socialMedia || {
-          twitter: '',
-          youtube: '',
-          tiktok: ''
+        socialMedia: {
+          twitter: user.x_handle || '',
+          tiktok: user.tiktok_handle || '',
+          instagram: user.instagram_handle || '',
+          youtube: user.youtube_handle || '',
+          discord: user.discord_handle || ''
         },
         preferences: user.preferences || {
           emailNotifications: true,
@@ -934,6 +940,24 @@ const SettingsPage = () => {
                   fieldName="tiktok"
                   onSave={saveFieldValue}
                   placeholder="@yourusername"
+                />
+
+                <SocialInput
+                  icon={Instagram}
+                  label="Instagram"
+                  initialValue={formData.socialMedia?.instagram || ''}
+                  fieldName="instagram"
+                  onSave={saveFieldValue}
+                  placeholder="@yourusername"
+                />
+
+                <SocialInput
+                  icon={MessageCircle}
+                  label="Discord"
+                  initialValue={formData.socialMedia?.discord || ''}
+                  fieldName="discord"
+                  onSave={saveFieldValue}
+                  placeholder="username#1234 or username"
                 />
 
                 {/* Email Notifications */}
