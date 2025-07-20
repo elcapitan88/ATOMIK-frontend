@@ -158,10 +158,10 @@ const OnboardingStep1Welcome = ({ onNext }) => {
         }
 
         .steps-preview {
-          display: flex;
-          flex-direction: column;
+          display: grid;
+          grid-template-columns: 1fr 1fr;
           gap: 8px;
-          max-width: 300px;
+          max-width: 400px;
           margin: 0 auto;
         }
 
