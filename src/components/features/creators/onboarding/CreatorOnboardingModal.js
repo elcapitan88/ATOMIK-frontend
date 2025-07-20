@@ -127,7 +127,7 @@ const CreatorOnboardingModal = ({ isOpen, onClose }) => {
 
         .progress-fill {
           height: 100%;
-          background: linear-gradient(90deg, #6366f1, #8b5cf6);
+          background: linear-gradient(90deg, #00C6E0, #00D7F2);
           border-radius: 2px;
           transition: width 0.3s ease;
         }

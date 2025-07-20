@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import FormInput from '../../../common/Form/FormInput';
+import { useAuth } from '../../../../contexts/AuthContext';
 
 const OnboardingStep2Profile = ({ data, onNext, onBack, isSubmitting }) => {
+  const { user } = useAuth();
   const [formData, setFormData] = useState({
+    username: user?.username || '',
     bio: data?.profile?.bio || '',
     website: data?.profile?.website || '',
     socialLinks: {
@@ -18,6 +21,14 @@ const OnboardingStep2Profile = ({ data, onNext, onBack, isSubmitting }) => {
 
   const validateForm = () => {
     const newErrors = {};
+
+    if (!formData.username.trim()) {
+      newErrors.username = 'Username is required';
+    } else if (formData.username.length < 2) {
+      newErrors.username = 'Username must be at least 2 characters';
+    } else if (formData.username.length > 30) {
+      newErrors.username = 'Username must be less than 30 characters';
+    }
 
     if (!formData.bio.trim()) {
       newErrors.bio = 'Bio is required';
@@ -113,16 +124,29 @@ const OnboardingStep2Profile = ({ data, onNext, onBack, isSubmitting }) => {
     }
   };
 
-  const isFormValid = formData.bio.trim();
+  const isFormValid = formData.username.trim() && formData.bio.trim();
 
   return (
     <div className="profile-step">
       <div className="step-header">
         <h2>Create Your Profile</h2>
-        <p>Your username will be your creator name. Tell potential subscribers about yourself and your trading expertise</p>
+        <p>Set up your creator profile and tell potential subscribers about yourself and your trading expertise</p>
       </div>
 
       <form onSubmit={handleSubmit} className="profile-form">
+        <div className="form-section">
+          <FormInput
+            label="Username *"
+            placeholder="Your creator username"
+            value={formData.username}
+            onChange={(value) => handleInputChange('username', value)}
+            error={errors.username}
+            maxLength={30}
+          />
+          <div className="char-count">
+            {formData.username.length}/30
+          </div>
+        </div>
 
         <div className="form-section">
           <label className="form-label">Bio *</label>
@@ -274,8 +298,8 @@ const OnboardingStep2Profile = ({ data, onNext, onBack, isSubmitting }) => {
 
         .form-textarea:focus {
           outline: none;
-          border-color: #6366f1;
-          box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+          border-color: #00C6E0;
+          box-shadow: 0 0 0 3px rgba(0, 198, 224, 0.1);
         }
 
         .form-textarea.error {

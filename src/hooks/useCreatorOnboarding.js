@@ -107,6 +107,7 @@ export const useCreatorOnboarding = () => {
       if (currentStep === 2 && stepData.profile) {
         // Save profile data including social links to user profile
         const profileUpdateData = {
+          username: stepData.profile.username,
           website: stepData.profile.website,
           socialMedia: stepData.profile.socialLinks
         };
