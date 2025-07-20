@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { GlassModal } from '../../../common/Modal/GlassModal';
+import GlassModal from '../../../common/Modal/GlassModal';
 import { useCreatorOnboarding } from '../../../../hooks/useCreatorOnboarding';
 import OnboardingStep1Welcome from './OnboardingStep1Welcome';
 import OnboardingStep2Profile from './OnboardingStep2Profile';
