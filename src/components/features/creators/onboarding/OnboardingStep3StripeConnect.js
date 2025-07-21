@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import axiosInstance from '../../../../services/axiosConfig';
 
 const OnboardingStep3StripeConnect = ({ data, onNext, onBack, isSubmitting }) => {
   const [isConnecting, setIsConnecting] = useState(false);
@@ -9,23 +10,12 @@ const OnboardingStep3StripeConnect = ({ data, onNext, onBack, isSubmitting }) =>
     
     try {
       // Call backend to create Stripe Connect account link
-      const response = await fetch('/api/v1/creators/setup-stripe-connect', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify({
-          refresh_url: window.location.href,
-          return_url: `${window.location.origin}/creator/onboarding/stripe-return`
-        })
+      const response = await axiosInstance.post('/api/v1/creators/setup-stripe-connect', {
+        refresh_url: window.location.href,
+        return_url: `${window.location.origin}/creator/onboarding/stripe-return`
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to setup Stripe Connect');
-      }
-
-      const result = await response.json();
+      const result = response.data;
       
       // Redirect to Stripe's hosted onboarding
       window.location.href = result.account_link_url;
