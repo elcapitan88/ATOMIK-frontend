@@ -57,14 +57,10 @@ const OnboardingStep1Welcome = ({ onNext }) => {
             </div>
             <div className="step-preview">
               <span className="step-number">2</span>
-              <span>Tax Information</span>
+              <span>Connect with Stripe</span>
             </div>
             <div className="step-preview">
               <span className="step-number">3</span>
-              <span>Payment Setup</span>
-            </div>
-            <div className="step-preview">
-              <span className="step-number">4</span>
               <span>Strategy Selection</span>
             </div>
           </div>
