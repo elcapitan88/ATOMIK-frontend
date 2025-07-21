@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useCreator } from './useCreator';
 import { useAuth } from '../contexts/AuthContext';
-import axiosInstance from '../services/api/axiosConfig';
+import axiosInstance from '../services/axiosConfig';
 
 const ONBOARDING_STORAGE_KEY = 'creator_onboarding_progress';
 
