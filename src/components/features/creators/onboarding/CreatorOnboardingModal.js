@@ -3,9 +3,8 @@ import GlassModal from '../../../common/Modal/GlassModal';
 import { useCreatorOnboarding } from '../../../../hooks/useCreatorOnboarding';
 import OnboardingStep1Welcome from './OnboardingStep1Welcome';
 import OnboardingStep2Profile from './OnboardingStep2Profile';
-import OnboardingStep3TaxInfo from './OnboardingStep3TaxInfo';
-import OnboardingStep4Stripe from './OnboardingStep4Stripe';
-import OnboardingStep5Strategy from './OnboardingStep5Strategy';
+import OnboardingStep3StripeConnect from './OnboardingStep3StripeConnect';
+import OnboardingStep4Strategy from './OnboardingStep4Strategy';
 import OnboardingSuccess from './OnboardingSuccess';
 
 const CreatorOnboardingModal = ({ isOpen, onClose }) => {
@@ -26,7 +25,7 @@ const CreatorOnboardingModal = ({ isOpen, onClose }) => {
     setIsSubmitting(true);
     try {
       await updateData(stepData);
-      if (currentStep === 5) {
+      if (currentStep === 4) {
         await completeOnboarding();
       } else {
         nextStep();
@@ -39,7 +38,7 @@ const CreatorOnboardingModal = ({ isOpen, onClose }) => {
   }, [currentStep, updateData, completeOnboarding, nextStep]);
 
   const handleClose = useCallback(() => {
-    if (currentStep === 6) {
+    if (currentStep === 5) {
       resetOnboarding();
     }
     onClose();
@@ -60,19 +59,17 @@ const CreatorOnboardingModal = ({ isOpen, onClose }) => {
       case 2:
         return <OnboardingStep2Profile {...stepProps} />;
       case 3:
-        return <OnboardingStep3TaxInfo {...stepProps} />;
+        return <OnboardingStep3StripeConnect {...stepProps} />;
       case 4:
-        return <OnboardingStep4Stripe {...stepProps} />;
+        return <OnboardingStep4Strategy {...stepProps} />;
       case 5:
-        return <OnboardingStep5Strategy {...stepProps} />;
-      case 6:
         return <OnboardingSuccess onClose={handleClose} />;
       default:
         return <OnboardingStep1Welcome {...stepProps} />;
     }
   };
 
-  const progressPercentage = ((currentStep - 1) / 5) * 100;
+  const progressPercentage = ((currentStep - 1) / 4) * 100;
 
   return (
     <GlassModal 
@@ -82,7 +79,7 @@ const CreatorOnboardingModal = ({ isOpen, onClose }) => {
       size={{ base: "full", sm: "xl", md: "2xl" }}
     >
       <div className="onboarding-container">
-        {currentStep < 6 && (
+        {currentStep < 5 && (
           <div className="progress-header">
             <div className="progress-bar">
               <div 
@@ -91,7 +88,7 @@ const CreatorOnboardingModal = ({ isOpen, onClose }) => {
               />
             </div>
             <span className="step-indicator">
-              Step {currentStep} of 5
+              Step {currentStep} of 4
             </span>
           </div>
         )}

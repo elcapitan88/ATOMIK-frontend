@@ -16,17 +16,6 @@ const initialOnboardingData = {
       discord: ''
     }
   },
-  taxInfo: {
-    businessType: '',
-    taxId: '',
-    address: {
-      street: '',
-      city: '',
-      state: '',
-      zipCode: '',
-      country: 'US'
-    }
-  },
   stripe: {
     accountId: null,
     onboardingComplete: false
@@ -141,7 +130,7 @@ export const useCreatorOnboarding = () => {
   }, [onboardingData, completedSteps, currentStep, saveProgress, updateUserProfile]);
 
   const nextStep = useCallback(() => {
-    const newStep = Math.min(currentStep + 1, 6);
+    const newStep = Math.min(currentStep + 1, 5);
     setCurrentStep(newStep);
     saveProgress(newStep, completedSteps, onboardingData);
   }, [currentStep, completedSteps, onboardingData, saveProgress]);
@@ -153,7 +142,7 @@ export const useCreatorOnboarding = () => {
   }, [currentStep, completedSteps, onboardingData, saveProgress]);
 
   const goToStep = useCallback((step) => {
-    if (step >= 1 && step <= 6) {
+    if (step >= 1 && step <= 5) {
       setCurrentStep(step);
       saveProgress(step, completedSteps, onboardingData);
     }
@@ -169,10 +158,10 @@ export const useCreatorOnboarding = () => {
         trading_experience: 'intermediate' // Default value
       });
 
-      setCurrentStep(6);
-      const allCompleted = new Set([1, 2, 3, 4, 5]);
+      setCurrentStep(5);
+      const allCompleted = new Set([1, 2, 3, 4]);
       setCompletedSteps(allCompleted);
-      saveProgress(6, allCompleted, onboardingData);
+      saveProgress(5, allCompleted, onboardingData);
       
       return true;
     } catch (error) {
@@ -206,12 +195,8 @@ export const useCreatorOnboarding = () => {
       case 2:
         return onboardingData.profile.username && onboardingData.profile.bio;
       case 3:
-        return onboardingData.taxInfo.businessType && 
-               onboardingData.taxInfo.address.street &&
-               onboardingData.taxInfo.address.city;
-      case 4:
         return onboardingData.stripe.onboardingComplete;
-      case 5:
+      case 4:
         return onboardingData.strategy.strategyId && 
                onboardingData.strategy.pricing.price > 0;
       default:
@@ -234,9 +219,9 @@ export const useCreatorOnboarding = () => {
     canProceedToStep,
     getStepValidation,
     progress: {
-      percentage: ((currentStep - 1) / 5) * 100,
+      percentage: ((currentStep - 1) / 4) * 100,
       completedCount: completedSteps.size,
-      totalSteps: 5
+      totalSteps: 4
     }
   };
 };
