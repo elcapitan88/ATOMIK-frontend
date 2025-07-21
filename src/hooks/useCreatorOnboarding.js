@@ -109,8 +109,16 @@ export const useCreatorOnboarding = () => {
           if (updateUserProfile) {
             updateUserProfile(response.data);
           }
+
+          // Create the creator profile after updating user profile
+          await becomeCreatorMutation.mutateAsync({
+            username: stepData.profile.username,
+            bio: stepData.profile.bio,
+            trading_experience: 'intermediate' // Default value
+          });
+          
         } catch (error) {
-          console.error('Failed to update user profile during onboarding:', error);
+          console.error('Failed to update user profile or create creator profile during onboarding:', error);
           // Don't throw error to allow onboarding to continue
         }
       }
@@ -151,13 +159,7 @@ export const useCreatorOnboarding = () => {
   const completeOnboarding = useCallback(async () => {
     setIsLoading(true);
     try {
-      // Create the creator profile (social links are already saved to user profile)
-      await becomeCreatorMutation.mutateAsync({
-        username: user?.username || '',
-        bio: onboardingData.profile.bio,
-        trading_experience: 'intermediate' // Default value
-      });
-
+      // Creator profile is already created in Step 2, just finalize the onboarding
       setCurrentStep(5);
       const allCompleted = new Set([1, 2, 3, 4]);
       setCompletedSteps(allCompleted);
@@ -170,7 +172,7 @@ export const useCreatorOnboarding = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [onboardingData, becomeCreatorMutation, saveProgress, user]);
+  }, [onboardingData, saveProgress]);
 
   const resetOnboarding = useCallback(() => {
     setCurrentStep(1);
