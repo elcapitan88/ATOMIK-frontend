@@ -112,7 +112,6 @@ export const useCreatorOnboarding = () => {
 
           // Create the creator profile after updating user profile
           await becomeCreatorMutation.mutateAsync({
-            username: stepData.profile.username,
             bio: stepData.profile.bio,
             trading_experience: 'intermediate' // Default value
           });
