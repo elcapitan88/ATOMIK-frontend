@@ -468,11 +468,72 @@ const CreatorSettingsFlow = ({ user }) => {
     bio: '',
     trading_experience: 'intermediate'
   });
+  const [isLoadingOnboarding, setIsLoadingOnboarding] = useState(true);
   const toast = useToast();
   const { updateUserProfile } = useAuth();
   
   // Determine if user is already a creator
   const isCreator = user?.creator_profile_id != null;
+
+  // Load onboarding status on component mount
+  React.useEffect(() => {
+    const loadOnboardingStatus = async () => {
+      try {
+        const response = await axiosInstance.get('/api/v1/creators/onboarding-status');
+        const { onboarding_step, onboarding_data, is_creator } = response.data;
+        
+        if (is_creator) {
+          // If already a creator, show management view or skip to Stripe if incomplete
+          if (onboarding_step === 3) {
+            setCurrentStep(3); // Continue Stripe setup
+            if (onboarding_data) {
+              setCreatorData(onboarding_data);
+            }
+          } else {
+            // Already a creator and onboarding complete, show management view
+            setCurrentStep(null);
+          }
+        } else if (onboarding_step) {
+          // Resume from saved step
+          setCurrentStep(onboarding_step);
+          if (onboarding_data) {
+            setCreatorData(onboarding_data);
+          }
+        } else {
+          // Start fresh
+          setCurrentStep(1);
+        }
+      } catch (error) {
+        console.error('Failed to load onboarding status:', error);
+        setCurrentStep(1); // Default to start
+      } finally {
+        setIsLoadingOnboarding(false);
+      }
+    };
+
+    loadOnboardingStatus();
+  }, []);
+
+  // Update onboarding step in database
+  const saveOnboardingStep = async (step, data = null) => {
+    try {
+      await axiosInstance.post('/api/v1/creators/update-onboarding-step', {
+        step,
+        data
+      });
+    } catch (error) {
+      console.error('Failed to save onboarding step:', error);
+    }
+  };
+
+  // Complete onboarding and clear progress
+  const completeOnboarding = async () => {
+    try {
+      await axiosInstance.post('/api/v1/creators/complete-onboarding');
+    } catch (error) {
+      console.error('Failed to complete onboarding:', error);
+    }
+  };
 
   // Handle creator profile creation (now separate from Stripe)
   const handleCreateCreatorProfile = async () => {
@@ -502,6 +563,7 @@ const CreatorSettingsFlow = ({ user }) => {
 
       // Move to Stripe setup step
       setCurrentStep(3);
+      saveOnboardingStep(3, creatorData);
       
       toast({
         title: "Profile created!",
@@ -532,8 +594,20 @@ const CreatorSettingsFlow = ({ user }) => {
     }
   }, [isCreator, currentStep]);
 
-  // If already a creator, show full settings view
-  if (isCreator && currentStep !== 3) {
+  // Show loading state while fetching onboarding status
+  if (isLoadingOnboarding) {
+    return (
+      <SectionContainer icon={Zap} title="Creator">
+        <Box p={8} textAlign="center">
+          <Spinner color="#00C6E0" size="lg" />
+          <Text color="whiteAlpha.600" mt={4}>Loading your creator status...</Text>
+        </Box>
+      </SectionContainer>
+    );
+  }
+
+  // If already a creator and onboarding complete, show full settings view
+  if (isCreator && currentStep === null) {
     return (
       <VStack spacing={8} align="stretch">
         {/* Creator Dashboard */}
@@ -759,7 +833,10 @@ const CreatorSettingsFlow = ({ user }) => {
                   px={8}
                   _hover={{ bg: "#00A3B8" }}
                   leftIcon={<Zap size={20} />}
-                  onClick={() => setCurrentStep(2)}
+                  onClick={() => {
+                    setCurrentStep(2);
+                    saveOnboardingStep(2);
+                  }}
                 >
                   Get Started
                 </Button>
@@ -822,7 +899,10 @@ const CreatorSettingsFlow = ({ user }) => {
                 <Button
                   variant="ghost"
                   color="whiteAlpha.600"
-                  onClick={() => setCurrentStep(1)}
+                  onClick={() => {
+                    setCurrentStep(1);
+                    saveOnboardingStep(1);
+                  }}
                   leftIcon={<ArrowLeft size={16} />}
                 >
                   Back
@@ -860,8 +940,12 @@ const CreatorSettingsFlow = ({ user }) => {
 
               {/* Embedded Stripe Connect Component */}
               <StripeConnectEmbed
-                onComplete={(status) => {
+                onComplete={async (status) => {
                   console.log('Stripe onboarding complete:', status);
+                  
+                  // Mark onboarding as complete
+                  await completeOnboarding();
+                  
                   toast({
                     title: "Setup complete!",
                     description: "You're all set to start earning from your strategies",
@@ -869,9 +953,13 @@ const CreatorSettingsFlow = ({ user }) => {
                     duration: 5000,
                     isClosable: true,
                   });
-                  // Refresh the page to show creator dashboard
+                  
+                  // Update local state to show creator dashboard
+                  setCurrentStep(null);
+                  
+                  // Refresh user data
                   setTimeout(() => {
-                    window.location.href = '/settings?section=creator';
+                    window.location.reload();
                   }, 2000);
                 }}
                 onError={(error) => {
@@ -890,7 +978,10 @@ const CreatorSettingsFlow = ({ user }) => {
                 <Button
                   variant="ghost"
                   color="whiteAlpha.600"
-                  onClick={() => setCurrentStep(2)}
+                  onClick={() => {
+                    setCurrentStep(2);
+                    saveOnboardingStep(2);
+                  }}
                   leftIcon={<ArrowLeft size={16} />}
                   isDisabled // Disable back button during Stripe setup
                 >
