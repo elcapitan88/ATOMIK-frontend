@@ -468,7 +468,7 @@ const CreatorSettingsFlow = ({ user }) => {
   });
   
   // Determine if user is already a creator
-  const isCreator = user?.creator_profile_id !== null;
+  const isCreator = user?.creator_profile_id != null; // Using != instead of !== to catch both null and undefined
   
   // Debug info - remove this later
   console.log('CreatorSettingsFlow Debug:', {
