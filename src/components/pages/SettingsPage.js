@@ -470,6 +470,14 @@ const CreatorSettingsFlow = ({ user }) => {
   // Determine if user is already a creator
   const isCreator = user?.creator_profile_id !== null;
   
+  // Debug info - remove this later
+  console.log('CreatorSettingsFlow Debug:', {
+    user,
+    creator_profile_id: user?.creator_profile_id,
+    isCreator,
+    userKeys: user ? Object.keys(user) : 'no user'
+  });
+  
   // If already a creator, show full settings view
   if (isCreator) {
     return (
