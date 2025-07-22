@@ -462,21 +462,61 @@ const PasswordChangeModal = ({ isOpen, onClose }) => {
 // Creator Settings Flow Component
 const CreatorSettingsFlow = ({ user }) => {
   const [currentStep, setCurrentStep] = useState(1);
+  const [isCreatingProfile, setIsCreatingProfile] = useState(false);
   const [creatorData, setCreatorData] = useState({
     bio: '',
     trading_experience: 'intermediate'
   });
+  const toast = useToast();
+  const { updateUserProfile } = useAuth();
   
   // Determine if user is already a creator
-  const isCreator = user?.creator_profile_id != null; // Using != instead of !== to catch both null and undefined
-  
-  // Debug info - remove this later
-  console.log('CreatorSettingsFlow Debug:', {
-    user,
-    creator_profile_id: user?.creator_profile_id,
-    isCreator,
-    userKeys: user ? Object.keys(user) : 'no user'
-  });
+  const isCreator = user?.creator_profile_id != null;
+
+  // Handle creator profile creation and Stripe Connect
+  const handleCreateCreatorProfile = async () => {
+    setIsCreatingProfile(true);
+    try {
+      // Step 1: Create creator profile
+      const profileResponse = await axiosInstance.post('/api/v1/creators/become-creator', {
+        bio: creatorData.bio,
+        trading_experience: creatorData.trading_experience
+      });
+
+      console.log('Creator profile created:', profileResponse.data);
+
+      // Step 2: Update user context
+      if (profileResponse.data.creator_profile_id) {
+        updateUserProfile({
+          creator_profile_id: profileResponse.data.creator_profile_id
+        });
+      }
+
+      // Step 3: Initiate Stripe Connect
+      const stripeResponse = await axiosInstance.post('/api/v1/stripe/create-connect-account', {
+        creator_profile_id: profileResponse.data.creator_profile_id
+      });
+
+      if (stripeResponse.data.onboarding_url) {
+        // Redirect to Stripe onboarding
+        window.location.href = stripeResponse.data.onboarding_url;
+      } else {
+        throw new Error('No Stripe onboarding URL received');
+      }
+
+    } catch (error) {
+      console.error('Creator setup error:', error);
+      toast({
+        title: "Setup failed",
+        description: error.response?.data?.detail || error.message || "Please try again",
+        status: "error",
+        duration: 5000,
+        isClosable: true,
+      });
+    } finally {
+      setIsCreatingProfile(false);
+    }
+  };
   
   // If already a creator, show full settings view
   if (isCreator) {
@@ -851,10 +891,9 @@ const CreatorSettingsFlow = ({ user }) => {
                     width="full"
                     _hover={{ bg: "#00A3B8" }}
                     leftIcon={<CreditCard size={20} />}
-                    onClick={() => {
-                      // TODO: Create creator profile and initiate Stripe Connect
-                      console.log('Create creator profile and connect Stripe:', creatorData);
-                    }}
+                    onClick={handleCreateCreatorProfile}
+                    isLoading={isCreatingProfile}
+                    loadingText="Setting up your account..."
                   >
                     Connect with Stripe
                   </Button>
