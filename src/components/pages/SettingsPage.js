@@ -509,6 +509,7 @@ const SettingsPage = () => {
   const menuItems = [
     { id: 'profile', label: 'Profile', icon: User },
     { id: 'billing', label: 'Billing', icon: CreditCard },
+    { id: 'creator', label: 'Creator', icon: Zap },
     { id: 'affiliate', label: 'Affiliate', icon: DollarSign }
   ];
 
@@ -1308,6 +1309,208 @@ const SettingsPage = () => {
                 </Link>
               </HStack>
             </Box>
+          </VStack>
+        );
+
+      case 'creator':
+        return (
+          <VStack spacing={8} align="stretch">
+            {/* Creator Status Toggle */}
+            <SectionContainer icon={Zap} title="Creator Program">
+              <VStack spacing={6} align="stretch">
+                <FormControl display="flex" alignItems="center" justifyContent="space-between">
+                  <Box>
+                    <FormLabel color="white" mb="0" fontSize="md" fontWeight="semibold">
+                      Enable Creator Status
+                    </FormLabel>
+                    <Text fontSize="sm" color="whiteAlpha.600">
+                      Join our creator program to monetize your trading strategies and build a following
+                    </Text>
+                  </Box>
+                  <Switch 
+                    colorScheme="cyan"
+                    size="lg"
+                    isChecked={user?.creator_profile_id !== null}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        // TODO: Enable creator status
+                        console.log('Enable creator status');
+                      } else {
+                        // TODO: Disable creator status
+                        console.log('Disable creator status');
+                      }
+                    }}
+                  />
+                </FormControl>
+
+                {/* Show creator sections only if enabled */}
+                {user?.creator_profile_id && (
+                  <>
+                    <Divider borderColor="#333" />
+                    
+                    {/* Creator Profile Section */}
+                    <Box>
+                      <Text color="white" fontSize="lg" fontWeight="semibold" mb={4}>
+                        Creator Profile
+                      </Text>
+                      <VStack spacing={4} align="stretch">
+                        <FormInput
+                          label="Bio"
+                          placeholder="Tell your audience about your trading experience..."
+                          helperText="Share your trading background and expertise"
+                        />
+                        <FormInput
+                          label="Trading Experience"
+                          placeholder="e.g., 5+ years in forex and crypto markets"
+                          helperText="Describe your years of experience and markets you trade"
+                        />
+                      </VStack>
+                    </Box>
+
+                    <Divider borderColor="#333" />
+
+                    {/* Payment Setup Section */}
+                    <Box>
+                      <Text color="white" fontSize="lg" fontWeight="semibold" mb={4}>
+                        Payment Setup
+                      </Text>
+                      <Box
+                        bg="#1a1a1a"
+                        p={6}
+                        borderRadius="lg"
+                        border="1px solid #333"
+                      >
+                        <VStack spacing={4} align="stretch">
+                          <HStack justify="space-between">
+                            <VStack align="start" spacing={1}>
+                              <Text color="white" fontSize="md" fontWeight="medium">
+                                Stripe Connect
+                              </Text>
+                              <Text color="whiteAlpha.600" fontSize="sm">
+                                Set up payments to receive earnings from your strategies
+                              </Text>
+                            </VStack>
+                            <Button
+                              bg="#00C6E0"
+                              color="white"
+                              size="sm"
+                              _hover={{ bg: "#00A3B8" }}
+                              leftIcon={<CreditCard size={16} />}
+                            >
+                              Setup Payments
+                            </Button>
+                          </HStack>
+                        </VStack>
+                      </Box>
+                    </Box>
+
+                    <Divider borderColor="#333" />
+
+                    {/* Earnings Overview */}
+                    <Box>
+                      <Text color="white" fontSize="lg" fontWeight="semibold" mb={4}>
+                        Earnings Overview
+                      </Text>
+                      <SimpleGrid columns={{ base: 1, md: 3 }} spacing={4}>
+                        <Box bg="#1a1a1a" p={4} borderRadius="lg" border="1px solid #333">
+                          <VStack align="start" spacing={2}>
+                            <Text color="whiteAlpha.600" fontSize="sm">
+                              Total Earnings
+                            </Text>
+                            <Text color="white" fontSize="xl" fontWeight="bold">
+                              $0.00
+                            </Text>
+                          </VStack>
+                        </Box>
+                        <Box bg="#1a1a1a" p={4} borderRadius="lg" border="1px solid #333">
+                          <VStack align="start" spacing={2}>
+                            <Text color="whiteAlpha.600" fontSize="sm">
+                              This Month
+                            </Text>
+                            <Text color="white" fontSize="xl" fontWeight="bold">
+                              $0.00
+                            </Text>
+                          </VStack>
+                        </Box>
+                        <Box bg="#1a1a1a" p={4} borderRadius="lg" border="1px solid #333">
+                          <VStack align="start" spacing={2}>
+                            <Text color="whiteAlpha.600" fontSize="sm">
+                              Subscribers
+                            </Text>
+                            <Text color="white" fontSize="xl" fontWeight="bold">
+                              0
+                            </Text>
+                          </VStack>
+                        </Box>
+                      </SimpleGrid>
+                    </Box>
+
+                    <Divider borderColor="#333" />
+
+                    {/* Quick Actions */}
+                    <Box>
+                      <Text color="white" fontSize="lg" fontWeight="semibold" mb={4}>
+                        Quick Actions
+                      </Text>
+                      <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
+                        <Button
+                          variant="outline"
+                          color="white"
+                          borderColor="#333"
+                          leftIcon={<Zap size={16} />}
+                          _hover={{ borderColor: "#00C6E0", color: "#00C6E0" }}
+                        >
+                          View Creator Hub
+                        </Button>
+                        <Button
+                          variant="outline"
+                          color="white"
+                          borderColor="#333"
+                          leftIcon={<DollarSign size={16} />}
+                          _hover={{ borderColor: "#00C6E0", color: "#00C6E0" }}
+                        >
+                          Manage Strategies
+                        </Button>
+                      </SimpleGrid>
+                    </Box>
+                  </>
+                )}
+
+                {/* Show onboarding prompt if not a creator */}
+                {!user?.creator_profile_id && (
+                  <Box
+                    bg="linear-gradient(135deg, rgba(0, 198, 224, 0.1) 0%, rgba(0, 198, 224, 0.05) 100%)"
+                    p={6}
+                    borderRadius="lg"
+                    border="1px solid rgba(0, 198, 224, 0.3)"
+                  >
+                    <VStack spacing={4} align="center" textAlign="center">
+                      <Box color="#00C6E0">
+                        <Zap size={32} />
+                      </Box>
+                      <VStack spacing={2}>
+                        <Text color="white" fontSize="lg" fontWeight="semibold">
+                          Join the Creator Program
+                        </Text>
+                        <Text color="whiteAlpha.700" fontSize="sm" maxW="md">
+                          Monetize your trading expertise by sharing strategies with our community. 
+                          Earn recurring revenue from subscribers and build your trading reputation.
+                        </Text>
+                      </VStack>
+                      <Button
+                        bg="#00C6E0"
+                        color="white"
+                        size="md"
+                        _hover={{ bg: "#00A3B8" }}
+                        leftIcon={<Zap size={16} />}
+                      >
+                        Get Started
+                      </Button>
+                    </VStack>
+                  </Box>
+                )}
+              </VStack>
+            </SectionContainer>
           </VStack>
         );
 
