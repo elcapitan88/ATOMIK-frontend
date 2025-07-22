@@ -150,8 +150,16 @@
       form-action 'self';
     ">
 
-    <!-- Stripe Connect JS - Preload to avoid Cloudflare Rocket Loader conflicts -->
-    <script src="https://js.stripe.com/v3/" data-cfasync="false" defer></script>
+    <!-- Disable Cloudflare Rocket Loader for this page -->
+    <script data-cfasync="false">
+      // Disable Cloudflare Rocket Loader globally for this page
+      if (typeof window !== 'undefined') {
+        window.__cfRLUnblockHandlers = true;
+      }
+    </script>
+    
+    <!-- Stripe Connect JS - Load without Cloudflare interference -->
+    <script src="https://js.stripe.com/v3/" data-cfasync="false"></script>
     
     <!-- Structured Data -->
     <script type="application/ld+json">
