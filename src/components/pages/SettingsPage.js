@@ -478,6 +478,13 @@ const CreatorSettingsFlow = ({ user }) => {
   const handleCreateCreatorProfile = async () => {
     setIsCreatingProfile(true);
     try {
+      // Check if user already has a creator profile
+      if (isCreator) {
+        console.log('User already has creator profile, skipping to Stripe setup');
+        setCurrentStep(3);
+        return;
+      }
+
       // Create creator profile
       const profileResponse = await axiosInstance.post('/api/v1/creators/become-creator', {
         bio: creatorData.bio,
@@ -487,9 +494,9 @@ const CreatorSettingsFlow = ({ user }) => {
       console.log('Creator profile created:', profileResponse.data);
 
       // Update user context
-      if (profileResponse.data.creator_profile_id) {
+      if (profileResponse.data.id) {
         updateUserProfile({
-          creator_profile_id: profileResponse.data.creator_profile_id
+          creator_profile_id: profileResponse.data.id
         });
       }
 
@@ -518,8 +525,15 @@ const CreatorSettingsFlow = ({ user }) => {
     }
   };
   
+  // Reset step when user navigates away and comes back
+  React.useEffect(() => {
+    if (isCreator && currentStep < 3) {
+      setCurrentStep(3); // Skip to Stripe setup if already a creator
+    }
+  }, [isCreator, currentStep]);
+
   // If already a creator, show full settings view
-  if (isCreator) {
+  if (isCreator && currentStep !== 3) {
     return (
       <VStack spacing={8} align="stretch">
         {/* Creator Dashboard */}
