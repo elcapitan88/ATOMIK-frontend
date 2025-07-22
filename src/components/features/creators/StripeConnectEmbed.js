@@ -33,21 +33,41 @@ const StripeConnectEmbed = ({ onComplete, onError }) => {
   useEffect(() => {
     const initializeStripeConnect = async () => {
       try {
+        console.log('🔵 Starting Stripe Connect initialization...');
         setLoading(true);
         setError(null);
 
+        // Check publishable key
+        const publishableKey = process.env.REACT_APP_STRIPE_PUBLISHABLE_KEY;
+        console.log('🔵 Publishable key found:', publishableKey ? 'Yes' : 'No');
+        
+        if (!publishableKey) {
+          throw new Error('Stripe publishable key not found in environment variables');
+        }
+
         // Get account session from backend
+        console.log('🔵 Fetching account session from backend...');
         const response = await axiosInstance.post('/api/v1/creators/create-account-session');
         const { client_secret, account_id } = response.data;
+        
+        console.log('🔵 Account session response:', { 
+          has_client_secret: !!client_secret, 
+          account_id,
+          client_secret_preview: client_secret ? client_secret.substring(0, 20) + '...' : 'none'
+        });
 
         if (!client_secret) {
           throw new Error('No client secret received from server');
         }
 
         // Initialize Stripe Connect
+        console.log('🔵 Loading Stripe Connect library...');
         const instance = loadConnectAndInitialize({
-          publishableKey: process.env.REACT_APP_STRIPE_PUBLISHABLE_KEY,
-          fetchClientSecret: async () => client_secret,
+          publishableKey,
+          fetchClientSecret: async () => {
+            console.log('🔵 Stripe requesting client secret...');
+            return client_secret;
+          },
           appearance: {
             overlays: 'dialog',
             variables: {
@@ -63,13 +83,15 @@ const StripeConnectEmbed = ({ onComplete, onError }) => {
           },
         });
 
+        console.log('🔵 Stripe Connect instance created:', !!instance);
         setStripeConnectInstance(instance);
 
         // Check initial account status
+        console.log('🔵 Checking initial account status...');
         checkAccountStatus();
 
       } catch (err) {
-        console.error('Stripe Connect initialization error:', err);
+        console.error('❌ Stripe Connect initialization error:', err);
         setError(err.message || 'Failed to initialize payment setup');
         if (onError) onError(err);
       } finally {
@@ -211,9 +233,11 @@ const StripeConnectEmbed = ({ onComplete, onError }) => {
     );
   }
 
+  console.log('🔵 Rendering StripeConnectEmbed, instance available:', !!stripeConnectInstance);
+
   return (
     <Box>
-      {stripeConnectInstance && (
+      {stripeConnectInstance ? (
         <ConnectComponentsProvider connectInstance={stripeConnectInstance}>
           <Box
             bg="#1a1a1a"
@@ -222,6 +246,7 @@ const StripeConnectEmbed = ({ onComplete, onError }) => {
             border="1px solid #333"
             minH="400px"
           >
+            {console.log('🔵 Rendering ConnectAccountOnboarding component')}
             <ConnectAccountOnboarding
               onExit={handleOnboardingExit}
               // CollectionOptions
@@ -253,6 +278,21 @@ const StripeConnectEmbed = ({ onComplete, onError }) => {
             </Box>
           )}
         </ConnectComponentsProvider>
+      ) : (
+        <Box
+          bg="#1a1a1a"
+          p={6}
+          borderRadius="lg"
+          border="1px solid #333"
+          minH="400px"
+          display="flex"
+          alignItems="center"
+          justifyContent="center"
+        >
+          <Text color="whiteAlpha.600" fontSize="sm">
+            Stripe Connect instance not available. Check browser console for details.
+          </Text>
+        </Box>
       )}
     </Box>
   );
