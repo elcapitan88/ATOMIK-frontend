@@ -150,6 +150,9 @@
       form-action 'self';
     ">
 
+    <!-- Stripe Connect JS - Preload to avoid Cloudflare Rocket Loader conflicts -->
+    <script src="https://js.stripe.com/v3/" data-cfasync="false" defer></script>
+    
     <!-- Structured Data -->
     <script type="application/ld+json">
     {

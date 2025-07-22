@@ -18,6 +18,7 @@ import {
   ConnectAccountOnboarding, 
   ConnectComponentsProvider 
 } from '@stripe/react-connect-js';
+// Import with explicit script loading to avoid Cloudflare Rocket Loader conflicts
 import { loadConnectAndInitialize } from '@stripe/connect-js';
 import { CheckCircle, RefreshCw, ExternalLink } from 'lucide-react';
 import axiosInstance from '@/services/axiosConfig';
