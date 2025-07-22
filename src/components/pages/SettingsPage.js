@@ -73,6 +73,7 @@ import axiosInstance from '@/services/axiosConfig';
 import { ProfilePicture } from '@/components/common/ProfilePicture';
 import { AffiliateDashboard, BecomeAffiliateModal } from '@/components/affiliate';
 import { useAffiliate } from '@/hooks/useAffiliate';
+import StripeConnectEmbed from '@/components/features/creators/StripeConnectEmbed';
 
 const MotionBox = motion(Box);
 const MotionFlex = motion(Flex);
@@ -473,11 +474,11 @@ const CreatorSettingsFlow = ({ user }) => {
   // Determine if user is already a creator
   const isCreator = user?.creator_profile_id != null;
 
-  // Handle creator profile creation and Stripe Connect
+  // Handle creator profile creation (now separate from Stripe)
   const handleCreateCreatorProfile = async () => {
     setIsCreatingProfile(true);
     try {
-      // Step 1: Create creator profile
+      // Create creator profile
       const profileResponse = await axiosInstance.post('/api/v1/creators/become-creator', {
         bio: creatorData.bio,
         trading_experience: creatorData.trading_experience
@@ -485,24 +486,23 @@ const CreatorSettingsFlow = ({ user }) => {
 
       console.log('Creator profile created:', profileResponse.data);
 
-      // Step 2: Update user context
+      // Update user context
       if (profileResponse.data.creator_profile_id) {
         updateUserProfile({
           creator_profile_id: profileResponse.data.creator_profile_id
         });
       }
 
-      // Step 3: Initiate Stripe Connect
-      const stripeResponse = await axiosInstance.post('/api/v1/stripe/create-connect-account', {
-        creator_profile_id: profileResponse.data.creator_profile_id
+      // Move to Stripe setup step
+      setCurrentStep(3);
+      
+      toast({
+        title: "Profile created!",
+        description: "Now let's set up your payment details",
+        status: "success",
+        duration: 3000,
+        isClosable: true,
       });
-
-      if (stripeResponse.data.onboarding_url) {
-        // Redirect to Stripe onboarding
-        window.location.href = stripeResponse.data.onboarding_url;
-      } else {
-        throw new Error('No Stripe onboarding URL received');
-      }
 
     } catch (error) {
       console.error('Creator setup error:', error);
@@ -817,8 +817,10 @@ const CreatorSettingsFlow = ({ user }) => {
                   bg="#00C6E0"
                   color="white"
                   _hover={{ bg: "#00A3B8" }}
-                  onClick={() => setCurrentStep(3)}
+                  onClick={handleCreateCreatorProfile}
                   isDisabled={!creatorData.bio.trim()}
+                  isLoading={isCreatingProfile}
+                  loadingText="Creating profile..."
                 >
                   Continue to Payment Setup
                 </Button>
@@ -828,77 +830,47 @@ const CreatorSettingsFlow = ({ user }) => {
         );
 
       case 3:
-        // Stripe Connect Setup
+        // Stripe Connect Setup with Embedded Components
         return (
           <SectionContainer icon={CreditCard} title="Set Up Payments">
             <VStack spacing={6} align="stretch">
               <Box>
                 <Text color="white" fontSize="lg" fontWeight="semibold" mb={2}>
-                  Connect your Stripe account
+                  Complete your payment setup
                 </Text>
                 <Text color="whiteAlpha.600" fontSize="sm" mb={6}>
-                  To receive payments from your subscribers, you'll need to connect a Stripe account. 
-                  This is secure and handled entirely by Stripe - we never see your banking information.
+                  Fill out the secure form below to start receiving payments. This information is 
+                  handled entirely by Stripe - we never see your banking details.
                 </Text>
               </Box>
 
-              <Box
-                bg="#1a1a1a"
-                p={6}
-                borderRadius="lg"
-                border="1px solid #333"
-              >
-                <VStack spacing={4} align="stretch">
-                  <HStack>
-                    <Box
-                      bg="rgba(0, 198, 224, 0.2)"
-                      p={3}
-                      borderRadius="md"
-                    >
-                      <Shield size={24} color="#00C6E0" />
-                    </Box>
-                    <VStack align="start" spacing={1}>
-                      <Text color="white" fontSize="md" fontWeight="medium">
-                        Secure Payment Processing
-                      </Text>
-                      <Text color="whiteAlpha.600" fontSize="sm">
-                        Powered by Stripe Connect - Bank-level security and compliance
-                      </Text>
-                    </VStack>
-                  </HStack>
-
-                  <Divider borderColor="#333" />
-
-                  <VStack spacing={3} align="start">
-                    <Text color="whiteAlpha.700" fontSize="sm">
-                      ✓ Instant payouts to your bank account
-                    </Text>
-                    <Text color="whiteAlpha.700" fontSize="sm">
-                      ✓ Detailed earnings reports and analytics
-                    </Text>
-                    <Text color="whiteAlpha.700" fontSize="sm">
-                      ✓ Automatic tax documentation (1099s)
-                    </Text>
-                    <Text color="whiteAlpha.700" fontSize="sm">
-                      ✓ Support for multiple currencies
-                    </Text>
-                  </VStack>
-
-                  <Button
-                    bg="#00C6E0"
-                    color="white"
-                    size="lg"
-                    width="full"
-                    _hover={{ bg: "#00A3B8" }}
-                    leftIcon={<CreditCard size={20} />}
-                    onClick={handleCreateCreatorProfile}
-                    isLoading={isCreatingProfile}
-                    loadingText="Setting up your account..."
-                  >
-                    Connect with Stripe
-                  </Button>
-                </VStack>
-              </Box>
+              {/* Embedded Stripe Connect Component */}
+              <StripeConnectEmbed
+                onComplete={(status) => {
+                  console.log('Stripe onboarding complete:', status);
+                  toast({
+                    title: "Setup complete!",
+                    description: "You're all set to start earning from your strategies",
+                    status: "success",
+                    duration: 5000,
+                    isClosable: true,
+                  });
+                  // Refresh the page to show creator dashboard
+                  setTimeout(() => {
+                    window.location.href = '/settings?section=creator';
+                  }, 2000);
+                }}
+                onError={(error) => {
+                  console.error('Stripe onboarding error:', error);
+                  toast({
+                    title: "Setup error",
+                    description: "Please try again or contact support",
+                    status: "error",
+                    duration: 5000,
+                    isClosable: true,
+                  });
+                }}
+              />
 
               <HStack justify="space-between" pt={4}>
                 <Button
@@ -906,11 +878,12 @@ const CreatorSettingsFlow = ({ user }) => {
                   color="whiteAlpha.600"
                   onClick={() => setCurrentStep(2)}
                   leftIcon={<ArrowLeft size={16} />}
+                  isDisabled // Disable back button during Stripe setup
                 >
                   Back
                 </Button>
                 <Text color="whiteAlpha.500" fontSize="xs">
-                  You'll be redirected to Stripe to complete account setup
+                  Complete the form above to finish setup
                 </Text>
               </HStack>
             </VStack>
