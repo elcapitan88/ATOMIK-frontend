@@ -29,12 +29,10 @@ import {
   Store, 
   Menu as MenuIcon, 
   ChevronLeft,
-  Shield,
-  Star
+  Shield
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import SupportModal from '../../common/Modal/SupportModal';
-import CreatorOnboardingModal from '../../features/creators/onboarding/CreatorOnboardingModal';
 
 // Simplified MenuItem with fewer conditionals
 const MenuItem = memo(({ icon, item, isSelected, onClick, isExpanded }) => {
@@ -129,7 +127,6 @@ const Menu = ({ onSelectItem }) => {
   const [selectedItem, setSelectedItem] = useState('Dashboard');
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const { isOpen: isSupportOpen, onOpen: onSupportOpen, onClose: onSupportClose } = useDisclosure();
-  const { isOpen: isCreatorOnboardingOpen, onOpen: onCreatorOnboardingOpen, onClose: onCreatorOnboardingClose } = useDisclosure();
   const menuRef = useRef(null);
   
   const navigate = useNavigate();
@@ -255,10 +252,6 @@ const Menu = ({ onSelectItem }) => {
     onSupportOpen();
   };
 
-  const handleBecomeCreatorClick = () => {
-    setIsUserMenuOpen(false);
-    onCreatorOnboardingOpen();
-  };
 
   const handleUserMenuClick = (e) => {
     e.stopPropagation();
@@ -452,13 +445,6 @@ const Menu = ({ onSelectItem }) => {
                   <PopoverBody p={2}>
                     <VStack spacing={1} align="stretch">
                       <MenuItem 
-                        icon={Star} 
-                        item="Become Creator" 
-                        onClick={handleBecomeCreatorClick} 
-                        isExpanded={true}
-                      />
-                      <Box my={2} h="1px" bg="whiteAlpha.300" />
-                      <MenuItem 
                         icon={Settings} 
                         item="Settings" 
                         onClick={() => navigate('/settings')} 
@@ -495,8 +481,6 @@ const Menu = ({ onSelectItem }) => {
       {/* Support Modal */}
       <SupportModal isOpen={isSupportOpen} onClose={onSupportClose} />
       
-      {/* Creator Onboarding Modal */}
-      <CreatorOnboardingModal isOpen={isCreatorOnboardingOpen} onClose={onCreatorOnboardingClose} />
     </>
   );
 };

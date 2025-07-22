@@ -268,45 +268,5 @@ export const useRevenueCalculator = () => {
   };
 };
 
-// Hook for creator onboarding flow
-export const useCreatorOnboarding = () => {
-  const [step, setStep] = useState(1); // 1: basics, 2: stripe, 3: first strategy
-  const [onboardingData, setOnboardingData] = useState({
-    bio: '',
-    experience: 'intermediate',
-    stripeAccountId: null
-  });
-
-  const updateData = useCallback((newData) => {
-    setOnboardingData(prev => ({ ...prev, ...newData }));
-  }, []);
-
-  const nextStep = useCallback(() => {
-    setStep(prev => Math.min(prev + 1, 3));
-  }, []);
-
-  const prevStep = useCallback(() => {
-    setStep(prev => Math.max(prev - 1, 1));
-  }, []);
-
-  const resetOnboarding = useCallback(() => {
-    setStep(1);
-    setOnboardingData({
-      bio: '',
-      experience: 'intermediate',
-      stripeAccountId: null
-    });
-  }, []);
-
-  return {
-    step,
-    onboardingData,
-    updateData,
-    nextStep,
-    prevStep,
-    resetOnboarding,
-    isComplete: step > 3
-  };
-};
 
 export default useCreator;
