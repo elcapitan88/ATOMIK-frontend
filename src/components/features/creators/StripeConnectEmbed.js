@@ -46,27 +46,15 @@ const StripeConnectEmbed = ({ onComplete, onError }) => {
           throw new Error('Stripe publishable key not found in environment variables');
         }
 
-        // Get account session from backend
-        console.log('🔵 Fetching account session from backend...');
-        const response = await axiosInstance.post('/api/v1/creators/create-account-session');
-        const { client_secret, account_id } = response.data;
-        
-        console.log('🔵 Account session response:', { 
-          has_client_secret: !!client_secret, 
-          account_id,
-          client_secret_preview: client_secret ? client_secret.substring(0, 20) + '...' : 'none'
-        });
-
-        if (!client_secret) {
-          throw new Error('No client secret received from server');
-        }
-
         // Initialize Stripe Connect
         console.log('🔵 Loading Stripe Connect library...');
         const instance = loadConnectAndInitialize({
           publishableKey,
           fetchClientSecret: async () => {
-            console.log('🔵 Stripe requesting client secret...');
+            console.log('🔵 Stripe requesting fresh client secret from backend...');
+            const response = await axiosInstance.post('/api/v1/creators/create-account-session');
+            const { client_secret } = response.data;
+            console.log('🔵 Received fresh client secret:', client_secret ? 'Yes' : 'No');
             return client_secret;
           },
           appearance: {
