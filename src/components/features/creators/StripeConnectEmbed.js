@@ -344,9 +344,14 @@ const StripeConnectEmbed = ({ onComplete, onError }) => {
             {console.log('🔵 Rendering ConnectAccountOnboarding component')}
             <ConnectAccountOnboarding
               onExit={handleOnboardingExit}
+              onStepChange={(stepChange) => {
+                console.log('🔵 Stripe step change:', stepChange);
+              }}
+              // Ensure TOS collection is enabled
+              skipTermsOfServiceCollection={false}
               // Collection options for embedded onboarding
               collectionOptions={{
-                fields: 'currently_due',
+                fields: 'eventually_due',
                 futureRequirements: 'include',
               }}
             />
