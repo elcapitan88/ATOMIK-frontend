@@ -37,103 +37,24 @@ const StripeConnectEmbed = ({ onComplete, onError }) => {
 
   // Initialize Stripe Connect with singleton pattern
   useEffect(() => {
-    const getStripeConnectInstance = async () => {
-      try {
-        console.log('🔵 Getting Stripe Connect instance...');
-        setLoading(true);
-        setError(null);
-
-        // Return existing instance if available
-        if (stripeConnectInstanceSingleton) {
-          console.log('🔵 Using existing Stripe Connect instance');
-          setStripeConnectInstance(stripeConnectInstanceSingleton);
-          checkAccountStatus();
-          setLoading(false);
-          return;
-        }
-
-        // If initialization is in progress, wait for it
-        if (isInitializing) {
-          console.log('🔵 Waiting for existing initialization...');
-          const instance = await new Promise((resolve, reject) => {
-            initializationPromises.push({ resolve, reject });
-          });
-          setStripeConnectInstance(instance);
-          checkAccountStatus();
-          setLoading(false);
-          return;
-        }
-
-        // Start initialization
-        console.log('🔵 Starting new Stripe Connect initialization...');
-        isInitializing = true;
-
-        // Check publishable key
-        const publishableKey = process.env.REACT_APP_STRIPE_PUBLISHABLE_KEY;
-        console.log('🔵 Publishable key found:', publishableKey ? 'Yes' : 'No');
-        
-        if (!publishableKey) {
-          throw new Error('Stripe publishable key not found in environment variables');
-        }
-
-        // Initialize Stripe Connect (only once)
-        console.log('🔵 Loading Stripe Connect library...');
-        const instance = loadConnectAndInitialize({
-          publishableKey,
-          fetchClientSecret: async () => {
-            console.log('🔵 Stripe requesting fresh client secret from backend...');
-            const response = await axiosInstance.post('/api/v1/creators/create-account-session');
-            const { client_secret } = response.data;
-            console.log('🔵 Received fresh client secret:', client_secret ? 'Yes' : 'No');
-            return client_secret;
-          },
-          appearance: {
-            // Remove overlays setting to embed the form instead of opening a dialog
-            variables: {
-              colorPrimary: '#00C6E0',
-              colorBackground: '#1a1a1a',
-              colorText: '#ffffff',
-              colorDanger: '#df1b41',
-              fontFamily: 'Inter, system-ui, sans-serif',
-              spacingUnit: '4px',
-              borderRadius: '8px',
-              colorBorder: '#333333',
-            }
-          },
-        });
-
-
-        console.log('🔵 Stripe Connect instance created:', !!instance);
-        
-        // Store singleton instance
-        stripeConnectInstanceSingleton = instance;
-        setStripeConnectInstance(instance);
-
-        // Resolve all waiting promises
-        initializationPromises.forEach(({ resolve }) => resolve(instance));
-        initializationPromises.length = 0;
-
-        // Check initial account status
-        console.log('🔵 Checking initial account status...');
-        checkAccountStatus();
-
-      } catch (err) {
-        console.error('❌ Stripe Connect initialization error:', err);
-        setError(err.message || 'Failed to initialize payment setup');
-        
-        // Reject all waiting promises
-        initializationPromises.forEach(({ reject }) => reject(err));
-        initializationPromises.length = 0;
-        
-        if (onError) onError(err);
-      } finally {
-        isInitializing = false;
-        setLoading(false);
+    getStripeConnectInstance();
+    
+    // Add global error listener for Stripe Connect errors
+    const handleWindowError = (event) => {
+      if (event.error && event.error.message && 
+          event.error.message.includes('Failed to claim account session')) {
+        console.log('🔴 Detected account session error, automatically recovering...');
+        handleAccountSessionError();
       }
     };
-
-    getStripeConnectInstance();
-  }, [onError]);
+    
+    window.addEventListener('error', handleWindowError);
+    
+    // Cleanup
+    return () => {
+      window.removeEventListener('error', handleWindowError);
+    };
+  }, []);
 
   // Check account status
   const checkAccountStatus = async () => {
@@ -161,6 +82,129 @@ const StripeConnectEmbed = ({ onComplete, onError }) => {
       duration: 4000,
       isClosable: true,
     });
+  };
+
+  // Handle account session expiry/errors automatically
+  const handleAccountSessionError = async () => {
+    console.log('🔄 Account session expired/invalid, getting fresh session...');
+    
+    // Clear the existing instance
+    stripeConnectInstanceSingleton = null;
+    setStripeConnectInstance(null);
+    setLoading(true);
+    setError(null);
+    
+    try {
+      // Force a fresh account session by reinitializing the component
+      await getStripeConnectInstance();
+    } catch (error) {
+      console.error('❌ Failed to recover from account session error:', error);
+      setError('Unable to initialize payment setup. Please try refreshing the page.');
+    }
+  };
+
+  // Get or create Stripe Connect instance
+  const getStripeConnectInstance = async () => {
+    try {
+      console.log('🔵 Getting Stripe Connect instance...');
+      setLoading(true);
+      setError(null);
+
+      // Return existing instance if available
+      if (stripeConnectInstanceSingleton) {
+        console.log('🔵 Using existing Stripe Connect instance');
+        setStripeConnectInstance(stripeConnectInstanceSingleton);
+        checkAccountStatus();
+        setLoading(false);
+        return;
+      }
+
+      // If initialization is in progress, wait for it
+      if (isInitializing) {
+        console.log('🔵 Waiting for existing initialization...');
+        const instance = await new Promise((resolve, reject) => {
+          initializationPromises.push({ resolve, reject });
+        });
+        setStripeConnectInstance(instance);
+        checkAccountStatus();
+        setLoading(false);
+        return;
+      }
+
+      // Start initialization
+      console.log('🔵 Starting new Stripe Connect initialization...');
+      isInitializing = true;
+
+      // Check publishable key
+      const publishableKey = process.env.REACT_APP_STRIPE_PUBLISHABLE_KEY;
+      console.log('🔵 Publishable key found:', publishableKey ? 'Yes' : 'No');
+      
+      if (!publishableKey) {
+        throw new Error('Stripe publishable key not found in environment variables');
+      }
+
+      // Initialize Stripe Connect (only once)
+      console.log('🔵 Loading Stripe Connect library...');
+      const instance = loadConnectAndInitialize({
+        publishableKey,
+        fetchClientSecret: async () => {
+          console.log('🔵 Stripe requesting fresh client secret from backend...');
+          try {
+            // Add timestamp to prevent caching issues
+            const response = await axiosInstance.post('/api/v1/creators/create-account-session', {
+              timestamp: Date.now()
+            });
+            const { client_secret } = response.data;
+            console.log('🔵 Received fresh client secret:', client_secret ? 'Yes' : 'No');
+            console.log('🔵 Client secret preview:', client_secret ? `${client_secret.substring(0, 20)}...` : 'None');
+            return client_secret;
+          } catch (error) {
+            console.error('❌ Failed to get client secret:', error);
+            throw error;
+          }
+        },
+        appearance: {
+          // Remove overlays setting to embed the form instead of opening a dialog
+          variables: {
+            colorPrimary: '#00C6E0',
+            colorBackground: '#1a1a1a',
+            colorText: '#ffffff',
+            colorDanger: '#df1b41',
+            fontFamily: 'Inter, system-ui, sans-serif',
+            spacingUnit: '4px',
+            borderRadius: '8px',
+            colorBorder: '#333333',
+          }
+        },
+      });
+
+      console.log('🔵 Stripe Connect instance created:', !!instance);
+      
+      // Store singleton instance
+      stripeConnectInstanceSingleton = instance;
+      setStripeConnectInstance(instance);
+
+      // Resolve all waiting promises
+      initializationPromises.forEach(({ resolve }) => resolve(instance));
+      initializationPromises.length = 0;
+
+      // Check initial account status
+      console.log('🔵 Checking initial account status...');
+      checkAccountStatus();
+
+    } catch (err) {
+      console.error('❌ Stripe Connect initialization error:', err);
+      setError(err.message || 'Failed to initialize payment setup');
+      
+      // Reject all waiting promises
+      initializationPromises.forEach(({ reject }) => reject(err));
+      initializationPromises.length = 0;
+      
+      if (onError) onError(err);
+    } finally {
+      isInitializing = false;
+      setLoading(false);
+    }
   };
 
   // Handle refresh
