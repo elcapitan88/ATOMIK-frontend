@@ -346,6 +346,24 @@ const StripeConnectEmbed = ({ onComplete, onError }) => {
               onExit={handleOnboardingExit}
               onStepChange={(stepChange) => {
                 console.log('🔵 Stripe step change:', stepChange);
+                
+                // If we're on the summary step, log additional info
+                if (stepChange.step === 'summary') {
+                  console.log('🔵 On summary step - this is where Agree and Submit should be');
+                  
+                  // Set up a listener for clicks on the Agree and Submit button
+                  setTimeout(() => {
+                    const buttons = document.querySelectorAll('button');
+                    buttons.forEach(button => {
+                      if (button.textContent.includes('Agree') || button.textContent.includes('Submit')) {
+                        console.log('🔵 Found potential Agree/Submit button:', button.textContent);
+                        button.addEventListener('click', () => {
+                          console.log('🔵 Agree/Submit button clicked!');
+                        });
+                      }
+                    });
+                  }, 1000);
+                }
               }}
               // Ensure TOS collection is enabled
               skipTermsOfServiceCollection={false}
