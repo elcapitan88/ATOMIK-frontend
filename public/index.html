@@ -158,8 +158,22 @@
       }
     </script>
     
-    <!-- Stripe Connect JS - Load without Cloudflare interference -->
+    <!-- Load Stripe JS synchronously to ensure it's available -->
     <script src="https://js.stripe.com/v3/" data-cfasync="false"></script>
+    <script data-cfasync="false">
+      // Ensure Stripe is loaded before proceeding
+      (function() {
+        var checkStripe = function() {
+          if (typeof window.Stripe !== 'undefined') {
+            console.log('✅ Stripe base library loaded successfully');
+          } else {
+            console.warn('⚠️ Stripe base library not found, retrying...');
+            setTimeout(checkStripe, 100);
+          }
+        };
+        checkStripe();
+      })();
+    </script>
     
     <!-- Structured Data -->
     <script type="application/ld+json">
