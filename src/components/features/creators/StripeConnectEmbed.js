@@ -48,11 +48,23 @@ const StripeConnectEmbed = ({ onComplete, onError }) => {
       }
     };
     
+    // Add unhandled promise rejection listener
+    const handleUnhandledRejection = (event) => {
+      if (event.reason && event.reason.message && 
+          event.reason.message.includes('Failed to claim account session')) {
+        console.log('🔴 Detected account session error in promise, automatically recovering...');
+        event.preventDefault(); // Prevent console error
+        handleAccountSessionError();
+      }
+    };
+    
     window.addEventListener('error', handleWindowError);
+    window.addEventListener('unhandledrejection', handleUnhandledRejection);
     
     // Cleanup
     return () => {
       window.removeEventListener('error', handleWindowError);
+      window.removeEventListener('unhandledrejection', handleUnhandledRejection);
     };
   }, []);
 
@@ -160,6 +172,10 @@ const StripeConnectEmbed = ({ onComplete, onError }) => {
             return client_secret;
           } catch (error) {
             console.error('❌ Failed to get client secret:', error);
+            // If this is a session-related error, trigger recovery
+            if (error.response && (error.response.status === 500 || error.response.status === 400)) {
+              console.log('🔴 Backend error getting client secret, may need to recover session');
+            }
             throw error;
           }
         },
@@ -330,6 +346,13 @@ const StripeConnectEmbed = ({ onComplete, onError }) => {
               collectionOptions={{
                 fields: 'currently_due',
                 futureRequirements: 'include',
+              }}
+              // Add error handler for Stripe component
+              onLoadError={(error) => {
+                console.log('🔴 ConnectAccountOnboarding load error:', error);
+                if (error && error.message && error.message.includes('Failed to claim account session')) {
+                  handleAccountSessionError();
+                }
               }}
             />
           </Box>
