@@ -23,6 +23,11 @@ import { loadConnectAndInitialize } from '@stripe/connect-js';
 import { CheckCircle, RefreshCw, ExternalLink } from 'lucide-react';
 import axiosInstance from '@/services/axiosConfig';
 
+// Singleton instance management to prevent multiple Connect.js loads
+let stripeConnectInstanceSingleton = null;
+let isInitializing = false;
+const initializationPromises = [];
+
 const StripeConnectEmbed = ({ onComplete, onError }) => {
   const [stripeConnectInstance, setStripeConnectInstance] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -30,13 +35,38 @@ const StripeConnectEmbed = ({ onComplete, onError }) => {
   const [accountStatus, setAccountStatus] = useState(null);
   const toast = useToast();
 
-  // Initialize Stripe Connect
+  // Initialize Stripe Connect with singleton pattern
   useEffect(() => {
-    const initializeStripeConnect = async () => {
+    const getStripeConnectInstance = async () => {
       try {
-        console.log('🔵 Starting Stripe Connect initialization...');
+        console.log('🔵 Getting Stripe Connect instance...');
         setLoading(true);
         setError(null);
+
+        // Return existing instance if available
+        if (stripeConnectInstanceSingleton) {
+          console.log('🔵 Using existing Stripe Connect instance');
+          setStripeConnectInstance(stripeConnectInstanceSingleton);
+          checkAccountStatus();
+          setLoading(false);
+          return;
+        }
+
+        // If initialization is in progress, wait for it
+        if (isInitializing) {
+          console.log('🔵 Waiting for existing initialization...');
+          const instance = await new Promise((resolve, reject) => {
+            initializationPromises.push({ resolve, reject });
+          });
+          setStripeConnectInstance(instance);
+          checkAccountStatus();
+          setLoading(false);
+          return;
+        }
+
+        // Start initialization
+        console.log('🔵 Starting new Stripe Connect initialization...');
+        isInitializing = true;
 
         // Check publishable key
         const publishableKey = process.env.REACT_APP_STRIPE_PUBLISHABLE_KEY;
@@ -46,7 +76,7 @@ const StripeConnectEmbed = ({ onComplete, onError }) => {
           throw new Error('Stripe publishable key not found in environment variables');
         }
 
-        // Initialize Stripe Connect
+        // Initialize Stripe Connect (only once)
         console.log('🔵 Loading Stripe Connect library...');
         const instance = loadConnectAndInitialize({
           publishableKey,
@@ -72,8 +102,26 @@ const StripeConnectEmbed = ({ onComplete, onError }) => {
           },
         });
 
+        // Add error handling for Connect.js loading failures
+        const component = instance.create('account_onboarding');
+        if (component && component.setOnLoadError) {
+          component.setOnLoadError((loadError) => {
+            console.error('❌ Connect.js load error:', loadError);
+            console.error('Component name:', loadError.elementTagName);
+            console.error('Error details:', loadError.error);
+            setError(`Failed to load Stripe component: ${loadError.error?.message || 'Unknown error'}`);
+          });
+        }
+
         console.log('🔵 Stripe Connect instance created:', !!instance);
+        
+        // Store singleton instance
+        stripeConnectInstanceSingleton = instance;
         setStripeConnectInstance(instance);
+
+        // Resolve all waiting promises
+        initializationPromises.forEach(({ resolve }) => resolve(instance));
+        initializationPromises.length = 0;
 
         // Check initial account status
         console.log('🔵 Checking initial account status...');
@@ -82,13 +130,19 @@ const StripeConnectEmbed = ({ onComplete, onError }) => {
       } catch (err) {
         console.error('❌ Stripe Connect initialization error:', err);
         setError(err.message || 'Failed to initialize payment setup');
+        
+        // Reject all waiting promises
+        initializationPromises.forEach(({ reject }) => reject(err));
+        initializationPromises.length = 0;
+        
         if (onError) onError(err);
       } finally {
+        isInitializing = false;
         setLoading(false);
       }
     };
 
-    initializeStripeConnect();
+    getStripeConnectInstance();
   }, [onError]);
 
   // Check account status
