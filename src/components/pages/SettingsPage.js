@@ -517,16 +517,23 @@ const CreatorSettingsFlow = ({ user }) => {
   // Update onboarding step in database
   const saveOnboardingStep = async (step, data = null) => {
     try {
-      console.log(`🔄 Saving onboarding step ${step} with data:`, data);
       const response = await axiosInstance.post('/api/v1/creators/update-onboarding-step', {
         step,
         data
       });
-      console.log(`✅ Onboarding step ${step} saved successfully:`, response.data);
       return response.data;
     } catch (error) {
-      console.error(`❌ Failed to save onboarding step ${step}:`, error);
-      console.error('Error details:', error.response?.data);
+      console.error(`Failed to save onboarding step ${step}:`, error);
+      
+      // Show user-friendly error
+      toast({
+        title: "Failed to save progress",
+        description: error.response?.data?.detail || "Please check your connection and try again",
+        status: "error",
+        duration: 5000,
+        isClosable: true,
+      });
+      
       throw error;
     }
   };
