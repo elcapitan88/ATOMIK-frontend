@@ -88,7 +88,7 @@ const StripeConnectEmbed = ({ onComplete, onError }) => {
             return client_secret;
           },
           appearance: {
-            overlays: 'dialog',
+            // Remove overlays setting to embed the form instead of opening a dialog
             variables: {
               colorPrimary: '#00C6E0',
               colorBackground: '#1a1a1a',
@@ -102,16 +102,6 @@ const StripeConnectEmbed = ({ onComplete, onError }) => {
           },
         });
 
-        // Add error handling for Connect.js loading failures
-        const component = instance.create('account_onboarding');
-        if (component && component.setOnLoadError) {
-          component.setOnLoadError((loadError) => {
-            console.error('❌ Connect.js load error:', loadError);
-            console.error('Component name:', loadError.elementTagName);
-            console.error('Error details:', loadError.error);
-            setError(`Failed to load Stripe component: ${loadError.error?.message || 'Unknown error'}`);
-          });
-        }
 
         console.log('🔵 Stripe Connect instance created:', !!instance);
         
