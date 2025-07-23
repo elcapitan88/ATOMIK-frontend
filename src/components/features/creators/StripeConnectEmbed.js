@@ -56,16 +56,53 @@ const StripeConnectEmbed = ({ onComplete, onError }) => {
   };
 
   // Handle onboarding exit
-  const handleOnboardingExit = async () => {
+  const handleOnboardingExit = async (exitEvent = {}) => {
+    console.log('🔵 Stripe onboarding exit event:', exitEvent);
+    
+    // Check the account status after any exit
     await checkAccountStatus();
     
-    toast({
-      title: "Progress saved",
-      description: "You can complete setup anytime from your creator settings",
-      status: "info",
-      duration: 4000,
-      isClosable: true,
-    });
+    // Check if this was a completion (submission) vs just closing
+    if (exitEvent.reason === 'exit_completed' || exitEvent.reason === 'requirements_completed') {
+      console.log('🎉 Stripe onboarding appears to be completed!');
+      
+      // Wait a moment for Stripe to process, then check status again
+      setTimeout(async () => {
+        await checkAccountStatus();
+        
+        // Check if onboarding is truly complete
+        const statusResponse = await axiosInstance.get('/api/v1/creators/stripe-status');
+        if (statusResponse.data.onboarding_complete) {
+          toast({
+            title: "Setup complete!",
+            description: "Your payment account is ready. Welcome to the creator program!",
+            status: "success",
+            duration: 6000,
+            isClosable: true,
+          });
+          
+          if (onComplete) {
+            onComplete(statusResponse.data);
+          }
+        } else {
+          toast({
+            title: "Almost there!",
+            description: "Please complete all required fields to finish setup",
+            status: "warning",
+            duration: 5000,
+            isClosable: true,
+          });
+        }
+      }, 2000);
+    } else {
+      toast({
+        title: "Progress saved",
+        description: "You can complete setup anytime from your creator settings",
+        status: "info",
+        duration: 4000,
+        isClosable: true,
+      });
+    }
   };
 
   // Handle manual refresh for account session errors
