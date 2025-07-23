@@ -38,34 +38,6 @@ const StripeConnectEmbed = ({ onComplete, onError }) => {
   // Initialize Stripe Connect with singleton pattern
   useEffect(() => {
     getStripeConnectInstance();
-    
-    // Add global error listener for Stripe Connect errors
-    const handleWindowError = (event) => {
-      if (event.error && event.error.message && 
-          event.error.message.includes('Failed to claim account session')) {
-        console.log('🔴 Detected account session error, automatically recovering...');
-        handleAccountSessionError();
-      }
-    };
-    
-    // Add unhandled promise rejection listener
-    const handleUnhandledRejection = (event) => {
-      if (event.reason && event.reason.message && 
-          event.reason.message.includes('Failed to claim account session')) {
-        console.log('🔴 Detected account session error in promise, automatically recovering...');
-        event.preventDefault(); // Prevent console error
-        handleAccountSessionError();
-      }
-    };
-    
-    window.addEventListener('error', handleWindowError);
-    window.addEventListener('unhandledrejection', handleUnhandledRejection);
-    
-    // Cleanup
-    return () => {
-      window.removeEventListener('error', handleWindowError);
-      window.removeEventListener('unhandledrejection', handleUnhandledRejection);
-    };
   }, []);
 
   // Check account status
@@ -96,23 +68,16 @@ const StripeConnectEmbed = ({ onComplete, onError }) => {
     });
   };
 
-  // Handle account session expiry/errors automatically
-  const handleAccountSessionError = async () => {
-    console.log('🔄 Account session expired/invalid, getting fresh session...');
-    
+  // Handle manual refresh for account session errors
+  const handleRefreshSession = () => {
     // Clear the existing instance
     stripeConnectInstanceSingleton = null;
     setStripeConnectInstance(null);
     setLoading(true);
     setError(null);
     
-    try {
-      // Force a fresh account session by reinitializing the component
-      await getStripeConnectInstance();
-    } catch (error) {
-      console.error('❌ Failed to recover from account session error:', error);
-      setError('Unable to initialize payment setup. Please try refreshing the page.');
-    }
+    // Get fresh instance
+    getStripeConnectInstance();
   };
 
   // Get or create Stripe Connect instance
@@ -172,10 +137,6 @@ const StripeConnectEmbed = ({ onComplete, onError }) => {
             return client_secret;
           } catch (error) {
             console.error('❌ Failed to get client secret:', error);
-            // If this is a session-related error, trigger recovery
-            if (error.response && (error.response.status === 500 || error.response.status === 400)) {
-              console.log('🔴 Backend error getting client secret, may need to recover session');
-            }
             throw error;
           }
         },
@@ -240,6 +201,10 @@ const StripeConnectEmbed = ({ onComplete, onError }) => {
   }
 
   if (error) {
+    const isSessionError = error.includes('Failed to claim account session') || 
+                           error.includes('account session') ||
+                           error.includes('session');
+    
     return (
       <Alert
         status="error"
@@ -255,10 +220,10 @@ const StripeConnectEmbed = ({ onComplete, onError }) => {
       >
         <AlertIcon boxSize="40px" mr={0} />
         <AlertTitle mt={4} mb={1} fontSize="lg" color="white">
-          Setup Error
+          {isSessionError ? 'Session Expired' : 'Setup Error'}
         </AlertTitle>
         <AlertDescription maxWidth="sm" color="whiteAlpha.800">
-          {error}
+          {isSessionError ? 'Your payment setup session has expired. Click below to get a fresh session.' : error}
         </AlertDescription>
         <Button
           mt={4}
@@ -267,10 +232,10 @@ const StripeConnectEmbed = ({ onComplete, onError }) => {
           color="white"
           borderColor="whiteAlpha.300"
           leftIcon={<RefreshCw size={16} />}
-          onClick={handleRefresh}
+          onClick={isSessionError ? handleRefreshSession : handleRefresh}
           _hover={{ borderColor: "#00C6E0", color: "#00C6E0" }}
         >
-          Try Again
+          {isSessionError ? 'Get Fresh Session' : 'Try Again'}
         </Button>
       </Alert>
     );
@@ -346,13 +311,6 @@ const StripeConnectEmbed = ({ onComplete, onError }) => {
               collectionOptions={{
                 fields: 'currently_due',
                 futureRequirements: 'include',
-              }}
-              // Add error handler for Stripe component
-              onLoadError={(error) => {
-                console.log('🔴 ConnectAccountOnboarding load error:', error);
-                if (error && error.message && error.message.includes('Failed to claim account session')) {
-                  handleAccountSessionError();
-                }
               }}
             />
           </Box>
