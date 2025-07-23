@@ -517,12 +517,17 @@ const CreatorSettingsFlow = ({ user }) => {
   // Update onboarding step in database
   const saveOnboardingStep = async (step, data = null) => {
     try {
-      await axiosInstance.post('/api/v1/creators/update-onboarding-step', {
+      console.log(`🔄 Saving onboarding step ${step} with data:`, data);
+      const response = await axiosInstance.post('/api/v1/creators/update-onboarding-step', {
         step,
         data
       });
+      console.log(`✅ Onboarding step ${step} saved successfully:`, response.data);
+      return response.data;
     } catch (error) {
-      console.error('Failed to save onboarding step:', error);
+      console.error(`❌ Failed to save onboarding step ${step}:`, error);
+      console.error('Error details:', error.response?.data);
+      throw error;
     }
   };
 
@@ -563,7 +568,11 @@ const CreatorSettingsFlow = ({ user }) => {
 
       // Move to Stripe setup step
       setCurrentStep(3);
-      saveOnboardingStep(3, creatorData);
+      try {
+        await saveOnboardingStep(3, creatorData);
+      } catch (error) {
+        console.error('Failed to save step 3:', error);
+      }
       
       toast({
         title: "Profile created!",
@@ -833,9 +842,13 @@ const CreatorSettingsFlow = ({ user }) => {
                   px={8}
                   _hover={{ bg: "#00A3B8" }}
                   leftIcon={<Zap size={20} />}
-                  onClick={() => {
+                  onClick={async () => {
                     setCurrentStep(2);
-                    saveOnboardingStep(2);
+                    try {
+                      await saveOnboardingStep(2);
+                    } catch (error) {
+                      console.error('Failed to save step 2:', error);
+                    }
                   }}
                 >
                   Get Started
@@ -899,9 +912,13 @@ const CreatorSettingsFlow = ({ user }) => {
                 <Button
                   variant="ghost"
                   color="whiteAlpha.600"
-                  onClick={() => {
+                  onClick={async () => {
                     setCurrentStep(1);
-                    saveOnboardingStep(1);
+                    try {
+                      await saveOnboardingStep(1);
+                    } catch (error) {
+                      console.error('Failed to save step 1:', error);
+                    }
                   }}
                   leftIcon={<ArrowLeft size={16} />}
                 >
@@ -978,9 +995,13 @@ const CreatorSettingsFlow = ({ user }) => {
                 <Button
                   variant="ghost"
                   color="whiteAlpha.600"
-                  onClick={() => {
+                  onClick={async () => {
                     setCurrentStep(2);
-                    saveOnboardingStep(2);
+                    try {
+                      await saveOnboardingStep(2);
+                    } catch (error) {
+                      console.error('Failed to save step 2:', error);
+                    }
                   }}
                   leftIcon={<ArrowLeft size={16} />}
                   isDisabled // Disable back button during Stripe setup
