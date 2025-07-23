@@ -282,9 +282,9 @@ const StripeConnectEmbed = ({ onComplete, onError }) => {
             {console.log('🔵 Rendering ConnectAccountOnboarding component')}
             <ConnectAccountOnboarding
               onExit={handleOnboardingExit}
-              // CollectionOptions
+              // Collection options for embedded onboarding
               collectionOptions={{
-                fields: 'eventually_due',
+                fields: 'currently_due',
                 futureRequirements: 'include',
               }}
             />
