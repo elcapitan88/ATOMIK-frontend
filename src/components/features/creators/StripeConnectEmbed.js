@@ -496,9 +496,70 @@ const StripeConnectEmbed = ({ onComplete, onError }) => {
                 borderRadius="full"
               />
               {accountStatus.details_submitted && (
-                <Text color="whiteAlpha.600" fontSize="xs" mt={2} textAlign="center">
-                  If you see the overview screen, click "Agree and Submit" to complete setup
-                </Text>
+                <VStack spacing={3} mt={3}>
+                  <Text color="whiteAlpha.600" fontSize="xs" textAlign="center">
+                    If you see the overview screen, click "Agree and Submit" to complete setup
+                  </Text>
+                  <Button
+                    size="sm"
+                    colorScheme="orange"
+                    variant="outline"
+                    onClick={async () => {
+                      console.log('🔧 Manual TOS acceptance triggered...');
+                      try {
+                        setLoading(true);
+                        
+                        // Get user info
+                        const userAgent = navigator.userAgent;
+                        let userIP = '127.0.0.1';
+                        
+                        try {
+                          const ipResponse = await fetch('https://api.ipify.org?format=json');
+                          const ipData = await ipResponse.json();
+                          userIP = ipData.ip;
+                        } catch (ipError) {
+                          console.warn('Could not get user IP, using fallback');
+                        }
+                        
+                        // Call API to accept TOS
+                        const response = await axiosInstance.post('/api/v1/creators/accept-tos', {
+                          user_ip: userIP,
+                          user_agent: userAgent
+                        });
+                        
+                        console.log('🎉 Manual TOS acceptance successful:', response.data);
+                        
+                        toast({
+                          title: "TOS Accepted Manually!",
+                          description: "Terms of Service accepted via API for testing.",
+                          status: "success",
+                          duration: 5000,
+                          isClosable: true,
+                        });
+                        
+                        // Refresh account status
+                        await checkAccountStatus();
+                        
+                      } catch (error) {
+                        console.error('❌ Manual TOS acceptance failed:', error);
+                        toast({
+                          title: "Manual TOS Failed",
+                          description: error.response?.data?.detail || "Failed to accept TOS manually",
+                          status: "error",
+                          duration: 5000,
+                          isClosable: true,
+                        });
+                      } finally {
+                        setLoading(false);
+                      }
+                    }}
+                    _hover={{ borderColor: "#ff8c00", color: "#ff8c00" }}
+                    isLoading={loading}
+                    loadingText="Accepting TOS..."
+                  >
+                    🔧 Manual TOS Accept (Testing)
+                  </Button>
+                </VStack>
               )}
             </Box>
           )}
