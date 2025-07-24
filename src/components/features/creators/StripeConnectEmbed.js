@@ -44,6 +44,73 @@ const StripeConnectEmbed = ({ onComplete, onError }) => {
     getStripeConnectInstance();
   }, []);
 
+  // Add debugging observer for dynamic content changes
+  useEffect(() => {
+    if (!stripeConnectInstance) return;
+
+    console.log('🔵 Setting up comprehensive debugging...');
+
+    // Track all DOM mutations to catch dynamically loaded content
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
+          mutation.addedNodes.forEach((node) => {
+            if (node.nodeType === Node.ELEMENT_NODE) {
+              // Look for buttons in any new content
+              const buttons = node.querySelectorAll ? node.querySelectorAll('button') : [];
+              if (buttons.length > 0) {
+                console.log('🔵 NEW BUTTONS DETECTED via mutation observer:', buttons.length);
+                buttons.forEach((button, index) => {
+                  console.log(`🔵 New Button ${index}: "${button.textContent}"`);
+                  if (button.textContent.toLowerCase().includes('agree') || 
+                      button.textContent.toLowerCase().includes('submit')) {
+                    console.log('🔵 *** FOUND TOS BUTTON via mutation observer! ***');
+                    
+                    // Add enhanced click tracking
+                    button.addEventListener('click', (event) => {
+                      console.log('🔵 *** TOS BUTTON CLICKED! ***');
+                      console.log('🔵 Button:', button);
+                      console.log('🔵 Event:', event);
+                      console.log('🔵 Default prevented:', event.defaultPrevented);
+                      console.log('🔵 Propagation stopped:', event.cancelBubble);
+                    });
+                  }
+                });
+              }
+            }
+          });
+        }
+      });
+    });
+
+    // Observe the entire document for changes
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true
+    });
+
+    // Also add a periodic check every 2 seconds
+    const intervalId = setInterval(() => {
+      const allButtons = document.querySelectorAll('button');
+      const tosButtons = Array.from(allButtons).filter(button => 
+        button.textContent.toLowerCase().includes('agree') || 
+        button.textContent.toLowerCase().includes('submit')
+      );
+      
+      if (tosButtons.length > 0) {
+        console.log('🔵 *** PERIODIC CHECK FOUND TOS BUTTONS:', tosButtons.length);
+        tosButtons.forEach((button, index) => {
+          console.log(`🔵 TOS Button ${index}: "${button.textContent}" - disabled: ${button.disabled}`);
+        });
+      }
+    }, 2000);
+
+    return () => {
+      observer.disconnect();
+      clearInterval(intervalId);
+    };
+  }, [stripeConnectInstance]);
+
   // Check account status
   const checkAccountStatus = async () => {
     try {
@@ -333,73 +400,6 @@ const StripeConnectEmbed = ({ onComplete, onError }) => {
   }
 
   console.log('🔵 Rendering StripeConnectEmbed, instance available:', !!stripeConnectInstance);
-
-  // Add debugging observer for dynamic content changes
-  useEffect(() => {
-    if (!stripeConnectInstance) return;
-
-    console.log('🔵 Setting up comprehensive debugging...');
-
-    // Track all DOM mutations to catch dynamically loaded content
-    const observer = new MutationObserver((mutations) => {
-      mutations.forEach((mutation) => {
-        if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
-          mutation.addedNodes.forEach((node) => {
-            if (node.nodeType === Node.ELEMENT_NODE) {
-              // Look for buttons in any new content
-              const buttons = node.querySelectorAll ? node.querySelectorAll('button') : [];
-              if (buttons.length > 0) {
-                console.log('🔵 NEW BUTTONS DETECTED via mutation observer:', buttons.length);
-                buttons.forEach((button, index) => {
-                  console.log(`🔵 New Button ${index}: "${button.textContent}"`);
-                  if (button.textContent.toLowerCase().includes('agree') || 
-                      button.textContent.toLowerCase().includes('submit')) {
-                    console.log('🔵 *** FOUND TOS BUTTON via mutation observer! ***');
-                    
-                    // Add enhanced click tracking
-                    button.addEventListener('click', (event) => {
-                      console.log('🔵 *** TOS BUTTON CLICKED! ***');
-                      console.log('🔵 Button:', button);
-                      console.log('🔵 Event:', event);
-                      console.log('🔵 Default prevented:', event.defaultPrevented);
-                      console.log('🔵 Propagation stopped:', event.cancelBubble);
-                    });
-                  }
-                });
-              }
-            }
-          });
-        }
-      });
-    });
-
-    // Observe the entire document for changes
-    observer.observe(document.body, {
-      childList: true,
-      subtree: true
-    });
-
-    // Also add a periodic check every 2 seconds
-    const intervalId = setInterval(() => {
-      const allButtons = document.querySelectorAll('button');
-      const tosButtons = Array.from(allButtons).filter(button => 
-        button.textContent.toLowerCase().includes('agree') || 
-        button.textContent.toLowerCase().includes('submit')
-      );
-      
-      if (tosButtons.length > 0) {
-        console.log('🔵 *** PERIODIC CHECK FOUND TOS BUTTONS:', tosButtons.length);
-        tosButtons.forEach((button, index) => {
-          console.log(`🔵 TOS Button ${index}: "${button.textContent}" - disabled: ${button.disabled}`);
-        });
-      }
-    }, 2000);
-
-    return () => {
-      observer.disconnect();
-      clearInterval(intervalId);
-    };
-  }, [stripeConnectInstance]);
 
   return (
     <Box>
