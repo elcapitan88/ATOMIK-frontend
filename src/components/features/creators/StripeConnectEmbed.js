@@ -78,9 +78,11 @@ const StripeConnectEmbed = ({ onComplete, onError }) => {
       const prevStatus = accountStatus;
       setAccountStatus(response.data);
 
-      // Auto-accept TOS if details are submitted but TOS not accepted
-      if (response.data.details_submitted && !response.data.tos_accepted) {
-        console.log('🔵 Details submitted but TOS not accepted - auto-accepting TOS...');
+      // Auto-accept TOS if account exists but TOS not accepted
+      // This handles any case where TOS needs to be accepted
+      if (response.data.account_id && !response.data.tos_accepted && 
+          response.data.requirements?.currently_due?.includes('tos_acceptance.date')) {
+        console.log('🔵 Account exists but TOS not accepted - auto-accepting TOS...');
         
         try {
           // Get user info
