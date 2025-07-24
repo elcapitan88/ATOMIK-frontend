@@ -45,12 +45,12 @@ const StripeConnectEmbed = ({ onComplete, onError }) => {
     console.log('🔵 *** StripeConnectEmbed useEffect triggered - calling getStripeConnectInstance ***');
     getStripeConnectInstance();
     
-    // Start periodic status check
+    // Start periodic status check - only if component is still mounted
     const statusCheckInterval = setInterval(async () => {
       if (!accountStatus?.onboarding_complete) {
         await checkAccountStatus();
       }
-    }, 3000); // Check every 3 seconds
+    }, 5000); // Check every 5 seconds (reduced frequency)
     
     // Cleanup function
     return () => {
@@ -63,9 +63,17 @@ const StripeConnectEmbed = ({ onComplete, onError }) => {
   }, []);
 
 
-  // Check account status
+  // Check account status with rate limiting
   const checkAccountStatus = async () => {
     try {
+      // Prevent too many rapid API calls
+      const now = Date.now();
+      const lastCheck = checkAccountStatus.lastCall || 0;
+      if (now - lastCheck < 2000) { // Minimum 2 seconds between calls
+        return accountStatus;
+      }
+      checkAccountStatus.lastCall = now;
+
       const response = await axiosInstance.get('/api/v1/creators/stripe-status');
       const prevStatus = accountStatus;
       setAccountStatus(response.data);
@@ -90,7 +98,7 @@ const StripeConnectEmbed = ({ onComplete, onError }) => {
       return response.data;
     } catch (err) {
       console.error('Error checking account status:', err);
-      return null;
+      return accountStatus; // Return existing status on error
     }
   };
 
@@ -394,6 +402,10 @@ const StripeConnectEmbed = ({ onComplete, onError }) => {
               collectionOptions={{
                 fields: 'eventually_due',
                 futureRequirements: 'include',
+              }}
+              onLoadError={(error) => {
+                console.error('🔴 ConnectAccountOnboarding load error:', error);
+                setError('Failed to load onboarding form');
               }}
             />
           </Box>
