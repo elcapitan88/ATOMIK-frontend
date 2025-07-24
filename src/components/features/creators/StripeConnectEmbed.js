@@ -128,7 +128,9 @@ const StripeConnectEmbed = ({ onComplete, onError }) => {
 
   // Handle onboarding exit
   const handleOnboardingExit = async (exitEvent = {}) => {
-    console.log('🔵 Stripe onboarding exit event:', exitEvent);
+    console.log('🔵 *** STRIPE ONBOARDING EXIT EVENT ***', exitEvent);
+    console.log('🔵 Exit reason:', exitEvent?.reason);
+    console.log('🔵 Exit details:', JSON.stringify(exitEvent, null, 2));
     
     // Check the account status after any exit
     await checkAccountStatus();
@@ -420,43 +422,126 @@ const StripeConnectEmbed = ({ onComplete, onError }) => {
                 
                 // Log ALL step changes to see what's happening
                 console.log('🔵 Step details:', {
-                  step: stepChange.step,
-                  type: stepChange.type,
-                  ...stepChange
+                  step: stepChange?.step || 'NO_STEP',
+                  type: stepChange?.type || 'NO_TYPE',
+                  elementTagName: stepChange?.elementTagName || 'NO_TAG',
+                  fullObject: stepChange
                 });
                 
-                // If we're on the summary step, add debugging
-                if (stepChange.step === 'summary') {
-                  console.log('🔵 *** ON SUMMARY STEP - TOS SHOULD BE HERE! ***');
+                // Check for summary step with various possible values
+                const isOnSummary = stepChange?.step === 'summary' || 
+                                   stepChange?.step === 'tos_acceptance' ||
+                                   stepChange?.step === 'review' ||
+                                   (stepChange && JSON.stringify(stepChange).includes('summary')) ||
+                                   (stepChange && JSON.stringify(stepChange).includes('tos')) ||
+                                   (stepChange && JSON.stringify(stepChange).includes('agree'));
+                
+                if (isOnSummary) {
+                  console.log('🔵 *** ON SUMMARY/TOS STEP - RUNNING ENHANCED DEBUGGING! ***');
                   
                   // Immediate check
                   const immediateButtons = document.querySelectorAll('button');
                   console.log('🔵 Immediate button count:', immediateButtons.length);
                   
+                  immediateButtons.forEach((btn, idx) => {
+                    console.log(`🔵 Immediate Button ${idx}: "${btn.textContent}"`);
+                  });
+                  
                   // Multiple delayed checks with increasing delays
                   [500, 1000, 2000, 3000, 5000].forEach((delay, index) => {
                     setTimeout(() => {
-                      console.log(`🔵 Button check ${index + 1} (after ${delay}ms):`);
+                      console.log(`🔵 *** Button check ${index + 1} (after ${delay}ms): ***`);
                       const buttons = document.querySelectorAll('button');
-                      console.log(`🔵 Total buttons: ${buttons.length}`);
+                      console.log(`🔵 Total buttons found: ${buttons.length}`);
                       
                       buttons.forEach((button, btnIndex) => {
                         const text = button.textContent.trim();
+                        console.log(`🔵 Button ${btnIndex}: "${text}" (disabled: ${button.disabled})`);
+                        
                         if (text.toLowerCase().includes('agree') || 
                             text.toLowerCase().includes('submit') ||
-                            text.toLowerCase().includes('terms')) {
+                            text.toLowerCase().includes('terms') ||
+                            text.toLowerCase().includes('finish') ||
+                            text.toLowerCase().includes('complete')) {
                           console.log(`🔵 *** FOUND POTENTIAL TOS BUTTON: "${text}" ***`);
                           console.log('🔵 Button properties:', {
                             disabled: button.disabled,
                             visible: button.offsetParent !== null,
                             style: button.style.cssText,
                             className: button.className,
-                            id: button.id
+                            id: button.id,
+                            parentElement: button.parentElement?.tagName
                           });
+                          
+                          // Add click listener to this specific button
+                          button.addEventListener('click', async (event) => {
+                            console.log('🔵 *** TOS BUTTON CLICK INTERCEPTED! ***');
+                            console.log('🔵 Button text:', text);
+                            
+                            // Prevent the default Stripe handling temporarily
+                            event.preventDefault();
+                            event.stopPropagation();
+                            
+                            console.log('🔵 Calling backend to accept TOS...');
+                            
+                            try {
+                              // Get user's IP and user agent
+                              const userAgent = navigator.userAgent;
+                              
+                              // Get user's IP (this is a simple approach, in production you might want to use a more reliable method)
+                              let userIP = '127.0.0.1';
+                              try {
+                                const ipResponse = await fetch('https://api.ipify.org?format=json');
+                                const ipData = await ipResponse.json();
+                                userIP = ipData.ip;
+                                console.log('🔵 User IP:', userIP);
+                              } catch (ipError) {
+                                console.warn('🔵 Could not get user IP, using default');
+                              }
+                              
+                              // Call our backend to accept TOS
+                              const response = await axiosInstance.post('/api/v1/creators/accept-tos', {
+                                user_ip: userIP,
+                                user_agent: userAgent
+                              });
+                              
+                              console.log('🔵 *** TOS ACCEPTANCE SUCCESS! ***', response.data);
+                              
+                              // Show success message
+                              toast({
+                                title: "Terms accepted!",
+                                description: "Processing your account setup...",
+                                status: "success",
+                                duration: 3000,
+                                isClosable: true,
+                              });
+                              
+                              // Check account status and trigger completion if ready
+                              setTimeout(async () => {
+                                await checkAccountStatus();
+                                
+                                // Trigger the onboarding exit handler as if Stripe completed it
+                                await handleOnboardingExit({ reason: 'exit_completed' });
+                              }, 1000);
+                              
+                            } catch (error) {
+                              console.error('🔵 *** TOS ACCEPTANCE FAILED! ***', error);
+                              
+                              toast({
+                                title: "Setup error",
+                                description: "Could not complete setup. Please try again.",
+                                status: "error",
+                                duration: 5000,
+                                isClosable: true,
+                              });
+                            }
+                          }, { once: true, capture: true });
                         }
                       });
                     }, delay);
                   });
+                } else {
+                  console.log('🔵 Not on summary step, current step:', stepChange?.step || 'unknown');
                 }
               }}
               // Ensure TOS collection is enabled
