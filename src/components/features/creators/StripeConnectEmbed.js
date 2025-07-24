@@ -33,7 +33,7 @@ const StripeConnectEmbed = ({ onComplete, onError }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [accountStatus, setAccountStatus] = useState(null);
-  const [previousStep, setPreviousStep] = useState(null);
+  const [isMonitoringCompletion, setIsMonitoringCompletion] = useState(false);
   const pollingIntervalRef = useRef(null);
   const toast = useToast();
 
@@ -45,143 +45,108 @@ const StripeConnectEmbed = ({ onComplete, onError }) => {
     console.log('🔵 *** StripeConnectEmbed useEffect triggered - calling getStripeConnectInstance ***');
     getStripeConnectInstance();
     
+    // Start periodic status check
+    const statusCheckInterval = setInterval(async () => {
+      if (!accountStatus?.onboarding_complete) {
+        await checkAccountStatus();
+      }
+    }, 3000); // Check every 3 seconds
+    
     // Cleanup function
     return () => {
       if (pollingIntervalRef.current) {
         console.log('🔵 Cleaning up polling interval on unmount');
         clearInterval(pollingIntervalRef.current);
       }
+      clearInterval(statusCheckInterval);
     };
   }, []);
 
-  // Add debugging observer for dynamic content changes
-  useEffect(() => {
-    if (!stripeConnectInstance) return;
-
-    console.log('🔵 Setting up comprehensive debugging...');
-
-    // Track all DOM mutations to catch dynamically loaded content
-    const observer = new MutationObserver((mutations) => {
-      mutations.forEach((mutation) => {
-        if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
-          mutation.addedNodes.forEach((node) => {
-            if (node.nodeType === Node.ELEMENT_NODE) {
-              // Look for buttons in any new content
-              const buttons = node.querySelectorAll ? node.querySelectorAll('button') : [];
-              if (buttons.length > 0) {
-                console.log('🔵 NEW BUTTONS DETECTED via mutation observer:', buttons.length);
-                buttons.forEach((button, index) => {
-                  console.log(`🔵 New Button ${index}: "${button.textContent}"`);
-                  if (button.textContent.toLowerCase().includes('agree') || 
-                      button.textContent.toLowerCase().includes('submit')) {
-                    console.log('🔵 *** FOUND TOS BUTTON via mutation observer! ***');
-                    
-                    // Add enhanced click tracking
-                    button.addEventListener('click', (event) => {
-                      console.log('🔵 *** TOS BUTTON CLICKED! ***');
-                      console.log('🔵 Button:', button);
-                      console.log('🔵 Event:', event);
-                      console.log('🔵 Default prevented:', event.defaultPrevented);
-                      console.log('🔵 Propagation stopped:', event.cancelBubble);
-                    });
-                  }
-                });
-              }
-            }
-          });
-        }
-      });
-    });
-
-    // Observe the entire document for changes
-    observer.observe(document.body, {
-      childList: true,
-      subtree: true
-    });
-
-    // Also add a periodic check every 2 seconds
-    const intervalId = setInterval(() => {
-      const allButtons = document.querySelectorAll('button');
-      const tosButtons = Array.from(allButtons).filter(button => 
-        button.textContent.toLowerCase().includes('agree') || 
-        button.textContent.toLowerCase().includes('submit')
-      );
-      
-      if (tosButtons.length > 0) {
-        console.log('🔵 *** PERIODIC CHECK FOUND TOS BUTTONS:', tosButtons.length);
-        tosButtons.forEach((button, index) => {
-          console.log(`🔵 TOS Button ${index}: "${button.textContent}" - disabled: ${button.disabled}`);
-        });
-      }
-    }, 2000);
-
-    return () => {
-      observer.disconnect();
-      clearInterval(intervalId);
-    };
-  }, [stripeConnectInstance]);
 
   // Check account status
   const checkAccountStatus = async () => {
     try {
       const response = await axiosInstance.get('/api/v1/creators/stripe-status');
+      const prevStatus = accountStatus;
       setAccountStatus(response.data);
 
-      // If onboarding is complete, notify parent
-      if (response.data.onboarding_complete && onComplete) {
-        onComplete(response.data);
+      // Check if status changed from incomplete to complete
+      if (!prevStatus?.onboarding_complete && response.data.onboarding_complete) {
+        console.log('🎉 Onboarding completed!');
+        
+        toast({
+          title: "Setup complete!",
+          description: "Your payment account is ready. Welcome to the creator program!",
+          status: "success",
+          duration: 6000,
+          isClosable: true,
+        });
+        
+        if (onComplete) {
+          onComplete(response.data);
+        }
       }
+      
+      return response.data;
     } catch (err) {
       console.error('Error checking account status:', err);
+      return null;
     }
   };
 
   // Handle onboarding exit
-  const handleOnboardingExit = async (exitEvent = {}) => {
-    console.log('🔵 *** STRIPE ONBOARDING EXIT EVENT ***', exitEvent);
-    console.log('🔵 Exit reason:', exitEvent?.reason);
-    console.log('🔵 Exit details:', JSON.stringify(exitEvent, null, 2));
+  const handleOnboardingExit = async () => {
+    console.log('🔵 *** STRIPE ONBOARDING EXIT EVENT ***');
+    console.log('🔵 User exited the onboarding flow');
     
-    // Check the account status after any exit
-    await checkAccountStatus();
-    
-    // Check if this was a completion (submission) vs just closing
-    if (exitEvent.reason === 'exit_completed' || exitEvent.reason === 'requirements_completed') {
-      console.log('🎉 Stripe onboarding appears to be completed!');
+    // Always check the current account status when exiting
+    try {
+      const statusResponse = await axiosInstance.get('/api/v1/creators/stripe-status');
+      console.log('🔵 Account status after exit:', statusResponse.data);
       
-      // Wait a moment for Stripe to process, then check status again
-      setTimeout(async () => {
-        await checkAccountStatus();
+      // Update local state
+      setAccountStatus(statusResponse.data);
+      
+      // Check if onboarding is complete
+      if (statusResponse.data.onboarding_complete) {
+        console.log('🎉 Stripe onboarding is complete!');
         
-        // Check if onboarding is truly complete
-        const statusResponse = await axiosInstance.get('/api/v1/creators/stripe-status');
-        if (statusResponse.data.onboarding_complete) {
-          toast({
-            title: "Setup complete!",
-            description: "Your payment account is ready. Welcome to the creator program!",
-            status: "success",
-            duration: 6000,
-            isClosable: true,
-          });
-          
-          if (onComplete) {
-            onComplete(statusResponse.data);
-          }
-        } else {
-          toast({
-            title: "Almost there!",
-            description: "Please complete all required fields to finish setup",
-            status: "warning",
-            duration: 5000,
-            isClosable: true,
-          });
+        toast({
+          title: "Setup complete!",
+          description: "Your payment account is ready. Welcome to the creator program!",
+          status: "success",
+          duration: 6000,
+          isClosable: true,
+        });
+        
+        if (onComplete) {
+          onComplete(statusResponse.data);
         }
-      }, 2000);
-    } else {
+      } else if (statusResponse.data.details_submitted) {
+        // Details submitted but not fully complete
+        toast({
+          title: "Almost there!",
+          description: "Your information has been submitted. We'll notify you once verification is complete.",
+          status: "info",
+          duration: 5000,
+          isClosable: true,
+        });
+      } else {
+        // Not complete yet
+        toast({
+          title: "Progress saved",
+          description: "You can complete setup anytime from your creator settings",
+          status: "info",
+          duration: 4000,
+          isClosable: true,
+        });
+      }
+    } catch (error) {
+      console.error('Error checking account status:', error);
       toast({
-        title: "Progress saved",
-        description: "You can complete setup anytime from your creator settings",
-        status: "info",
+        title: "Status check failed",
+        description: "Please refresh the page to see your current status",
+        status: "warning",
         duration: 4000,
         isClosable: true,
       });
@@ -424,178 +389,11 @@ const StripeConnectEmbed = ({ onComplete, onError }) => {
             border="1px solid #333"
             minH="400px"
           >
-            {console.log('🔵 Rendering ConnectAccountOnboarding component')}
             <ConnectAccountOnboarding
               onExit={handleOnboardingExit}
-              // Add more event handlers that Stripe might provide
-              onComplete={async (completeEvent) => {
-                console.log('🔵 *** STRIPE ONBOARDING COMPLETE EVENT! ***', completeEvent);
-                
-                // This might fire when user clicks "Agree and Submit"
-                // Handle TOS acceptance here
-                try {
-                  const userAgent = navigator.userAgent;
-                  let userIP = '127.0.0.1';
-                  
-                  try {
-                    const ipResponse = await fetch('https://api.ipify.org?format=json');
-                    const ipData = await ipResponse.json();
-                    userIP = ipData.ip;
-                  } catch (ipError) {
-                    console.warn('Could not get user IP');
-                  }
-                  
-                  const response = await axiosInstance.post('/api/v1/creators/accept-tos', {
-                    user_ip: userIP,
-                    user_agent: userAgent
-                  });
-                  
-                  console.log('🔵 TOS accepted successfully:', response.data);
-                  
-                  toast({
-                    title: "Setup complete!",
-                    description: "Your payment account is being set up...",
-                    status: "success",
-                    duration: 3000,
-                    isClosable: true,
-                  });
-                  
-                  // Trigger completion
-                  setTimeout(() => {
-                    handleOnboardingExit({ reason: 'exit_completed' });
-                  }, 1000);
-                  
-                } catch (error) {
-                  console.error('TOS acceptance failed:', error);
-                }
-              }}
-              onStepChange={(stepChange) => {
-                console.log('🔵 *** STEP CHANGE DETECTED! ***', stepChange);
-                
-                // Log ALL step changes to see what's happening
-                console.log('🔵 Step details:', {
-                  step: stepChange?.step || 'NO_STEP',
-                  type: stepChange?.type || 'NO_TYPE',
-                  elementTagName: stepChange?.elementTagName || 'NO_TAG',
-                  fullObject: stepChange
-                });
-                
-                // Check if we're transitioning FROM summary (which might indicate submission)
-                if (previousStep === 'summary' && stepChange?.step !== 'summary') {
-                  console.log('🔵 *** LEAVING SUMMARY STEP - POSSIBLE SUBMISSION! ***');
-                  // The user might have clicked submit
-                }
-                
-                // Store current step for next comparison
-                setPreviousStep(stepChange?.step);
-                
-                // Check for summary step with various possible values
-                const isOnSummary = stepChange?.step === 'summary' || 
-                                   stepChange?.step === 'tos_acceptance' ||
-                                   stepChange?.step === 'review' ||
-                                   (stepChange && JSON.stringify(stepChange).includes('summary')) ||
-                                   (stepChange && JSON.stringify(stepChange).includes('tos')) ||
-                                   (stepChange && JSON.stringify(stepChange).includes('agree'));
-                
-                if (isOnSummary) {
-                  console.log('🔵 *** ON SUMMARY/TOS STEP ***');
-                  console.log('🔵 The "Agree and Submit" button is inside a Stripe iframe');
-                  console.log('🔵 Waiting for user to click it within the iframe...');
-                  
-                  // Clear any existing polling interval
-                  if (pollingIntervalRef.current) {
-                    console.log('🔵 Clearing existing polling interval');
-                    clearInterval(pollingIntervalRef.current);
-                  }
-                  
-                  // Since we can't access the iframe, we need to poll for status changes
-                  let pollCount = 0;
-                  pollingIntervalRef.current = setInterval(async () => {
-                    pollCount++;
-                    console.log(`🔵 Polling for TOS acceptance... (attempt ${pollCount})`);
-                    
-                    try {
-                      const statusResponse = await axiosInstance.get('/api/v1/creators/stripe-status');
-                      console.log('🔵 Current TOS status:', statusResponse.data.tos_accepted);
-                      
-                      // Check if requirements changed (TOS might be accepted)
-                      const currentlyDue = statusResponse.data.requirements?.currently_due || [];
-                      const hasTosRequirement = currentlyDue.some(req => 
-                        req.includes('tos_acceptance')
-                      );
-                      
-                      if (!hasTosRequirement && statusResponse.data.details_submitted) {
-                        console.log('🔵 *** TOS APPEARS TO BE ACCEPTED! ***');
-                        clearInterval(pollingIntervalRef.current);
-                        pollingIntervalRef.current = null;
-                        
-                        // Accept TOS on our end
-                        const userAgent = navigator.userAgent;
-                        let userIP = '127.0.0.1';
-                        
-                        try {
-                          const ipResponse = await fetch('https://api.ipify.org?format=json');
-                          const ipData = await ipResponse.json();
-                          userIP = ipData.ip;
-                        } catch (ipError) {
-                          console.warn('Could not get user IP');
-                        }
-                        
-                        await axiosInstance.post('/api/v1/creators/accept-tos', {
-                          user_ip: userIP,
-                          user_agent: userAgent
-                        });
-                        
-                        console.log('🔵 TOS acceptance recorded');
-                        
-                        toast({
-                          title: "Setup complete!",
-                          description: "Your payment account is ready.",
-                          status: "success",
-                          duration: 3000,
-                          isClosable: true,
-                        });
-                        
-                        // Trigger completion
-                        setTimeout(() => {
-                          handleOnboardingExit({ reason: 'exit_completed' });
-                        }, 1000);
-                      }
-                      
-                      // Stop polling after 30 seconds
-                      if (pollCount > 15) {
-                        console.log('🔵 Stopping TOS polling after 30 seconds');
-                        clearInterval(pollingIntervalRef.current);
-                        pollingIntervalRef.current = null;
-                      }
-                    } catch (error) {
-                      console.error('Error polling status:', error);
-                    }
-                  }, 2000); // Poll every 2 seconds
-                  
-                } else {
-                  console.log('🔵 Not on summary step, current step:', stepChange?.step || 'unknown');
-                }
-              }}
-              // Ensure TOS collection is enabled
-              skipTermsOfServiceCollection={false}
-              // Enhanced collection options for embedded onboarding
               collectionOptions={{
                 fields: 'eventually_due',
                 futureRequirements: 'include',
-              }}
-              // Additional props to help with TOS acceptance
-              appearance={{
-                variables: {
-                  colorPrimary: '#00C6E0',
-                }
-              }}
-              // Try to handle form submission events
-              onFormSubmit={(submitEvent) => {
-                console.log('🔵 *** FORM SUBMIT EVENT! ***', submitEvent);
-              }}
-              onRequirementsChange={(requirementsEvent) => {
-                console.log('🔵 *** REQUIREMENTS CHANGE EVENT! ***', requirementsEvent);
               }}
             />
           </Box>
@@ -618,6 +416,11 @@ const StripeConnectEmbed = ({ onComplete, onError }) => {
                 bg="#333"
                 borderRadius="full"
               />
+              {accountStatus.details_submitted && (
+                <Text color="whiteAlpha.600" fontSize="xs" mt={2} textAlign="center">
+                  If you see the overview screen, click "Agree and Submit" to complete setup
+                </Text>
+              )}
             </Box>
           )}
         </ConnectComponentsProvider>
