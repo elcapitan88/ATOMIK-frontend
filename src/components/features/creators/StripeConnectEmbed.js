@@ -407,6 +407,73 @@ const StripeConnectEmbed = ({ onComplete, onError }) => {
                 console.error('🔴 ConnectAccountOnboarding load error:', error);
                 setError('Failed to load onboarding form');
               }}
+              onStepChange={async (stepInfo) => {
+                console.log('🔵 Step changed:', stepInfo);
+                
+                // Check if we're on the summary/TOS step
+                const isOnTOSStep = stepInfo?.step === 'summary' || 
+                                   stepInfo?.step === 'tos_acceptance' ||
+                                   stepInfo?.step === 'review' ||
+                                   (stepInfo && JSON.stringify(stepInfo).toLowerCase().includes('summary')) ||
+                                   (stepInfo && JSON.stringify(stepInfo).toLowerCase().includes('tos'));
+                
+                if (isOnTOSStep) {
+                  console.log('🔵 User is on TOS step - monitoring for submission...');
+                  
+                  // Start monitoring for TOS acceptance
+                  const tosMonitor = setInterval(async () => {
+                    try {
+                      const statusResponse = await axiosInstance.get('/api/v1/creators/stripe-status');
+                      console.log('🔵 Checking if details submitted:', statusResponse.data.details_submitted);
+                      
+                      // If details are submitted but TOS is not accepted, accept it via API
+                      if (statusResponse.data.details_submitted && !statusResponse.data.tos_accepted) {
+                        console.log('🔵 Details submitted but TOS not accepted - accepting via API...');
+                        clearInterval(tosMonitor);
+                        
+                        // Accept TOS via API
+                        const userAgent = navigator.userAgent;
+                        let userIP = '127.0.0.1';
+                        
+                        try {
+                          const ipResponse = await fetch('https://api.ipify.org?format=json');
+                          const ipData = await ipResponse.json();
+                          userIP = ipData.ip;
+                        } catch (ipError) {
+                          console.warn('Could not get user IP, using fallback');
+                        }
+                        
+                        await axiosInstance.post('/api/v1/creators/accept-tos', {
+                          user_ip: userIP,
+                          user_agent: userAgent
+                        });
+                        
+                        console.log('🎉 TOS accepted via API!');
+                        
+                        toast({
+                          title: "Setup complete!",
+                          description: "Your payment account is ready. TOS accepted via API.",
+                          status: "success",
+                          duration: 6000,
+                          isClosable: true,
+                        });
+                        
+                        // Trigger completion
+                        setTimeout(() => {
+                          handleOnboardingExit();
+                        }, 1000);
+                      }
+                    } catch (error) {
+                      console.error('Error in TOS monitoring:', error);
+                    }
+                  }, 2000); // Check every 2 seconds
+                  
+                  // Clear monitor after 30 seconds
+                  setTimeout(() => {
+                    clearInterval(tosMonitor);
+                  }, 30000);
+                }
+              }}
             />
           </Box>
           
