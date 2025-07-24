@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import {
   Box,
   VStack,
@@ -33,6 +33,8 @@ const StripeConnectEmbed = ({ onComplete, onError }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [accountStatus, setAccountStatus] = useState(null);
+  const [previousStep, setPreviousStep] = useState(null);
+  const pollingIntervalRef = useRef(null);
   const toast = useToast();
 
   console.log('🔵 *** StripeConnectEmbed component mounted/rendered ***');
@@ -42,6 +44,14 @@ const StripeConnectEmbed = ({ onComplete, onError }) => {
   useEffect(() => {
     console.log('🔵 *** StripeConnectEmbed useEffect triggered - calling getStripeConnectInstance ***');
     getStripeConnectInstance();
+    
+    // Cleanup function
+    return () => {
+      if (pollingIntervalRef.current) {
+        console.log('🔵 Cleaning up polling interval on unmount');
+        clearInterval(pollingIntervalRef.current);
+      }
+    };
   }, []);
 
   // Add debugging observer for dynamic content changes
@@ -471,13 +481,13 @@ const StripeConnectEmbed = ({ onComplete, onError }) => {
                 });
                 
                 // Check if we're transitioning FROM summary (which might indicate submission)
-                if (this.previousStep === 'summary' && stepChange?.step !== 'summary') {
+                if (previousStep === 'summary' && stepChange?.step !== 'summary') {
                   console.log('🔵 *** LEAVING SUMMARY STEP - POSSIBLE SUBMISSION! ***');
                   // The user might have clicked submit
                 }
                 
                 // Store current step for next comparison
-                this.previousStep = stepChange?.step;
+                setPreviousStep(stepChange?.step);
                 
                 // Check for summary step with various possible values
                 const isOnSummary = stepChange?.step === 'summary' || 
@@ -492,9 +502,15 @@ const StripeConnectEmbed = ({ onComplete, onError }) => {
                   console.log('🔵 The "Agree and Submit" button is inside a Stripe iframe');
                   console.log('🔵 Waiting for user to click it within the iframe...');
                   
+                  // Clear any existing polling interval
+                  if (pollingIntervalRef.current) {
+                    console.log('🔵 Clearing existing polling interval');
+                    clearInterval(pollingIntervalRef.current);
+                  }
+                  
                   // Since we can't access the iframe, we need to poll for status changes
                   let pollCount = 0;
-                  const pollInterval = setInterval(async () => {
+                  pollingIntervalRef.current = setInterval(async () => {
                     pollCount++;
                     console.log(`🔵 Polling for TOS acceptance... (attempt ${pollCount})`);
                     
@@ -510,7 +526,8 @@ const StripeConnectEmbed = ({ onComplete, onError }) => {
                       
                       if (!hasTosRequirement && statusResponse.data.details_submitted) {
                         console.log('🔵 *** TOS APPEARS TO BE ACCEPTED! ***');
-                        clearInterval(pollInterval);
+                        clearInterval(pollingIntervalRef.current);
+                        pollingIntervalRef.current = null;
                         
                         // Accept TOS on our end
                         const userAgent = navigator.userAgent;
@@ -548,7 +565,8 @@ const StripeConnectEmbed = ({ onComplete, onError }) => {
                       // Stop polling after 30 seconds
                       if (pollCount > 15) {
                         console.log('🔵 Stopping TOS polling after 30 seconds');
-                        clearInterval(pollInterval);
+                        clearInterval(pollingIntervalRef.current);
+                        pollingIntervalRef.current = null;
                       }
                     } catch (error) {
                       console.error('Error polling status:', error);
