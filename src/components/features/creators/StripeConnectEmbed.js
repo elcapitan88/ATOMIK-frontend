@@ -417,6 +417,48 @@ const StripeConnectEmbed = ({ onComplete, onError }) => {
             {console.log('🔵 Rendering ConnectAccountOnboarding component')}
             <ConnectAccountOnboarding
               onExit={handleOnboardingExit}
+              // Add more event handlers that Stripe might provide
+              onComplete={async (completeEvent) => {
+                console.log('🔵 *** STRIPE ONBOARDING COMPLETE EVENT! ***', completeEvent);
+                
+                // This might fire when user clicks "Agree and Submit"
+                // Handle TOS acceptance here
+                try {
+                  const userAgent = navigator.userAgent;
+                  let userIP = '127.0.0.1';
+                  
+                  try {
+                    const ipResponse = await fetch('https://api.ipify.org?format=json');
+                    const ipData = await ipResponse.json();
+                    userIP = ipData.ip;
+                  } catch (ipError) {
+                    console.warn('Could not get user IP');
+                  }
+                  
+                  const response = await axiosInstance.post('/api/v1/creators/accept-tos', {
+                    user_ip: userIP,
+                    user_agent: userAgent
+                  });
+                  
+                  console.log('🔵 TOS accepted successfully:', response.data);
+                  
+                  toast({
+                    title: "Setup complete!",
+                    description: "Your payment account is being set up...",
+                    status: "success",
+                    duration: 3000,
+                    isClosable: true,
+                  });
+                  
+                  // Trigger completion
+                  setTimeout(() => {
+                    handleOnboardingExit({ reason: 'exit_completed' });
+                  }, 1000);
+                  
+                } catch (error) {
+                  console.error('TOS acceptance failed:', error);
+                }
+              }}
               onStepChange={(stepChange) => {
                 console.log('🔵 *** STEP CHANGE DETECTED! ***', stepChange);
                 
@@ -428,6 +470,15 @@ const StripeConnectEmbed = ({ onComplete, onError }) => {
                   fullObject: stepChange
                 });
                 
+                // Check if we're transitioning FROM summary (which might indicate submission)
+                if (this.previousStep === 'summary' && stepChange?.step !== 'summary') {
+                  console.log('🔵 *** LEAVING SUMMARY STEP - POSSIBLE SUBMISSION! ***');
+                  // The user might have clicked submit
+                }
+                
+                // Store current step for next comparison
+                this.previousStep = stepChange?.step;
+                
                 // Check for summary step with various possible values
                 const isOnSummary = stepChange?.step === 'summary' || 
                                    stepChange?.step === 'tos_acceptance' ||
@@ -437,109 +488,73 @@ const StripeConnectEmbed = ({ onComplete, onError }) => {
                                    (stepChange && JSON.stringify(stepChange).includes('agree'));
                 
                 if (isOnSummary) {
-                  console.log('🔵 *** ON SUMMARY/TOS STEP - RUNNING ENHANCED DEBUGGING! ***');
+                  console.log('🔵 *** ON SUMMARY/TOS STEP ***');
+                  console.log('🔵 The "Agree and Submit" button is inside a Stripe iframe');
+                  console.log('🔵 Waiting for user to click it within the iframe...');
                   
-                  // Immediate check
-                  const immediateButtons = document.querySelectorAll('button');
-                  console.log('🔵 Immediate button count:', immediateButtons.length);
-                  
-                  immediateButtons.forEach((btn, idx) => {
-                    console.log(`🔵 Immediate Button ${idx}: "${btn.textContent}"`);
-                  });
-                  
-                  // Multiple delayed checks with increasing delays
-                  [500, 1000, 2000, 3000, 5000].forEach((delay, index) => {
-                    setTimeout(() => {
-                      console.log(`🔵 *** Button check ${index + 1} (after ${delay}ms): ***`);
-                      const buttons = document.querySelectorAll('button');
-                      console.log(`🔵 Total buttons found: ${buttons.length}`);
+                  // Since we can't access the iframe, we need to poll for status changes
+                  let pollCount = 0;
+                  const pollInterval = setInterval(async () => {
+                    pollCount++;
+                    console.log(`🔵 Polling for TOS acceptance... (attempt ${pollCount})`);
+                    
+                    try {
+                      const statusResponse = await axiosInstance.get('/api/v1/creators/stripe-status');
+                      console.log('🔵 Current TOS status:', statusResponse.data.tos_accepted);
                       
-                      buttons.forEach((button, btnIndex) => {
-                        const text = button.textContent.trim();
-                        console.log(`🔵 Button ${btnIndex}: "${text}" (disabled: ${button.disabled})`);
+                      // Check if requirements changed (TOS might be accepted)
+                      const currentlyDue = statusResponse.data.requirements?.currently_due || [];
+                      const hasTosRequirement = currentlyDue.some(req => 
+                        req.includes('tos_acceptance')
+                      );
+                      
+                      if (!hasTosRequirement && statusResponse.data.details_submitted) {
+                        console.log('🔵 *** TOS APPEARS TO BE ACCEPTED! ***');
+                        clearInterval(pollInterval);
                         
-                        if (text.toLowerCase().includes('agree') || 
-                            text.toLowerCase().includes('submit') ||
-                            text.toLowerCase().includes('terms') ||
-                            text.toLowerCase().includes('finish') ||
-                            text.toLowerCase().includes('complete')) {
-                          console.log(`🔵 *** FOUND POTENTIAL TOS BUTTON: "${text}" ***`);
-                          console.log('🔵 Button properties:', {
-                            disabled: button.disabled,
-                            visible: button.offsetParent !== null,
-                            style: button.style.cssText,
-                            className: button.className,
-                            id: button.id,
-                            parentElement: button.parentElement?.tagName
-                          });
-                          
-                          // Add click listener to this specific button
-                          button.addEventListener('click', async (event) => {
-                            console.log('🔵 *** TOS BUTTON CLICK INTERCEPTED! ***');
-                            console.log('🔵 Button text:', text);
-                            
-                            // Prevent the default Stripe handling temporarily
-                            event.preventDefault();
-                            event.stopPropagation();
-                            
-                            console.log('🔵 Calling backend to accept TOS...');
-                            
-                            try {
-                              // Get user's IP and user agent
-                              const userAgent = navigator.userAgent;
-                              
-                              // Get user's IP (this is a simple approach, in production you might want to use a more reliable method)
-                              let userIP = '127.0.0.1';
-                              try {
-                                const ipResponse = await fetch('https://api.ipify.org?format=json');
-                                const ipData = await ipResponse.json();
-                                userIP = ipData.ip;
-                                console.log('🔵 User IP:', userIP);
-                              } catch (ipError) {
-                                console.warn('🔵 Could not get user IP, using default');
-                              }
-                              
-                              // Call our backend to accept TOS
-                              const response = await axiosInstance.post('/api/v1/creators/accept-tos', {
-                                user_ip: userIP,
-                                user_agent: userAgent
-                              });
-                              
-                              console.log('🔵 *** TOS ACCEPTANCE SUCCESS! ***', response.data);
-                              
-                              // Show success message
-                              toast({
-                                title: "Terms accepted!",
-                                description: "Processing your account setup...",
-                                status: "success",
-                                duration: 3000,
-                                isClosable: true,
-                              });
-                              
-                              // Check account status and trigger completion if ready
-                              setTimeout(async () => {
-                                await checkAccountStatus();
-                                
-                                // Trigger the onboarding exit handler as if Stripe completed it
-                                await handleOnboardingExit({ reason: 'exit_completed' });
-                              }, 1000);
-                              
-                            } catch (error) {
-                              console.error('🔵 *** TOS ACCEPTANCE FAILED! ***', error);
-                              
-                              toast({
-                                title: "Setup error",
-                                description: "Could not complete setup. Please try again.",
-                                status: "error",
-                                duration: 5000,
-                                isClosable: true,
-                              });
-                            }
-                          }, { once: true, capture: true });
+                        // Accept TOS on our end
+                        const userAgent = navigator.userAgent;
+                        let userIP = '127.0.0.1';
+                        
+                        try {
+                          const ipResponse = await fetch('https://api.ipify.org?format=json');
+                          const ipData = await ipResponse.json();
+                          userIP = ipData.ip;
+                        } catch (ipError) {
+                          console.warn('Could not get user IP');
                         }
-                      });
-                    }, delay);
-                  });
+                        
+                        await axiosInstance.post('/api/v1/creators/accept-tos', {
+                          user_ip: userIP,
+                          user_agent: userAgent
+                        });
+                        
+                        console.log('🔵 TOS acceptance recorded');
+                        
+                        toast({
+                          title: "Setup complete!",
+                          description: "Your payment account is ready.",
+                          status: "success",
+                          duration: 3000,
+                          isClosable: true,
+                        });
+                        
+                        // Trigger completion
+                        setTimeout(() => {
+                          handleOnboardingExit({ reason: 'exit_completed' });
+                        }, 1000);
+                      }
+                      
+                      // Stop polling after 30 seconds
+                      if (pollCount > 15) {
+                        console.log('🔵 Stopping TOS polling after 30 seconds');
+                        clearInterval(pollInterval);
+                      }
+                    } catch (error) {
+                      console.error('Error polling status:', error);
+                    }
+                  }, 2000); // Poll every 2 seconds
+                  
                 } else {
                   console.log('🔵 Not on summary step, current step:', stepChange?.step || 'unknown');
                 }
@@ -556,6 +571,13 @@ const StripeConnectEmbed = ({ onComplete, onError }) => {
                 variables: {
                   colorPrimary: '#00C6E0',
                 }
+              }}
+              // Try to handle form submission events
+              onFormSubmit={(submitEvent) => {
+                console.log('🔵 *** FORM SUBMIT EVENT! ***', submitEvent);
+              }}
+              onRequirementsChange={(requirementsEvent) => {
+                console.log('🔵 *** REQUIREMENTS CHANGE EVENT! ***', requirementsEvent);
               }}
             />
           </Box>
