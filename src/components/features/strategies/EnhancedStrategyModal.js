@@ -478,12 +478,29 @@ const EnhancedStrategyModal = ({
       <ModalContent 
         bg="rgba(0, 0, 0, 0.75)"
         backdropFilter="blur(20px)"
-        boxShadow="0 8px 32px 0 rgba(0, 198, 224, 0.37)"
+        boxShadow="0 8px 32px 0 rgba(0, 0, 0, 0.5)"
         border="1px solid rgba(255, 255, 255, 0.18)"
         borderRadius="xl"
         color="white"
         maxH="90vh"
         overflow="hidden"
+        sx={{
+          '&::-webkit-scrollbar': {
+            width: '8px',
+          },
+          '&::-webkit-scrollbar-track': {
+            background: 'rgba(255, 255, 255, 0.05)',
+            borderRadius: '4px',
+          },
+          '&::-webkit-scrollbar-thumb': {
+            background: 'rgba(255, 255, 255, 0.1)',
+            borderRadius: '4px',
+            border: '1px solid rgba(255, 255, 255, 0.05)',
+            '&:hover': {
+              background: 'rgba(255, 255, 255, 0.15)',
+            },
+          },
+        }}
       >
         <ModalHeader 
           borderBottom="1px solid rgba(255, 255, 255, 0.18)"
@@ -504,7 +521,28 @@ const EnhancedStrategyModal = ({
           </VStack>
         </ModalHeader>
 
-        <ModalBody py={6} overflowY="auto" maxH="60vh">
+        <ModalBody 
+          py={6} 
+          overflowY="auto" 
+          maxH="60vh"
+          sx={{
+            '&::-webkit-scrollbar': {
+              width: '8px',
+            },
+            '&::-webkit-scrollbar-track': {
+              background: 'rgba(255, 255, 255, 0.05)',
+              borderRadius: '4px',
+            },
+            '&::-webkit-scrollbar-thumb': {
+              background: 'rgba(255, 255, 255, 0.1)',
+              borderRadius: '4px',
+              border: '1px solid rgba(255, 255, 255, 0.05)',
+              '&:hover': {
+                background: 'rgba(255, 255, 255, 0.15)',
+              },
+            },
+          }}
+        >
           {getStepContent()}
         </ModalBody>
 

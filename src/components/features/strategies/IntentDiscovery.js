@@ -37,7 +37,7 @@ const IntentCard = ({
 }) => {
   return (
     <Box
-      p={4}
+      p={3}
       borderRadius="lg"
       border="2px solid"
       borderColor={isSelected ? "#00C6E0" : "rgba(255, 255, 255, 0.18)"}
@@ -49,13 +49,13 @@ const IntentCard = ({
       _hover={!isDisabled ? {
         borderColor: isSelected ? "#00C6E0" : "rgba(0, 198, 224, 0.5)",
         bg: isSelected ? "rgba(0, 198, 224, 0.12)" : "rgba(255, 255, 255, 0.08)",
-        transform: "translateY(-2px)",
-        boxShadow: "0 8px 32px 0 rgba(0, 198, 224, 0.2)"
+        transform: "translateY(-1px)",
+        boxShadow: "0 4px 16px 0 rgba(0, 0, 0, 0.3)"
       } : {}}
       onClick={!isDisabled ? onClick : undefined}
       position="relative"
     >
-      <VStack spacing={3} align="flex-start">
+      <VStack spacing={2} align="flex-start">
         <HStack justify="space-between" w="full">
           <HStack spacing={3}>
             <Box
@@ -64,10 +64,10 @@ const IntentCard = ({
               bg="rgba(0, 198, 224, 0.15)"
               color="#00C6E0"
             >
-              <Icon as={icon} size="20px" />
+              <Icon as={icon} size="18px" />
             </Box>
             <Text
-              fontSize="lg"
+              fontSize="md"
               fontWeight="semibold"
               color="white"
             >
@@ -92,7 +92,7 @@ const IntentCard = ({
         <Text
           fontSize="sm"
           color="rgba(255, 255, 255, 0.8)"
-          lineHeight="1.5"
+          lineHeight="1.4"
         >
           {description}
         </Text>
@@ -192,14 +192,14 @@ const IntentDiscovery = ({
 
   return (
     <Box w="full">
-      <VStack spacing={6} align="stretch">
+      <VStack spacing={4} align="stretch">
         {/* Header */}
         <Box textAlign="center">
           <Text
-            fontSize="xl"
+            fontSize="lg"
             fontWeight="bold"
             color="white"
-            mb={2}
+            mb={1}
           >
             How will you use this strategy?
           </Text>
@@ -214,7 +214,7 @@ const IntentDiscovery = ({
         </Box>
 
         {/* Intent Cards */}
-        <VStack spacing={3}>
+        <VStack spacing={2}>
           {intents.map((intent) => (
             <IntentCard
               key={intent.id}
@@ -271,22 +271,22 @@ const IntentDiscovery = ({
         {/* Selected Intent Summary */}
         {selectedIntent && (
           <Box
-            p={4}
+            p={3}
             bg="rgba(0, 198, 224, 0.05)"
             border="1px solid rgba(0, 198, 224, 0.2)"
-            borderRadius="lg"
+            borderRadius="md"
           >
             <HStack spacing={3}>
               <Icon 
                 as={intents.find(i => i.id === selectedIntent)?.icon} 
                 color="#00C6E0" 
-                size="20px" 
+                size="18px" 
               />
               <Box flex="1">
-                <Text color="white" fontWeight="medium">
+                <Text color="white" fontWeight="medium" fontSize="sm">
                   Intent: {intents.find(i => i.id === selectedIntent)?.title}
                 </Text>
-                <Text color="rgba(255, 255, 255, 0.7)" fontSize="sm">
+                <Text color="rgba(255, 255, 255, 0.7)" fontSize="xs">
                   {selectedIntent === 'personal' && 'Your strategy will be private and for personal use only.'}
                   {selectedIntent === 'share_free' && 'Your strategy will be shared freely with the community.'}
                   {selectedIntent === 'monetize' && 'Your strategy will be available for purchase with your pricing.'}
@@ -299,26 +299,26 @@ const IntentDiscovery = ({
         {/* Benefits Preview */}
         {selectedIntent && (
           <Box
-            p={4}
+            p={3}
             bg="rgba(255, 255, 255, 0.02)"
-            borderRadius="lg"
+            borderRadius="md"
             border="1px solid rgba(255, 255, 255, 0.1)"
           >
-            <Text color="white" fontWeight="medium" mb={3}>
+            <Text color="white" fontWeight="medium" mb={2} fontSize="sm">
               What you'll get:
             </Text>
-            <VStack spacing={2} align="stretch">
+            <VStack spacing={1.5} align="stretch">
               {selectedIntent === 'personal' && (
                 <>
-                  <HStack spacing={3}>
-                    <Lock size={16} color="rgba(255, 255, 255, 0.7)" />
-                    <Text fontSize="sm" color="rgba(255, 255, 255, 0.8)">
+                  <HStack spacing={2}>
+                    <Lock size={14} color="rgba(255, 255, 255, 0.7)" />
+                    <Text fontSize="xs" color="rgba(255, 255, 255, 0.8)">
                       Private webhook URL for your exclusive use
                     </Text>
                   </HStack>
-                  <HStack spacing={3}>
-                    <Settings size={16} color="rgba(255, 255, 255, 0.7)" />
-                    <Text fontSize="sm" color="rgba(255, 255, 255, 0.8)">
+                  <HStack spacing={2}>
+                    <Settings size={14} color="rgba(255, 255, 255, 0.7)" />
+                    <Text fontSize="xs" color="rgba(255, 255, 255, 0.8)">
                       Full control over configuration and settings
                     </Text>
                   </HStack>
@@ -327,15 +327,15 @@ const IntentDiscovery = ({
               
               {selectedIntent === 'share_free' && (
                 <>
-                  <HStack spacing={3}>
-                    <Users size={16} color="rgba(255, 255, 255, 0.7)" />
-                    <Text fontSize="sm" color="rgba(255, 255, 255, 0.8)">
+                  <HStack spacing={2}>
+                    <Users size={14} color="rgba(255, 255, 255, 0.7)" />
+                    <Text fontSize="xs" color="rgba(255, 255, 255, 0.8)">
                       Community visibility and user ratings
                     </Text>
                   </HStack>
-                  <HStack spacing={3}>
-                    <TrendingUp size={16} color="rgba(255, 255, 255, 0.7)" />
-                    <Text fontSize="sm" color="rgba(255, 255, 255, 0.8)">
+                  <HStack spacing={2}>
+                    <TrendingUp size={14} color="rgba(255, 255, 255, 0.7)" />
+                    <Text fontSize="xs" color="rgba(255, 255, 255, 0.8)">
                       Build reputation and follower base
                     </Text>
                   </HStack>
@@ -344,21 +344,21 @@ const IntentDiscovery = ({
               
               {selectedIntent === 'monetize' && (
                 <>
-                  <HStack spacing={3}>
-                    <DollarSign size={16} color="rgba(255, 255, 255, 0.7)" />
-                    <Text fontSize="sm" color="rgba(255, 255, 255, 0.8)">
+                  <HStack spacing={2}>
+                    <DollarSign size={14} color="rgba(255, 255, 255, 0.7)" />
+                    <Text fontSize="xs" color="rgba(255, 255, 255, 0.8)">
                       Set your own pricing (monthly, yearly, lifetime)
                     </Text>
                   </HStack>
-                  <HStack spacing={3}>
-                    <TrendingUp size={16} color="rgba(255, 255, 255, 0.7)" />
-                    <Text fontSize="sm" color="rgba(255, 255, 255, 0.8)">
+                  <HStack spacing={2}>
+                    <TrendingUp size={14} color="rgba(255, 255, 255, 0.7)" />
+                    <Text fontSize="xs" color="rgba(255, 255, 255, 0.8)">
                       Automatic revenue tracking and analytics
                     </Text>
                   </HStack>
-                  <HStack spacing={3}>
-                    <Users size={16} color="rgba(255, 255, 255, 0.7)" />
-                    <Text fontSize="sm" color="rgba(255, 255, 255, 0.8)">
+                  <HStack spacing={2}>
+                    <Users size={14} color="rgba(255, 255, 255, 0.7)" />
+                    <Text fontSize="xs" color="rgba(255, 255, 255, 0.8)">
                       Subscriber management and notifications
                     </Text>
                   </HStack>
