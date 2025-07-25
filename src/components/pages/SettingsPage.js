@@ -465,6 +465,7 @@ const PasswordChangeModal = ({ isOpen, onClose }) => {
 const CreatorSettingsFlow = ({ user }) => {
   const [currentStep, setCurrentStep] = useState(1);
   const [isCreatingProfile, setIsCreatingProfile] = useState(false);
+  const [onboardingCompleted, setOnboardingCompleted] = useState(false);
   const [creatorData, setCreatorData] = useState({
     bio: '',
     trading_experience: 'intermediate'
@@ -624,7 +625,9 @@ const CreatorSettingsFlow = ({ user }) => {
   }
 
   // If already a creator and onboarding complete, show full settings view
-  if (isCreator && currentStep === null) {
+  console.log('🔍 Checking creator management condition:', { isCreator, onboardingCompleted, currentStep });
+  if ((isCreator || onboardingCompleted) && currentStep === null) {
+    console.log('✅ Showing creator management interface');
     return (
       <VStack spacing={8} align="stretch">
         {/* Creator Dashboard */}
@@ -941,13 +944,29 @@ const CreatorSettingsFlow = ({ user }) => {
                   
                   // Mark onboarding as complete
                   await completeOnboarding();
+                  setOnboardingCompleted(true); // Mark locally as completed
                   
                   // Show success state and redirect to creator area after longer delay
                   setCurrentStep('success');
                   
                   // Redirect to creator area after showing success for longer
-                  setTimeout(() => {
+                  setTimeout(async () => {
+                    // Refresh user data to ensure creator_profile_id is updated
+                    try {
+                      const response = await axiosInstance.get('/api/v1/auth/me');
+                      if (response.data && response.data.creator_profile_id) {
+                        console.log('🎉 User data refreshed, creator_profile_id found:', response.data.creator_profile_id);
+                        // Update the auth context with fresh user data
+                        if (updateUserProfile) {
+                          updateUserProfile(response.data);
+                        }
+                      }
+                    } catch (error) {
+                      console.error('Failed to refresh user data:', error);
+                    }
+                    
                     setCurrentStep(null); // This will show the creator management interface
+                    console.log('🎯 Transitioning to creator management interface. isCreator:', isCreator, 'onboardingCompleted:', onboardingCompleted);
                   }, 4000); // Show success screen for 4 seconds
                 }}
                 onError={(error) => {
