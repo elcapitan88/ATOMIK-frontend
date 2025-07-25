@@ -230,6 +230,34 @@ const IntentDiscovery = ({
           ))}
         </VStack>
 
+        {/* Become a Creator Link for non-creators */}
+        {!hasCreatorProfile && (
+          <Box
+            textAlign="center"
+            p={3}
+            bg="rgba(255, 255, 255, 0.02)"
+            borderRadius="lg"
+            border="1px solid rgba(255, 255, 255, 0.1)"
+          >
+            <Text color="rgba(255, 255, 255, 0.7)" fontSize="sm" mb={2}>
+              Want to monetize your strategies?
+            </Text>
+            <Button
+              size="sm"
+              variant="ghost"
+              color="#00C6E0"
+              _hover={{
+                bg: 'rgba(0, 198, 224, 0.1)',
+                transform: 'translateY(-1px)'
+              }}
+              leftIcon={<DollarSign size={16} />}
+              onClick={() => onCreatorSetup && onCreatorSetup()}
+            >
+              Become a Creator
+            </Button>
+          </Box>
+        )}
+
         {/* Creator Setup Banner for monetization */}
         {selectedIntent === 'monetize' && !canMonetize && (
           <Alert
