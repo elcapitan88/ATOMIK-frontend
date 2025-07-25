@@ -123,15 +123,6 @@ const IntentDiscovery = ({
   const hasCreatorProfile = user?.creator_profile?.id;
   const hasStripeAccount = user?.creator_profile?.stripe_account_id;
   const canMonetize = hasCreatorProfile && hasStripeAccount;
-  
-  // Debug logging
-  console.log('Creator eligibility check:', {
-    user: user,
-    hasCreatorProfile,
-    hasStripeAccount,
-    canMonetize,
-    creator_profile: user?.creator_profile
-  });
 
   const handleIntentSelect = async (intent) => {
     if (intent === 'monetize' && !canMonetize) {
