@@ -26,12 +26,14 @@ import {
   Check,
   Target,
   Settings,
-  Rocket
+  Rocket,
+  DollarSign
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 import IntentDiscovery from './IntentDiscovery';
 import StrategyBasics from './StrategyBasics';
+import StrategyMonetizationSetup from './StrategyMonetizationSetup';
 import { useAuth } from '../../../contexts/AuthContext';
 
 const STEPS = [
@@ -48,6 +50,13 @@ const STEPS = [
     description: 'Set up your strategy',
     icon: Settings,
     required: true
+  },
+  {
+    id: 'monetization',
+    title: 'Monetization',
+    description: 'Set pricing options',
+    icon: DollarSign,
+    required: false // Only for monetize intent
   },
   {
     id: 'review',
@@ -294,6 +303,9 @@ const EnhancedStrategyModal = ({
     max_retries: webhook?.max_retries || 3,
     require_signature: webhook?.require_signature ?? true
   });
+  const [monetizationData, setMonetizationData] = useState({
+    pricing_options: []
+  });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [validationErrors, setValidationErrors] = useState({});
 
@@ -365,7 +377,7 @@ const EnhancedStrategyModal = ({
       setCompletedSteps(prev => [...prev, currentStep]);
     }
     
-    setCurrentStep(prev => Math.min(prev + 1, STEPS.length - 1));
+    setCurrentStep(prev => Math.min(prev + 1, activeSteps.length - 1));
   };
 
   const handlePrevious = () => {
@@ -374,6 +386,28 @@ const EnhancedStrategyModal = ({
 
   const handleEditStep = (stepIndex) => {
     setCurrentStep(stepIndex);
+  };
+
+  // Get active steps based on selected intent
+  const getActiveSteps = () => {
+    if (selectedIntent === 'monetize') {
+      return STEPS; // All steps including monetization
+    } else {
+      return STEPS.filter(step => step.id !== 'monetization'); // Skip monetization step
+    }
+  };
+
+  const activeSteps = getActiveSteps();
+
+  // Helper to check if current step is the final step
+  const isFinalStep = () => {
+    return currentStep === activeSteps.length - 1;
+  };
+
+  // Helper to get the actual step index in the full STEPS array
+  const getActualStepIndex = (activeStepIndex) => {
+    const stepId = activeSteps[activeStepIndex]?.id;
+    return STEPS.findIndex(step => step.id === stepId);
   };
 
   const handleSubmit = async () => {
@@ -431,8 +465,10 @@ const EnhancedStrategyModal = ({
   };
 
   const getStepContent = () => {
-    switch (currentStep) {
-      case 0:
+    const currentStepId = activeSteps[currentStep]?.id;
+    
+    switch (currentStepId) {
+      case 'intent':
         return (
           <IntentDiscovery
             onIntentSelect={handleIntentSelect}
@@ -441,7 +477,7 @@ const EnhancedStrategyModal = ({
             onCreatorSetup={handleCreatorSetup}
           />
         );
-      case 1:
+      case 'basics':
         return (
           <StrategyBasics
             formData={formData}
@@ -450,11 +486,31 @@ const EnhancedStrategyModal = ({
             intent={selectedIntent}
           />
         );
-      case 2:
+      case 'monetization':
+        return (
+          <StrategyMonetizationSetup
+            webhookId={webhook?.id}
+            existingMonetization={null}
+            onComplete={(result) => {
+              setMonetizationData(result);
+              // Mark step as completed and move to review
+              if (!completedSteps.includes(currentStep)) {
+                setCompletedSteps(prev => [...prev, currentStep]);
+              }
+              setCurrentStep(prev => prev + 1);
+            }}
+            onCancel={() => {
+              // Go back to previous step
+              setCurrentStep(prev => prev - 1);
+            }}
+          />
+        );
+      case 'review':
         return (
           <ReviewStep
             formData={formData}
             selectedIntent={selectedIntent}
+            monetizationData={selectedIntent === 'monetize' ? monetizationData : null}
             onEdit={handleEditStep}
           />
         );
@@ -514,7 +570,7 @@ const EnhancedStrategyModal = ({
               <ModalCloseButton position="static" />
             </HStack>
             <StepIndicator 
-              steps={STEPS} 
+              steps={activeSteps} 
               currentStep={currentStep} 
               completedSteps={completedSteps} 
             />
@@ -562,7 +618,7 @@ const EnhancedStrategyModal = ({
             </Button>
 
             <HStack spacing={3}>
-              {currentStep < STEPS.length - 1 ? (
+              {!isFinalStep() && activeSteps[currentStep]?.id !== 'monetization' ? (
                 <Button
                   bg="transparent"
                   color="white"
@@ -577,7 +633,7 @@ const EnhancedStrategyModal = ({
                 >
                   Next Step
                 </Button>
-              ) : (
+              ) : activeSteps[currentStep]?.id !== 'monetization' ? (
                 <Button
                   bg="#00C6E0"
                   color="white"
