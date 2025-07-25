@@ -20,9 +20,10 @@ import { Activity, Zap, Clock, Plus, Search, RefreshCw } from 'lucide-react';
 import WebhooksView from '@/components/features/trading/WebhooksView';  // or whatever the correct path is
 import LiveTradesView from './LiveTradesView';
 import HistoricalTradesView from './HistoricalTradesView';
-import WebhookModal from '../webhooks/WebhookModal';
+import StrategyModal from '../strategies/StrategyModal';
 import WebhookDetailsModal from '../webhooks/WebhookDetailsModal';
 import { webhookApi } from '@/services/api/Webhooks/webhookApi';
+import { useStrategyTerminology } from '@/hooks/useStrategyEnhancements';
 
 const TradesTable = () => {
   const [webhooksHandler, setWebhooksHandler] = useState(null);
@@ -33,6 +34,7 @@ const TradesTable = () => {
   const [liveFilters, setLiveFilters] = useState({ side: 'all', symbol: 'all' });
   const [newlyCreatedWebhook, setNewlyCreatedWebhook] = useState(null); // Store newly created webhook
   const toast = useToast();
+  const terminology = useStrategyTerminology();
   
   // Modal control - only for webhook creation
   const {
@@ -146,7 +148,7 @@ const TradesTable = () => {
             _active={{ bg: 'rgba(0, 198, 224, 0.2)' }}
             transition="all 0.2s"
           >
-            Generate Webhook
+            {terminology.createAction}
           </Button>
         )}
       </Flex>
@@ -385,8 +387,8 @@ const TradesTable = () => {
         </Flex>
       )}
 
-      {/* Only WebhookModal remains here */}
-      <WebhookModal
+      {/* Strategy/Webhook Modal - component will render based on feature flags */}
+      <StrategyModal
         isOpen={isWebhookModalOpen}
         onClose={onWebhookModalClose}
         onSubmit={handleCreateWebhook}

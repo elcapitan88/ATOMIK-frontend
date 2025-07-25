@@ -37,7 +37,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { webhookApi } from '@/services/api/Webhooks/webhookApi';
-import WebhookModal from '@/components/features/webhooks/WebhookModal';
+import StrategyModal from '@/components/features/strategies/StrategyModal';
 import WebhookDetailsModal from '@/components/features/webhooks/WebhookDetailsModal';
 import ShareStrategyModal from '@/components/common/Modal/ShareStrategyModal';
 import DeleteWebhook from '@/components/common/Modal/DeleteWebhook';
