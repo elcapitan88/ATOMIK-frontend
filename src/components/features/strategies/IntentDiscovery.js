@@ -33,7 +33,8 @@ const IntentCard = ({
   isSelected, 
   onClick, 
   isDisabled, 
-  disabledReason 
+  disabledReason,
+  onCreatorSetup 
 }) => {
   return (
     <Box
@@ -100,9 +101,31 @@ const IntentCard = ({
         {isDisabled && disabledReason && (
           <Alert status="warning" size="sm" bg="rgba(255, 193, 7, 0.1)" border="none">
             <AlertIcon color="orange.300" />
-            <AlertDescription fontSize="xs" color="orange.200">
-              {disabledReason}
-            </AlertDescription>
+            <Box flex="1">
+              <AlertDescription fontSize="xs" color="orange.200" mb={onCreatorSetup ? 2 : 0}>
+                {disabledReason}
+              </AlertDescription>
+              {onCreatorSetup && (
+                <Button
+                  size="xs"
+                  variant="ghost"
+                  color="orange.200"
+                  _hover={{
+                    color: "orange.100",
+                    bg: 'rgba(255, 193, 7, 0.1)'
+                  }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onCreatorSetup();
+                  }}
+                  leftIcon={<DollarSign size={12} />}
+                  fontSize="xs"
+                  fontWeight="medium"
+                >
+                  Become Creator
+                </Button>
+              )}
+            </Box>
           </Alert>
         )}
       </VStack>
@@ -226,37 +249,10 @@ const IntentDiscovery = ({
               onClick={() => handleIntentSelect(intent.id)}
               isDisabled={!intent.available}
               disabledReason={intent.disabledReason}
+              onCreatorSetup={!hasCreatorProfile ? (() => onCreatorSetup && onCreatorSetup()) : undefined}
             />
           ))}
         </VStack>
-
-        {/* Become a Creator Link for non-creators */}
-        {!hasCreatorProfile && (
-          <Box
-            textAlign="center"
-            p={3}
-            bg="rgba(255, 255, 255, 0.02)"
-            borderRadius="lg"
-            border="1px solid rgba(255, 255, 255, 0.1)"
-          >
-            <Text color="rgba(255, 255, 255, 0.7)" fontSize="sm" mb={2}>
-              Want to monetize your strategies?
-            </Text>
-            <Button
-              size="sm"
-              variant="ghost"
-              color="#00C6E0"
-              _hover={{
-                bg: 'rgba(0, 198, 224, 0.1)',
-                transform: 'translateY(-1px)'
-              }}
-              leftIcon={<DollarSign size={16} />}
-              onClick={() => onCreatorSetup && onCreatorSetup()}
-            >
-              Become a Creator
-            </Button>
-          </Box>
-        )}
 
         {/* Creator Setup Banner for monetization */}
         {selectedIntent === 'monetize' && !canMonetize && (
