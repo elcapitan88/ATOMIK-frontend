@@ -1,5 +1,5 @@
 // frontend/src/components/features/strategies/StrategyBasics.js
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import {
   Box,
   VStack,
@@ -16,9 +16,9 @@ import {
   Icon,
   Tooltip,
   IconButton,
-  Divider,
   Code,
-  useClipboard
+  Grid,
+  GridItem
 } from '@chakra-ui/react';
 import { 
   TrendingUp,
@@ -27,10 +27,8 @@ import {
   Zap,
   Target,
   HelpCircle,
-  Copy,
   Check,
-  ExternalLink,
-  Activity
+  ExternalLink
 } from 'lucide-react';
 
 const STRATEGY_TYPES = [
@@ -132,21 +130,6 @@ const StrategyBasics = ({
   webhookUrl = null,
   intent = 'personal'
 }) => {
-  const [generatedUrl, setGeneratedUrl] = useState('');
-  const { hasCopied, onCopy } = useClipboard(generatedUrl);
-
-  // Generate webhook URL preview when name changes
-  useEffect(() => {
-    if (formData.name) {
-      // Simple URL generation for preview
-      const baseUrl = window.location.origin;
-      const slug = formData.name.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-');
-      const mockToken = 'wh_' + Math.random().toString(36).substring(2, 15);
-      setGeneratedUrl(`${baseUrl}/api/v1/webhooks/${mockToken}/trigger`);
-    } else {
-      setGeneratedUrl('');
-    }
-  }, [formData.name]);
 
   const handleInputChange = (field, value) => {
     onFormChange({
@@ -230,16 +213,24 @@ const StrategyBasics = ({
             />
           </Tooltip>
         </Flex>
-        <VStack spacing={2}>
-          {STRATEGY_TYPES.map(type => (
-            <StrategyTypeCard
-              key={type.value}
-              type={type}
-              isSelected={formData.strategy_type === type.value}
-              onClick={(value) => handleInputChange('strategy_type', value)}
-            />
-          ))}
-        </VStack>
+        <Grid templateColumns="repeat(2, 1fr)" gap={3}>
+          {STRATEGY_TYPES.map((type, index) => {
+            // If it's the last item and we have an odd number, span 2 columns to center it
+            const isLastOdd = index === STRATEGY_TYPES.length - 1 && STRATEGY_TYPES.length % 2 === 1;
+            
+            return (
+              <GridItem key={type.value} colSpan={isLastOdd ? 2 : 1}>
+                <Box maxW={isLastOdd ? "50%" : "100%"} mx={isLastOdd ? "auto" : "0"}>
+                  <StrategyTypeCard
+                    type={type}
+                    isSelected={formData.strategy_type === type.value}
+                    onClick={(value) => handleInputChange('strategy_type', value)}
+                  />
+                </Box>
+              </GridItem>
+            );
+          })}
+        </Grid>
       </Box>
 
       {/* Source Type */}
@@ -330,54 +321,6 @@ const StrategyBasics = ({
         )}
       </Box>
 
-      <Divider borderColor="rgba(255, 255, 255, 0.1)" />
-
-      {/* Webhook URL Preview */}
-      {generatedUrl && (
-        <Box>
-          <Text color="white" fontWeight="medium" mb={3}>
-            Webhook URL Preview
-          </Text>
-          <Box
-            p={3}
-            bg="rgba(255, 255, 255, 0.05)"
-            borderRadius="md"
-            border="1px solid rgba(255, 255, 255, 0.1)"
-          >
-            <HStack spacing={2} mb={2}>
-              <Activity size={16} color="#00C6E0" />
-              <Text fontSize="sm" color="#00C6E0" fontWeight="medium">
-                Your webhook will be accessible at:
-              </Text>
-            </HStack>
-            <HStack spacing={2}>
-              <Code
-                bg="rgba(0, 0, 0, 0.3)"
-                color="white"
-                fontSize="xs"
-                p={2}
-                borderRadius="md"
-                flex="1"
-                wordBreak="break-all"
-              >
-                {generatedUrl}
-              </Code>
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={onCopy}
-                leftIcon={hasCopied ? <Check size={14} /> : <Copy size={14} />}
-                color={hasCopied ? "green.300" : "rgba(255, 255, 255, 0.7)"}
-              >
-                {hasCopied ? 'Copied!' : 'Copy'}
-              </Button>
-            </HStack>
-            <Text fontSize="xs" color="rgba(255, 255, 255, 0.6)" mt={2}>
-              * This is a preview. The actual URL will be generated when you create the strategy.
-            </Text>
-          </Box>
-        </Box>
-      )}
 
       {/* Expected Payload Format */}
       <Box>
