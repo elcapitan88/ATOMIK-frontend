@@ -217,32 +217,8 @@ const PricingOptionCard = ({
   );
 };
 
-const RevenueEstimator = ({ pricingOptions }) => {
-  const calculateEstimatedRevenue = () => {
-    let monthly = 0;
-    let yearly = 0;
-    
-    // Estimate based on enabled pricing options
-    if (pricingOptions.monthly?.enabled && pricingOptions.monthly?.amount) {
-      monthly += parseFloat(pricingOptions.monthly.amount) * 10; // Assume 10 subscribers
-    }
-    
-    if (pricingOptions.yearly?.enabled && pricingOptions.yearly?.amount) {
-      yearly += parseFloat(pricingOptions.yearly.amount) * 5; // Assume 5 yearly subscribers
-      monthly += (yearly / 12);
-    }
-    
-    if (pricingOptions.lifetime?.enabled && pricingOptions.lifetime?.amount) {
-      monthly += (parseFloat(pricingOptions.lifetime.amount) * 2) / 12; // Assume 2 lifetime per month
-    }
-    
-    return {
-      monthly: monthly.toFixed(2),
-      yearly: (monthly * 12).toFixed(2)
-    };
-  };
-
-  const estimates = calculateEstimatedRevenue();
+const RevenueEstimator = ({ pricingOptions, calculateRevenue }) => {
+  const estimates = calculateRevenue ? calculateRevenue() : { monthly: '0.00', yearly: '0.00' };
   
   if (estimates.monthly === '0.00') return null;
 
@@ -294,7 +270,8 @@ const RevenueEstimator = ({ pricingOptions }) => {
 };
 
 const StrategyMonetizationSetup = ({ 
-  webhookId,
+  webhookId = null,
+  formData = null, // For new strategy creation
   existingMonetization = null,
   onComplete,
   onCancel 
@@ -425,7 +402,27 @@ const StrategyMonetizationSetup = ({
           trial_period_days: option.hasTrialPeriod ? (option.trialDays || 7) : 0
         }));
 
-      // Call API to set up monetization
+      // For new strategy creation, just store the pricing data locally
+      // The actual API call will happen when the strategy is created
+      if (!webhookId) {
+        const result = {
+          pricing_options: enabledPricing,
+          estimated_monthly_revenue: parseFloat(calculateEstimatedRevenue().monthly)
+        };
+        
+        toast({
+          title: "Pricing Configuration Saved",
+          description: "Your pricing options have been saved. The strategy will be created with monetization.",
+          status: "success",
+          duration: 3000,
+          isClosable: true,
+        });
+
+        onComplete && onComplete(result);
+        return;
+      }
+
+      // For existing strategies, call the API
       const response = await fetch(`/api/v1/strategies/${webhookId}/setup-monetization`, {
         method: 'POST',
         headers: {
@@ -466,6 +463,30 @@ const StrategyMonetizationSetup = ({
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const calculateEstimatedRevenue = () => {
+    let monthly = 0;
+    let yearly = 0;
+    
+    // Estimate based on enabled pricing options
+    if (pricingOptions.monthly?.enabled && pricingOptions.monthly?.amount) {
+      monthly += parseFloat(pricingOptions.monthly.amount) * 10; // Assume 10 subscribers
+    }
+    
+    if (pricingOptions.yearly?.enabled && pricingOptions.yearly?.amount) {
+      yearly += parseFloat(pricingOptions.yearly.amount) * 5; // Assume 5 yearly subscribers
+      monthly += (yearly / 12);
+    }
+    
+    if (pricingOptions.lifetime?.enabled && pricingOptions.lifetime?.amount) {
+      monthly += (parseFloat(pricingOptions.lifetime.amount) * 2) / 12; // Assume 2 lifetime per month
+    }
+    
+    return {
+      monthly: monthly.toFixed(2),
+      yearly: (monthly * 12).toFixed(2)
+    };
   };
 
   const hasEnabledOptions = Object.values(pricingOptions).some(option => option.enabled);
@@ -513,7 +534,10 @@ const StrategyMonetizationSetup = ({
 
       {/* Revenue Estimator */}
       {hasEnabledOptions && (
-        <RevenueEstimator pricingOptions={pricingOptions} />
+        <RevenueEstimator 
+          pricingOptions={pricingOptions} 
+          calculateRevenue={calculateEstimatedRevenue}
+        />
       )}
 
       {/* Platform Fee Notice */}

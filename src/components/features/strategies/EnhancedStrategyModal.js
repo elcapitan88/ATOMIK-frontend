@@ -489,7 +489,8 @@ const EnhancedStrategyModal = ({
       case 'monetization':
         return (
           <StrategyMonetizationSetup
-            webhookId={webhook?.id}
+            formData={formData} // Pass form data instead of webhook ID for new strategies
+            webhookId={webhook?.id} // Only exists for existing webhooks
             existingMonetization={null}
             onComplete={(result) => {
               setMonetizationData(result);
@@ -618,7 +619,8 @@ const EnhancedStrategyModal = ({
             </Button>
 
             <HStack spacing={3}>
-              {!isFinalStep() && activeSteps[currentStep]?.id !== 'monetization' ? (
+              {/* Show Next button for non-final steps, except monetization step has its own buttons */}
+              {!isFinalStep() && activeSteps[currentStep]?.id !== 'monetization' && (
                 <Button
                   bg="transparent"
                   color="white"
@@ -633,7 +635,10 @@ const EnhancedStrategyModal = ({
                 >
                   Next Step
                 </Button>
-              ) : activeSteps[currentStep]?.id !== 'monetization' ? (
+              )}
+              
+              {/* Show Create/Update button for final step, except monetization step handles its own submission */}
+              {isFinalStep() && activeSteps[currentStep]?.id !== 'monetization' && (
                 <Button
                   bg="#00C6E0"
                   color="white"
