@@ -74,6 +74,7 @@ import { ProfilePicture } from '@/components/common/ProfilePicture';
 import { AffiliateDashboard, BecomeAffiliateModal } from '@/components/affiliate';
 import { useAffiliate } from '@/hooks/useAffiliate';
 import StripeConnectEmbed from '@/components/features/creators/StripeConnectEmbed';
+import StripeAccountManagement from '@/components/features/creators/StripeAccountManagement';
 
 const MotionBox = motion(Box);
 const MotionFlex = motion(Flex);
@@ -706,37 +707,8 @@ const CreatorSettingsFlow = ({ user }) => {
           </VStack>
         </SectionContainer>
 
-        {/* Payment Setup */}
-        <SectionContainer icon={CreditCard} title="Payment Setup">
-          <Box
-            bg="#1a1a1a"
-            p={6}
-            borderRadius="lg"
-            border="1px solid #333"
-          >
-            <VStack spacing={4} align="stretch">
-              <HStack justify="space-between">
-                <VStack align="start" spacing={1}>
-                  <Text color="white" fontSize="md" fontWeight="medium">
-                    Stripe Connect
-                  </Text>
-                  <Text color="whiteAlpha.600" fontSize="sm">
-                    Manage your payment settings to receive earnings
-                  </Text>
-                </VStack>
-                <Button
-                  bg="#00C6E0"
-                  color="white"
-                  size="sm"
-                  _hover={{ bg: "#00A3B8" }}
-                  leftIcon={<CreditCard size={16} />}
-                >
-                  Manage Payments
-                </Button>
-              </HStack>
-            </VStack>
-          </Box>
-        </SectionContainer>
+        {/* Stripe Account Management */}
+        <StripeAccountManagement />
       </VStack>
     );
   }
@@ -970,21 +942,13 @@ const CreatorSettingsFlow = ({ user }) => {
                   // Mark onboarding as complete
                   await completeOnboarding();
                   
-                  toast({
-                    title: "Setup complete!",
-                    description: "You're all set to start earning from your strategies",
-                    status: "success",
-                    duration: 5000,
-                    isClosable: true,
-                  });
+                  // Show success state and redirect to creator area after longer delay
+                  setCurrentStep('success');
                   
-                  // Update local state to show creator dashboard
-                  setCurrentStep(null);
-                  
-                  // Refresh user data
+                  // Redirect to creator area after showing success for longer
                   setTimeout(() => {
-                    window.location.reload();
-                  }, 2000);
+                    setCurrentStep(null); // This will show the creator management interface
+                  }, 4000); // Show success screen for 4 seconds
                 }}
                 onError={(error) => {
                   console.error('Stripe onboarding error:', error);
@@ -1023,6 +987,82 @@ const CreatorSettingsFlow = ({ user }) => {
           </SectionContainer>
         );
 
+      case 'success':
+        // Success screen after completion
+        return (
+          <SectionContainer icon={CheckCircle} title="Welcome to the Creator Program!">
+            <VStack spacing={8} align="center">
+              {/* Success Animation */}
+              <MotionBox
+                initial={{ scale: 0, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ duration: 0.5, ease: "backOut" }}
+              >
+                <Box
+                  bg="linear-gradient(135deg, rgba(0, 198, 224, 0.2) 0%, rgba(0, 198, 224, 0.1) 100%)"
+                  p={8}
+                  borderRadius="full"
+                  border="1px solid rgba(0, 198, 224, 0.3)"
+                >
+                  <CheckCircle size={64} color="#00C6E0" />
+                </Box>
+              </MotionBox>
+
+              {/* Success Message */}
+              <VStack spacing={4} textAlign="center">
+                <Text color="white" fontSize="2xl" fontWeight="bold">
+                  🎉 Setup Complete!
+                </Text>
+                <Text color="whiteAlpha.700" fontSize="lg" maxW="md">
+                  Your payment account is ready and you're now part of the creator program. 
+                  You can start monetizing your trading strategies immediately.
+                </Text>
+              </VStack>
+
+              {/* Success Features */}
+              <SimpleGrid columns={{ base: 1, md: 3 }} spacing={6} w="full" maxW="2xl">
+                <Box bg="#1a1a1a" p={4} borderRadius="lg" border="1px solid #333" textAlign="center">
+                  <DollarSign size={32} color="#00C6E0" style={{ margin: '0 auto 12px' }} />
+                  <Text color="white" fontSize="md" fontWeight="semibold" mb={2}>
+                    Start Earning
+                  </Text>
+                  <Text color="whiteAlpha.600" fontSize="sm">
+                    Monetize your strategies with subscription pricing
+                  </Text>
+                </Box>
+                
+                <Box bg="#1a1a1a" p={4} borderRadius="lg" border="1px solid #333" textAlign="center">
+                  <Shield size={32} color="#00C6E0" style={{ margin: '0 auto 12px' }} />
+                  <Text color="white" fontSize="md" fontWeight="semibold" mb={2}>
+                    Secure Payments
+                  </Text>
+                  <Text color="whiteAlpha.600" fontSize="sm">
+                    Powered by Stripe with automatic payouts
+                  </Text>
+                </Box>
+                
+                <Box bg="#1a1a1a" p={4} borderRadius="lg" border="1px solid #333" textAlign="center">
+                  <Zap size={32} color="#00C6E0" style={{ margin: '0 auto 12px' }} />
+                  <Text color="white" fontSize="md" fontWeight="semibold" mb={2}>
+                    Full Control
+                  </Text>
+                  <Text color="whiteAlpha.600" fontSize="sm">
+                    Manage pricing, payouts, and analytics
+                  </Text>
+                </Box>
+              </SimpleGrid>
+
+              {/* Loading indicator with countdown */}
+              <VStack spacing={3}>
+                <Text color="whiteAlpha.600" fontSize="sm">
+                  Redirecting to your creator dashboard...
+                </Text>
+                <Spinner size="sm" color="#00C6E0" />
+              </VStack>
+            </VStack>
+          </SectionContainer>
+        );
+
       default:
         return null;
     }
@@ -1030,46 +1070,48 @@ const CreatorSettingsFlow = ({ user }) => {
 
   return (
     <VStack spacing={8} align="stretch">
-      {/* Progress Indicator */}
-      <Box>
-        <HStack spacing={4} justify="center" mb={2}>
-          {[1, 2, 3].map((step) => (
-            <HStack key={step} spacing={2}>
-              <Box
-                w="8"
-                h="8"
-                borderRadius="full"
-                bg={currentStep >= step ? "#00C6E0" : "#333"}
-                display="flex"
-                alignItems="center"
-                justifyContent="center"
-                transition="all 0.3s"
-              >
-                <Text
-                  color={currentStep >= step ? "white" : "whiteAlpha.600"}
-                  fontSize="sm"
-                  fontWeight="semibold"
-                >
-                  {step}
-                </Text>
-              </Box>
-              {step < 3 && (
+      {/* Progress Indicator - hide during success screen */}
+      {currentStep !== 'success' && (
+        <Box>
+          <HStack spacing={4} justify="center" mb={2}>
+            {[1, 2, 3].map((step) => (
+              <HStack key={step} spacing={2}>
                 <Box
-                  w="12"
-                  h="1"
-                  bg={currentStep > step ? "#00C6E0" : "#333"}
+                  w="8"
+                  h="8"
+                  borderRadius="full"
+                  bg={currentStep >= step ? "#00C6E0" : "#333"}
+                  display="flex"
+                  alignItems="center"
+                  justifyContent="center"
                   transition="all 0.3s"
-                />
-              )}
-            </HStack>
-          ))}
-        </HStack>
-        <HStack justify="center">
-          <Text color="whiteAlpha.600" fontSize="xs">
-            Step {currentStep} of 3
-          </Text>
-        </HStack>
-      </Box>
+                >
+                  <Text
+                    color={currentStep >= step ? "white" : "whiteAlpha.600"}
+                    fontSize="sm"
+                    fontWeight="semibold"
+                  >
+                    {step}
+                  </Text>
+                </Box>
+                {step < 3 && (
+                  <Box
+                    w="12"
+                    h="1"
+                    bg={currentStep > step ? "#00C6E0" : "#333"}
+                    transition="all 0.3s"
+                  />
+                )}
+              </HStack>
+            ))}
+          </HStack>
+          <HStack justify="center">
+            <Text color="whiteAlpha.600" fontSize="xs">
+              Step {currentStep} of 3
+            </Text>
+          </HStack>
+        </Box>
+      )}
 
       {renderOnboardingStep()}
     </VStack>

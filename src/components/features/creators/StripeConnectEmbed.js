@@ -126,13 +126,8 @@ const StripeConnectEmbed = ({ onComplete, onError }) => {
       if (!prevStatus?.onboarding_complete && response.data.onboarding_complete) {
         console.log('🎉 Onboarding completed!');
         
-        toast({
-          title: "Setup complete!",
-          description: "Your payment account is ready. Welcome to the creator program!",
-          status: "success",
-          duration: 6000,
-          isClosable: true,
-        });
+        // Don't show toast here - let parent component handle success messaging
+        console.log('🎉 Onboarding completed - notifying parent component');
         
         if (onComplete) {
           onComplete(response.data);
@@ -163,13 +158,8 @@ const StripeConnectEmbed = ({ onComplete, onError }) => {
       if (statusResponse.data.onboarding_complete) {
         console.log('🎉 Stripe onboarding is complete!');
         
-        toast({
-          title: "Setup complete!",
-          description: "Your payment account is ready. Welcome to the creator program!",
-          status: "success",
-          duration: 6000,
-          isClosable: true,
-        });
+        // Don't show toast here - let parent component handle success messaging
+        console.log('🎉 Onboarding completed via exit - notifying parent component');
         
         if (onComplete) {
           onComplete(statusResponse.data);
