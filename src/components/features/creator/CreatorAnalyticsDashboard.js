@@ -46,7 +46,7 @@ import {
   RefreshCw,
   Activity
 } from 'lucide-react';
-import { useAuth } from '../../../hooks/useAuth';
+import { useAuth } from '../../../contexts/AuthContext';
 import api from '../../../services/api';
 import { formatCurrency } from '../../../utils/formatters';
 
