@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useCreator } from '../../../hooks/useCreator';
 import CreatorDashboard from './CreatorDashboard';
 import CreatorStrategyManager from './CreatorStrategyManager';
-import CreatorAnalytics from './CreatorAnalytics';
+import CreatorAnalyticsDashboard from '../../features/creator/CreatorAnalyticsDashboard';
 import CreatorSettings from './CreatorSettings';
 
 const CreatorHubPage = () => {
@@ -67,7 +67,7 @@ const CreatorHubPage = () => {
       case 'strategies':
         return <CreatorStrategyManager creatorProfile={creatorProfile} />;
       case 'analytics':
-        return <CreatorAnalytics creatorProfile={creatorProfile} />;
+        return <CreatorAnalyticsDashboard />;
       case 'settings':
         return <CreatorSettings creatorProfile={creatorProfile} />;
       default:
