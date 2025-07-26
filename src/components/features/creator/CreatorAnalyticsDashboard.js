@@ -47,7 +47,7 @@ import {
   Activity
 } from 'lucide-react';
 import { useAuth } from '../../../contexts/AuthContext';
-import api from '../../../config/axiosConfig';
+import axiosInstance from '@/services/axiosConfig';
 import { formatCurrency } from '../../../utils/formatters';
 
 const CreatorDashboard = () => {
@@ -65,7 +65,7 @@ const CreatorDashboard = () => {
     else setIsRefreshing(true);
     
     try {
-      const response = await api.get(`/analytics/dashboard?period=${selectedPeriod}`);
+      const response = await axiosInstance.get(`/analytics/dashboard?period=${selectedPeriod}`);
       setDashboardData(response.data);
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
