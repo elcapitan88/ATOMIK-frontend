@@ -256,6 +256,7 @@ const StripeConnectEmbed = ({ onComplete, onError }) => {
           try {
             // Add timestamp to prevent caching issues
             const response = await axiosInstance.post('/api/v1/creators/create-account-session', {
+              component_type: "onboarding",
               timestamp: Date.now()
             });
             const { client_secret } = response.data;

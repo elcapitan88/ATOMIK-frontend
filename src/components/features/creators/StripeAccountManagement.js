@@ -111,6 +111,7 @@ const StripeAccountManagement = () => {
           console.log('🔵 Stripe requesting fresh client secret for account management...');
           try {
             const response = await axiosInstance.post('/api/v1/creators/create-account-session', {
+              component_type: "management",
               timestamp: Date.now()
             });
             const { client_secret } = response.data;
