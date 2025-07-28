@@ -530,7 +530,7 @@ const RegistrationForm = ({ selectedPlan, selectedInterval, onSubmit, onCancel, 
   return (
     <VStack spacing={6} align="stretch" as="form" onSubmit={handleSubmit}>
       <Heading size="md" color="white" textAlign="center">
-        Create your account to get started with the {selectedPlan} plan
+        Create your account to get started with the {pricingData[selectedPlan]?.name || selectedPlan} plan
       </Heading>
       
       <FormControl isRequired isInvalid={!!errors.email}>
@@ -631,7 +631,7 @@ const RegistrationForm = ({ selectedPlan, selectedInterval, onSubmit, onCancel, 
           isLoading={isSubmitting}
           loadingText="Creating Account..."
         >
-          {selectedPlan === 'starter' ? 'Get Started Free' : 'Create Account & Continue'}
+          {pricingData[selectedPlan]?.name === 'Starter' ? 'Get Started Free' : 'Create Account & Continue'}
         </Button>
         <Button
           variant="ghost"
@@ -1150,7 +1150,7 @@ const PricingPage = () => {
             borderColor="whiteAlpha.200" 
             pb={4}
           >
-            {selectedPlan?.tier === 'starter' ? 'Get Started Free' : `Join ${selectedPlan?.tier} Plan`}
+            {selectedPlan?.tier === 'starter' ? 'Get Started Free' : `Join ${pricingData[selectedPlan?.tier]?.name} Plan`}
           </ModalHeader>
           {!isSubmitting && <ModalCloseButton color="white" />}
           <ModalBody py={6}>
