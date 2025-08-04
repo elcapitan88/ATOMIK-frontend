@@ -57,13 +57,13 @@ export const useStrategyEnhancements = () => {
 
 /**
  * Check if user is eligible for enhanced features
- * Simple eligibility: admins and beta testers only
+ * Enhanced features are now available to all authenticated users
  */
 const checkUserEligibility = (user) => {
   if (!user) return false;
   
-  // Enable for admins and beta testers only
-  return user.app_role === 'admin' || user.app_role === 'beta_tester';
+  // Enable for all authenticated users
+  return true;
 };
 
 /**
@@ -104,11 +104,11 @@ const getFeatureFlags = async (userId) => {
     console.warn('Could not fetch feature flags from API:', error);
   }
   
-  // Default to enabled for eligible users (admins and beta testers)
+  // Default to enabled for all authenticated users
   return {
     enhancedUI: true,     
     intentDiscovery: true, 
-    monetization: true,   // Enable monetization for admins/beta testers
+    monetization: true,   // Enable monetization UI for all users (actual monetization still requires creator setup)
     glassMorphism: true   
   };
 };

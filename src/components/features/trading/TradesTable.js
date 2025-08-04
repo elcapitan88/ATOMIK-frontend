@@ -20,7 +20,7 @@ import { Activity, Zap, Clock, Plus, Search, RefreshCw } from 'lucide-react';
 import WebhooksView from '@/components/features/trading/WebhooksView';  // or whatever the correct path is
 import LiveTradesView from './LiveTradesView';
 import HistoricalTradesView from './HistoricalTradesView';
-import StrategyModal from '../strategies/StrategyModal';
+import EnhancedStrategyModal from '../strategies/EnhancedStrategyModal';
 import WebhookDetailsModal from '../webhooks/WebhookDetailsModal';
 import { webhookApi } from '@/services/api/Webhooks/webhookApi';
 import { useStrategyTerminology } from '@/hooks/useStrategyEnhancements';
@@ -387,8 +387,8 @@ const TradesTable = () => {
         </Flex>
       )}
 
-      {/* Strategy/Webhook Modal - component will render based on feature flags */}
-      <StrategyModal
+      {/* Enhanced Strategy Modal with intent discovery */}
+      <EnhancedStrategyModal
         isOpen={isWebhookModalOpen}
         onClose={onWebhookModalClose}
         onSubmit={handleCreateWebhook}
