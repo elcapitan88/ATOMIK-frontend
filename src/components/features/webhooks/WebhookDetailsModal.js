@@ -55,29 +55,33 @@ function WebhookDetailsModal({ isOpen, onClose, webhook, isNewlyCreated = false 
       size="xl"
       scrollBehavior="inside"
     >
-      <ModalOverlay bg="blackAlpha.300" backdropFilter="blur(5px)" />
-      <ModalContent
-        bg="rgba(255, 255, 255, 0.1)"
-        backdropFilter="blur(10px)"
-        boxShadow="0 8px 32px 0 rgba(0, 198, 224, 0.37)"
+      <ModalOverlay 
+        bg="blackAlpha.300" 
+        backdropFilter="blur(10px)" 
+      />
+      <ModalContent 
+        bg="rgba(0, 0, 0, 0.75)"
+        backdropFilter="blur(20px)"
+        boxShadow="0 8px 32px 0 rgba(0, 0, 0, 0.5)"
         border="1px solid rgba(255, 255, 255, 0.18)"
         borderRadius="xl"
         color="white"
         maxH="90vh"
-        overflowY="auto"
-        css={{
+        overflow="hidden"
+        sx={{
           '&::-webkit-scrollbar': {
             width: '8px',
           },
           '&::-webkit-scrollbar-track': {
-            background: 'rgba(0, 0, 0, 0.1)',
+            background: 'rgba(255, 255, 255, 0.05)',
             borderRadius: '4px',
           },
           '&::-webkit-scrollbar-thumb': {
-            background: 'rgba(255, 255, 255, 0.2)',
+            background: 'rgba(255, 255, 255, 0.1)',
             borderRadius: '4px',
+            border: '1px solid rgba(255, 255, 255, 0.05)',
             '&:hover': {
-              background: 'rgba(255, 255, 255, 0.3)',
+              background: 'rgba(255, 255, 255, 0.15)',
             },
           },
         }}
@@ -87,14 +91,36 @@ function WebhookDetailsModal({ isOpen, onClose, webhook, isNewlyCreated = false 
         </ModalHeader>
         <ModalCloseButton />
         
-        <ModalBody py={6}>
+        <ModalBody 
+          py={6}
+          overflowY="auto"
+          sx={{
+            '&::-webkit-scrollbar': {
+              width: '8px',
+            },
+            '&::-webkit-scrollbar-track': {
+              background: 'rgba(255, 255, 255, 0.05)',
+              borderRadius: '4px',
+            },
+            '&::-webkit-scrollbar-thumb': {
+              background: 'rgba(255, 255, 255, 0.1)',
+              borderRadius: '4px',
+              border: '1px solid rgba(255, 255, 255, 0.05)',
+              '&:hover': {
+                background: 'rgba(255, 255, 255, 0.15)',
+              },
+            },
+          }}
+        >
           <VStack spacing={6} align="stretch">
             {/* Combined Security Alert */}
             <Alert 
               status={isNewlyCreated ? "error" : "warning"}
               variant="subtle"
               bg={isNewlyCreated ? "rgba(229, 62, 62, 0.1)" : "rgba(236, 201, 75, 0.1)"}
-              borderRadius="md"
+              borderRadius="lg"
+              border="1px solid"
+              borderColor={isNewlyCreated ? "rgba(229, 62, 62, 0.2)" : "rgba(236, 201, 75, 0.2)"}
               flexDirection="column"
               alignItems="flex-start"
               p={4}
@@ -129,15 +155,22 @@ function WebhookDetailsModal({ isOpen, onClose, webhook, isNewlyCreated = false 
 
             {/* Webhook URL */}
             <Box>
-              <Text fontSize="sm" fontWeight="medium" mb={2}>
+              <Text fontSize="sm" fontWeight="medium" mb={2} color="white">
                 Webhook URL
               </Text>
               <InputGroup size="md">
                 <Input
                   value={fullWebhookUrl}
                   readOnly
-                  bg="whiteAlpha.100"
+                  bg="rgba(255, 255, 255, 0.05)"
+                  border="1px solid rgba(255, 255, 255, 0.1)"
+                  borderRadius="lg"
+                  color="white"
                   pr="4.5rem"
+                  _focus={{
+                    borderColor: "rgba(0, 198, 224, 0.5)",
+                    boxShadow: "0 0 0 1px rgba(0, 198, 224, 0.2)"
+                  }}
                 />
                 <InputRightElement width="4.5rem">
                   <IconButton
@@ -156,7 +189,14 @@ function WebhookDetailsModal({ isOpen, onClose, webhook, isNewlyCreated = false 
                     }}
                     icon={hasUrlCopied ? <CheckCircle size={16} /> : <Copy size={16} />}
                     aria-label={hasUrlCopied ? "Copied" : "Copy URL"}
-                    colorScheme={hasUrlCopied ? "green" : "gray"}
+                    bg={hasUrlCopied ? "rgba(72, 187, 120, 0.2)" : "rgba(255, 255, 255, 0.1)"}
+                    color={hasUrlCopied ? "#48BB78" : "#00C6E0"}
+                    border="1px solid"
+                    borderColor={hasUrlCopied ? "rgba(72, 187, 120, 0.3)" : "rgba(0, 198, 224, 0.3)"}
+                    _hover={{
+                      bg: hasUrlCopied ? "rgba(72, 187, 120, 0.3)" : "rgba(0, 198, 224, 0.2)",
+                      borderColor: hasUrlCopied ? "rgba(72, 187, 120, 0.4)" : "rgba(0, 198, 224, 0.4)"
+                    }}
                   />
                 </InputRightElement>
               </InputGroup>
@@ -164,7 +204,7 @@ function WebhookDetailsModal({ isOpen, onClose, webhook, isNewlyCreated = false 
 
             {/* Implementation Guide */}
             <Box>
-              <Text fontSize="sm" fontWeight="medium" mb={4}>
+              <Text fontSize="sm" fontWeight="medium" mb={4} color="white">
                 Implementation Guide
               </Text>
 
@@ -172,14 +212,15 @@ function WebhookDetailsModal({ isOpen, onClose, webhook, isNewlyCreated = false 
                 <Alert 
                   status="info" 
                   variant="subtle"
-                  bg="whiteAlpha.100"
-                  borderRadius="md"
+                  bg="rgba(0, 198, 224, 0.1)"
+                  borderRadius="lg"
+                  border="1px solid rgba(0, 198, 224, 0.2)"
                   mb={4}
                 >
-                  <AlertIcon />
+                  <AlertIcon color="#00C6E0" />
                   <Box>
-                    <Text fontWeight="medium">TradingView Setup</Text>
-                    <Text fontSize="sm">
+                    <Text fontWeight="medium" color="white">TradingView Setup</Text>
+                    <Text fontSize="sm" color="rgba(255, 255, 255, 0.8)">
                       Configure this URL in your TradingView alert message webhook URL field. 
                       The {'{{strategy.order.action}}'} variable will automatically handle both buy and sell signals.
                     </Text>
@@ -189,14 +230,15 @@ function WebhookDetailsModal({ isOpen, onClose, webhook, isNewlyCreated = false 
                 <Alert 
                   status="info" 
                   variant="subtle"
-                  bg="whiteAlpha.100"
-                  borderRadius="md"
+                  bg="rgba(0, 198, 224, 0.1)"
+                  borderRadius="lg"
+                  border="1px solid rgba(0, 198, 224, 0.2)"
                   mb={4}
                 >
-                  <AlertIcon />
+                  <AlertIcon color="#00C6E0" />
                   <Box>
-                    <Text fontWeight="medium">Custom Implementation</Text>
-                    <Text fontSize="sm">
+                    <Text fontWeight="medium" color="white">Custom Implementation</Text>
+                    <Text fontSize="sm" color="rgba(255, 255, 255, 0.8)">
                       You'll need to create two separate webhooks - one for buy signals and one for sell signals.
                     </Text>
                   </Box>
@@ -205,14 +247,18 @@ function WebhookDetailsModal({ isOpen, onClose, webhook, isNewlyCreated = false 
 
               <Box
                 p={4}
-                bg="whiteAlpha.100"
-                borderRadius="md"
+                bg="rgba(255, 255, 255, 0.05)"
+                border="1px solid rgba(255, 255, 255, 0.1)"
+                borderRadius="lg"
                 cursor="pointer"
                 onClick={handleCopyPayload}
                 transition="all 0.2s"
-                _hover={{ bg: "whiteAlpha.200" }}
+                _hover={{ 
+                  bg: "rgba(255, 255, 255, 0.08)",
+                  borderColor: "rgba(0, 198, 224, 0.3)"
+                }}
               >
-                <Text fontSize="sm" mb={2} color="whiteAlpha.700">
+                <Text fontSize="sm" mb={2} color="rgba(255, 255, 255, 0.7)">
                   Click to copy example payload
                 </Text>
                 <Code

@@ -139,14 +139,13 @@ export const useFeature = (featureName) => {
 
 /**
  * Hook for UI component selection based on feature flags
+ * @deprecated - All users now use EnhancedStrategyModal. This hook is kept for backward compatibility.
  */
 export const useStrategyModal = () => {
-  const { enhancedUI, loading } = useStrategyEnhancements();
-  
   return {
-    ModalComponent: enhancedUI ? 'EnhancedStrategyModal' : 'WebhookModal',
-    useEnhanced: enhancedUI,
-    loading
+    ModalComponent: 'EnhancedStrategyModal',
+    useEnhanced: true,
+    loading: false
   };
 };
 
