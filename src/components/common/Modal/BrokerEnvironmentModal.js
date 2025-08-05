@@ -86,7 +86,7 @@ const EnvironmentOption = ({ title, onClick, isDisabled = false }) => {
           </Text>
           <Text fontSize="xs" color="rgba(255, 255, 255, 0.7)" textAlign="center">
             {isDemoMode 
-              ? 'Practice with virtual funds' 
+              ? 'For funded programs and demo trading' 
               : 'Trade with real capital'
             }
           </Text>
@@ -208,7 +208,7 @@ const BrokerEnvironmentModal = ({ isOpen, onClose, selectedBroker, onEnvironment
                   Choose your {selectedBroker.name} environment
                 </Text>
                 <Text fontSize="xs" color="rgba(255, 255, 255, 0.8)">
-                  You can connect to both Demo and Live environments simultaneously
+                  Demo accounts are required for funded programs. You can connect to both environments.
                 </Text>
               </VStack>
             </Alert>
