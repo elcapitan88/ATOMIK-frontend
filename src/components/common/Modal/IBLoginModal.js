@@ -115,71 +115,108 @@ const IBLoginModal = ({ isOpen, onClose, onConnect }) => {
         {!isSubmitting && <ModalCloseButton color="white" />}
         
         <ModalBody pt={6} pb={8}>
-          <form onSubmit={handleSubmit}>
-            <VStack spacing={4}>
-              <FormControl isRequired>
-                <FormLabel>Username</FormLabel>
-                <Input 
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  placeholder="Enter your IB username"
-                  bg="whiteAlpha.100"
-                  border="1px solid rgba(255, 255, 255, 0.18)"
-                  _hover={{ borderColor: "rgba(255, 255, 255, 0.3)" }}
-                />
-              </FormControl>
-              
-              <FormControl isRequired>
-                <FormLabel>Password</FormLabel>
-                <Input 
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Enter your IB password"
-                  bg="whiteAlpha.100"
-                  border="1px solid rgba(255, 255, 255, 0.18)"
-                  _hover={{ borderColor: "rgba(255, 255, 255, 0.3)" }}
-                />
-              </FormControl>
+          <VStack spacing={6}>
+            <Alert
+              status="info"
+              bg="rgba(66, 153, 225, 0.1)"
+              border="1px solid rgba(66, 153, 225, 0.3)"
+              borderRadius="md"
+              color="white"
+            >
+              <AlertIcon color="blue.300" />
+              <VStack spacing={1} align="flex-start">
+                <Text fontSize="sm" fontWeight="medium">
+                  Connect your Interactive Brokers account
+                </Text>
+                <Text fontSize="xs" color="rgba(255, 255, 255, 0.8)">
+                  Your credentials are encrypted and secure. Choose Paper for demo or Live for real trading.
+                </Text>
+              </VStack>
+            </Alert>
+            
+            <form onSubmit={handleSubmit} style={{ width: '100%' }}>
+              <VStack spacing={4}>
+                <FormControl isRequired>
+                  <FormLabel color="white" fontSize="sm" fontWeight="medium">
+                    Username
+                  </FormLabel>
+                  <Input 
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    placeholder="Enter your IB username"
+                    bg="rgba(255, 255, 255, 0.05)"
+                    border="1px solid rgba(255, 255, 255, 0.1)"
+                    borderRadius="md"
+                    _hover={{ borderColor: "rgba(255, 255, 255, 0.2)" }}
+                    _focus={{ 
+                      borderColor: "#00C6E0",
+                      boxShadow: "0 0 0 1px #00C6E0"
+                    }}
+                    color="white"
+                  />
+                </FormControl>
+                
+                <FormControl isRequired>
+                  <FormLabel color="white" fontSize="sm" fontWeight="medium">
+                    Password
+                  </FormLabel>
+                  <Input 
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Enter your IB password"
+                    bg="rgba(255, 255, 255, 0.05)"
+                    border="1px solid rgba(255, 255, 255, 0.1)"
+                    borderRadius="md"
+                    _hover={{ borderColor: "rgba(255, 255, 255, 0.2)" }}
+                    _focus={{ 
+                      borderColor: "#00C6E0",
+                      boxShadow: "0 0 0 1px #00C6E0"
+                    }}
+                    color="white"
+                  />
+                </FormControl>
 
-              <FormControl>
-                <FormLabel>Trading Environment</FormLabel>
-                <HStack spacing={0} width="100%">
-                  <Button
-                    onClick={() => setEnvironment(ENVIRONMENTS.PAPER)}
-                    flex={1}
-                    size="md"
-                    variant={environment === ENVIRONMENTS.PAPER ? "solid" : "outline"}
-                    bg={environment === ENVIRONMENTS.PAPER ? "red.500" : "transparent"}
-                    color={environment === ENVIRONMENTS.PAPER ? "white" : "red.300"}
-                    borderColor="red.500"
-                    borderRightRadius={0}
-                    _hover={{
-                      bg: environment === ENVIRONMENTS.PAPER ? "red.600" : "red.500",
-                      color: "white"
-                    }}
-                  >
-                    Paper Trading
-                  </Button>
-                  <Button
-                    onClick={() => setEnvironment(ENVIRONMENTS.LIVE)}
-                    flex={1}
-                    size="md"
-                    variant={environment === ENVIRONMENTS.LIVE ? "solid" : "outline"}
-                    bg={environment === ENVIRONMENTS.LIVE ? "blue.500" : "transparent"}
-                    color={environment === ENVIRONMENTS.LIVE ? "white" : "blue.300"}
-                    borderColor="blue.500"
-                    borderLeftRadius={0}
-                    _hover={{
-                      bg: environment === ENVIRONMENTS.LIVE ? "blue.600" : "blue.500",
-                      color: "white"
-                    }}
-                  >
-                    Live Trading
-                  </Button>
-                </HStack>
-              </FormControl>
-              
+                <FormControl>
+                  <FormLabel color="white" fontSize="sm" fontWeight="medium">
+                    Trading Environment
+                  </FormLabel>
+                  <HStack spacing={0} width="100%">
+                    <Button
+                      onClick={() => setEnvironment(ENVIRONMENTS.PAPER)}
+                      flex={1}
+                      size="md"
+                      variant={environment === ENVIRONMENTS.PAPER ? "solid" : "outline"}
+                      bg={environment === ENVIRONMENTS.PAPER ? "red.500" : "transparent"}
+                      color={environment === ENVIRONMENTS.PAPER ? "white" : "red.300"}
+                      borderColor="red.500"
+                      borderRightRadius={0}
+                      _hover={{
+                        bg: environment === ENVIRONMENTS.PAPER ? "red.600" : "red.500",
+                        color: "white"
+                      }}
+                    >
+                      Paper Trading
+                    </Button>
+                    <Button
+                      onClick={() => setEnvironment(ENVIRONMENTS.LIVE)}
+                      flex={1}
+                      size="md"
+                      variant={environment === ENVIRONMENTS.LIVE ? "solid" : "outline"}
+                      bg={environment === ENVIRONMENTS.LIVE ? "blue.500" : "transparent"}
+                      color={environment === ENVIRONMENTS.LIVE ? "white" : "blue.300"}
+                      borderColor="blue.500"
+                      borderLeftRadius={0}
+                      _hover={{
+                        bg: environment === ENVIRONMENTS.LIVE ? "blue.600" : "blue.500",
+                        color: "white"
+                      }}
+                    >
+                      Live Trading
+                    </Button>
+                  </HStack>
+                </FormControl>
+
                 <Box width="100%" pt={4}>
                   <Button
                     type="submit"
