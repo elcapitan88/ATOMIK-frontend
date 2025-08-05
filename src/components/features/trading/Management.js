@@ -32,6 +32,7 @@ import {
 
 import accountManager from '@/services/account/AccountManager';
 import AccountStatusIndicator from '@/components/common/AccountStatusIndicator';
+import IBProvisioningStatus from '@/components/common/IBProvisioningStatus';
 import BrokerSelectionModal from '@/components/common/Modal/BrokerSelectionModal';
 import BrokerEnvironmentModal from '@/components/common/Modal/BrokerEnvironmentModal';
 import DeleteAccount from '@/components/common/Modal/DeleteAccount';
@@ -765,14 +766,31 @@ const Management = () => {
             weeklyPnL: realtimeData?.weeklyPnL ?? account.weeklyPnL ?? 0
         };
 
+        // Check if this is an IB account that's provisioning
+        const isIBProvisioning = account.broker_id === 'interactivebrokers' && 
+            ['provisioning', 'initializing', 'starting'].includes(account.digital_ocean_status);
+        
+        // Show status for error states too
+        const isIBError = account.broker_id === 'interactivebrokers' && 
+            account.digital_ocean_status === 'error';
+
         return (
-            <Box 
-                bg="whiteAlpha.100" 
-                borderRadius="lg"
-                overflow="hidden"
-                transition="all 0.3s"
-                _hover={{ bg: "whiteAlpha.200" }}
-            >
+            <>
+                {/* IB Provisioning Status - Shows above the account card */}
+                {account.broker_id === 'interactivebrokers' && (
+                    <IBProvisioningStatus 
+                        account={account} 
+                        isOpen={isIBProvisioning || isIBError}
+                    />
+                )}
+                
+                <Box 
+                    bg="whiteAlpha.100" 
+                    borderRadius="lg"
+                    overflow="hidden"
+                    transition="all 0.3s"
+                    _hover={{ bg: "whiteAlpha.200" }}
+                >
                 {/* Main Account Row - More Compact */}
                 <Flex 
                     py={2}
@@ -887,6 +905,7 @@ const Management = () => {
                 </Box>
                 )}
             </Box>
+            </>
         );
     };
     
