@@ -19,11 +19,14 @@ import {
   Select,
   Alert,
   AlertIcon,
-  Spinner
+  Spinner,
+  Badge,
+  HStack,
+  Icon
 } from '@chakra-ui/react';
 import { webhookApi } from '@/services/api/Webhooks/webhookApi';
 import { STRATEGY_TYPE_OPTIONS } from '@utils/constants/strategyTypes';
-import { Info } from 'lucide-react';
+import { Info, User, Share2, DollarSign, Lock, Users, TrendingUp } from 'lucide-react';
 
 const ShareStrategyModal = ({ isOpen, onClose, webhook, onWebhookUpdate }) => {
   const toast = useToast();
@@ -156,20 +159,28 @@ const ShareStrategyModal = ({ isOpen, onClose, webhook, onWebhookUpdate }) => {
       size="xl"
       closeOnOverlayClick={!isSubmitting}
     >
-      <ModalOverlay bg="blackAlpha.300" backdropFilter="blur(5px)" />
+      <ModalOverlay 
+        bg="blackAlpha.300" 
+        backdropFilter="blur(10px)" 
+      />
       <ModalContent 
-        bg="rgba(255, 255, 255, 0.1)" 
+        bg="rgba(0, 0, 0, 0.75)"
         backdropFilter="blur(10px)"
+        boxShadow="0 8px 32px 0 rgba(0, 0, 0, 0.5)"
+        border="1px solid rgba(255, 255, 255, 0.1)"
         borderRadius="xl"
-        border="1px solid rgba(255, 255, 255, 0.18)"
+        color="white"
       >
         <ModalHeader 
-          borderBottom="1px solid rgba(255, 255, 255, 0.18)" 
+          borderBottom="1px solid rgba(255, 255, 255, 0.1)" 
           pb={4} 
           color="white"
           pr={12}
         >
-          Share Strategy
+          <HStack spacing={3}>
+            <Icon as={Share2} size="20px" color="#00C6E0" />
+            <Text>Manage Strategy Sharing</Text>
+          </HStack>
         </ModalHeader>
         <ModalCloseButton 
           color="white"
@@ -179,14 +190,54 @@ const ShareStrategyModal = ({ isOpen, onClose, webhook, onWebhookUpdate }) => {
         
         <ModalBody py={6}>
           <VStack spacing={6}>
-            {/* Strategy Name Display */}
-            <Box width="full">
-              <Text color="whiteAlpha.700" fontSize="sm" mb={1}>
-                Strategy Name
-              </Text>
-              <Text color="white" fontWeight="medium" fontSize="lg">
-                {formData.name || 'Unnamed Strategy'}
-              </Text>
+            {/* Strategy Overview Card */}
+            <Box 
+              width="full" 
+              p={4} 
+              bg="rgba(255, 255, 255, 0.05)" 
+              borderRadius="lg" 
+              border="1px solid rgba(255, 255, 255, 0.1)"
+            >
+              <VStack spacing={3} align="stretch">
+                <HStack justify="space-between">
+                  <Text color="white" fontWeight="semibold" fontSize="lg">
+                    {formData.name || 'Unnamed Strategy'}
+                  </Text>
+                  <Badge 
+                    colorScheme={
+                      webhook?.usage_intent === 'personal' ? 'gray' :
+                      webhook?.usage_intent === 'share_free' ? 'green' :
+                      webhook?.usage_intent === 'monetize' ? 'yellow' : 'gray'
+                    }
+                    fontSize="xs"
+                    px={2}
+                    py={1}
+                  >
+                    {webhook?.usage_intent === 'personal' && 'Personal Use'}
+                    {webhook?.usage_intent === 'share_free' && 'Free Sharing'}
+                    {webhook?.usage_intent === 'monetize' && 'Monetized'}
+                    {!webhook?.usage_intent && 'Legacy Strategy'}
+                  </Badge>
+                </HStack>
+                
+                <HStack spacing={2}>
+                  <Icon 
+                    as={
+                      webhook?.usage_intent === 'personal' ? Lock :
+                      webhook?.usage_intent === 'share_free' ? Users :
+                      webhook?.usage_intent === 'monetize' ? DollarSign : User
+                    } 
+                    size="14px" 
+                    color="rgba(255, 255, 255, 0.7)" 
+                  />
+                  <Text fontSize="sm" color="rgba(255, 255, 255, 0.8)">
+                    {webhook?.usage_intent === 'personal' && 'Originally created for private use'}
+                    {webhook?.usage_intent === 'share_free' && 'Originally created for free community sharing'}
+                    {webhook?.usage_intent === 'monetize' && 'Originally created with monetization intent'}
+                    {!webhook?.usage_intent && 'Legacy strategy - can be shared or monetized'}
+                  </Text>
+                </HStack>
+              </VStack>
             </Box>
 
             {/* Strategy Type Selector */}
@@ -259,10 +310,13 @@ const ShareStrategyModal = ({ isOpen, onClose, webhook, onWebhookUpdate }) => {
             >
               <Box>
                 <Text color="white" fontWeight="medium">
-                  Activate Strategy Sharing
+                  {formData.isShared ? 'Strategy Sharing Active' : 'Activate Strategy Sharing'}
                 </Text>
                 <Text color="whiteAlpha.600" fontSize="sm">
-                  Make this strategy available in the marketplace
+                  {formData.isShared 
+                    ? 'Your strategy is currently visible in the marketplace' 
+                    : 'Make this strategy discoverable by other users'
+                  }
                 </Text>
               </Box>
               <Box position="relative">
@@ -290,13 +344,47 @@ const ShareStrategyModal = ({ isOpen, onClose, webhook, onWebhookUpdate }) => {
               </Box>
             </Flex>
 
-            {/* Info Alert */}
-            {formData.isActive && (
-              <Alert status="info" bg="whiteAlpha.200" color="white">
+            {/* Intent-Aware Info Alert */}
+            {formData.isShared && (
+              <Alert 
+                status="success" 
+                bg="rgba(72, 187, 120, 0.1)" 
+                border="1px solid rgba(72, 187, 120, 0.3)"
+                borderRadius="md"
+                color="white"
+              >
+                <AlertIcon as={Share2} color="green.300" />
+                <VStack spacing={1} align="flex-start">
+                  <Text fontSize="sm" fontWeight="medium">
+                    Strategy is now shared in the marketplace
+                  </Text>
+                  <Text fontSize="xs" color="rgba(255, 255, 255, 0.8)">
+                    {webhook?.usage_intent === 'monetize' 
+                      ? 'Users can discover and purchase your strategy' 
+                      : 'Users can discover and follow your strategy for free'
+                    }
+                  </Text>
+                </VStack>
+              </Alert>
+            )}
+            
+            {!formData.isShared && webhook?.usage_intent === 'personal' && (
+              <Alert 
+                status="info" 
+                bg="rgba(66, 153, 225, 0.1)" 
+                border="1px solid rgba(66, 153, 225, 0.3)"
+                borderRadius="md"
+                color="white"
+              >
                 <AlertIcon as={Info} color="blue.300" />
-                <Text fontSize="sm">
-                  Your strategy will be visible to other users in the marketplace
-                </Text>
+                <VStack spacing={1} align="flex-start">
+                  <Text fontSize="sm" fontWeight="medium">
+                    Transform your private strategy into a community asset
+                  </Text>
+                  <Text fontSize="xs" color="rgba(255, 255, 255, 0.8)">
+                    Share it freely or set up monetization to earn from your trading expertise
+                  </Text>
+                </VStack>
               </Alert>
             )}
           </VStack>
