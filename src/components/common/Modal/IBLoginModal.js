@@ -16,8 +16,11 @@ import {
   useToast,
   Flex,
   HStack,
+  Icon,
+  Alert,
+  AlertIcon
 } from '@chakra-ui/react';
-import { AlertTriangle, Info, Shield } from 'lucide-react';
+import { AlertTriangle, Info, Shield, Building2, Lock } from 'lucide-react';
 import { ENVIRONMENTS } from '@/utils/constants/brokers';
 
 const IBLoginModal = ({ isOpen, onClose, onConnect }) => {
@@ -81,9 +84,12 @@ const IBLoginModal = ({ isOpen, onClose, onConnect }) => {
       isCentered
       closeOnOverlayClick={!isSubmitting}
     >
-      <ModalOverlay bg="blackAlpha.300" backdropFilter="blur(5px)" />
+      <ModalOverlay 
+        bg="blackAlpha.300" 
+        backdropFilter="blur(10px)" 
+      />
       <ModalContent 
-        bg="rgba(255, 255, 255, 0.1)"
+        bg="rgba(0, 0, 0, 0.75)"
         backdropFilter="blur(10px)"
         boxShadow={environment === ENVIRONMENTS.PAPER 
           ? "0 8px 32px 0 rgba(255, 0, 0, 0.37)" 
@@ -94,14 +100,17 @@ const IBLoginModal = ({ isOpen, onClose, onConnect }) => {
           : "2px solid rgba(0, 123, 255, 0.6)"
         }
         borderRadius="xl"
-        maxW="400px"
+        maxW="500px"
         color="white"
       >
         <ModalHeader 
-          borderBottom="1px solid rgba(255, 255, 255, 0.18)" 
+          borderBottom="1px solid rgba(255, 255, 255, 0.1)" 
           pb={4}
         >
-          Connect to Interactive Brokers
+          <HStack spacing={3}>
+            <Icon as={Building2} size="20px" color="#00C6E0" />
+            <Text>Connect to Interactive Brokers</Text>
+          </HStack>
         </ModalHeader>
         {!isSubmitting && <ModalCloseButton color="white" />}
         
@@ -171,30 +180,41 @@ const IBLoginModal = ({ isOpen, onClose, onConnect }) => {
                 </HStack>
               </FormControl>
               
-              <Box width="100%" pt={4}>
-                <Button
-                  type="submit"
-                  width="100%"
-                  colorScheme={environment === ENVIRONMENTS.PAPER ? "red" : "blue"}
-                  isLoading={isSubmitting}
-                  loadingText="Connecting..."
-                  bg={environment === ENVIRONMENTS.PAPER ? "red.500" : "blue.500"}
-                  _hover={{ 
-                    bg: environment === ENVIRONMENTS.PAPER ? "red.600" : "blue.600" 
-                  }}
-                >
-                  Connect to {environment === ENVIRONMENTS.PAPER ? "Paper" : "Live"} Account
-                </Button>
-              </Box>
-            </VStack>
-          </form>
-          
-          <Flex mt={6} alignItems="center" justifyContent="center" color="whiteAlpha.700">
-            <Shield size={14} style={{ marginRight: '8px' }} />
-            <Text fontSize="sm" textAlign="center">
-              Your credentials are encrypted using industry-standard SSL/TLS protocols and never stored in plaintext.
-            </Text>
-          </Flex>
+                <Box width="100%" pt={4}>
+                  <Button
+                    type="submit"
+                    width="100%"
+                    colorScheme={environment === ENVIRONMENTS.PAPER ? "red" : "blue"}
+                    isLoading={isSubmitting}
+                    loadingText="Connecting..."
+                    bg={environment === ENVIRONMENTS.PAPER ? "red.500" : "blue.500"}
+                    _hover={{ 
+                      bg: environment === ENVIRONMENTS.PAPER ? "red.600" : "blue.600" 
+                    }}
+                    size="md"
+                    fontWeight="semibold"
+                  >
+                    Connect to {environment === ENVIRONMENTS.PAPER ? "Paper" : "Live"} Account
+                  </Button>
+                </Box>
+              </VStack>
+            </form>
+            
+            <Box 
+              p={3} 
+              bg="rgba(255, 255, 255, 0.05)" 
+              borderRadius="md" 
+              border="1px solid rgba(255, 255, 255, 0.1)"
+              w="full"
+            >
+              <HStack spacing={3}>
+                <Icon as={Lock} size="16px" color="#00C6E0" />
+                <Text fontSize="sm" color="rgba(255, 255, 255, 0.8)">
+                  Your credentials are encrypted and never stored in plaintext
+                </Text>
+              </HStack>
+            </Box>
+          </VStack>
         </ModalBody>
       </ModalContent>
     </Modal>
