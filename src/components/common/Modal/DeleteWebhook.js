@@ -15,9 +15,9 @@ import {
 import { webhookApi } from '@/services/api/Webhooks/webhookApi';
 
 const glassEffect = {
-  background: "rgba(255, 255, 255, 0.1)",
-  backdropFilter: "blur(10px)",
-  boxShadow: "0 8px 32px 0 rgba(31, 38, 135, 0.37)",
+  bg: "rgba(0, 0, 0, 0.75)",
+  backdropFilter: "blur(20px)",
+  boxShadow: "0 8px 32px 0 rgba(0, 0, 0, 0.5)",
   border: "1px solid rgba(255, 255, 255, 0.18)",
   borderRadius: "xl",
 };
@@ -65,7 +65,10 @@ const DeleteWebhook = ({ isOpen, onClose, webhookToken, onWebhookDeleted }) => {
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} isCentered>
-      <ModalOverlay bg="blackAlpha.300" backdropFilter="blur(5px)" />
+      <ModalOverlay 
+        bg="blackAlpha.300" 
+        backdropFilter="blur(10px)" 
+      />
       <ModalContent {...glassEffect} maxW="400px" color="white">
         <ModalHeader borderBottom="1px solid rgba(255, 255, 255, 0.18)" pb={4}>
           Confirm Deletion
