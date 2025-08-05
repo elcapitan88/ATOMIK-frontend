@@ -16,9 +16,9 @@ import { webhookApi } from '@/services/api/Webhooks/webhookApi';
 
 const glassEffect = {
   bg: "rgba(0, 0, 0, 0.75)",
-  backdropFilter: "blur(20px)",
+  backdropFilter: "blur(10px)",
   boxShadow: "0 8px 32px 0 rgba(0, 0, 0, 0.5)",
-  border: "1px solid rgba(255, 255, 255, 0.18)",
+  border: "1px solid rgba(255, 255, 255, 0.1)",
   borderRadius: "xl",
 };
 
