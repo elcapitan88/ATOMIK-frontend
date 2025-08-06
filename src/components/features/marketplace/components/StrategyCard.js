@@ -24,7 +24,11 @@ const StrategyCard = ({ strategy, onSubscriptionChange }) => {
     rating = 0,
     subscriberCount = 0,
     isPublic,
-    isSubscribed = false
+    isSubscribed = false,
+    isMonetized = false,
+    usageIntent = 'personal',
+    marketplacePurchaseUrl,
+    pricingEndpoint
   } = strategy;
 
   const [currentRating, setCurrentRating] = useState(rating);
@@ -44,6 +48,10 @@ const StrategyCard = ({ strategy, onSubscriptionChange }) => {
           duration: 3000,
           isClosable: true,
         });
+        setSubscribed(false);
+        if (onSubscriptionChange) {
+          onSubscriptionChange(token, false);
+        }
       } else {
         await webhookApi.subscribeToStrategy(token);
         toast({
@@ -53,12 +61,39 @@ const StrategyCard = ({ strategy, onSubscriptionChange }) => {
           duration: 3000,
           isClosable: true,
         });
-      }
-      setSubscribed(!subscribed);
-      if (onSubscriptionChange) {
-        onSubscriptionChange(token, !subscribed);
+        setSubscribed(true);
+        if (onSubscriptionChange) {
+          onSubscriptionChange(token, true);
+        }
       }
     } catch (error) {
+      // Handle HTTP 402 Payment Required error for monetized strategies
+      if (error.response?.status === 402) {
+        const errorData = error.response.data?.detail;
+        if (errorData && errorData.error_code === 'PAYMENT_REQUIRED') {
+          // This is a monetized strategy - redirect to payment flow
+          toast({
+            title: "💳 Payment Required",
+            description: `${errorData.strategy_name} requires payment. Redirecting to purchase...`,
+            status: "warning",
+            duration: 4000,
+            isClosable: true,
+          });
+          
+          // Redirect to marketplace purchase page
+          const marketplaceUrl = errorData.marketplace_url;
+          if (marketplaceUrl) {
+            // Use React Router for navigation (assuming it's available)
+            window.location.href = marketplaceUrl;
+          } else {
+            // Fallback: construct URL manually
+            window.location.href = `/marketplace/strategy/${token}/purchase`;
+          }
+          return;
+        }
+      }
+      
+      // Handle other errors
       toast({
         title: "Error",
         description: error.message || "Failed to update subscription",
@@ -96,14 +131,34 @@ const StrategyCard = ({ strategy, onSubscriptionChange }) => {
         {/* Header Section */}
         <HStack justify="space-between" align="start">
           <VStack align="start" spacing={0}>
-            <Text 
-              fontSize="md" 
-              fontWeight="bold" 
-              color="white"
-              noOfLines={1}
-            >
-              {name}
-            </Text>
+            <HStack align="center" spacing={2}>
+              <Text 
+                fontSize="md" 
+                fontWeight="bold" 
+                color="white"
+                noOfLines={1}
+              >
+                {name}
+              </Text>
+              {isMonetized && (
+                <Badge 
+                  colorScheme="yellow" 
+                  size="sm"
+                  variant="solid"
+                >
+                  💰 PAID
+                </Badge>
+              )}
+              {usageIntent === 'share_free' && (
+                <Badge 
+                  colorScheme="green" 
+                  size="sm"
+                  variant="solid"
+                >
+                  FREE
+                </Badge>
+              )}
+            </HStack>
             <Text fontSize="sm" color="whiteAlpha.700">
               by {username}
             </Text>
@@ -177,7 +232,12 @@ const StrategyCard = ({ strategy, onSubscriptionChange }) => {
           }}
           leftIcon={subscribed ? <CheckCircle2 size={16} /> : null}
         >
-          {subscribed ? "Subscribed" : "Subscribe"}
+          {subscribed 
+            ? "Subscribed" 
+            : isMonetized 
+              ? "💳 Purchase" 
+              : "Subscribe Free"
+          }
         </Button>
       </VStack>
     </Box>

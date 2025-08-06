@@ -125,7 +125,11 @@ const MarketplacePage = () => {
           isPublic: strategy.is_shared,
           rating: strategy.rating || 0,
           subscriberCount: strategy.subscriber_count || 0,
-          isSubscribed: subscribedSet.has(strategy.token)
+          isSubscribed: subscribedSet.has(strategy.token),
+          isMonetized: strategy.is_monetized || false,
+          usageIntent: strategy.usage_intent || 'personal',
+          marketplacePurchaseUrl: strategy.marketplace_purchase_url,
+          pricingEndpoint: strategy.pricing_endpoint
         });
         return acc;
       }, {});
