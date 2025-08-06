@@ -417,7 +417,8 @@ const EnhancedStrategyModal = ({
     try {
       const submitData = {
         ...formData,
-        usage_intent: selectedIntent
+        usage_intent: selectedIntent,
+        monetizationData: selectedIntent === 'monetize' ? monetizationData : null
       };
 
       await onSubmit(submitData);

@@ -55,6 +55,52 @@ const TradesTable = () => {
     console.log('Creating webhook...', webhookData);
     const createdWebhook = await webhookApi.generateWebhook(webhookData);
     
+    // If this is a monetized strategy and has pricing data, set up monetization
+    if (webhookData.usage_intent === 'monetize' && webhookData.monetizationData) {
+      try {
+        console.log('Setting up monetization for strategy...');
+        const response = await fetch(`${process.env.REACT_APP_API_URL}/api/v1/strategies/${createdWebhook.id}/setup-monetization`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+          },
+          body: JSON.stringify({
+            pricing_options: webhookData.monetizationData.pricing_options
+          })
+        });
+        
+        if (!response.ok) {
+          throw new Error('Failed to setup monetization');
+        }
+        
+        const monetizationResult = await response.json();
+        console.log('Monetization setup successful:', monetizationResult);
+        
+        // Update the webhook to mark it as monetized and shared
+        createdWebhook.is_monetized = true;
+        createdWebhook.is_shared = true;
+        
+        toast({
+          title: "Strategy Monetized",
+          description: "Your strategy has been successfully monetized and published to the marketplace!",
+          status: "success",
+          duration: 5000,
+          isClosable: true,
+        });
+      } catch (error) {
+        console.error('Failed to setup monetization:', error);
+        // Show error but don't fail the entire creation
+        toast({
+          title: "Monetization Setup Failed",
+          description: "Strategy created but monetization setup failed. Please try setting up pricing later.",
+          status: "warning",
+          duration: 5000,
+          isClosable: true,
+        });
+      }
+    }
+    
     // Store the newly created webhook with all its data including secret
     setNewlyCreatedWebhook(createdWebhook);
     
