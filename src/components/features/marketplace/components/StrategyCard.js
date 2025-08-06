@@ -13,6 +13,7 @@ import {
 import { Users, Lock, Unlock, CheckCircle2 } from 'lucide-react';
 import { webhookApi } from '@/services/api/Webhooks/webhookApi';
 import StarRating from '../StarRating';
+import StrategyPurchaseModal from './StrategyPurchaseModal';
 
 const StrategyCard = ({ strategy, onSubscriptionChange }) => {
   const {
@@ -34,6 +35,8 @@ const StrategyCard = ({ strategy, onSubscriptionChange }) => {
   const [currentRating, setCurrentRating] = useState(rating);
   const [isLoading, setIsLoading] = useState(false);
   const [subscribed, setSubscribed] = useState(isSubscribed);
+  const [isPurchaseModalOpen, setIsPurchaseModalOpen] = useState(false);
+  const [pricing, setPricing] = useState(null);
   const toast = useToast();
 
   const handleSubscription = async () => {
@@ -71,24 +74,8 @@ const StrategyCard = ({ strategy, onSubscriptionChange }) => {
       if (error.response?.status === 402) {
         const errorData = error.response.data?.detail;
         if (errorData && errorData.error_code === 'PAYMENT_REQUIRED') {
-          // This is a monetized strategy - redirect to payment flow
-          toast({
-            title: "💳 Payment Required",
-            description: `${errorData.strategy_name} requires payment. Redirecting to purchase...`,
-            status: "warning",
-            duration: 4000,
-            isClosable: true,
-          });
-          
-          // Redirect to marketplace purchase page
-          const marketplaceUrl = errorData.marketplace_url;
-          if (marketplaceUrl) {
-            // Use React Router for navigation (assuming it's available)
-            window.location.href = marketplaceUrl;
-          } else {
-            // Fallback: construct URL manually
-            window.location.href = `/marketplace/strategy/${token}/purchase`;
-          }
+          // This is a monetized strategy - open purchase modal
+          await handlePurchaseFlow();
           return;
         }
       }
@@ -108,6 +95,44 @@ const StrategyCard = ({ strategy, onSubscriptionChange }) => {
 
   const handleRatingChange = (newRating) => {
     setCurrentRating(newRating);
+  };
+
+  // Handle purchase flow for monetized strategies
+  const handlePurchaseFlow = async () => {
+    try {
+      // Fetch pricing information
+      const pricingResponse = await fetch(`${process.env.REACT_APP_API_URL}/api/v1/strategy-monetization/${token}/pricing`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+        }
+      });
+      
+      if (pricingResponse.ok) {
+        const pricingData = await pricingResponse.json();
+        setPricing(pricingData);
+        setIsPurchaseModalOpen(true);
+      } else {
+        throw new Error('Failed to fetch pricing information');
+      }
+    } catch (error) {
+      console.error('Error fetching pricing:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load pricing information. Please try again.",
+        status: "error",
+        duration: 5000,
+        isClosable: true,
+      });
+    }
+  };
+
+  // Handle successful purchase
+  const handlePurchaseSuccess = () => {
+    setSubscribed(true);
+    setIsPurchaseModalOpen(false);
+    if (onSubscriptionChange) {
+      onSubscriptionChange(token, true);
+    }
   };
 
   return (
@@ -240,6 +265,17 @@ const StrategyCard = ({ strategy, onSubscriptionChange }) => {
           }
         </Button>
       </VStack>
+      
+      {/* Purchase Modal */}
+      {isPurchaseModalOpen && pricing && (
+        <StrategyPurchaseModal
+          isOpen={isPurchaseModalOpen}
+          onClose={() => setIsPurchaseModalOpen(false)}
+          strategy={strategy}
+          pricing={pricing}
+          onSuccess={handlePurchaseSuccess}
+        />
+      )}
     </Box>
   );
 };
