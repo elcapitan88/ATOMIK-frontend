@@ -126,7 +126,7 @@ const MarketplacePage = () => {
           rating: strategy.rating || 0,
           subscriberCount: strategy.subscriber_count || 0,
           isSubscribed: subscribedSet.has(strategy.token),
-          isMonetized: strategy.is_monetized || false,
+          isMonetized: strategy.is_monetized || strategy.usage_intent === 'monetize',
           usageIntent: strategy.usage_intent || 'personal',
           marketplacePurchaseUrl: strategy.marketplace_purchase_url,
           pricingEndpoint: strategy.pricing_endpoint
