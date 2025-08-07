@@ -100,25 +100,19 @@ const StrategyCard = ({ strategy, onSubscriptionChange }) => {
   // Handle purchase flow for monetized strategies
   const handlePurchaseFlow = async () => {
     try {
-      // Fetch pricing information
-      const pricingResponse = await fetch(`${process.env.REACT_APP_API_URL}/api/v1/strategies/${token}/pricing`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('access_token')}`
-        }
-      });
+      // Import and use marketplace API
+      const { marketplaceApi } = await import('@/services/api/marketplace/marketplaceApi');
       
-      if (pricingResponse.ok) {
-        const pricingData = await pricingResponse.json();
-        setPricing(pricingData);
-        setIsPurchaseModalOpen(true);
-      } else {
-        throw new Error('Failed to fetch pricing information');
-      }
+      // Fetch pricing information using the API service
+      const pricingData = await marketplaceApi.getStrategyPricing(token);
+      
+      setPricing(pricingData);
+      setIsPurchaseModalOpen(true);
     } catch (error) {
       console.error('Error fetching pricing:', error);
       toast({
         title: "Error",
-        description: "Failed to load pricing information. Please try again.",
+        description: error.message || "Failed to load pricing information. Please try again.",
         status: "error",
         duration: 5000,
         isClosable: true,
