@@ -48,40 +48,47 @@ const StrategyPurchaseModal = ({
     setIsProcessing(true);
     
     try {
-      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/v1/marketplace/strategies/${strategy.token}/purchase`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('access_token')}`
-        },
-        body: JSON.stringify({
-          price_id: selectedPrice.id,
-          pricing_type: selectedPrice.price_type
-        })
-      });
-
-      if (response.ok) {
-        const result = await response.json();
-        
-        // Handle different response types
-        if (result.checkout_url) {
-          // Redirect to Stripe Checkout
-          window.location.href = result.checkout_url;
-        } else if (result.success) {
-          // Direct purchase success
-          toast({
-            title: "🎉 Purchase Successful!",
-            description: "You now have access to this strategy",
-            status: "success",
-            duration: 4000,
-            isClosable: true,
-          });
-          onSuccess();
-          onClose();
-        }
+      // Import marketplace API
+      const { marketplaceApi } = await import('@/services/api/marketplace/marketplaceApi');
+      
+      // Determine if this is a subscription or one-time purchase
+      const isSubscription = selectedPrice.price_type === 'monthly' || selectedPrice.price_type === 'yearly';
+      const isOneTime = selectedPrice.price_type === 'lifetime';
+      
+      let result;
+      
+      if (isSubscription) {
+        // Handle subscription purchase
+        result = await marketplaceApi.subscribeToStrategy(strategy.token, {
+          payment_method_id: 'pm_card_visa', // This would come from Stripe Elements in a real implementation
+          billing_interval: selectedPrice.price_type, // 'monthly' or 'yearly'
+          start_trial: pricing.is_trial_enabled && pricing.trial_days > 0
+        });
+      } else if (isOneTime) {
+        // Handle one-time purchase
+        result = await marketplaceApi.purchaseStrategy(strategy.token, {
+          payment_method_id: 'pm_card_visa', // This would come from Stripe Elements in a real implementation
+          start_trial: false
+        });
       } else {
-        const errorData = await response.json();
-        throw new Error(errorData.detail || 'Purchase failed');
+        throw new Error('Unsupported pricing type');
+      }
+
+      // Handle different response types
+      if (result.checkout_url) {
+        // Redirect to Stripe Checkout
+        window.location.href = result.checkout_url;
+      } else {
+        // Direct purchase success
+        toast({
+          title: "🎉 Purchase Successful!",
+          description: "You now have access to this strategy",
+          status: "success",
+          duration: 4000,
+          isClosable: true,
+        });
+        onSuccess();
+        onClose();
       }
     } catch (error) {
       console.error('Purchase error:', error);

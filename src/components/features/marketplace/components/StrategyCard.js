@@ -106,7 +106,10 @@ const StrategyCard = ({ strategy, onSubscriptionChange }) => {
       // Fetch pricing information using the API service
       const pricingData = await marketplaceApi.getStrategyPricing(token);
       
-      setPricing(pricingData);
+      // Transform backend response to expected frontend format
+      const transformedPricing = transformPricingData(pricingData);
+      
+      setPricing(transformedPricing);
       setIsPurchaseModalOpen(true);
     } catch (error) {
       console.error('Error fetching pricing:', error);
@@ -118,6 +121,68 @@ const StrategyCard = ({ strategy, onSubscriptionChange }) => {
         isClosable: true,
       });
     }
+  };
+
+  // Transform backend PricingOptionsResponse to frontend expected format
+  const transformPricingData = (pricingData) => {
+    if (pricingData.is_free) {
+      return {
+        is_free: true,
+        pricing_type: 'free',
+        prices: []
+      };
+    }
+
+    const prices = [];
+    
+    // Add monthly option if available
+    if (pricingData.base_amount && pricingData.billing_intervals?.includes('monthly')) {
+      prices.push({
+        id: 'monthly',
+        price_type: 'monthly',
+        amount: parseFloat(pricingData.base_amount),
+        display_name: 'Monthly Subscription'
+      });
+    }
+    
+    // Add yearly option if available
+    if (pricingData.yearly_amount && pricingData.billing_intervals?.includes('yearly')) {
+      prices.push({
+        id: 'yearly',
+        price_type: 'yearly',
+        amount: parseFloat(pricingData.yearly_amount),
+        display_name: 'Annual Subscription'
+      });
+    }
+    
+    // Add setup fee if available
+    if (pricingData.setup_fee) {
+      prices.push({
+        id: 'setup',
+        price_type: 'setup',
+        amount: parseFloat(pricingData.setup_fee),
+        display_name: 'Setup Fee'
+      });
+    }
+
+    // Handle one-time pricing
+    if (pricingData.pricing_type === 'one_time' && pricingData.base_amount) {
+      prices.push({
+        id: 'lifetime',
+        price_type: 'lifetime',
+        amount: parseFloat(pricingData.base_amount),
+        display_name: 'One-time Purchase'
+      });
+    }
+
+    return {
+      is_free: false,
+      pricing_type: pricingData.pricing_type,
+      trial_days: pricingData.trial_days || 0,
+      is_trial_enabled: pricingData.is_trial_enabled || false,
+      user_has_access: pricingData.user_has_access || false,
+      prices: prices
+    };
   };
 
   // Handle successful purchase
