@@ -101,7 +101,7 @@ const StrategyCard = ({ strategy, onSubscriptionChange }) => {
   const handlePurchaseFlow = async () => {
     try {
       // Fetch pricing information
-      const pricingResponse = await fetch(`${process.env.REACT_APP_API_URL}/api/v1/strategy-monetization/${token}/pricing`, {
+      const pricingResponse = await fetch(`${process.env.REACT_APP_API_URL}/api/v1/strategies/${token}/pricing`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('access_token')}`
         }
