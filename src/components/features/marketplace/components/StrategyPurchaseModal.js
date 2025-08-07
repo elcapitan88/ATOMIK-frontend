@@ -48,48 +48,28 @@ const StrategyPurchaseModal = ({
     setIsProcessing(true);
     
     try {
-      // Import marketplace API
-      const { marketplaceApi } = await import('@/services/api/marketplace/marketplaceApi');
-      
-      // Determine if this is a subscription or one-time purchase
-      const isSubscription = selectedPrice.price_type === 'monthly' || selectedPrice.price_type === 'yearly';
-      const isOneTime = selectedPrice.price_type === 'lifetime';
-      
-      let result;
-      
-      if (isSubscription) {
-        // Handle subscription purchase
-        result = await marketplaceApi.subscribeToStrategy(strategy.token, {
-          payment_method_id: 'pm_card_visa', // This would come from Stripe Elements in a real implementation
-          billing_interval: selectedPrice.price_type, // 'monthly' or 'yearly'
-          start_trial: pricing.is_trial_enabled && pricing.trial_days > 0
-        });
-      } else if (isOneTime) {
-        // Handle one-time purchase
-        result = await marketplaceApi.purchaseStrategy(strategy.token, {
-          payment_method_id: 'pm_card_visa', // This would come from Stripe Elements in a real implementation
-          start_trial: false
-        });
-      } else {
-        throw new Error('Unsupported pricing type');
+      // Create checkout session for strategy purchase
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/v1/marketplace/strategies/${strategy.token}/create-checkout`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+        },
+        body: JSON.stringify({
+          billing_interval: selectedPrice.price_type // 'monthly', 'yearly', or 'lifetime'
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || 'Failed to create checkout session');
       }
 
-      // Handle different response types
-      if (result.checkout_url) {
-        // Redirect to Stripe Checkout
-        window.location.href = result.checkout_url;
-      } else {
-        // Direct purchase success
-        toast({
-          title: "🎉 Purchase Successful!",
-          description: "You now have access to this strategy",
-          status: "success",
-          duration: 4000,
-          isClosable: true,
-        });
-        onSuccess();
-        onClose();
-      }
+      const { checkout_url } = await response.json();
+      
+      // Redirect to Stripe Checkout
+      window.location.href = checkout_url;
+      
     } catch (error) {
       console.error('Purchase error:', error);
       toast({
@@ -99,9 +79,9 @@ const StrategyPurchaseModal = ({
         duration: 5000,
         isClosable: true,
       });
-    } finally {
       setIsProcessing(false);
     }
+    // Note: Don't set setIsProcessing(false) here since we're redirecting
   };
 
   // Get pricing display info
