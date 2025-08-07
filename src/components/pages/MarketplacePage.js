@@ -32,6 +32,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { webhookApi } from '@/services/api/Webhooks/webhookApi';
+import { marketplaceApi } from '@/services/api/marketplace/marketplaceApi';
 import { STRATEGY_TYPE_OPTIONS } from '@utils/constants/strategyTypes';
 import StrategyCard from '../features/marketplace/components/StrategyCard';
 import Menu from '../layout/Sidebar/Menu';
@@ -103,19 +104,29 @@ const MarketplacePage = () => {
   const fetchStrategies = async () => {
     try {
       setIsLoading(true);
-      const [sharedResponse, subscribedResponse] = await Promise.all([
+      const [sharedResponse, subscribedResponse, purchasedResponse] = await Promise.all([
         webhookApi.listSharedStrategies(),
-        webhookApi.getSubscribedStrategies()
+        webhookApi.getSubscribedStrategies(),
+        marketplaceApi.getUserPurchases().catch(() => ({ purchases: [] })) // Fallback if endpoint fails
       ]);
       
+      // Create sets for quick lookup
       const subscribedSet = new Set(subscribedResponse.map(s => s.token));
-      setSubscribedStrategies(subscribedSet);
+      const purchasedSet = new Set(purchasedResponse?.purchases?.map(p => p.webhook_token) || []);
+      
+      // Merge subscribed and purchased sets
+      const allAccessSet = new Set([...subscribedSet, ...purchasedSet]);
+      setSubscribedStrategies(allAccessSet);
       
       const groupedStrategies = sharedResponse.reduce((acc, strategy) => {
         const type = strategy.strategy_type || 'uncategorized';
         if (!acc[type]) {
           acc[type] = [];
         }
+        
+        // Check if user has access (either subscribed for free or purchased)
+        const hasAccess = allAccessSet.has(strategy.token);
+        
         acc[type].push({
           ...strategy,
           name: strategy.name || 'Unnamed Strategy',
@@ -125,7 +136,8 @@ const MarketplacePage = () => {
           isPublic: strategy.is_shared,
           rating: strategy.rating || 0,
           subscriberCount: strategy.subscriber_count || 0,
-          isSubscribed: subscribedSet.has(strategy.token),
+          isSubscribed: hasAccess, // Now includes both subscribed and purchased
+          isPurchased: purchasedSet.has(strategy.token), // Specifically purchased
           isMonetized: strategy.is_monetized || strategy.usage_intent === 'monetize',
           usageIntent: strategy.usage_intent || 'personal',
           marketplacePurchaseUrl: strategy.marketplace_purchase_url,

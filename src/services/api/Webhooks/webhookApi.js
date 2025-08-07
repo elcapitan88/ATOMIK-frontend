@@ -81,20 +81,53 @@ class WebhookApi {
 
     async getAllAvailableWebhooks() {
         try {
-          // Fetch both owned and subscribed webhooks in parallel
-          const [ownedWebhooks, subscribedWebhooks] = await Promise.all([
+          // Import marketplaceApi dynamically to avoid circular dependency
+          const { marketplaceApi } = await import('@/services/api/marketplace/marketplaceApi');
+          
+          // Fetch owned, subscribed, and purchased webhooks in parallel
+          const [ownedWebhooks, subscribedWebhooks, purchasedResponse] = await Promise.all([
             this.listWebhooks(),          // Uses existing method
-            this.getSubscribedStrategies() // Uses existing method
+            this.getSubscribedStrategies(), // Uses existing method  
+            marketplaceApi.getUserPurchases().catch(() => ({ purchases: [] })) // Get purchased strategies
           ]);
     
-          // Combine and format the webhooks
-          const combinedWebhooks = [
-            ...ownedWebhooks,
-            ...subscribedWebhooks.map(webhook => ({
+          // Create a map to track webhooks by token to avoid duplicates
+          const webhooksMap = new Map();
+          
+          // Add owned webhooks
+          ownedWebhooks.forEach(webhook => {
+            webhooksMap.set(webhook.token, {
               ...webhook,
-              isSubscribed: true // Add flag to identify subscribed webhooks
-            }))
-          ];
+              isOwned: true
+            });
+          });
+          
+          // Add subscribed webhooks (if not already owned)
+          subscribedWebhooks.forEach(webhook => {
+            if (!webhooksMap.has(webhook.token)) {
+              webhooksMap.set(webhook.token, {
+                ...webhook,
+                isSubscribed: true
+              });
+            }
+          });
+          
+          // Add purchased webhooks (if not already in the map)
+          if (purchasedResponse?.purchases) {
+            purchasedResponse.purchases.forEach(purchase => {
+              if (purchase.webhook_token && !webhooksMap.has(purchase.webhook_token)) {
+                webhooksMap.set(purchase.webhook_token, {
+                  token: purchase.webhook_token,
+                  name: purchase.webhook_name || 'Purchased Strategy',
+                  isPurchased: true,
+                  isSubscribed: true // Mark as subscribed so it shows in activation
+                });
+              }
+            });
+          }
+          
+          // Convert map back to array
+          const combinedWebhooks = Array.from(webhooksMap.values());
     
           return combinedWebhooks;
         } catch (error) {
