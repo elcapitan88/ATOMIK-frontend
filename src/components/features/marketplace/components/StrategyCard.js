@@ -38,6 +38,20 @@ const StrategyCard = ({ strategy, onSubscriptionChange }) => {
   const [isPurchaseModalOpen, setIsPurchaseModalOpen] = useState(false);
   const [pricing, setPricing] = useState(null);
   const toast = useToast();
+  
+  // Debug logging for the specific purchased strategy
+  React.useEffect(() => {
+    if (token === 'OGgxOp0wOd60YGb4kc4CEh8oSz2ZCscKVVZtfwbCbHg') {
+      console.log('[StrategyCard] Break N Enter strategy props:', {
+        token,
+        name,
+        isSubscribed,
+        subscribed,
+        isMonetized,
+        usageIntent
+      });
+    }
+  }, [token, name, isSubscribed, subscribed, isMonetized, usageIntent]);
 
   const handleSubscription = async () => {
     try {

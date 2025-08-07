@@ -107,16 +107,41 @@ const MarketplacePage = () => {
       const [sharedResponse, subscribedResponse, purchasedResponse] = await Promise.all([
         webhookApi.listSharedStrategies(),
         webhookApi.getSubscribedStrategies(),
-        marketplaceApi.getUserPurchases().catch(() => ({ purchases: [] })) // Fallback if endpoint fails
+        marketplaceApi.getUserPurchases().catch((error) => {
+          console.error('[MarketplacePage] getUserPurchases failed:', error);
+          console.error('[MarketplacePage] Error response:', error.response?.data);
+          console.error('[MarketplacePage] Error status:', error.response?.status);
+          
+          // Show user-friendly error notification for non-404 errors
+          if (error.response?.status !== 404) {
+            toast({
+              title: "Error loading purchases",
+              description: "Some purchased strategies may not display correctly. Please refresh the page.",
+              status: "warning",
+              duration: 5000,
+              isClosable: true,
+            });
+          }
+          
+          return { purchases: [] }; // Fallback if endpoint fails
+        })
       ]);
       
       // Create sets for quick lookup
       const subscribedSet = new Set(subscribedResponse.map(s => s.token));
       const purchasedSet = new Set(purchasedResponse?.purchases?.map(p => p.webhook_token) || []);
       
+      // Debug logging
+      console.log('[MarketplacePage] Subscribed strategies:', subscribedResponse.length);
+      console.log('[MarketplacePage] Purchased strategies:', purchasedResponse?.purchases?.length || 0);
+      console.log('[MarketplacePage] Purchased tokens:', Array.from(purchasedSet));
+      
       // Merge subscribed and purchased sets
       const allAccessSet = new Set([...subscribedSet, ...purchasedSet]);
       setSubscribedStrategies(allAccessSet);
+      
+      console.log('[MarketplacePage] Total accessible strategies:', allAccessSet.size);
+      console.log('[MarketplacePage] Accessible tokens:', Array.from(allAccessSet));
       
       const groupedStrategies = sharedResponse.reduce((acc, strategy) => {
         const type = strategy.strategy_type || 'uncategorized';
@@ -126,6 +151,17 @@ const MarketplacePage = () => {
         
         // Check if user has access (either subscribed for free or purchased)
         const hasAccess = allAccessSet.has(strategy.token);
+        
+        // Debug logging for specific strategy
+        if (strategy.token === 'OGgxOp0wOd60YGb4kc4CEh8oSz2ZCscKVVZtfwbCbHg') {
+          console.log('[MarketplacePage] Processing Break N Enter strategy:', {
+            token: strategy.token,
+            name: strategy.name,
+            isInPurchasedSet: purchasedSet.has(strategy.token),
+            isInAllAccessSet: hasAccess,
+            isMonetized: strategy.is_monetized || strategy.usage_intent === 'monetize'
+          });
+        }
         
         acc[type].push({
           ...strategy,
