@@ -16,6 +16,7 @@ const AuthPage = lazy(() => import('./components/pages/AuthPage'));
 const ResetPassword = lazy(() => import('./components/pages/ResetPassword'));
 const SettingsPage = lazy(() => import('./components/pages/SettingsPage'));
 const MarketplacePage = lazy(() => import('./components/pages/MarketplacePage'));
+const StrategyPurchaseSuccess = lazy(() => import('./components/pages/StrategyPurchaseSuccess'));
 const PricingPage = lazy(() => import('./components/pages/PricingPage'));
 const StrategyBuilderPage = lazy(() => import('./components/pages/Builder/StrategyBuilderPage'));
 const LandingPage = lazy(() => import('./components/pages/landing/LandingPage'));
@@ -297,6 +298,18 @@ function App() {
             <WithAuth>
               <DashboardLayout>
                 <MarketplacePage />
+              </DashboardLayout>
+            </WithAuth>
+          }
+        />
+        
+        {/* Strategy Purchase Success Route */}
+        <Route
+          path="/marketplace/purchase-success"
+          element={
+            <WithAuth>
+              <DashboardLayout>
+                <StrategyPurchaseSuccess />
               </DashboardLayout>
             </WithAuth>
           }

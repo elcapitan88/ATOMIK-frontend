@@ -124,6 +124,13 @@ class MarketplaceApi {
         );
     }
 
+    // Verify purchase session after Stripe checkout
+    async verifyPurchaseSession(sessionId) {
+        return this.errorHandler(() => 
+            axiosInstance.get(`${this.baseUrl}/verify-purchase-session/${sessionId}`)
+        );
+    }
+
     // Cancel subscription
     async cancelSubscription(purchaseId) {
         return this.errorHandler(() => 
