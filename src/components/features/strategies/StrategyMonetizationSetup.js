@@ -423,7 +423,7 @@ const StrategyMonetizationSetup = ({
       }
 
       // For existing strategies, call the API
-      const response = await fetch(`/api/v1/strategies/${webhookId}/setup-monetization`, {
+      const response = await fetch(`/api/v1/marketplace/strategies/${webhookId}/setup-monetization`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

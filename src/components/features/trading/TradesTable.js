@@ -59,7 +59,7 @@ const TradesTable = () => {
     if (webhookData.usage_intent === 'monetize' && webhookData.monetizationData) {
       try {
         console.log('Setting up monetization for strategy...');
-        const response = await fetch(`${process.env.REACT_APP_API_URL}/api/v1/strategies/${createdWebhook.id}/setup-monetization`, {
+        const response = await fetch(`${process.env.REACT_APP_API_URL}/api/v1/marketplace/strategies/${createdWebhook.id}/setup-monetization`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
