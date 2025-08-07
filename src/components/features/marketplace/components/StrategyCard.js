@@ -56,6 +56,13 @@ const StrategyCard = ({ strategy, onSubscriptionChange }) => {
           onSubscriptionChange(token, false);
         }
       } else {
+        // Check if strategy is monetized - if so, go directly to purchase flow
+        if (isMonetized) {
+          await handlePurchaseFlow();
+          return;
+        }
+        
+        // For free strategies, use the old subscription API
         await webhookApi.subscribeToStrategy(token);
         toast({
           title: "Subscribed!",
@@ -70,16 +77,6 @@ const StrategyCard = ({ strategy, onSubscriptionChange }) => {
         }
       }
     } catch (error) {
-      // Handle HTTP 402 Payment Required error for monetized strategies
-      if (error.response?.status === 402) {
-        const errorData = error.response.data?.detail;
-        if (errorData && errorData.error_code === 'PAYMENT_REQUIRED') {
-          // This is a monetized strategy - open purchase modal
-          await handlePurchaseFlow();
-          return;
-        }
-      }
-      
       // Handle other errors
       toast({
         title: "Error",
