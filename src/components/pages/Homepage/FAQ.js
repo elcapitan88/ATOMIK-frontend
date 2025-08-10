@@ -81,7 +81,7 @@ const FAQ = () => {
     },
     {
       question: "How much does trading automation cost?",
-      answer: "Atomik offers transparent, flat-rate pricing with no per-trade fees. You can automate unlimited trades for one monthly price. We offer a 14-day free trial so you can test the platform risk-free. No hidden costs or surprise charges."
+      answer: "Atomik offers transparent, flat-rate pricing with no per-trade fees. You can automate unlimited trades for one monthly price. We offer a 7-day free trial so you can test the platform risk-free. No hidden costs or surprise charges."
     },
     {
       question: "What brokers does Atomik support?",
@@ -150,7 +150,7 @@ const FAQ = () => {
                   "name": "How much does trading automation cost?",
                   "acceptedAnswer": {
                     "@type": "Answer",
-                    "text": "Atomik offers transparent, flat-rate pricing with no per-trade fees. You can automate unlimited trades for one monthly price. We offer a 14-day free trial so you can test the platform risk-free. No hidden costs or surprise charges."
+                    "text": "Atomik offers transparent, flat-rate pricing with no per-trade fees. You can automate unlimited trades for one monthly price. We offer a 7-day free trial so you can test the platform risk-free. No hidden costs or surprise charges."
                   }
                 },
                 {

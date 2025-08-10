@@ -197,7 +197,7 @@ const Hero = () => {
                     }}
                   >
                     <Text position="relative" zIndex={1}>
-                      Try Free for 14 Days
+                      Try Free for 7 Days
                     </Text>
                   </Button>
                 </RouterLink>

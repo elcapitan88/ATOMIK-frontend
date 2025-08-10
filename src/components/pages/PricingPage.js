@@ -127,7 +127,7 @@ const pricingData = {
     ctaText: "Start Free Trial",
     popular: true,
     color: "#00C6E0",
-    trial: "14-day free trial"
+    trial: "7-day free trial"
   },
   elite: { // Internal ID 'elite' is now marketed as "Pro"
     name: "Pro", // New marketing name (was "Elite")
@@ -150,7 +150,7 @@ const pricingData = {
     ctaText: "Start Free Trial",
     popular: false,
     color: "#9932CC", // Purple that complements the cyan
-    trial: "14-day free trial"
+    trial: "7-day free trial"
   }
 };
 
@@ -833,8 +833,8 @@ const FAQ = () => {
       answer: "Currently, we support Tradovate with plans to add more brokers in the near future. Our platform is designed to be broker-agnostic, making it easy to scale with additional brokers."
     },
     {
-      question: "What is the 14-day free trial?",
-      answer: "All our plans include a 14-day free trial that gives you full access to all features. You can cancel anytime during the trial period without being charged."
+      question: "What is the 7-day free trial?",
+      answer: "All our plans include a 7-day free trial that gives you full access to all features. You can cancel anytime during the trial period without being charged."
     },
     {
       question: "How secure is my trading account?",

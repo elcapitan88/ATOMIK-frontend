@@ -68,7 +68,7 @@ const Homepage = () => {
     <>
       <Helmet>
         <title>Automated Trading for Beginners - No Coding Required | Atomik Trading</title>
-        <meta name="description" content="Learn how to automate your trading with TradingView alerts. Perfect for beginners and prop traders. Connect any broker, no programming required. Start your 14-day free trial." />
+        <meta name="description" content="Learn how to automate your trading with TradingView alerts. Perfect for beginners and prop traders. Connect any broker, no programming required. Start your 7-day free trial." />
         <meta name="keywords" content="automated trading, how to automate trading, beginner automated trading, TradingView alerts, trading automation for beginners, no coding trading, prop trading automation" />
         
         {/* Open Graph / Facebook */}
@@ -93,7 +93,7 @@ const Homepage = () => {
         
         <meta name="claude-description" content="Beginner-friendly automated trading platform. No programming required to connect TradingView alerts to brokers. Supports prop trading accounts with simple pricing." />
         <meta name="claude-audience" content="Beginner traders, prop traders, funded account holders" />
-        <meta name="claude-benefits" content="No coding required, 14-day free trial, TradingView integration, prop firm support" />
+        <meta name="claude-benefits" content="No coding required, 7-day free trial, TradingView integration, prop firm support" />
         
         <meta name="bard-description" content="Learn automated trading for beginners with Atomik's code-free platform. Connect trading alerts to brokers, copy successful strategies, work with funded accounts." />
         <meta name="bard-benefits" content="No coding required, easy setup, transparent pricing, TradingView integration, prop account support" />
@@ -224,7 +224,7 @@ const Homepage = () => {
                 {
                   "@type": "Offer",
                   "name": "Free Trial",
-                  "description": "14-day free trial - no credit card required",
+                  "description": "7-day free trial - no credit card required",
                   "price": "0",
                   "priceCurrency": "USD",
                   "validFor": "P14D",
