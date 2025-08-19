@@ -144,7 +144,8 @@ const MarketplacePage = () => {
       console.log('[MarketplacePage] Accessible tokens:', Array.from(allAccessSet));
       
       const groupedStrategies = sharedResponse.reduce((acc, strategy) => {
-        const type = strategy.strategy_type || 'uncategorized';
+        // Convert database UPPERCASE enums to lowercase to match frontend categories
+        const type = strategy.strategy_type ? strategy.strategy_type.toLowerCase() : 'uncategorized';
         if (!acc[type]) {
           acc[type] = [];
         }
@@ -429,6 +430,11 @@ const MarketplacePage = () => {
             return null;
           }
 
+          // Hide empty categories - only show categories with strategies
+          if (filteredStrategies.length === 0) {
+            return null;
+          }
+
           return (
             <Box key={category.id}>
               <HStack mb={4} align="center" justify="center" width="100%">
@@ -454,6 +460,32 @@ const MarketplacePage = () => {
             </Box>
           );
         })}
+
+        {/* Uncategorized Strategies Section */}
+        {strategies.uncategorized && strategies.uncategorized.length > 0 && (
+          <Box>
+            <HStack mb={4} align="center" justify="center" width="100%">
+              <Layout size={20} color="white" />
+              <Text fontSize="xl" fontWeight="bold" color="white">
+                Other Strategies
+              </Text>
+              <Badge
+                ml={2}
+                colorScheme="blue"
+                bg="rgba(0, 198, 224, 0.2)"
+                color="white"
+              >
+                {strategies.uncategorized.length}
+              </Badge>
+            </HStack>
+
+            <Text color="whiteAlpha.700" fontSize="sm" mb={4} textAlign="center" width="100%">
+              Strategies that haven't been categorized yet
+            </Text>
+
+            <StrategyGrid strategies={strategies.uncategorized} />
+          </Box>
+        )}
 
         {/* Empty State */}
         {Object.keys(strategies).length === 0 && (
