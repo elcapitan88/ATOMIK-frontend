@@ -156,4 +156,4 @@ import('./reportWebVitals').then(({ default: reportWebVitals }) => {
       console.log('Web Vital:', metric);
     }
   });
-});
+});// Force rebuild Wed, Aug 20, 2025  9:27:24 PM
