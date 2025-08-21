@@ -45,11 +45,9 @@ export const getBaseUrl = () => {
  * Gets the API URL for the application based on environment
  */
 export const getApiUrl = () => {
-  // First try environment variables
-  if (process.env.NODE_ENV === 'production') {
-    if (process.env.REACT_APP_API_URL) {
-      return process.env.REACT_APP_API_URL;
-    }
+  // Always use environment variable if available
+  if (process.env.REACT_APP_API_URL) {
+    return process.env.REACT_APP_API_URL;
   }
   
   // Fallback to runtime detection
