@@ -23,6 +23,7 @@ import MemberChatMenu from '../chat/MemberChatMenu';
 import MemberChatComponent from '../chat/MemberChat';
 import MaintenanceBanner from '@/components/common/MaintenanceBanner';
 import PaymentStatusWarning from '@/components/subscription/PaymentStatusWarning';
+import ARIAAssistant from '@/components/ARIA/ARIAAssistant';
 import logger from '@/utils/logger';
 
 // Lazy loaded components
@@ -525,6 +526,9 @@ const DashboardContent = () => {
                     />
                 </>
             )}
+            
+            {/* ARIA Assistant - Floating Chat */}
+            <ARIAAssistant />
         </Flex>
         </>
     );
