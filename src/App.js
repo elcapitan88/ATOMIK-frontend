@@ -19,6 +19,7 @@ const MarketplacePage = lazy(() => import('./components/pages/MarketplacePage'))
 const StrategyPurchaseSuccess = lazy(() => import('./components/pages/StrategyPurchaseSuccess'));
 const PricingPage = lazy(() => import('./components/pages/PricingPage'));
 const StrategyBuilderPage = lazy(() => import('./components/pages/Builder/StrategyBuilderPage'));
+const EngineStrategiesPage = lazy(() => import('./components/features/strategies/EngineStrategies'));
 const LandingPage = lazy(() => import('./components/pages/landing/LandingPage'));
 const ComingSoon = lazy(() => import('./components/common/ComingSoon'));
 const CreatorHubPage = lazy(() => import('./components/pages/CreatorHub/CreatorHubPage'));
@@ -332,6 +333,17 @@ function App() {
             <WithAuth>
               <DashboardLayout>
                 <StrategyBuilderPage />
+              </DashboardLayout>
+            </WithAuth>
+          }
+        />
+
+        <Route
+          path="/engine-strategies"
+          element={
+            <WithAuth>
+              <DashboardLayout>
+                <EngineStrategiesPage />
               </DashboardLayout>
             </WithAuth>
           }

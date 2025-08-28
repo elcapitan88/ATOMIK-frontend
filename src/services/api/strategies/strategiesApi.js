@@ -196,6 +196,60 @@ class StrategiesApi {
     return this.listStrategies(false);
   }
 
+  // Strategy Engine API Methods
+  async configureEngineStrategy(strategyData) {
+    try {
+      console.log('Configuring Engine strategy:', JSON.stringify(strategyData, null, 2));
+
+      const response = await this.withRetry(() =>
+        axiosInstance.post(`${this.baseUrl}/engine/configure`, strategyData)
+      );
+
+      this.clearCache();
+      return response.data;
+    } catch (error) {
+      console.error('Engine strategy configuration error:', error);
+      throw handleApiError(error);
+    }
+  }
+
+  async listEngineStrategies() {
+    try {
+      const response = await this.withRetry(() =>
+        axiosInstance.get(`${this.baseUrl}/engine/list`)
+      );
+      return response.data;
+    } catch (error) {
+      throw handleApiError(error);
+    }
+  }
+
+  async updateEngineStrategy(strategyId, updateData) {
+    try {
+      const response = await this.withRetry(() =>
+        axiosInstance.put(`${this.baseUrl}/engine/${strategyId}`, updateData)
+      );
+
+      this.clearCache();
+      return response.data;
+    } catch (error) {
+      throw handleApiError(error);
+    }
+  }
+
+  async deleteEngineStrategy(strategyId) {
+    try {
+      await this.withRetry(() =>
+        axiosInstance.delete(`${this.baseUrl}/engine/${strategyId}`)
+      );
+
+      this.clearCache();
+      return true;
+    } catch (error) {
+      throw handleApiError(error);
+    }
+  }
+
   // Validate strategy data before sending to API
   validateStrategyData(data) {
     const requiredFields = {
