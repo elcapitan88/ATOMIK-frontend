@@ -28,7 +28,7 @@ import {
   useToast,
 } from '@chakra-ui/react';
 import { Settings, Activity } from 'lucide-react';
-import { accountsApi } from '@/services/api/accounts';
+import axiosInstance from '@/services/axiosConfig';
 
 const EngineStrategyModal = ({
   isOpen,
@@ -115,8 +115,8 @@ const EngineStrategyModal = ({
   const fetchAccounts = async () => {
     try {
       setIsLoadingAccounts(true);
-      const response = await accountsApi.getAccounts();
-      setAccounts(response.filter(account => account.is_active));
+      const response = await axiosInstance.get('/api/v1/brokers/accounts');
+      setAccounts(response.data.filter(account => account.is_active));
     } catch (error) {
       toast({
         title: "Error fetching accounts",
