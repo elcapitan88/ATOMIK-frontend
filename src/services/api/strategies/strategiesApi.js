@@ -56,7 +56,7 @@ class StrategiesApi {
     storage.remove(CACHE_KEY);
   }
 
-  // API Methods
+  // API Methods - Get user's activated strategies
   async listStrategies(useCache = true) {
     try {
       if (useCache) {
@@ -64,6 +64,23 @@ class StrategiesApi {
         if (cached) return cached;
       }
   
+      // Use new working authenticated endpoint to get user's specific activated strategies
+      const response = await this.withRetry(() =>
+        axiosInstance.get(`${this.baseUrl}/user-activated`)
+      );
+  
+      // Extract strategies from response format
+      const strategies = response.data?.strategies || response.data || [];
+      this.setCachedStrategies(strategies);
+      return strategies;
+    } catch (error) {
+      throw handleApiError(error);
+    }
+  }
+
+  // Get all available strategies from marketplace (for browsing/subscribing)
+  async listAvailableStrategies(useCache = true) {
+    try {
       // Use unified marketplace endpoint that works without auth and shows all strategies
       const response = await this.withRetry(() =>
         axiosInstance.get('/api/v1/marketplace/strategies/available')
@@ -71,7 +88,6 @@ class StrategiesApi {
   
       // Extract strategies from unified response format
       const strategies = response.data?.strategies || response.data || [];
-      this.setCachedStrategies(strategies);
       return strategies;
     } catch (error) {
       throw handleApiError(error);
