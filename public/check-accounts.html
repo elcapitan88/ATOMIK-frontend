@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Account Debug Check</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            background: #1a1a1a;
+            color: #0f0;
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 { color: #0ff; }
+        button {
+            background: #333;
+            color: #0f0;
+            border: 1px solid #0f0;
+            padding: 10px 20px;
+            cursor: pointer;
+            margin: 10px 5px;
+            font-family: 'Courier New', monospace;
+        }
+        button:hover {
+            background: #0f0;
+            color: #000;
+        }
+        .output {
+            background: #000;
+            border: 1px solid #0f0;
+            padding: 15px;
+            margin: 20px 0;
+            white-space: pre-wrap;
+            font-size: 12px;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+        .error { color: #f00; }
+        .success { color: #0f0; }
+        .warning { color: #ff0; }
+        .info { color: #0ff; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Account & Strategy Debug Tool</h1>
+    
+    <div>
+        <button onclick="checkAuth()">1. Check Auth Token</button>
+        <button onclick="checkAccounts()">2. Check Accounts API</button>
+        <button onclick="checkWebhooks()">3. Check Webhooks API</button>
+        <button onclick="checkLocalStorage()">4. Check Local Storage</button>
+        <button onclick="testModalData()">5. Test Modal Data Flow</button>
+    </div>
+    
+    <div id="output" class="output">Ready to debug...</div>
+    
+    <script>
+        const output = document.getElementById('output');
+        
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const className = type;
+            output.innerHTML += `<span class="${className}">[${timestamp}] ${message}</span>\n`;
+            output.scrollTop = output.scrollHeight;
+        }
+        
+        function clear() {
+            output.innerHTML = '';
+        }
+        
+        async function checkAuth() {
+            clear();
+            log('=== CHECKING AUTHENTICATION ===', 'info');
+            
+            const token = localStorage.getItem('access_token');
+            const user = localStorage.getItem('user');
+            
+            if (!token) {
+                log('❌ No access_token found in localStorage', 'error');
+                return false;
+            }
+            
+            log('✓ Access token found', 'success');
+            
+            // Decode JWT to check expiration
+            try {
+                const parts = token.split('.');
+                const payload = JSON.parse(atob(parts[1]));
+                const exp = new Date(payload.exp * 1000);
+                const now = new Date();
+                
+                log(`Token expires: ${exp.toLocaleString()}`, 'info');
+                
+                if (exp < now) {
+                    log('⚠️ Token is expired!', 'warning');
+                    return false;
+                } else {
+                    log(`✓ Token valid for ${Math.floor((exp - now) / 1000 / 60)} more minutes`, 'success');
+                }
+                
+                if (user) {
+                    const userData = JSON.parse(user);
+                    log(`User: ${userData.email || userData.username || 'Unknown'}`, 'info');
+                }
+                
+                return true;
+            } catch (e) {
+                log('Error decoding token: ' + e.message, 'error');
+                return false;
+            }
+        }
+        
+        async function checkAccounts() {
+            clear();
+            log('=== FETCHING ACCOUNTS ===', 'info');
+            
+            const token = localStorage.getItem('access_token');
+            if (!token) {
+                log('❌ No auth token - please login first', 'error');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/v1/brokers/accounts', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                log(`Response Status: ${response.status} ${response.statusText}`, response.ok ? 'success' : 'error');
+                
+                const data = await response.json();
+                log('\n=== RAW RESPONSE ===', 'info');
+                log(JSON.stringify(data, null, 2), 'info');
+                
+                if (Array.isArray(data)) {
+                    log(`\n=== ACCOUNT ANALYSIS ===`, 'info');
+                    log(`Total accounts: ${data.length}`, 'info');
+                    
+                    const activeAccounts = data.filter(a => a.is_active === true);
+                    const inactiveAccounts = data.filter(a => a.is_active === false);
+                    const unknownAccounts = data.filter(a => a.is_active === undefined || a.is_active === null);
+                    
+                    log(`Active (is_active=true): ${activeAccounts.length}`, 'success');
+                    log(`Inactive (is_active=false): ${inactiveAccounts.length}`, 'warning');
+                    log(`Unknown (is_active undefined/null): ${unknownAccounts.length}`, 'warning');
+                    
+                    log('\n=== ACCOUNT DETAILS ===', 'info');
+                    data.forEach((account, idx) => {
+                        log(`\nAccount ${idx + 1}:`, 'info');
+                        log(`  ID: ${account.account_id}`, 'info');
+                        log(`  Name: ${account.name || 'N/A'}`, 'info');
+                        log(`  Broker: ${account.broker_id}`, 'info');
+                        log(`  Active: ${account.is_active}`, account.is_active ? 'success' : 'warning');
+                        log(`  Status: ${account.status || 'N/A'}`, 'info');
+                    });
+                    
+                    // Check what the modal would filter
+                    log('\n=== MODAL FILTER TEST ===', 'info');
+                    const modalFilter1 = data.filter(account => account.is_active);
+                    log(`Filter: account.is_active (strict true) = ${modalFilter1.length} accounts`, 'info');
+                    
+                    const modalFilter2 = data.filter(account => account.is_active !== false);
+                    log(`Filter: account.is_active !== false = ${modalFilter2.length} accounts`, 'info');
+                    
+                    const modalFilter3 = data.filter(account => account.is_active === true);
+                    log(`Filter: account.is_active === true = ${modalFilter3.length} accounts`, 'info');
+                    
+                } else {
+                    log('Response is not an array!', 'error');
+                    log(`Response type: ${typeof data}`, 'error');
+                }
+                
+            } catch (error) {
+                log(`❌ Error: ${error.message}`, 'error');
+                log(`Full error: ${JSON.stringify(error, null, 2)}`, 'error');
+            }
+        }
+        
+        async function checkWebhooks() {
+            clear();
+            log('=== FETCHING WEBHOOKS ===', 'info');
+            
+            const token = localStorage.getItem('access_token');
+            if (!token) {
+                log('❌ No auth token - please login first', 'error');
+                return;
+            }
+            
+            try {
+                // Try multiple webhook endpoints
+                const endpoints = [
+                    '/api/v1/webhooks/list',
+                    '/api/v1/webhooks/subscribed',
+                    '/api/v1/marketplace/my-purchases'
+                ];
+                
+                for (const endpoint of endpoints) {
+                    log(`\nTrying ${endpoint}...`, 'info');
+                    
+                    try {
+                        const response = await fetch(endpoint, {
+                            headers: {
+                                'Authorization': `Bearer ${token}`,
+                                'Content-Type': 'application/json'
+                            }
+                        });
+                        
+                        log(`  Status: ${response.status}`, response.ok ? 'success' : 'warning');
+                        
+                        if (response.ok) {
+                            const data = await response.json();
+                            log(`  Result: ${JSON.stringify(data).substring(0, 200)}...`, 'info');
+                        }
+                    } catch (e) {
+                        log(`  Error: ${e.message}`, 'error');
+                    }
+                }
+                
+            } catch (error) {
+                log(`❌ Error: ${error.message}`, 'error');
+            }
+        }
+        
+        function checkLocalStorage() {
+            clear();
+            log('=== LOCAL STORAGE CHECK ===', 'info');
+            
+            const keys = Object.keys(localStorage);
+            log(`Total items: ${keys.length}`, 'info');
+            
+            const relevantKeys = keys.filter(k => 
+                k.includes('token') || 
+                k.includes('user') || 
+                k.includes('account') || 
+                k.includes('strategy') ||
+                k.includes('webhook')
+            );
+            
+            log('\n=== RELEVANT ITEMS ===', 'info');
+            relevantKeys.forEach(key => {
+                const value = localStorage.getItem(key);
+                const preview = value && value.length > 100 ? 
+                    value.substring(0, 100) + '...' : value;
+                log(`${key}: ${preview}`, 'info');
+            });
+        }
+        
+        async function testModalData() {
+            clear();
+            log('=== TESTING MODAL DATA FLOW ===', 'info');
+            
+            // First check auth
+            const authValid = await checkAuth();
+            if (!authValid) {
+                log('⚠️ Fix authentication first', 'warning');
+                return;
+            }
+            
+            log('\n1. Fetching accounts...', 'info');
+            const token = localStorage.getItem('access_token');
+            
+            try {
+                const accountsResponse = await fetch('/api/v1/brokers/accounts', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const accountsData = await accountsResponse.json();
+                
+                log(`   Received ${accountsData.length || 0} accounts`, 'info');
+                
+                // Simulate modal filtering
+                log('\n2. Applying modal filters...', 'info');
+                
+                const filtered1 = accountsData.filter(account => account.is_active);
+                log(`   Filter (is_active truthy): ${filtered1.length} accounts`, 'info');
+                
+                const filtered2 = accountsData.filter(account => account.is_active === true);
+                log(`   Filter (is_active === true): ${filtered2.length} accounts`, 'info');
+                
+                const filtered3 = accountsData.filter(account => account.is_active !== false);
+                log(`   Filter (is_active !== false): ${filtered3.length} accounts`, 'info');
+                
+                log('\n3. What the modal would show:', 'info');
+                if (filtered1.length === 0) {
+                    log('   ❌ NO ACCOUNTS would be shown (is_active filter removes all)', 'error');
+                    log('   Suggestion: Change filter to account.is_active !== false', 'warning');
+                } else {
+                    log(`   ✓ ${filtered1.length} accounts would be shown`, 'success');
+                }
+                
+            } catch (error) {
+                log(`Error: ${error.message}`, 'error');
+            }
+        }
+    </script>
+</body>
+</html>
