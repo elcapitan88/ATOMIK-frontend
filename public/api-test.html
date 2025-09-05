@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>API Configuration Test</title>
+    <style>
+        body {
+            font-family: monospace;
+            background: #1a1a1a;
+            color: #0f0;
+            padding: 20px;
+        }
+        .output {
+            background: #000;
+            border: 1px solid #0f0;
+            padding: 15px;
+            margin: 20px 0;
+            white-space: pre-wrap;
+        }
+        button {
+            background: #333;
+            color: #0f0;
+            border: 1px solid #0f0;
+            padding: 10px 20px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .error { color: #f00; }
+        .success { color: #0f0; }
+        .warning { color: #ff0; }
+        .info { color: #0ff; }
+    </style>
+</head>
+<body>
+    <h1>🔍 API Configuration Debugger</h1>
+    
+    <button onclick="testApiEndpoints()">Test All Possible API Endpoints</button>
+    <button onclick="checkAxiosConfig()">Check Axios Configuration</button>
+    
+    <div id="output" class="output">Ready...</div>
+    
+    <script>
+        const output = document.getElementById('output');
+        
+        function log(message, className = '') {
+            output.innerHTML += `<span class="${className}">${message}</span>\n`;
+        }
+        
+        function clear() {
+            output.innerHTML = '';
+        }
+        
+        async function testApiEndpoints() {
+            clear();
+            log('=== TESTING API ENDPOINTS ===', 'info');
+            
+            const token = localStorage.getItem('access_token');
+            if (!token) {
+                log('No auth token found!', 'error');
+                return;
+            }
+            
+            // List of possible backend URLs
+            const endpoints = [
+                { name: 'Frontend Origin (relative)', url: '/api/v1/brokers/accounts' },
+                { name: 'Development Backend', url: 'https://atomik-dev-development.up.railway.app/api/v1/brokers/accounts' },
+                { name: 'Production Backend', url: 'https://api.atomiktrading.io/api/v1/brokers/accounts' },
+            ];
+            
+            log(`Current location: ${window.location.hostname}`, 'info');
+            log(`Auth token: ${token.substring(0, 20)}...`, 'info');
+            log('');
+            
+            for (const endpoint of endpoints) {
+                log(`\nTesting: ${endpoint.name}`, 'warning');
+                log(`URL: ${endpoint.url}`, 'info');
+                
+                try {
+                    const response = await fetch(endpoint.url, {
+                        method: 'GET',
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json'
+                        }
+                    });
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        log(`✅ SUCCESS! Status: ${response.status}`, 'success');
+                        log(`Response: ${JSON.stringify(data).substring(0, 100)}...`, 'success');
+                        log(`Accounts found: ${Array.isArray(data) ? data.length : 'N/A'}`, 'success');
+                        
+                        // This is the working endpoint!
+                        log('\n🎯 WORKING ENDPOINT FOUND!', 'success');
+                        log(`Use this URL: ${endpoint.url.replace('/api/v1/brokers/accounts', '')}`, 'success');
+                    } else {
+                        log(`❌ Failed: ${response.status} ${response.statusText}`, 'error');
+                        const text = await response.text();
+                        log(`Response: ${text.substring(0, 100)}`, 'error');
+                    }
+                } catch (error) {
+                    log(`❌ Error: ${error.message}`, 'error');
+                    
+                    // Check if it's CORS
+                    if (error.message.includes('Failed to fetch')) {
+                        log('  → Could be CORS blocking or wrong URL', 'warning');
+                    }
+                }
+            }
+            
+            log('\n=== DIAGNOSIS ===', 'info');
+            log('If all endpoints failed with "Failed to fetch":', 'warning');
+            log('  1. Check if backend is running', 'warning');
+            log('  2. Check CORS configuration on backend', 'warning');
+            log('  3. Check network/firewall issues', 'warning');
+            log('', '');
+            log('If one endpoint worked:', 'warning');
+            log('  → Frontend is using wrong API URL', 'warning');
+            log('  → Set REACT_APP_API_URL in Railway to the working URL', 'warning');
+        }
+        
+        async function checkAxiosConfig() {
+            clear();
+            log('=== CHECKING AXIOS CONFIGURATION ===', 'info');
+            
+            // Try to load the axios config
+            log('Checking what URL axios would use...', 'info');
+            log('');
+            
+            // Check environment
+            log('Environment checks:', 'info');
+            log(`  window.location.hostname: ${window.location.hostname}`, 'info');
+            log(`  window.location.origin: ${window.location.origin}`, 'info');
+            log(`  NODE_ENV: ${process?.env?.NODE_ENV || 'not accessible'}`, 'info');
+            log(`  REACT_APP_API_URL: ${process?.env?.REACT_APP_API_URL || 'not accessible'}`, 'info');
+            
+            // Simulate axios config logic
+            log('\nBased on axiosConfig.js logic:', 'warning');
+            
+            const hostname = window.location.hostname;
+            let expectedUrl;
+            
+            if (hostname === 'localhost') {
+                expectedUrl = 'http://localhost:8000';
+                log(`  → Would use: ${expectedUrl} (local development)`, 'info');
+            } else {
+                // In production build, can't access process.env
+                expectedUrl = 'https://api.atomiktrading.io';
+                log(`  → Would use: ${expectedUrl} (production default)`, 'info');
+                log('  ⚠️ Unless REACT_APP_API_URL is set at build time!', 'warning');
+            }
+            
+            log('\n=== SOLUTION ===', 'success');
+            log('The frontend is likely using the wrong API URL.', 'warning');
+            log('', '');
+            log('Fix on Railway:', 'success');
+            log('1. Go to Railway dashboard', 'info');
+            log('2. Select the frontend service (atomik-frontend-development)', 'info');
+            log('3. Go to Variables tab', 'info');
+            log('4. Add: REACT_APP_API_URL = https://atomik-dev-development.up.railway.app', 'info');
+            log('5. Redeploy the service', 'info');
+        }
+    </script>
+</body>
+</html>
