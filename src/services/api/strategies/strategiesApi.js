@@ -64,11 +64,13 @@ class StrategiesApi {
         if (cached) return cached;
       }
   
+      // Use unified marketplace endpoint that works without auth and shows all strategies
       const response = await this.withRetry(() =>
-        axiosInstance.get(`${this.baseUrl}/list`)
+        axiosInstance.get('/api/v1/marketplace/strategies/available')
       );
   
-      const strategies = response.data;
+      // Extract strategies from unified response format
+      const strategies = response.data?.strategies || response.data || [];
       this.setCachedStrategies(strategies);
       return strategies;
     } catch (error) {
