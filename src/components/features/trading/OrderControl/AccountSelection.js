@@ -35,12 +35,17 @@ const AccountSelection = ({ selectedAccounts = [], onChange }) => {
     staleTime: 30000
   });
 
-  // Query for strategies
+  // Query for strategies - now using unified marketplace endpoint
   const { data: strategies = [], isLoading: strategiesLoading } = useQuery({
     queryKey: ['strategies'],
     queryFn: async () => {
       try {
-        const response = await axios.get('/api/v1/strategies/list');
+        const response = await axios.get('/api/v1/marketplace/strategies/available');
+        // Extract strategies from the unified response format
+        const responseData = response.data;
+        if (responseData && responseData.strategies) {
+          return Array.isArray(responseData.strategies) ? responseData.strategies : [];
+        }
         return Array.isArray(response.data) ? response.data : [];
       } catch (error) {
         logger.error('Failed to fetch strategies:', error);

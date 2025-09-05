@@ -149,8 +149,8 @@ const DashboardContent = () => {
                     });
                 }
                 
-                // Strategies endpoint
-                if (url.includes('/api/v1/strategies/list') && dataCache.current.strategies) {
+                // Strategies endpoint - now using unified marketplace endpoint
+                if ((url.includes('/api/v1/strategies/list') || url.includes('/api/v1/marketplace/strategies/available')) && dataCache.current.strategies) {
                     logger.debug('Using cached strategies data');
                     return new Response(JSON.stringify(dataCache.current.strategies), {
                         headers: { 'Content-Type': 'application/json' },
@@ -188,7 +188,7 @@ const DashboardContent = () => {
                     
                     if (url.includes('/api/v1/brokers/accounts')) {
                         dataCache.current.accounts = data;
-                    } else if (url.includes('/api/v1/strategies/list')) {
+                    } else if (url.includes('/api/v1/strategies/list') || url.includes('/api/v1/marketplace/strategies/available')) {
                         dataCache.current.strategies = data;
                     } else if (url.includes('/api/v1/webhooks/list')) {
                         dataCache.current.webhooks = data;
@@ -235,16 +235,18 @@ const DashboardContent = () => {
                 // Use our regular API calls - the intercepted fetch will handle caching
                 const [accountsResponse, strategiesResponse] = await Promise.all([
                     axiosInstance.get('/api/v1/brokers/accounts'),
-                    axiosInstance.get('/api/v1/strategies/list')
+                    axiosInstance.get('/api/v1/marketplace/strategies/available')
                 ]);
 
                 // Store data both in component state and in our cache
                 dataCache.current.accounts = accountsResponse.data;
-                dataCache.current.strategies = strategiesResponse.data;
+                // Extract strategies from unified response format
+                const strategiesData = strategiesResponse.data?.strategies || strategiesResponse.data || [];
+                dataCache.current.strategies = strategiesData;
                 
                 setDashboardData({
                     accounts: accountsResponse.data,
-                    strategies: strategiesResponse.data,
+                    strategies: strategiesData,
                     activeAccountId: accountsResponse.data[0]?.account_id || null
                 });
 
