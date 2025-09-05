@@ -200,7 +200,11 @@ const ActivateStrategyModal = ({ isOpen, onClose, onSubmit, strategy = null, mar
           const accountsData = responses[0]?.data || [];
           const webhooksResponse = detectedType === 'webhook' ? (responses[1] || []) : [];
           
-          setAccounts(accountsData.filter(account => account.is_active));
+          // Filter for active accounts, but handle undefined/null cases
+          // If is_active is not explicitly false, consider it active
+          const activeAccounts = accountsData.filter(account => account.is_active !== false);
+          console.log(`Accounts: Total=${accountsData.length}, Active=${activeAccounts.length}`, accountsData);
+          setAccounts(activeAccounts);
           if (detectedType === 'webhook') {
             setWebhooks(webhooksResponse);
           }

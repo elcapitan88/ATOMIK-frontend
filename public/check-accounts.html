@@ -114,14 +114,28 @@
             clear();
             log('=== FETCHING ACCOUNTS ===', 'info');
             
+            // Check what API URL the app is configured to use
+            log('Checking API configuration...', 'info');
+            
+            // Try to detect the backend URL
+            const possibleUrls = [
+                window.location.origin, // Same origin
+                'https://atomik-dev-development.up.railway.app',
+                'https://api.atomiktrading.io'
+            ];
+            
             const token = localStorage.getItem('access_token');
             if (!token) {
                 log('❌ No auth token - please login first', 'error');
                 return;
             }
             
-            try {
-                const response = await fetch('/api/v1/brokers/accounts', {
+            // Try each possible backend URL
+            for (const baseUrl of possibleUrls) {
+                log(`\nTrying backend: ${baseUrl}`, 'info');
+                
+                try {
+                    const response = await fetch(`${baseUrl}/api/v1/brokers/accounts`, {
                     headers: {
                         'Authorization': `Bearer ${token}`,
                         'Content-Type': 'application/json'
