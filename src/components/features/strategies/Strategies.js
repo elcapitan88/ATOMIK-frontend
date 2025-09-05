@@ -22,7 +22,7 @@ import {
   RefreshCw,
   AlertTriangle
 } from 'lucide-react';
-import { strategiesApi } from '@/services/api/strategies';
+import { strategiesApi } from '@/services/api/strategies/strategiesApi';
 import { useWebSocket } from '@/hooks/useWebSocket';
 import { formatCurrency } from '@/utils/formatting/currency';
 
