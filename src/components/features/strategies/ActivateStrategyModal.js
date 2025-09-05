@@ -24,7 +24,7 @@ import {
   ModalCloseButton,
   Badge,
 } from '@chakra-ui/react';
-import { Plus, Minus } from 'lucide-react';
+import { Plus, Minus, Settings } from 'lucide-react';
 import axiosInstance from '@/services/axiosConfig';
 import { useStrategies } from '@/hooks/useStrategies';
 import { webhookApi } from '@/services/api/Webhooks/webhookApi';
@@ -77,30 +77,41 @@ const StrategyFormInput = ({ label, children, mb = 2, flex }) => (
   </Box>
 );
 
-const ActivateStrategyModal = ({ isOpen, onClose, onSubmit, strategy = null }) => {
+const ActivateStrategyModal = ({ isOpen, onClose, onSubmit, strategy = null, marketplaceStrategy = null, strategyCodes = [] }) => {
   // State management with separate validation states
   const [formData, setFormData] = useState({
+    strategyType: 'webhook', // NEW: 'webhook' | 'engine'
     selectedType: 'single',
     singleAccount: {
       accountId: '',
       quantity: 1,
       ticker: '',
-      webhookId: ''
+      webhookId: '',        // For webhook strategies
+      strategyCodeId: ''    // For engine strategies
     },
     multipleAccount: {
       leaderAccountId: '',
       leaderQuantity: 1,
       followerAccounts: [], // Array of {accountId: string, quantity: number}
       ticker: '',
-      webhookId: '',
+      webhookId: '',        // For webhook strategies
+      strategyCodeId: '',   // For engine strategies
       groupName: ''
-    }
+    },
+    // Engine strategy specific fields
+    description: '',
+    isActive: true,
+    stopLossPercent: '',
+    takeProfitPercent: '',
+    maxDailyLoss: '',
+    maxPositionSize: ''
   });
   
   const [accounts, setAccounts] = useState([]);
   const [webhooks, setWebhooks] = useState([]);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [pendingChangeType, setPendingChangeType] = useState(null);
+  const [errors, setErrors] = useState({});
   const { createStrategy, isCreating, createStrategyError, updateStrategy, isUpdating, updateStrategyError, deleteStrategy, isDeleting } = useStrategies();
   const toast = useToast();
 
@@ -108,8 +119,13 @@ const ActivateStrategyModal = ({ isOpen, onClose, onSubmit, strategy = null }) =
 
   // Form validation functions
   const validateSingleAccount = () => {
-    const { accountId, ticker, webhookId } = formData.singleAccount;
-    return Boolean(accountId && ticker && webhookId);
+    const { accountId, ticker, webhookId, strategyCodeId } = formData.singleAccount;
+    
+    if (formData.strategyType === 'webhook') {
+      return Boolean(accountId && ticker && webhookId);
+    } else {
+      return Boolean(accountId && ticker && strategyCodeId);
+    }
   };
 
   const validateMultipleAccount = () => {
@@ -118,19 +134,25 @@ const ActivateStrategyModal = ({ isOpen, onClose, onSubmit, strategy = null }) =
       followerAccounts, 
       ticker, 
       webhookId, 
+      strategyCodeId,
       groupName 
     } = formData.multipleAccount;
 
-    return Boolean(
+    const baseValidation = Boolean(
       leaderAccountId && 
       followerAccounts.length > 0 && 
       ticker && 
-      webhookId && 
       groupName &&
       followerAccounts.every(follower => 
         follower.accountId && follower.quantity > 0
       )
     );
+
+    if (formData.strategyType === 'webhook') {
+      return baseValidation && Boolean(webhookId);
+    } else {
+      return baseValidation && Boolean(strategyCodeId);
+    }
   };
 
   const isFormValid = () => {
@@ -139,69 +161,148 @@ const ActivateStrategyModal = ({ isOpen, onClose, onSubmit, strategy = null }) =
       : validateMultipleAccount();
   };
 
+  // Strategy type detection from marketplace data
+  const detectStrategyType = () => {
+    if (marketplaceStrategy) {
+      return marketplaceStrategy.strategy_type || 'webhook';
+    }
+    if (strategy) {
+      // Check if existing strategy has webhook_id or strategy_code_id
+      return strategy.webhook_id ? 'webhook' : 'engine';
+    }
+    return 'webhook'; // default
+  };
+
   // Data fetching effect
   useEffect(() => {
     if (isOpen) {
       // Reset confirmation state when modal opens
       setShowConfirmation(false);
       setPendingChangeType(null);
+      setErrors({});
+      
+      // Detect and set strategy type
+      const detectedType = detectStrategyType();
       
       const fetchData = async () => {
         try {
           console.log('Fetching accounts and webhooks...');
-          const [accountsResponse, webhooksResponse] = await Promise.all([
-            axiosInstance.get('/api/v1/brokers/accounts'),
-            webhookApi.getAllAvailableWebhooks()
-          ]);
-
-          console.log('Raw accounts response:', accountsResponse);
-          const accountsData = accountsResponse?.data || [];
-          setAccounts(accountsData);
-          setWebhooks(webhooksResponse);
-
-
-          // Set initial webhook if available
-          if (webhooksResponse.length > 0) {
-            const initialWebhookId = webhooksResponse[0].token;
-            setFormData(prev => ({
-              ...prev,
-              singleAccount: { ...prev.singleAccount, webhookId: initialWebhookId },
-              multipleAccount: { ...prev.multipleAccount, webhookId: initialWebhookId }
-            }));
+          const promises = [
+            axiosInstance.get('/api/v1/brokers/accounts')
+          ];
+          
+          // Only fetch webhooks for webhook strategies
+          if (detectedType === 'webhook') {
+            promises.push(webhookApi.getAllAvailableWebhooks());
           }
+          
+          const responses = await Promise.all(promises);
+          const accountsData = responses[0]?.data || [];
+          const webhooksResponse = detectedType === 'webhook' ? (responses[1] || []) : [];
+          
+          setAccounts(accountsData.filter(account => account.is_active));
+          if (detectedType === 'webhook') {
+            setWebhooks(webhooksResponse);
+          }
+
+          // Set initial form data based on strategy type and marketplace data
+          setFormData(prev => {
+            const newData = {
+              ...prev,
+              strategyType: detectedType
+            };
+            
+            // Set initial webhook if available for webhook strategies
+            if (detectedType === 'webhook' && webhooksResponse.length > 0) {
+              const initialWebhookId = webhooksResponse[0].token;
+              newData.singleAccount = { ...prev.singleAccount, webhookId: initialWebhookId };
+              newData.multipleAccount = { ...prev.multipleAccount, webhookId: initialWebhookId };
+            }
+            
+            // Set initial strategy code if available for engine strategies
+            if (detectedType === 'engine' && strategyCodes.length > 0) {
+              const initialCodeId = strategyCodes.find(code => code.is_active)?.id || strategyCodes[0]?.id;
+              if (initialCodeId) {
+                newData.singleAccount = { ...prev.singleAccount, strategyCodeId: initialCodeId.toString() };
+                newData.multipleAccount = { ...prev.multipleAccount, strategyCodeId: initialCodeId.toString() };
+              }
+            }
+            
+            // Populate from marketplace strategy if available
+            if (marketplaceStrategy) {
+              const ticker = marketplaceStrategy.ticker || '';
+              newData.singleAccount = { ...newData.singleAccount, ticker };
+              newData.multipleAccount = { ...newData.multipleAccount, ticker };
+              
+              if (detectedType === 'webhook' && marketplaceStrategy.source_id) {
+                newData.singleAccount.webhookId = marketplaceStrategy.source_id;
+                newData.multipleAccount.webhookId = marketplaceStrategy.source_id;
+              }
+              if (detectedType === 'engine' && marketplaceStrategy.source_id) {
+                newData.singleAccount.strategyCodeId = marketplaceStrategy.source_id.toString();
+                newData.multipleAccount.strategyCodeId = marketplaceStrategy.source_id.toString();
+              }
+            }
+            
+            return newData;
+          });
 
           // If editing existing strategy, populate form
           if (strategy) {
-            if (strategy.strategy_type === 'single') {
-              setFormData(prev => ({
-                selectedType: 'single',
-                singleAccount: {
-                  accountId: strategy.account_id || '',
-                  quantity: strategy.quantity || 1,
-                  ticker: strategy.ticker || '',
-                  webhookId: strategy.webhook_id
-                },
-                multipleAccount: prev.multipleAccount
-              }));
-            } else {
-              const followerAccountsData = strategy.follower_account_ids?.map((accountId, index) => ({
-                accountId,
-                quantity: strategy.follower_quantities?.[index] || 1
-              })) || [];
+            setFormData(prev => {
+              const strategyType = strategy.webhook_id ? 'webhook' : 'engine';
+              
+              if (strategy.strategy_type === 'single') {
+                return {
+                  ...prev,
+                  strategyType,
+                  selectedType: 'single',
+                  singleAccount: {
+                    ...prev.singleAccount,
+                    accountId: strategy.account_id || '',
+                    quantity: strategy.quantity || 1,
+                    ticker: strategy.ticker || '',
+                    webhookId: strategy.webhook_id || '',
+                    strategyCodeId: strategy.strategy_code_id?.toString() || ''
+                  },
+                  // Engine specific fields
+                  description: strategy.description || '',
+                  isActive: strategy.is_active !== undefined ? strategy.is_active : true,
+                  stopLossPercent: strategy.stop_loss_percent || '',
+                  takeProfitPercent: strategy.take_profit_percent || '',
+                  maxDailyLoss: strategy.max_daily_loss || '',
+                  maxPositionSize: strategy.max_position_size || ''
+                };
+              } else {
+                const followerAccountsData = strategy.follower_account_ids?.map((accountId, index) => ({
+                  accountId,
+                  quantity: strategy.follower_quantities?.[index] || 1
+                })) || [];
 
-              setFormData(prev => ({
-                selectedType: 'multiple',
-                singleAccount: prev.singleAccount,
-                multipleAccount: {
-                  leaderAccountId: strategy.leader_account_id || '',
-                  leaderQuantity: strategy.leader_quantity || 1,
-                  followerAccounts: followerAccountsData,
-                  ticker: strategy.ticker || '',
-                  webhookId: strategy.webhook_id,
-                  groupName: strategy.group_name || ''
-                }
-              }));
-            }
+                return {
+                  ...prev,
+                  strategyType,
+                  selectedType: 'multiple',
+                  multipleAccount: {
+                    ...prev.multipleAccount,
+                    leaderAccountId: strategy.leader_account_id || '',
+                    leaderQuantity: strategy.leader_quantity || 1,
+                    followerAccounts: followerAccountsData,
+                    ticker: strategy.ticker || '',
+                    webhookId: strategy.webhook_id || '',
+                    strategyCodeId: strategy.strategy_code_id?.toString() || '',
+                    groupName: strategy.group_name || ''
+                  },
+                  // Engine specific fields
+                  description: strategy.description || '',
+                  isActive: strategy.is_active !== undefined ? strategy.is_active : true,
+                  stopLossPercent: strategy.stop_loss_percent || '',
+                  takeProfitPercent: strategy.take_profit_percent || '',
+                  maxDailyLoss: strategy.max_daily_loss || '',
+                  maxPositionSize: strategy.max_position_size || ''
+                };
+              }
+            });
           }
         } catch (error) {
           console.error('Error fetching data:', error);
@@ -217,7 +318,7 @@ const ActivateStrategyModal = ({ isOpen, onClose, onSubmit, strategy = null }) =
 
       fetchData();
     }
-  }, [isOpen, strategy, toast]);
+  }, [isOpen, strategy, marketplaceStrategy, strategyCodes, toast]);
 
   // Helper functions for multiple account management
   const handleAddFollower = () => {
@@ -301,12 +402,14 @@ const ActivateStrategyModal = ({ isOpen, onClose, onSubmit, strategy = null }) =
           ticker: formData.singleAccount.ticker,
           account_id: formData.singleAccount.accountId,
           webhook_id: formData.singleAccount.webhookId,
+          strategy_code_id: formData.singleAccount.strategyCodeId,
           quantity: Number(formData.singleAccount.quantity)
         }
       : {
           ticker: formData.multipleAccount.ticker,
           leader_account_id: formData.multipleAccount.leaderAccountId,
           webhook_id: formData.multipleAccount.webhookId,
+          strategy_code_id: formData.multipleAccount.strategyCodeId,
           leader_quantity: Number(formData.multipleAccount.leaderQuantity),
           follower_account_ids: formData.multipleAccount.followerAccounts.map(f => f.accountId),
           follower_quantities: formData.multipleAccount.followerAccounts.map(f => Number(f.quantity)),
@@ -317,6 +420,7 @@ const ActivateStrategyModal = ({ isOpen, onClose, onSubmit, strategy = null }) =
     const coreFieldsChanged = 
       currentData.ticker !== strategy.ticker ||
       currentData.webhook_id !== strategy.webhook_id ||
+      currentData.strategy_code_id !== strategy.strategy_code_id?.toString() ||
       (strategy.strategy_type === 'single' && currentData.account_id !== strategy.account_id) ||
       (strategy.strategy_type === 'multiple' && currentData.leader_account_id !== strategy.leader_account_id) ||
       (strategy.strategy_type === 'multiple' && 
@@ -326,15 +430,25 @@ const ActivateStrategyModal = ({ isOpen, onClose, onSubmit, strategy = null }) =
       return 'recreate';
     }
 
-    // Check for simple updates (quantities, group name, active status)
+    // Check for simple updates (quantities, group name, active status, engine fields)
     const quantitiesChanged = 
       (strategy.strategy_type === 'single' && currentData.quantity !== strategy.quantity) ||
       (strategy.strategy_type === 'multiple' && 
         (currentData.leader_quantity !== strategy.leader_quantity ||
          JSON.stringify(currentData.follower_quantities) !== JSON.stringify(strategy.follower_quantities || []))) ||
       (strategy.strategy_type === 'multiple' && currentData.group_name !== strategy.group_name);
+      
+    // Check engine-specific field changes
+    const engineFieldsChanged = formData.strategyType === 'engine' && (
+      formData.description !== (strategy.description || '') ||
+      formData.isActive !== strategy.is_active ||
+      formData.stopLossPercent !== (strategy.stop_loss_percent || '') ||
+      formData.takeProfitPercent !== (strategy.take_profit_percent || '') ||
+      formData.maxDailyLoss !== (strategy.max_daily_loss || '') ||
+      formData.maxPositionSize !== (strategy.max_position_size || '')
+    );
 
-    return quantitiesChanged ? 'update' : 'nochange';
+    return (quantitiesChanged || engineFieldsChanged) ? 'update' : 'nochange';
   };
 
   // Handle confirmed recreate operation
@@ -343,28 +457,11 @@ const ActivateStrategyModal = ({ isOpen, onClose, onSubmit, strategy = null }) =
       setShowConfirmation(false);
       
       // First delete the existing strategy
-      await deleteStrategy(strategy.id);
+      const strategyType = strategy.webhook_id ? 'webhook' : 'engine';
+      await deleteStrategy({ strategyId: strategy.id, strategyType });
       
       // Then create the new strategy with updated data
-      const strategyData = formData.selectedType === 'single' 
-        ? {
-            strategy_type: 'single',
-            webhook_id: formData.singleAccount.webhookId,
-            ticker: formData.singleAccount.ticker,
-            account_id: formData.singleAccount.accountId,
-            quantity: Number(formData.singleAccount.quantity)
-          }
-        : {
-            strategy_type: 'multiple',
-            webhook_id: formData.multipleAccount.webhookId,
-            ticker: formData.multipleAccount.ticker,
-            leader_account_id: formData.multipleAccount.leaderAccountId,
-            leader_quantity: Number(formData.multipleAccount.leaderQuantity),
-            group_name: formData.multipleAccount.groupName,
-            follower_account_ids: formData.multipleAccount.followerAccounts.map(f => f.accountId),
-            follower_quantities: formData.multipleAccount.followerAccounts.map(f => Number(f.quantity))
-          };
-
+      const strategyData = buildStrategyData();
       await createStrategy(strategyData);
       
       toast({
@@ -389,6 +486,48 @@ const ActivateStrategyModal = ({ isOpen, onClose, onSubmit, strategy = null }) =
     }
   };
 
+  // Build strategy data based on current form state and strategy type
+  const buildStrategyData = () => {
+    const baseData = {
+      strategy_type: formData.selectedType,
+      ticker: formData.selectedType === 'single' ? formData.singleAccount.ticker : formData.multipleAccount.ticker
+    };
+
+    // Add type-specific identification field
+    if (formData.strategyType === 'webhook') {
+      baseData.webhook_id = formData.selectedType === 'single' 
+        ? formData.singleAccount.webhookId 
+        : formData.multipleAccount.webhookId;
+    } else {
+      baseData.strategy_code_id = parseInt(
+        formData.selectedType === 'single' 
+          ? formData.singleAccount.strategyCodeId 
+          : formData.multipleAccount.strategyCodeId
+      );
+      
+      // Add engine-specific fields
+      baseData.description = formData.description;
+      baseData.is_active = formData.isActive;
+      if (formData.stopLossPercent) baseData.stop_loss_percent = parseFloat(formData.stopLossPercent);
+      if (formData.takeProfitPercent) baseData.take_profit_percent = parseFloat(formData.takeProfitPercent);
+      if (formData.maxDailyLoss) baseData.max_daily_loss = parseFloat(formData.maxDailyLoss);
+      if (formData.maxPositionSize) baseData.max_position_size = parseInt(formData.maxPositionSize);
+    }
+
+    if (formData.selectedType === 'single') {
+      baseData.account_id = formData.singleAccount.accountId;
+      baseData.quantity = Number(formData.singleAccount.quantity);
+    } else {
+      baseData.leader_account_id = formData.multipleAccount.leaderAccountId;
+      baseData.leader_quantity = Number(formData.multipleAccount.leaderQuantity);
+      baseData.group_name = formData.multipleAccount.groupName;
+      baseData.follower_account_ids = formData.multipleAccount.followerAccounts.map(f => f.accountId);
+      baseData.follower_quantities = formData.multipleAccount.followerAccounts.map(f => Number(f.quantity));
+    }
+
+    return baseData;
+  };
+
   // Form submission handler
   const handleSubmit = async () => {
     try {
@@ -407,21 +546,35 @@ const ActivateStrategyModal = ({ isOpen, onClose, onSubmit, strategy = null }) =
       }
       
       if (changeType === 'update') {
-        // For updates, only send the fields that can be updated
-        const updateData = formData.selectedType === 'single' 
-          ? {
-              quantity: Number(formData.singleAccount.quantity),
-              is_active: true
-            }
-          : {
-              leader_quantity: Number(formData.multipleAccount.leaderQuantity),
-              follower_quantities: formData.multipleAccount.followerAccounts.map(f => Number(f.quantity)),
-              is_active: true
-            };
+        // For updates, build update data based on strategy type
+        const updateData = {};
+        
+        if (formData.selectedType === 'single') {
+          updateData.quantity = Number(formData.singleAccount.quantity);
+        } else {
+          updateData.leader_quantity = Number(formData.multipleAccount.leaderQuantity);
+          updateData.follower_quantities = formData.multipleAccount.followerAccounts.map(f => Number(f.quantity));
+          if (formData.multipleAccount.groupName !== strategy.group_name) {
+            updateData.group_name = formData.multipleAccount.groupName;
+          }
+        }
+        
+        // Add engine-specific update fields
+        if (formData.strategyType === 'engine') {
+          updateData.description = formData.description;
+          updateData.is_active = formData.isActive;
+          if (formData.stopLossPercent) updateData.stop_loss_percent = parseFloat(formData.stopLossPercent);
+          if (formData.takeProfitPercent) updateData.take_profit_percent = parseFloat(formData.takeProfitPercent);
+          if (formData.maxDailyLoss) updateData.max_daily_loss = parseFloat(formData.maxDailyLoss);
+          if (formData.maxPositionSize) updateData.max_position_size = parseInt(formData.maxPositionSize);
+        } else {
+          updateData.is_active = true;
+        }
 
         await updateStrategy({ 
           strategyId: strategy.id, 
-          updateData 
+          updateData,
+          strategyType: formData.strategyType
         });
         
       } else if (changeType === 'recreate') {
@@ -432,25 +585,7 @@ const ActivateStrategyModal = ({ isOpen, onClose, onSubmit, strategy = null }) =
         
       } else {
         // For creation, send all required fields
-        const strategyData = formData.selectedType === 'single' 
-          ? {
-              strategy_type: 'single',
-              webhook_id: formData.singleAccount.webhookId,
-              ticker: formData.singleAccount.ticker, // Let backend convert to display ticker
-              account_id: formData.singleAccount.accountId,
-              quantity: Number(formData.singleAccount.quantity)
-            }
-          : {
-              strategy_type: 'multiple',
-              webhook_id: formData.multipleAccount.webhookId,
-              ticker: formData.multipleAccount.ticker, // Let backend convert to display ticker
-              leader_account_id: formData.multipleAccount.leaderAccountId,
-              leader_quantity: Number(formData.multipleAccount.leaderQuantity),
-              group_name: formData.multipleAccount.groupName,
-              follower_account_ids: formData.multipleAccount.followerAccounts.map(f => f.accountId),
-              follower_quantities: formData.multipleAccount.followerAccounts.map(f => Number(f.quantity))
-            };
-
+        const strategyData = buildStrategyData();
         await createStrategy(strategyData);
       }
       
@@ -491,7 +626,24 @@ const ActivateStrategyModal = ({ isOpen, onClose, onSubmit, strategy = null }) =
         p={4}
       >
         <ModalHeader borderBottom="1px solid rgba(255, 255, 255, 0.18)" pb={4}>
-          {strategy ? 'Update Strategy' : 'Create New Strategy'}
+          <VStack spacing={2} align="start">
+            <Text fontSize="lg" fontWeight="bold">
+              {strategy ? 'Update Strategy' : 'Activate Strategy'}
+            </Text>
+            {(marketplaceStrategy || formData.strategyType === 'engine') && (
+              <Badge 
+                colorScheme={formData.strategyType === 'webhook' ? 'green' : 'purple'}
+                size="sm"
+              >
+                {formData.strategyType === 'webhook' ? 'Webhook Strategy' : 'Engine Strategy'}
+              </Badge>
+            )}
+            {marketplaceStrategy && (
+              <Text fontSize="sm" color="whiteAlpha.700">
+                {marketplaceStrategy.name}
+              </Text>
+            )}
+          </VStack>
         </ModalHeader>
         <ModalCloseButton />
    
@@ -538,6 +690,62 @@ const ActivateStrategyModal = ({ isOpen, onClose, onSubmit, strategy = null }) =
             </HStack>
    
             <Divider borderColor="whiteAlpha.300" />
+
+            {/* Strategy Code Selection - Only for Engine Strategies */}
+            {formData.strategyType === 'engine' && (
+              <StrategyFormInput label="Strategy Code">
+                <Select
+                  {...selectStyles}
+                  value={formData.selectedType === 'single' 
+                    ? formData.singleAccount.strategyCodeId 
+                    : formData.multipleAccount.strategyCodeId}
+                  onChange={(e) => setFormData(prev => ({
+                    ...prev,
+                    singleAccount: {
+                      ...prev.singleAccount,
+                      strategyCodeId: e.target.value
+                    },
+                    multipleAccount: {
+                      ...prev.multipleAccount,
+                      strategyCodeId: e.target.value
+                    }
+                  }))}
+                  placeholder="Select Strategy Code"
+                >
+                  {strategyCodes.filter(code => code.is_active).map(code => (
+                    <option key={code.id} value={code.id}>
+                      {code.name} {code.is_validated ? '✓' : ''}
+                    </option>
+                  ))}
+                </Select>
+                {(() => {
+                  const selectedCode = strategyCodes.find(code => 
+                    code.id === parseInt(
+                      formData.selectedType === 'single' 
+                        ? formData.singleAccount.strategyCodeId 
+                        : formData.multipleAccount.strategyCodeId
+                    )
+                  );
+                  return selectedCode && (
+                    <Box mt={2} p={2} bg="whiteAlpha.100" borderRadius="md">
+                      <HStack spacing={2}>
+                        <Badge colorScheme={selectedCode.is_validated ? 'green' : 'orange'}>
+                          {selectedCode.is_validated ? 'Validated' : 'Not Validated'}
+                        </Badge>
+                        <Badge colorScheme={selectedCode.is_active ? 'green' : 'red'}>
+                          {selectedCode.is_active ? 'Active' : 'Inactive'}
+                        </Badge>
+                      </HStack>
+                      {selectedCode.description && (
+                        <Text fontSize="sm" color="whiteAlpha.700" mt={1}>
+                          {selectedCode.description}
+                        </Text>
+                      )}
+                    </Box>
+                  );
+                })()} 
+              </StrategyFormInput>
+            )}
    
             {formData.selectedType === 'single' ? (
               <VStack spacing={4} align="stretch">
@@ -734,30 +942,118 @@ const ActivateStrategyModal = ({ isOpen, onClose, onSubmit, strategy = null }) =
               </VStack>
             )}
    
-            <Select
-              {...selectStyles}
-              value={formData.selectedType === 'single' 
-                ? formData.singleAccount.webhookId 
-                : formData.multipleAccount.webhookId}
-              onChange={(e) => setFormData(prev => ({
-                ...prev,
-                singleAccount: {
-                  ...prev.singleAccount,
-                  webhookId: e.target.value
-                },
-                multipleAccount: {
-                  ...prev.multipleAccount,
-                  webhookId: e.target.value
-                }
-              }))}
-              placeholder="Select Webhook"
-            >
-              {webhooks.map(webhook => (
-                <option key={webhook.token} value={webhook.token}>
-                  {webhook.name || webhook.token}
-                </option>
-              ))}
-            </Select>
+            {/* Webhook Selection - Only for Webhook Strategies */}
+            {formData.strategyType === 'webhook' && (
+              <Select
+                {...selectStyles}
+                value={formData.selectedType === 'single' 
+                  ? formData.singleAccount.webhookId 
+                  : formData.multipleAccount.webhookId}
+                onChange={(e) => setFormData(prev => ({
+                  ...prev,
+                  singleAccount: {
+                    ...prev.singleAccount,
+                    webhookId: e.target.value
+                  },
+                  multipleAccount: {
+                    ...prev.multipleAccount,
+                    webhookId: e.target.value
+                  }
+                }))}
+                placeholder="Select Webhook"
+              >
+                {webhooks.map(webhook => (
+                  <option key={webhook.token} value={webhook.token}>
+                    {webhook.name || webhook.token}
+                  </option>
+                ))}
+              </Select>
+            )}
+
+            {/* Engine Strategy Risk Management Fields */}
+            {formData.strategyType === 'engine' && (
+              <VStack spacing={4} align="stretch">
+                <Text fontSize="md" fontWeight="semibold" color="orange.300">
+                  Risk Management (Optional)
+                </Text>
+                
+                <HStack spacing={4}>
+                  <StrategyFormInput label="Stop Loss %" flex={1}>
+                    <Input
+                      {...glassEffect}
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      max="100"
+                      value={formData.stopLossPercent}
+                      onChange={(e) => setFormData(prev => ({
+                        ...prev,
+                        stopLossPercent: e.target.value
+                      }))}
+                      placeholder="0.00"
+                    />
+                  </StrategyFormInput>
+                  
+                  <StrategyFormInput label="Take Profit %" flex={1}>
+                    <Input
+                      {...glassEffect}
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={formData.takeProfitPercent}
+                      onChange={(e) => setFormData(prev => ({
+                        ...prev,
+                        takeProfitPercent: e.target.value
+                      }))}
+                      placeholder="0.00"
+                    />
+                  </StrategyFormInput>
+                </HStack>
+                
+                <HStack spacing={4}>
+                  <StrategyFormInput label="Max Daily Loss" flex={1}>
+                    <Input
+                      {...glassEffect}
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={formData.maxDailyLoss}
+                      onChange={(e) => setFormData(prev => ({
+                        ...prev,
+                        maxDailyLoss: e.target.value
+                      }))}
+                      placeholder="0.00"
+                    />
+                  </StrategyFormInput>
+                  
+                  <StrategyFormInput label="Max Position Size" flex={1}>
+                    <Input
+                      {...glassEffect}
+                      type="number"
+                      min="1"
+                      value={formData.maxPositionSize}
+                      onChange={(e) => setFormData(prev => ({
+                        ...prev,
+                        maxPositionSize: e.target.value
+                      }))}
+                      placeholder="0"
+                    />
+                  </StrategyFormInput>
+                </HStack>
+                
+                <StrategyFormInput label="Description (Optional)">
+                  <Input
+                    {...glassEffect}
+                    value={formData.description}
+                    onChange={(e) => setFormData(prev => ({
+                      ...prev,
+                      description: e.target.value
+                    }))}
+                    placeholder="Strategy description..."
+                  />
+                </StrategyFormInput>
+              </VStack>
+            )}
    
             <Button
               width="full"

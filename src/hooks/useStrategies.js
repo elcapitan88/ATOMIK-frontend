@@ -40,9 +40,18 @@ export const useStrategies = () => {
     }
   });
 
-  // Mutation for creating strategy
+  // Mutation for creating strategy (unified for both webhook and engine)
   const createStrategyMutation = useMutation({
-    mutationFn: (strategyData) => strategiesApi.activateStrategy(strategyData),
+    mutationFn: (strategyData) => {
+      // Route to appropriate API based on strategy data
+      if (strategyData.webhook_id) {
+        return strategiesApi.activateStrategy(strategyData);
+      } else if (strategyData.strategy_code_id) {
+        return strategiesApi.configureEngineStrategy(strategyData);
+      } else {
+        throw new Error('Invalid strategy data: missing webhook_id or strategy_code_id');
+      }
+    },
     onMutate: async (newStrategy) => {
       await queryClient.cancelQueries(STRATEGIES_KEYS.lists());
       const previousStrategies = queryClient.getQueryData(STRATEGIES_KEYS.lists());
@@ -82,9 +91,16 @@ export const useStrategies = () => {
     }
   });
 
-  // Mutation for updating strategy
+  // Mutation for updating strategy (unified for both webhook and engine)
   const updateStrategyMutation = useMutation({
-    mutationFn: ({ strategyId, updateData }) => strategiesApi.updateStrategy(strategyId, updateData),
+    mutationFn: ({ strategyId, updateData, strategyType = 'webhook' }) => {
+      // Route to appropriate update API based on strategy type
+      if (strategyType === 'engine') {
+        return strategiesApi.updateEngineStrategy(strategyId, updateData);
+      } else {
+        return strategiesApi.updateStrategy(strategyId, updateData);
+      }
+    },
     onMutate: async ({ strategyId, updateData }) => {
       await queryClient.cancelQueries(STRATEGIES_KEYS.lists());
       const previousStrategies = queryClient.getQueryData(STRATEGIES_KEYS.lists());
@@ -175,10 +191,23 @@ export const useStrategies = () => {
     }
   });
 
-  // Mutation for deleting strategy
+  // Mutation for deleting strategy (unified for both webhook and engine)
   const deleteStrategyMutation = useMutation({
-    mutationFn: (strategyId) => strategiesApi.deleteStrategy(strategyId),
-    onSuccess: (_, strategyId) => {
+    mutationFn: (param) => {
+      // Support both old single parameter and new object parameter
+      const { strategyId, strategyType } = typeof param === 'object' ? param : { strategyId: param, strategyType: 'webhook' };
+      
+      // Route to appropriate delete API based on strategy type
+      if (strategyType === 'engine') {
+        return strategiesApi.deleteEngineStrategy(strategyId);
+      } else {
+        return strategiesApi.deleteStrategy(strategyId);
+      }
+    },
+    onSuccess: (_, param) => {
+      // Handle both old single parameter and new object parameter
+      const strategyId = typeof param === 'object' ? param.strategyId : param;
+      
       // Optimistic update
       queryClient.setQueryData(STRATEGIES_KEYS.lists(), (old) => {
         return old?.filter(strategy => strategy.id !== strategyId);

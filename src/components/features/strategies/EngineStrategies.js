@@ -39,7 +39,7 @@ import {
 import { strategiesApi } from '@/services/api/strategies/strategiesApi';
 import { strategyCodesApi } from '@/services/api/strategies/strategyCodesApi';
 import { formatCurrency } from '@/utils/formatting/currency';
-import EngineStrategyModal from './EngineStrategyModal';
+import ActivateStrategyModal from './ActivateStrategyModal';
 import StrategyCodeModal from './StrategyCodeModal';
 
 const EngineStrategyCard = ({ strategy, onEdit, onDelete, onToggle, isLoading }) => {
@@ -289,36 +289,11 @@ const EngineStrategies = () => {
     }
   };
 
-  const handleStrategyModalSave = async (strategyData) => {
-    try {
-      if (selectedStrategy) {
-        await strategiesApi.updateEngineStrategy(selectedStrategy.id, strategyData);
-        toast({
-          title: "Strategy updated",
-          status: "success",
-          duration: 3000,
-          isClosable: true,
-        });
-      } else {
-        await strategiesApi.configureEngineStrategy(strategyData);
-        toast({
-          title: "Strategy configured",
-          status: "success",
-          duration: 3000,
-          isClosable: true,
-        });
-      }
-      await fetchData(false);
-      onStrategyModalClose();
-    } catch (error) {
-      toast({
-        title: "Error saving strategy",
-        description: error.message,
-        status: "error",
-        duration: 5000,
-        isClosable: true,
-      });
-    }
+  const handleStrategyModalSave = async () => {
+    // This function is no longer needed since the ActivateStrategyModal
+    // handles all the API calls internally through the useStrategies hook
+    await fetchData(false);
+    onStrategyModalClose();
   };
 
   const handleCodeModalSave = async () => {
@@ -490,10 +465,10 @@ const EngineStrategies = () => {
       </VStack>
 
       {/* Strategy Configuration Modal */}
-      <EngineStrategyModal
+      <ActivateStrategyModal
         isOpen={isStrategyModalOpen}
         onClose={onStrategyModalClose}
-        onSave={handleStrategyModalSave}
+        onSubmit={handleStrategyModalSave}
         strategy={selectedStrategy}
         strategyCodes={strategyCodes}
       />
