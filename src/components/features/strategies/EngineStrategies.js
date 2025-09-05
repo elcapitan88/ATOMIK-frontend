@@ -38,7 +38,7 @@ import {
 } from 'lucide-react';
 import { strategiesApi } from '@/services/api/strategies';
 import { strategyCodesApi } from '@/services/api/strategies/strategyCodesApi';
-import { formatCurrency } from '@/utils/currency';
+import { formatCurrency } from '@/utils/formatting/currency';
 import EngineStrategyModal from './EngineStrategyModal';
 import StrategyCodeModal from './StrategyCodeModal';
 

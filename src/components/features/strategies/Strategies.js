@@ -24,7 +24,7 @@ import {
 } from 'lucide-react';
 import { strategiesApi } from '@/services/api/strategies';
 import { useWebSocket } from '@/hooks/useWebSocket';
-import { formatCurrency } from '@/utils/currency';
+import { formatCurrency } from '@/utils/formatting/currency';
 
 const StatCard = ({ title, value, subtext, trend, isLoading }) => (
   <Box
