@@ -220,7 +220,7 @@ const ActivateStrategyModal = ({ isOpen, onClose, onSubmit, strategy = null, mar
             }
             
             // Set initial strategy code if available for engine strategies
-            if (detectedType === 'engine' && strategyCodes.length > 0) {
+            if (detectedType === 'engine' && strategyCodes && strategyCodes.length > 0) {
               const initialCodeId = strategyCodes.find(code => code.is_active)?.id || strategyCodes[0]?.id;
               if (initialCodeId) {
                 newData.singleAccount = { ...prev.singleAccount, strategyCodeId: initialCodeId.toString() };
@@ -318,7 +318,7 @@ const ActivateStrategyModal = ({ isOpen, onClose, onSubmit, strategy = null, mar
 
       fetchData();
     }
-  }, [isOpen, strategy, marketplaceStrategy, strategyCodes, toast]);
+  }, [isOpen, strategy, marketplaceStrategy, toast]); // Removed strategyCodes from deps to prevent infinite loop
 
   // Helper functions for multiple account management
   const handleAddFollower = () => {
@@ -712,14 +712,14 @@ const ActivateStrategyModal = ({ isOpen, onClose, onSubmit, strategy = null, mar
                   }))}
                   placeholder="Select Strategy Code"
                 >
-                  {strategyCodes.filter(code => code.is_active).map(code => (
+                  {(strategyCodes || []).filter(code => code.is_active).map(code => (
                     <option key={code.id} value={code.id}>
                       {code.name} {code.is_validated ? '✓' : ''}
                     </option>
                   ))}
                 </Select>
                 {(() => {
-                  const selectedCode = strategyCodes.find(code => 
+                  const selectedCode = (strategyCodes || []).find(code => 
                     code.id === parseInt(
                       formData.selectedType === 'single' 
                         ? formData.singleAccount.strategyCodeId 
