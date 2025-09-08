@@ -106,7 +106,7 @@ class MarketplaceApi {
         if (filters.creatorTier) params.append('creator_tier', filters.creatorTier);
 
         return this.errorHandler(() => 
-            axiosInstance.get(`${this.baseUrl}/strategies?${params.toString()}`)
+            axiosInstance.get(`${this.baseUrl}/strategies/available?${params.toString()}`)
         );
     }
 

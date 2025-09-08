@@ -105,7 +105,7 @@ const MarketplacePage = () => {
     try {
       setIsLoading(true);
       const [sharedResponse, subscribedResponse, purchasedResponse] = await Promise.all([
-        webhookApi.listSharedStrategies(),
+        marketplaceApi.getMarketplaceStrategies(),
         webhookApi.getSubscribedStrategies(),
         marketplaceApi.getUserPurchases().catch((error) => {
           console.error('[MarketplacePage] getUserPurchases failed:', error);
@@ -132,6 +132,8 @@ const MarketplacePage = () => {
       const purchasedSet = new Set(purchasedResponse?.purchases?.map(p => p.webhook_token) || []);
       
       // Debug logging
+      console.log('[MarketplacePage] Marketplace strategies response:', sharedResponse);
+      console.log('[MarketplacePage] Marketplace strategies count:', sharedResponse.strategies?.length || 0);
       console.log('[MarketplacePage] Subscribed strategies:', subscribedResponse.length);
       console.log('[MarketplacePage] Purchased strategies:', purchasedResponse?.purchases?.length || 0);
       console.log('[MarketplacePage] Purchased tokens:', Array.from(purchasedSet));
@@ -143,7 +145,7 @@ const MarketplacePage = () => {
       console.log('[MarketplacePage] Total accessible strategies:', allAccessSet.size);
       console.log('[MarketplacePage] Accessible tokens:', Array.from(allAccessSet));
       
-      const groupedStrategies = sharedResponse.reduce((acc, strategy) => {
+      const groupedStrategies = sharedResponse.strategies.reduce((acc, strategy) => {
         // Convert database UPPERCASE enums to lowercase to match frontend categories
         const type = strategy.strategy_type ? strategy.strategy_type.toLowerCase() : 'uncategorized';
         if (!acc[type]) {
