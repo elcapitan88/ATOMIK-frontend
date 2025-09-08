@@ -146,31 +146,8 @@ const MarketplacePage = () => {
       console.log('[MarketplacePage] Accessible tokens:', Array.from(allAccessSet));
       
       const groupedStrategies = sharedResponse.strategies.reduce((acc, strategy) => {
-        // Map backend categories to frontend category IDs
-        let type = 'uncategorized';
-        
-        if (strategy.category) {
-          const categoryLower = strategy.category.toLowerCase();
-          
-          // Map backend categories to frontend category IDs
-          if (categoryLower.includes('breakout')) {
-            type = 'breakout';
-          } else if (categoryLower.includes('momentum')) {
-            type = 'momentum';
-          } else if (categoryLower.includes('mean') || categoryLower.includes('reversion')) {
-            type = 'mean_reversion';
-          } else if (categoryLower.includes('scalp')) {
-            type = 'scalping';
-          } else if (categoryLower.includes('arbitrage')) {
-            type = 'arbitrage';
-          } else if (categoryLower === 'tradingview webhook' || categoryLower === 'strategy engine') {
-            // These aren't real categories - they're strategy types
-            // Put them in uncategorized for now
-            type = 'uncategorized';
-          } else {
-            type = 'uncategorized';
-          }
-        }
+        // Convert category to match frontend category IDs (like production)
+        const type = strategy.category ? strategy.category.toLowerCase() : 'uncategorized';
         if (!acc[type]) {
           acc[type] = [];
         }
