@@ -57,17 +57,30 @@ const StrategyCard = ({ strategy, onSubscriptionChange }) => {
     try {
       setIsLoading(true);
       if (subscribed) {
-        await webhookApi.unsubscribeFromStrategy(token);
-        toast({
-          title: "Unsubscribed",
-          description: "You have unsubscribed from this strategy",
-          status: "info",
-          duration: 3000,
-          isClosable: true,
-        });
-        setSubscribed(false);
-        if (onSubscriptionChange) {
-          onSubscriptionChange(token, false);
+        if (strategyType === 'engine') {
+          // Engine strategies need different handling
+          toast({
+            title: "Strategy Engine",
+            description: "To deactivate this strategy, please go to your Strategy Dashboard.",
+            status: "info",
+            duration: 5000,
+            isClosable: true,
+          });
+          return;
+        } else {
+          // For webhook strategies, use the unsubscribe API
+          await webhookApi.unsubscribeFromStrategy(token);
+          toast({
+            title: "Unsubscribed",
+            description: "You have unsubscribed from this strategy",
+            status: "info",
+            duration: 3000,
+            isClosable: true,
+          });
+          setSubscribed(false);
+          if (onSubscriptionChange) {
+            onSubscriptionChange(token, false);
+          }
         }
       } else {
         // Check if strategy is monetized - if so, go directly to purchase flow
@@ -76,15 +89,29 @@ const StrategyCard = ({ strategy, onSubscriptionChange }) => {
           return;
         }
         
-        // For free strategies, use the old subscription API
-        await webhookApi.subscribeToStrategy(token);
-        toast({
-          title: "Subscribed!",
-          description: "You are now subscribed to this strategy",
-          status: "success",
-          duration: 3000,
-          isClosable: true,
-        });
+        // For free strategies, handle based on strategy type
+        if (strategyType === 'engine') {
+          // Engine strategies need different handling - for now show informational message
+          toast({
+            title: "Strategy Engine",
+            description: "To activate this strategy, please go to your Strategy Dashboard and configure your settings.",
+            status: "info",
+            duration: 5000,
+            isClosable: true,
+          });
+          // Don't set subscribed for engine strategies as they use activation, not subscription
+          return;
+        } else {
+          // For webhook strategies, use the subscription API
+          await webhookApi.subscribeToStrategy(token);
+          toast({
+            title: "Subscribed!",
+            description: "You are now subscribed to this strategy",
+            status: "success",
+            duration: 3000,
+            isClosable: true,
+          });
+        }
         setSubscribed(true);
         if (onSubscriptionChange) {
           onSubscriptionChange(token, true);
