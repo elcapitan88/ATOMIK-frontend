@@ -146,14 +146,30 @@ const MarketplacePage = () => {
       console.log('[MarketplacePage] Accessible tokens:', Array.from(allAccessSet));
       
       const groupedStrategies = sharedResponse.strategies.reduce((acc, strategy) => {
-        // Group by category and normalize to match frontend category IDs
+        // Map backend categories to frontend category IDs
         let type = 'uncategorized';
+        
         if (strategy.category) {
-          // Normalize category names to match frontend category IDs
-          type = strategy.category.toLowerCase()
-            .replace(/\s+/g, '_')                    // Replace spaces with underscores
-            .replace('tradingview_webhook', 'webhook') // Map TradingView Webhook to webhook
-            .replace('strategy_engine', 'engine');      // Map Strategy Engine to engine
+          const categoryLower = strategy.category.toLowerCase();
+          
+          // Map backend categories to frontend category IDs
+          if (categoryLower.includes('breakout')) {
+            type = 'breakout';
+          } else if (categoryLower.includes('momentum')) {
+            type = 'momentum';
+          } else if (categoryLower.includes('mean') || categoryLower.includes('reversion')) {
+            type = 'mean_reversion';
+          } else if (categoryLower.includes('scalp')) {
+            type = 'scalping';
+          } else if (categoryLower.includes('arbitrage')) {
+            type = 'arbitrage';
+          } else if (categoryLower === 'tradingview webhook' || categoryLower === 'strategy engine') {
+            // These aren't real categories - they're strategy types
+            // Put them in uncategorized for now
+            type = 'uncategorized';
+          } else {
+            type = 'uncategorized';
+          }
         }
         if (!acc[type]) {
           acc[type] = [];
@@ -162,18 +178,14 @@ const MarketplacePage = () => {
         // Check if user has access - use API's user_has_access field or check by source_id
         const hasAccess = strategy.user_has_access || allAccessSet.has(strategy.source_id);
         
-        // Debug logging for specific strategy
-        if (strategy.source_id === 'OGgxOp0wOd60YGb4kc4CEh8oSz2ZCscKVVZtfwbCbHg') {
-          console.log('[MarketplacePage] Processing Break N Enter strategy:', {
-            source_id: strategy.source_id,
-            name: strategy.name,
-            category: strategy.category,
-            normalized_type: type,
-            isInPurchasedSet: purchasedSet.has(strategy.source_id),
-            isInAllAccessSet: hasAccess,
-            user_has_access: strategy.user_has_access
-          });
-        }
+        // Debug logging for each strategy
+        console.log(`[MarketplacePage] Processing ${strategy.name}:`, {
+          source_id: strategy.source_id,
+          original_category: strategy.category,
+          mapped_to: type,
+          pricing_type: strategy.pricing_type,
+          user_has_access: strategy.user_has_access
+        });
         
         acc[type].push({
           ...strategy,
