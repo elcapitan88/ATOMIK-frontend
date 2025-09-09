@@ -47,10 +47,20 @@ const ActivateStrategies = () => {
     isDeleting
   } = useStrategies();
 
+  // Chakra UI hooks
+  const toast = useToast();
+
   // Local state for UI
   const [selectedStrategy, setSelectedStrategy] = useState(null);
   const [strategyCodes, setStrategyCodes] = useState([]);
   
+  const sortOptions = [
+    { label: 'Strategy Name', value: 'name' },
+    { label: 'Type', value: 'type' },
+    { label: 'Status', value: 'status' },
+    { label: 'Ticker', value: 'ticker' }
+  ];
+
   // Fetch strategy codes for the activate modal
   useEffect(() => {
     const fetchStrategyCodes = async () => {
@@ -72,17 +82,6 @@ const ActivateStrategies = () => {
     
     fetchStrategyCodes();
   }, [toast]);
-
-  const sortOptions = [
-    { label: 'Strategy Name', value: 'name' },
-    { label: 'Type', value: 'type' },
-    { label: 'Status', value: 'status' },
-    { label: 'Ticker', value: 'ticker' }
-  ];
-
-  
-  // Chakra UI hooks
-  const toast = useToast();
   const [sortBy, setSortBy] = useState(null);
 
   const sortedStrategies = useMemo(() => {
