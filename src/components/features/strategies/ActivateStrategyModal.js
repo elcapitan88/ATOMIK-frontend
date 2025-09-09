@@ -121,11 +121,9 @@ const ActivateStrategyModal = ({ isOpen, onClose, onSubmit, strategy = null, mar
   const validateSingleAccount = () => {
     const { accountId, ticker, webhookId, strategyCodeId } = formData.singleAccount;
     
-    if (formData.strategyType === 'webhook') {
-      return Boolean(accountId && ticker && webhookId);
-    } else {
-      return Boolean(accountId && ticker && strategyCodeId);
-    }
+    // Check if we have either a webhook or strategy code selected
+    const hasStrategy = Boolean(webhookId || strategyCodeId);
+    return Boolean(accountId && ticker && hasStrategy);
   };
 
   const validateMultipleAccount = () => {
@@ -148,11 +146,9 @@ const ActivateStrategyModal = ({ isOpen, onClose, onSubmit, strategy = null, mar
       )
     );
 
-    if (formData.strategyType === 'webhook') {
-      return baseValidation && Boolean(webhookId);
-    } else {
-      return baseValidation && Boolean(strategyCodeId);
-    }
+    // Check if we have either a webhook or strategy code selected
+    const hasStrategy = Boolean(webhookId || strategyCodeId);
+    return baseValidation && hasStrategy;
   };
 
   const isFormValid = () => {
@@ -695,47 +691,71 @@ const ActivateStrategyModal = ({ isOpen, onClose, onSubmit, strategy = null, mar
    
             <Divider borderColor="whiteAlpha.300" />
 
-            {/* Strategy Code Selection - Only for Engine Strategies */}
-            {formData.strategyType === 'engine' && (
-              <StrategyFormInput label="Strategy Code">
-                <Select
-                  {...selectStyles}
-                  value={formData.selectedType === 'single' 
-                    ? formData.singleAccount.strategyCodeId 
-                    : formData.multipleAccount.strategyCodeId}
-                  onChange={(e) => setFormData(prev => ({
+            {/* Strategy Selection - Show ALL available strategies */}
+            <StrategyFormInput label="Strategy">
+              <Select
+                {...selectStyles}
+                value={formData.selectedType === 'single' 
+                  ? (formData.singleAccount.strategyCodeId || formData.singleAccount.webhookId)
+                  : (formData.multipleAccount.strategyCodeId || formData.multipleAccount.webhookId)}
+                onChange={(e) => {
+                  const selectedValue = e.target.value;
+                  // Auto-detect if this is an engine strategy (numeric) or webhook (string)
+                  const isEngineStrategy = !isNaN(selectedValue);
+                  
+                  setFormData(prev => ({
                     ...prev,
+                    strategyType: isEngineStrategy ? 'engine' : 'webhook',
                     singleAccount: {
                       ...prev.singleAccount,
-                      strategyCodeId: e.target.value
+                      strategyCodeId: isEngineStrategy ? selectedValue : '',
+                      webhookId: isEngineStrategy ? '' : selectedValue
                     },
                     multipleAccount: {
                       ...prev.multipleAccount,
-                      strategyCodeId: e.target.value
+                      strategyCodeId: isEngineStrategy ? selectedValue : '',
+                      webhookId: isEngineStrategy ? '' : selectedValue
                     }
-                  }))}
-                  placeholder="Select Strategy Code"
-                >
-                  {(strategyCodes || []).filter(code => code.is_active).map(code => {
-                    // Format the strategy name for display
-                    let displayName = code.name;
-                    if (code.name === 'stddev_breakout') {
-                      displayName = 'Standard Deviation Breakout';
-                    } else if (code.name === 'momentum_scalper') {
-                      displayName = 'Momentum Scalper';
-                    } else if (code.name === 'mean_reversion') {
-                      displayName = 'Mean Reversion';
-                    } else {
-                      displayName = code.name.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-                    }
-                    
-                    return (
-                      <option key={code.id} value={code.id}>
-                        {displayName} {code.is_validated ? '✓' : ''}
+                  }));
+                }}
+                placeholder="Select Strategy"
+              >
+                {/* Engine Strategies */}
+                {(strategyCodes || []).filter(code => code.is_active).length > 0 && (
+                  <optgroup label="Engine Strategies">
+                    {(strategyCodes || []).filter(code => code.is_active).map(code => {
+                      // Format the strategy name for display
+                      let displayName = code.name;
+                      if (code.name === 'stddev_breakout') {
+                        displayName = 'Standard Deviation Breakout';
+                      } else if (code.name === 'momentum_scalper') {
+                        displayName = 'Momentum Scalper';
+                      } else if (code.name === 'mean_reversion') {
+                        displayName = 'Mean Reversion';
+                      } else {
+                        displayName = code.name.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                      }
+                      
+                      return (
+                        <option key={`engine_${code.id}`} value={code.id}>
+                          {displayName} {code.is_validated ? '✓' : ''} (Engine)
+                        </option>
+                      );
+                    })}
+                  </optgroup>
+                )}
+
+                {/* Webhook Strategies */}
+                {(webhooks || []).length > 0 && (
+                  <optgroup label="Webhook Strategies">
+                    {(webhooks || []).map(webhook => (
+                      <option key={`webhook_${webhook.token}`} value={webhook.token}>
+                        {webhook.name} (Webhook)
                       </option>
-                    );
-                  })}
-                </Select>
+                    ))}
+                  </optgroup>
+                )}
+              </Select>
                 {(() => {
                   const selectedCode = (strategyCodes || []).find(code => 
                     code.id === parseInt(
@@ -960,33 +980,6 @@ const ActivateStrategyModal = ({ isOpen, onClose, onSubmit, strategy = null, mar
               </VStack>
             )}
    
-            {/* Webhook Selection - Only for Webhook Strategies */}
-            {formData.strategyType === 'webhook' && (
-              <Select
-                {...selectStyles}
-                value={formData.selectedType === 'single' 
-                  ? formData.singleAccount.webhookId 
-                  : formData.multipleAccount.webhookId}
-                onChange={(e) => setFormData(prev => ({
-                  ...prev,
-                  singleAccount: {
-                    ...prev.singleAccount,
-                    webhookId: e.target.value
-                  },
-                  multipleAccount: {
-                    ...prev.multipleAccount,
-                    webhookId: e.target.value
-                  }
-                }))}
-                placeholder="Select Webhook"
-              >
-                {webhooks.map(webhook => (
-                  <option key={webhook.token} value={webhook.token}>
-                    {webhook.name || webhook.token}
-                  </option>
-                ))}
-              </Select>
-            )}
 
             {/* Engine Strategy Risk Management Fields */}
             {formData.strategyType === 'engine' && (
