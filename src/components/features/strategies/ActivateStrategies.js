@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   Box,
   Flex,
@@ -23,6 +23,7 @@ import { MoreVertical, Settings, Trash2, SlidersHorizontal } from 'lucide-react'
 import ActivateStrategyModal from './ActivateStrategyModal';
 import DeleteStrategy from './DeleteStrategy';
 import { useStrategies } from '@/hooks/useStrategies';
+import { strategyCodesApi } from '@/services/api/strategies/strategyCodesApi';
 
 // Helper function to get broker display info
 const getBrokerInfo = (brokerId) => {
@@ -48,7 +49,21 @@ const ActivateStrategies = () => {
 
   // Local state for UI
   const [selectedStrategy, setSelectedStrategy] = useState(null);
+  const [strategyCodes, setStrategyCodes] = useState([]);
   
+  // Fetch strategy codes for the activate modal
+  useEffect(() => {
+    const fetchStrategyCodes = async () => {
+      try {
+        const codes = await strategyCodesApi.listStrategyCodes();
+        setStrategyCodes(codes);
+      } catch (error) {
+        console.error('Error fetching strategy codes:', error);
+      }
+    };
+    
+    fetchStrategyCodes();
+  }, []);
 
   const sortOptions = [
     { label: 'Strategy Name', value: 'name' },
@@ -463,6 +478,7 @@ const ActivateStrategies = () => {
         }}
         onSubmit={handleActivateStrategy}
         strategy={selectedStrategy}
+        strategyCodes={strategyCodes}
       />
       
       <DeleteStrategy
