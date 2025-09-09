@@ -78,6 +78,11 @@ const StrategyFormInput = ({ label, children, mb = 2, flex }) => (
 );
 
 const ActivateStrategyModal = ({ isOpen, onClose, onSubmit, strategy = null, marketplaceStrategy = null, strategyCodes = [] }) => {
+  // Utility function to determine if a strategy selection is an engine strategy
+  const isEngineStrategy = (selectedValue) => {
+    return selectedValue && !isNaN(selectedValue);
+  };
+
   // Debug logging
   React.useEffect(() => {
     if (isOpen) {
@@ -87,9 +92,8 @@ const ActivateStrategyModal = ({ isOpen, onClose, onSubmit, strategy = null, mar
     }
   }, [isOpen, strategyCodes]);
 
-  // State management with separate validation states
+  // State management
   const [formData, setFormData] = useState({
-    strategyType: 'webhook', // NEW: 'webhook' | 'engine'
     selectedType: 'single',
     singleAccount: {
       accountId: '',
@@ -109,11 +113,7 @@ const ActivateStrategyModal = ({ isOpen, onClose, onSubmit, strategy = null, mar
     },
     // Engine strategy specific fields
     description: '',
-    isActive: true,
-    stopLossPercent: '',
-    takeProfitPercent: '',
-    maxDailyLoss: '',
-    maxPositionSize: ''
+    isActive: true
   });
   
   const [accounts, setAccounts] = useState([]);
@@ -166,17 +166,6 @@ const ActivateStrategyModal = ({ isOpen, onClose, onSubmit, strategy = null, mar
       : validateMultipleAccount();
   };
 
-  // Strategy type detection from marketplace data
-  const detectStrategyType = () => {
-    if (marketplaceStrategy) {
-      return marketplaceStrategy.strategy_type || 'webhook';
-    }
-    if (strategy) {
-      // Check if existing strategy has webhook_id or strategy_code_id
-      return strategy.webhook_id ? 'webhook' : 'engine';
-    }
-    return 'webhook'; // default
-  };
 
   // Data fetching effect
   useEffect(() => {
@@ -276,11 +265,7 @@ const ActivateStrategyModal = ({ isOpen, onClose, onSubmit, strategy = null, mar
                   },
                   // Engine specific fields
                   description: strategy.description || '',
-                  isActive: strategy.is_active !== undefined ? strategy.is_active : true,
-                  stopLossPercent: strategy.stop_loss_percent || '',
-                  takeProfitPercent: strategy.take_profit_percent || '',
-                  maxDailyLoss: strategy.max_daily_loss || '',
-                  maxPositionSize: strategy.max_position_size || ''
+                  isActive: strategy.is_active !== undefined ? strategy.is_active : true
                 };
               } else {
                 const followerAccountsData = strategy.follower_account_ids?.map((accountId, index) => ({
@@ -304,11 +289,7 @@ const ActivateStrategyModal = ({ isOpen, onClose, onSubmit, strategy = null, mar
                   },
                   // Engine specific fields
                   description: strategy.description || '',
-                  isActive: strategy.is_active !== undefined ? strategy.is_active : true,
-                  stopLossPercent: strategy.stop_loss_percent || '',
-                  takeProfitPercent: strategy.take_profit_percent || '',
-                  maxDailyLoss: strategy.max_daily_loss || '',
-                  maxPositionSize: strategy.max_position_size || ''
+                  isActive: strategy.is_active !== undefined ? strategy.is_active : true
                 };
               }
             });
@@ -448,13 +429,12 @@ const ActivateStrategyModal = ({ isOpen, onClose, onSubmit, strategy = null, mar
       (strategy.strategy_type === 'multiple' && currentData.group_name !== strategy.group_name);
       
     // Check engine-specific field changes
-    const engineFieldsChanged = formData.strategyType === 'engine' && (
+    const currentValue = formData.selectedType === 'single' 
+      ? (formData.singleAccount.strategyCodeId || formData.singleAccount.webhookId)
+      : (formData.multipleAccount.strategyCodeId || formData.multipleAccount.webhookId);
+    const engineFieldsChanged = isEngineStrategy(currentValue) && (
       formData.description !== (strategy.description || '') ||
-      formData.isActive !== strategy.is_active ||
-      formData.stopLossPercent !== (strategy.stop_loss_percent || '') ||
-      formData.takeProfitPercent !== (strategy.take_profit_percent || '') ||
-      formData.maxDailyLoss !== (strategy.max_daily_loss || '') ||
-      formData.maxPositionSize !== (strategy.max_position_size || '')
+      formData.isActive !== strategy.is_active
     );
 
     return (quantitiesChanged || engineFieldsChanged) ? 'update' : 'nochange';
@@ -502,25 +482,17 @@ const ActivateStrategyModal = ({ isOpen, onClose, onSubmit, strategy = null, mar
       ticker: formData.selectedType === 'single' ? formData.singleAccount.ticker : formData.multipleAccount.ticker
     };
 
-    // Add type-specific identification field
-    if (formData.strategyType === 'webhook') {
-      baseData.webhook_id = formData.selectedType === 'single' 
-        ? formData.singleAccount.webhookId 
-        : formData.multipleAccount.webhookId;
-    } else {
-      baseData.strategy_code_id = parseInt(
-        formData.selectedType === 'single' 
-          ? formData.singleAccount.strategyCodeId 
-          : formData.multipleAccount.strategyCodeId
-      );
-      
-      // Add engine-specific fields
+    // Determine strategy type and add appropriate fields
+    const selectedValue = formData.selectedType === 'single' 
+      ? (formData.singleAccount.strategyCodeId || formData.singleAccount.webhookId)
+      : (formData.multipleAccount.strategyCodeId || formData.multipleAccount.webhookId);
+    
+    if (isEngineStrategy(selectedValue)) {
+      baseData.strategy_code_id = parseInt(selectedValue);
       baseData.description = formData.description;
       baseData.is_active = formData.isActive;
-      if (formData.stopLossPercent) baseData.stop_loss_percent = parseFloat(formData.stopLossPercent);
-      if (formData.takeProfitPercent) baseData.take_profit_percent = parseFloat(formData.takeProfitPercent);
-      if (formData.maxDailyLoss) baseData.max_daily_loss = parseFloat(formData.maxDailyLoss);
-      if (formData.maxPositionSize) baseData.max_position_size = parseInt(formData.maxPositionSize);
+    } else {
+      baseData.webhook_id = selectedValue;
     }
 
     if (formData.selectedType === 'single') {
@@ -568,14 +540,14 @@ const ActivateStrategyModal = ({ isOpen, onClose, onSubmit, strategy = null, mar
           }
         }
         
-        // Add engine-specific update fields
-        if (formData.strategyType === 'engine') {
+        // Add engine-specific update fields if it's an engine strategy
+        const selectedValue = formData.selectedType === 'single' 
+          ? (formData.singleAccount.strategyCodeId || formData.singleAccount.webhookId)
+          : (formData.multipleAccount.strategyCodeId || formData.multipleAccount.webhookId);
+        
+        if (isEngineStrategy(selectedValue)) {
           updateData.description = formData.description;
           updateData.is_active = formData.isActive;
-          if (formData.stopLossPercent) updateData.stop_loss_percent = parseFloat(formData.stopLossPercent);
-          if (formData.takeProfitPercent) updateData.take_profit_percent = parseFloat(formData.takeProfitPercent);
-          if (formData.maxDailyLoss) updateData.max_daily_loss = parseFloat(formData.maxDailyLoss);
-          if (formData.maxPositionSize) updateData.max_position_size = parseInt(formData.maxPositionSize);
         } else {
           updateData.is_active = true;
         }
@@ -583,7 +555,6 @@ const ActivateStrategyModal = ({ isOpen, onClose, onSubmit, strategy = null, mar
         await updateStrategy({ 
           strategyId: strategy.id, 
           updateData,
-          strategyType: formData.strategyType
         });
         
       } else if (changeType === 'recreate') {
@@ -639,14 +610,6 @@ const ActivateStrategyModal = ({ isOpen, onClose, onSubmit, strategy = null, mar
             <Text fontSize="lg" fontWeight="bold">
               {strategy ? 'Update Strategy' : 'Activate Strategy'}
             </Text>
-            {(marketplaceStrategy || formData.strategyType === 'engine') && (
-              <Badge 
-                colorScheme={formData.strategyType === 'webhook' ? 'green' : 'purple'}
-                size="sm"
-              >
-                {formData.strategyType === 'webhook' ? 'Webhook Strategy' : 'Engine Strategy'}
-              </Badge>
-            )}
             {marketplaceStrategy && (
               <Text fontSize="sm" color="whiteAlpha.700">
                 {marketplaceStrategy.name}
@@ -709,12 +672,10 @@ const ActivateStrategyModal = ({ isOpen, onClose, onSubmit, strategy = null, mar
                   : (formData.multipleAccount.strategyCodeId || formData.multipleAccount.webhookId)}
                 onChange={(e) => {
                   const selectedValue = e.target.value;
-                  // Auto-detect if this is an engine strategy (numeric) or webhook (string)
                   const isEngineStrategy = !isNaN(selectedValue);
                   
                   setFormData(prev => ({
                     ...prev,
-                    strategyType: isEngineStrategy ? 'engine' : 'webhook',
                     singleAccount: {
                       ...prev.singleAccount,
                       strategyCodeId: isEngineStrategy ? selectedValue : '',
@@ -990,90 +951,6 @@ const ActivateStrategyModal = ({ isOpen, onClose, onSubmit, strategy = null, mar
             )}
    
 
-            {/* Engine Strategy Risk Management Fields */}
-            {formData.strategyType === 'engine' && (
-              <VStack spacing={4} align="stretch">
-                <Text fontSize="md" fontWeight="semibold" color="orange.300">
-                  Risk Management (Optional)
-                </Text>
-                
-                <HStack spacing={4}>
-                  <StrategyFormInput label="Stop Loss %" flex={1}>
-                    <Input
-                      {...glassEffect}
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      max="100"
-                      value={formData.stopLossPercent}
-                      onChange={(e) => setFormData(prev => ({
-                        ...prev,
-                        stopLossPercent: e.target.value
-                      }))}
-                      placeholder="0.00"
-                    />
-                  </StrategyFormInput>
-                  
-                  <StrategyFormInput label="Take Profit %" flex={1}>
-                    <Input
-                      {...glassEffect}
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      value={formData.takeProfitPercent}
-                      onChange={(e) => setFormData(prev => ({
-                        ...prev,
-                        takeProfitPercent: e.target.value
-                      }))}
-                      placeholder="0.00"
-                    />
-                  </StrategyFormInput>
-                </HStack>
-                
-                <HStack spacing={4}>
-                  <StrategyFormInput label="Max Daily Loss" flex={1}>
-                    <Input
-                      {...glassEffect}
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      value={formData.maxDailyLoss}
-                      onChange={(e) => setFormData(prev => ({
-                        ...prev,
-                        maxDailyLoss: e.target.value
-                      }))}
-                      placeholder="0.00"
-                    />
-                  </StrategyFormInput>
-                  
-                  <StrategyFormInput label="Max Position Size" flex={1}>
-                    <Input
-                      {...glassEffect}
-                      type="number"
-                      min="1"
-                      value={formData.maxPositionSize}
-                      onChange={(e) => setFormData(prev => ({
-                        ...prev,
-                        maxPositionSize: e.target.value
-                      }))}
-                      placeholder="0"
-                    />
-                  </StrategyFormInput>
-                </HStack>
-                
-                <StrategyFormInput label="Description (Optional)">
-                  <Input
-                    {...glassEffect}
-                    value={formData.description}
-                    onChange={(e) => setFormData(prev => ({
-                      ...prev,
-                      description: e.target.value
-                    }))}
-                    placeholder="Strategy description..."
-                  />
-                </StrategyFormInput>
-              </VStack>
-            )}
    
             <Button
               width="full"
