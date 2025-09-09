@@ -56,14 +56,22 @@ const ActivateStrategies = () => {
     const fetchStrategyCodes = async () => {
       try {
         const codes = await strategyCodesApi.listStrategyCodes();
+        console.log('Fetched strategy codes:', codes); // Debug log
         setStrategyCodes(codes);
       } catch (error) {
         console.error('Error fetching strategy codes:', error);
+        toast({
+          title: "Error loading strategy codes",
+          description: error.message || "Failed to load available strategies",
+          status: "error",
+          duration: 5000,
+          isClosable: true,
+        });
       }
     };
     
     fetchStrategyCodes();
-  }, []);
+  }, [toast]);
 
   const sortOptions = [
     { label: 'Strategy Name', value: 'name' },

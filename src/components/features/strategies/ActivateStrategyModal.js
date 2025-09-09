@@ -78,6 +78,15 @@ const StrategyFormInput = ({ label, children, mb = 2, flex }) => (
 );
 
 const ActivateStrategyModal = ({ isOpen, onClose, onSubmit, strategy = null, marketplaceStrategy = null, strategyCodes = [] }) => {
+  // Debug logging
+  React.useEffect(() => {
+    if (isOpen) {
+      console.log('ActivateStrategyModal opened with strategyCodes:', strategyCodes);
+      console.log('Active strategies:', strategyCodes?.filter(code => code.is_active));
+      console.log('Active & validated strategies:', strategyCodes?.filter(code => code.is_active && code.is_validated));
+    }
+  }, [isOpen, strategyCodes]);
+
   // State management with separate validation states
   const [formData, setFormData] = useState({
     strategyType: 'webhook', // NEW: 'webhook' | 'engine'
