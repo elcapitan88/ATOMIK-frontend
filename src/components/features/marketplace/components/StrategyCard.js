@@ -12,6 +12,7 @@ import {
 } from '@chakra-ui/react';
 import { Users, Lock, Unlock, CheckCircle2 } from 'lucide-react';
 import { webhookApi } from '@/services/api/Webhooks/webhookApi';
+import { engineStrategiesApi } from '@/services/api/strategies/engineStrategiesApi';
 import StarRating from '../StarRating';
 import StrategyPurchaseModal from './StrategyPurchaseModal';
 
@@ -58,15 +59,20 @@ const StrategyCard = ({ strategy, onSubscriptionChange }) => {
       setIsLoading(true);
       if (subscribed) {
         if (strategyType === 'engine') {
-          // Engine strategies need different handling
+          // For engine strategies, use the engine API to unsubscribe
+          const strategyId = strategy.source_id || strategy.id;
+          await engineStrategiesApi.unsubscribeFromStrategy(strategyId);
           toast({
-            title: "Strategy Engine",
-            description: "To deactivate this strategy, please go to your Strategy Dashboard.",
+            title: "Unsubscribed",
+            description: "You have unsubscribed from this strategy",
             status: "info",
-            duration: 5000,
+            duration: 3000,
             isClosable: true,
           });
-          return;
+          setSubscribed(false);
+          if (onSubscriptionChange) {
+            onSubscriptionChange(token, false);
+          }
         } else {
           // For webhook strategies, use the unsubscribe API
           await webhookApi.unsubscribeFromStrategy(token);
@@ -91,16 +97,16 @@ const StrategyCard = ({ strategy, onSubscriptionChange }) => {
         
         // For free strategies, handle based on strategy type
         if (strategyType === 'engine') {
-          // Engine strategies need different handling - for now show informational message
+          // For engine strategies, use the engine API to subscribe
+          const strategyId = strategy.source_id || strategy.id;
+          await engineStrategiesApi.subscribeToStrategy(strategyId);
           toast({
-            title: "Strategy Engine",
-            description: "To activate this strategy, please go to your Strategy Dashboard and configure your settings.",
-            status: "info",
+            title: "Subscribed!",
+            description: "You are now subscribed to this strategy. You can activate it in your Strategy Dashboard.",
+            status: "success",
             duration: 5000,
             isClosable: true,
           });
-          // Don't set subscribed for engine strategies as they use activation, not subscription
-          return;
         } else {
           // For webhook strategies, use the subscription API
           await webhookApi.subscribeToStrategy(token);
