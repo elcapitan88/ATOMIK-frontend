@@ -5,7 +5,7 @@ import { handleApiError } from '@/utils/helpers/errorHandler';
 
 class StrategyCodesApi {
   constructor() {
-    this.baseUrl = '/api/v1/strategy-codes';
+    this.baseUrl = '/api/v1/strategies';
     this.retryAttempts = 3;
     this.retryDelay = 1000;
   }
