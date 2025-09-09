@@ -47,7 +47,7 @@ class StrategyCodesApi {
   async listStrategyCodes() {
     try {
       const response = await this.withRetry(() =>
-        axiosInstance.get(this.baseUrl)
+        axiosInstance.get(`${this.baseUrl}/my-strategies`)
       );
       return response.data;
     } catch (error) {

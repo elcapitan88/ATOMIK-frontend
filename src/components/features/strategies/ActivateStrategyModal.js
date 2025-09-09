@@ -716,11 +716,25 @@ const ActivateStrategyModal = ({ isOpen, onClose, onSubmit, strategy = null, mar
                   }))}
                   placeholder="Select Strategy Code"
                 >
-                  {(strategyCodes || []).filter(code => code.is_active).map(code => (
-                    <option key={code.id} value={code.id}>
-                      {code.name} {code.is_validated ? '✓' : ''}
-                    </option>
-                  ))}
+                  {(strategyCodes || []).filter(code => code.is_active).map(code => {
+                    // Format the strategy name for display
+                    let displayName = code.name;
+                    if (code.name === 'stddev_breakout') {
+                      displayName = 'Standard Deviation Breakout';
+                    } else if (code.name === 'momentum_scalper') {
+                      displayName = 'Momentum Scalper';
+                    } else if (code.name === 'mean_reversion') {
+                      displayName = 'Mean Reversion';
+                    } else {
+                      displayName = code.name.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                    }
+                    
+                    return (
+                      <option key={code.id} value={code.id}>
+                        {displayName} {code.is_validated ? '✓' : ''}
+                      </option>
+                    );
+                  })}
                 </Select>
                 {(() => {
                   const selectedCode = (strategyCodes || []).find(code => 
