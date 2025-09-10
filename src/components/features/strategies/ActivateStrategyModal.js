@@ -175,85 +175,54 @@ const ActivateStrategyModal = ({ isOpen, onClose, onSubmit, strategy = null, mar
       setPendingChangeType(null);
       setErrors({});
       
-      // Detect and set strategy type
-      const detectedType = detectStrategyType();
-      
       const fetchData = async () => {
         try {
           console.log('Fetching accounts and webhooks...');
           const promises = [
-            axiosInstance.get('/api/v1/brokers/accounts')
+            axiosInstance.get('/api/v1/brokers/accounts'),
+            webhookApi.getAllAvailableWebhooks() // Always fetch webhooks for simplicity
           ];
-          
-          // Only fetch webhooks for webhook strategies
-          if (detectedType === 'webhook') {
-            promises.push(webhookApi.getAllAvailableWebhooks());
-          }
           
           const responses = await Promise.all(promises);
           const accountsData = responses[0]?.data || [];
-          const webhooksResponse = detectedType === 'webhook' ? (responses[1] || []) : [];
+          const webhooksResponse = responses[1] || [];
           
           // Filter for active accounts, but handle undefined/null cases
           // If is_active is not explicitly false, consider it active
           const activeAccounts = accountsData.filter(account => account.is_active !== false);
           console.log(`Accounts: Total=${accountsData.length}, Active=${activeAccounts.length}`, accountsData);
           setAccounts(activeAccounts);
-          if (detectedType === 'webhook') {
-            setWebhooks(webhooksResponse);
-          }
+          setWebhooks(webhooksResponse);
 
-          // Set initial form data based on strategy type and marketplace data
-          setFormData(prev => {
-            const newData = {
-              ...prev,
-              strategyType: detectedType
-            };
-            
-            // Set initial webhook if available for webhook strategies
-            if (detectedType === 'webhook' && webhooksResponse.length > 0) {
-              const initialWebhookId = webhooksResponse[0].token;
-              newData.singleAccount = { ...prev.singleAccount, webhookId: initialWebhookId };
-              newData.multipleAccount = { ...prev.multipleAccount, webhookId: initialWebhookId };
-            }
-            
-            // Set initial strategy code if available for engine strategies
-            if (detectedType === 'engine' && strategyCodes && strategyCodes.length > 0) {
-              const initialCodeId = strategyCodes.find(code => code.is_active)?.id || strategyCodes[0]?.id;
-              if (initialCodeId) {
-                newData.singleAccount = { ...prev.singleAccount, strategyCodeId: initialCodeId.toString() };
-                newData.multipleAccount = { ...prev.multipleAccount, strategyCodeId: initialCodeId.toString() };
-              }
-            }
-            
-            // Populate from marketplace strategy if available
-            if (marketplaceStrategy) {
+          // Set initial form data from marketplace strategy if available
+          if (marketplaceStrategy) {
+            setFormData(prev => {
+              const newData = { ...prev };
               const ticker = marketplaceStrategy.ticker || '';
-              newData.singleAccount = { ...newData.singleAccount, ticker };
-              newData.multipleAccount = { ...newData.multipleAccount, ticker };
+              newData.singleAccount = { ...prev.singleAccount, ticker };
+              newData.multipleAccount = { ...prev.multipleAccount, ticker };
               
-              if (detectedType === 'webhook' && marketplaceStrategy.source_id) {
-                newData.singleAccount.webhookId = marketplaceStrategy.source_id;
-                newData.multipleAccount.webhookId = marketplaceStrategy.source_id;
+              // Set strategy source based on marketplace strategy
+              if (marketplaceStrategy.source_id) {
+                if (isEngineStrategy(marketplaceStrategy.source_id)) {
+                  newData.singleAccount.strategyCodeId = marketplaceStrategy.source_id.toString();
+                  newData.multipleAccount.strategyCodeId = marketplaceStrategy.source_id.toString();
+                } else {
+                  newData.singleAccount.webhookId = marketplaceStrategy.source_id;
+                  newData.multipleAccount.webhookId = marketplaceStrategy.source_id;
+                }
               }
-              if (detectedType === 'engine' && marketplaceStrategy.source_id) {
-                newData.singleAccount.strategyCodeId = marketplaceStrategy.source_id.toString();
-                newData.multipleAccount.strategyCodeId = marketplaceStrategy.source_id.toString();
-              }
-            }
-            
-            return newData;
-          });
+              
+              return newData;
+            });
+          }
 
           // If editing existing strategy, populate form
           if (strategy) {
             setFormData(prev => {
-              const strategyType = strategy.webhook_id ? 'webhook' : 'engine';
-              
               if (strategy.strategy_type === 'single') {
                 return {
                   ...prev,
-                  strategyType,
                   selectedType: 'single',
                   singleAccount: {
                     ...prev.singleAccount,
@@ -275,7 +244,6 @@ const ActivateStrategyModal = ({ isOpen, onClose, onSubmit, strategy = null, mar
 
                 return {
                   ...prev,
-                  strategyType,
                   selectedType: 'multiple',
                   multipleAccount: {
                     ...prev.multipleAccount,
