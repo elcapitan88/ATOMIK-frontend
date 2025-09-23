@@ -142,7 +142,7 @@ const useFeatureFlags = () => {
       'UI Enhancements': ['new-dashboard', 'advanced-charts'],
       'Advanced Analytics': ['advanced-analytics', 'ai-insights'],
       'Trading Features': ['experimental-trading', 'strategy-builder'],
-      'App Features': ['ai-insights', 'mobile-app-preview', 'social-trading'],
+      'App Features': ['ai-insights', 'mobile-app-preview', 'social-trading', 'aria-assistant'],
       'Integrations': ['broker-integration-v2'],
       'Communication': ['member-chat']
     };
@@ -269,6 +269,7 @@ const useFeatureFlags = () => {
       return enabled;
     })(),
     hasAtomikTradingLab: isFeatureEnabled('atomik-trading-lab'),
+    hasAriaAssistant: isFeatureEnabled('aria-assistant'),
   };
 };
 

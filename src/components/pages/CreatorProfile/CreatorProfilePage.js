@@ -19,7 +19,6 @@ import { motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCreatorProfile } from './hooks/useCreatorProfile';
 import ProfileHeader from './components/ProfileHeader';
-import SocialLinks from './components/SocialLinks';
 import StrategyGrid from './components/StrategyGrid';
 import ProfileSkeleton from './components/ProfileSkeleton';
 
@@ -248,18 +247,6 @@ const CreatorProfilePage = () => {
           </MotionBox>
 
 
-          {/* Social Links */}
-          {profile?.social_media && Object.keys(profile.social_media).length > 0 && (
-            <MotionBox
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3, delay: 0.2 }}
-            >
-              <DarkCard p={6}>
-                <SocialLinks socialMedia={profile.social_media} />
-              </DarkCard>
-            </MotionBox>
-          )}
 
           {/* Strategies Section */}
           <MotionBox

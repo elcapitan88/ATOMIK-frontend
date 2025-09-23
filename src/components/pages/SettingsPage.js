@@ -1532,224 +1532,11 @@ const SettingsPage = () => {
                       <Text color="whiteAlpha.700" fontSize="sm">
                         Pro Trader
                       </Text>
-
-                      {/* Social Media Links - Integrated Design */}
-                      <VStack align="stretch" spacing={3} w="full" mt={2}>
-                        <Text color="whiteAlpha.600" fontSize="xs" fontWeight="semibold" textTransform="uppercase" letterSpacing="wider">
-                          Social Profiles
-                        </Text>
-
-                        <SimpleGrid columns={{ base: 1, lg: 2 }} spacing={3} w="full">
-                          {/* Twitter/X */}
-                          <HStack spacing={3} bg="#1a1a1a" p={2} borderRadius="lg" border="1px solid #333" _hover={{ borderColor: "#444" }}>
-                            <Box color="#1DA1F2" minW="32px" display="flex" alignItems="center" justifyContent="center">
-                              <XIcon size={18} />
-                            </Box>
-                            <Input
-                              value={formData.socialMedia?.twitter || ''}
-                              onChange={(e) => setFormData(prev => ({
-                                ...prev,
-                                socialMedia: { ...prev.socialMedia, twitter: e.target.value }
-                              }))}
-                              onBlur={async () => {
-                                try {
-                                  await saveFieldValue('socialMedia', { twitter: formData.socialMedia?.twitter });
-                                  toast({
-                                    title: "Twitter/X updated",
-                                    status: "success",
-                                    duration: 2000,
-                                    isClosable: true,
-                                    position: "top-right"
-                                  });
-                                } catch (error) {
-                                  toast({
-                                    title: "Failed to update Twitter/X",
-                                    status: "error",
-                                    duration: 3000,
-                                    isClosable: true,
-                                  });
-                                }
-                              }}
-                              placeholder="@username"
-                              size="sm"
-                              variant="unstyled"
-                              color="white"
-                              fontSize="sm"
-                              _placeholder={{ color: "whiteAlpha.400" }}
-                            />
-                          </HStack>
-
-                          {/* YouTube */}
-                          <HStack spacing={3} bg="#1a1a1a" p={2} borderRadius="lg" border="1px solid #333" _hover={{ borderColor: "#444" }}>
-                            <Box color="#FF0000" minW="32px" display="flex" alignItems="center" justifyContent="center">
-                              <Youtube size={18} />
-                            </Box>
-                            <Input
-                              value={formData.socialMedia?.youtube || ''}
-                              onChange={(e) => setFormData(prev => ({
-                                ...prev,
-                                socialMedia: { ...prev.socialMedia, youtube: e.target.value }
-                              }))}
-                              onBlur={async () => {
-                                try {
-                                  await saveFieldValue('socialMedia', { youtube: formData.socialMedia?.youtube });
-                                  toast({
-                                    title: "YouTube updated",
-                                    status: "success",
-                                    duration: 2000,
-                                    isClosable: true,
-                                    position: "top-right"
-                                  });
-                                } catch (error) {
-                                  toast({
-                                    title: "Failed to update YouTube",
-                                    status: "error",
-                                    duration: 3000,
-                                    isClosable: true,
-                                  });
-                                }
-                              }}
-                              placeholder="channel or URL"
-                              size="sm"
-                              variant="unstyled"
-                              color="white"
-                              fontSize="sm"
-                              _placeholder={{ color: "whiteAlpha.400" }}
-                            />
-                          </HStack>
-
-                          {/* TikTok */}
-                          <HStack spacing={3} bg="#1a1a1a" p={2} borderRadius="lg" border="1px solid #333" _hover={{ borderColor: "#444" }}>
-                            <Box color="#FF0050" minW="32px" display="flex" alignItems="center" justifyContent="center">
-                              <TikTokIcon size={18} />
-                            </Box>
-                            <Input
-                              value={formData.socialMedia?.tiktok || ''}
-                              onChange={(e) => setFormData(prev => ({
-                                ...prev,
-                                socialMedia: { ...prev.socialMedia, tiktok: e.target.value }
-                              }))}
-                              onBlur={async () => {
-                                try {
-                                  await saveFieldValue('socialMedia', { tiktok: formData.socialMedia?.tiktok });
-                                  toast({
-                                    title: "TikTok updated",
-                                    status: "success",
-                                    duration: 2000,
-                                    isClosable: true,
-                                    position: "top-right"
-                                  });
-                                } catch (error) {
-                                  toast({
-                                    title: "Failed to update TikTok",
-                                    status: "error",
-                                    duration: 3000,
-                                    isClosable: true,
-                                  });
-                                }
-                              }}
-                              placeholder="@username"
-                              size="sm"
-                              variant="unstyled"
-                              color="white"
-                              fontSize="sm"
-                              _placeholder={{ color: "whiteAlpha.400" }}
-                            />
-                          </HStack>
-
-                          {/* Instagram */}
-                          <HStack spacing={3} bg="#1a1a1a" p={2} borderRadius="lg" border="1px solid #333" _hover={{ borderColor: "#444" }}>
-                            <Box
-                              minW="32px"
-                              display="flex"
-                              alignItems="center"
-                              justifyContent="center"
-                              bgGradient="linear(to-r, #833AB4, #FD1D1D, #F77737)"
-                              borderRadius="md"
-                              p="2px"
-                            >
-                              <Box bg="#1a1a1a" borderRadius="md" p="4px" display="flex">
-                                <Instagram size={14} color="white" />
-                              </Box>
-                            </Box>
-                            <Input
-                              value={formData.socialMedia?.instagram || ''}
-                              onChange={(e) => setFormData(prev => ({
-                                ...prev,
-                                socialMedia: { ...prev.socialMedia, instagram: e.target.value }
-                              }))}
-                              onBlur={async () => {
-                                try {
-                                  await saveFieldValue('socialMedia', { instagram: formData.socialMedia?.instagram });
-                                  toast({
-                                    title: "Instagram updated",
-                                    status: "success",
-                                    duration: 2000,
-                                    isClosable: true,
-                                    position: "top-right"
-                                  });
-                                } catch (error) {
-                                  toast({
-                                    title: "Failed to update Instagram",
-                                    status: "error",
-                                    duration: 3000,
-                                    isClosable: true,
-                                  });
-                                }
-                              }}
-                              placeholder="@username"
-                              size="sm"
-                              variant="unstyled"
-                              color="white"
-                              fontSize="sm"
-                              _placeholder={{ color: "whiteAlpha.400" }}
-                            />
-                          </HStack>
-
-                          {/* Discord */}
-                          <HStack spacing={3} bg="#1a1a1a" p={2} borderRadius="lg" border="1px solid #333" _hover={{ borderColor: "#444" }}>
-                            <Box color="#5865F2" minW="32px" display="flex" alignItems="center" justifyContent="center">
-                              <MessageCircle size={18} />
-                            </Box>
-                            <Input
-                              value={formData.socialMedia?.discord || ''}
-                              onChange={(e) => setFormData(prev => ({
-                                ...prev,
-                                socialMedia: { ...prev.socialMedia, discord: e.target.value }
-                              }))}
-                              onBlur={async () => {
-                                try {
-                                  await saveFieldValue('socialMedia', { discord: formData.socialMedia?.discord });
-                                  toast({
-                                    title: "Discord updated",
-                                    status: "success",
-                                    duration: 2000,
-                                    isClosable: true,
-                                    position: "top-right"
-                                  });
-                                } catch (error) {
-                                  toast({
-                                    title: "Failed to update Discord",
-                                    status: "error",
-                                    duration: 3000,
-                                    isClosable: true,
-                                  });
-                                }
-                              }}
-                              placeholder="username"
-                              size="sm"
-                              variant="unstyled"
-                              color="white"
-                              fontSize="sm"
-                              _placeholder={{ color: "whiteAlpha.400" }}
-                            />
-                          </HStack>
-                        </SimpleGrid>
-
-                        <Text color="whiteAlpha.500" fontSize="xs" mt={1}>
-                          Connect your social profiles to build your creator presence
-                        </Text>
-                      </VStack>
+                      <Text color="whiteAlpha.600" fontSize="xs" mt={2}>
+                        Your profile picture helps others recognize you across the platform.
+                        <br />
+                        Click on your avatar to upload or change your picture.
+                      </Text>
                     </VStack>
                   </Flex>
                 </Box>
@@ -1767,7 +1554,7 @@ const SettingsPage = () => {
                     icon={AtSign}
                     helperText="Your unique username on our platform."
                   />
-                  
+
                   <FormInput
                     label="Email Address"
                     initialValue={formData.email}
@@ -1778,7 +1565,7 @@ const SettingsPage = () => {
                     icon={Mail}
                     helperText="We'll send important notifications to this email."
                   />
-                  
+
                   <FormInput
                     label="Phone Number"
                     initialValue={formData.phone}
@@ -1803,6 +1590,226 @@ const SettingsPage = () => {
                       Change Password
                     </Button>
                   </HStack>
+
+                  <Divider borderColor="#333" />
+
+                  {/* Social Media Links - Moved below user info */}
+                  <VStack align="stretch" spacing={3} w="full">
+                    <Text color="whiteAlpha.600" fontSize="xs" fontWeight="semibold" textTransform="uppercase" letterSpacing="wider">
+                      Social Profiles
+                    </Text>
+
+                    <SimpleGrid columns={{ base: 1, lg: 2 }} spacing={3} w="full">
+                      {/* Twitter/X */}
+                      <HStack spacing={3} bg="#1a1a1a" p={2} borderRadius="lg" border="1px solid #333" _hover={{ borderColor: "#444" }}>
+                        <Box color="#1DA1F2" minW="32px" display="flex" alignItems="center" justifyContent="center">
+                          <XIcon size={18} />
+                        </Box>
+                        <Input
+                          value={formData.socialMedia?.twitter || ''}
+                          onChange={(e) => setFormData(prev => ({
+                            ...prev,
+                            socialMedia: { ...prev.socialMedia, twitter: e.target.value }
+                          }))}
+                          onBlur={async () => {
+                            try {
+                              await saveFieldValue('socialMedia', { twitter: formData.socialMedia?.twitter });
+                              toast({
+                                title: "Twitter/X updated",
+                                status: "success",
+                                duration: 2000,
+                                isClosable: true,
+                                position: "top-right"
+                              });
+                            } catch (error) {
+                              toast({
+                                title: "Failed to update Twitter/X",
+                                status: "error",
+                                duration: 3000,
+                                isClosable: true,
+                              });
+                            }
+                          }}
+                          placeholder="@username"
+                          size="sm"
+                          variant="unstyled"
+                          color="white"
+                          fontSize="sm"
+                          _placeholder={{ color: "whiteAlpha.400" }}
+                        />
+                      </HStack>
+
+                      {/* YouTube */}
+                      <HStack spacing={3} bg="#1a1a1a" p={2} borderRadius="lg" border="1px solid #333" _hover={{ borderColor: "#444" }}>
+                        <Box color="#FF0000" minW="32px" display="flex" alignItems="center" justifyContent="center">
+                          <Youtube size={18} />
+                        </Box>
+                        <Input
+                          value={formData.socialMedia?.youtube || ''}
+                          onChange={(e) => setFormData(prev => ({
+                            ...prev,
+                            socialMedia: { ...prev.socialMedia, youtube: e.target.value }
+                          }))}
+                          onBlur={async () => {
+                            try {
+                              await saveFieldValue('socialMedia', { youtube: formData.socialMedia?.youtube });
+                              toast({
+                                title: "YouTube updated",
+                                status: "success",
+                                duration: 2000,
+                                isClosable: true,
+                                position: "top-right"
+                              });
+                            } catch (error) {
+                              toast({
+                                title: "Failed to update YouTube",
+                                status: "error",
+                                duration: 3000,
+                                isClosable: true,
+                              });
+                            }
+                          }}
+                          placeholder="channel or URL"
+                          size="sm"
+                          variant="unstyled"
+                          color="white"
+                          fontSize="sm"
+                          _placeholder={{ color: "whiteAlpha.400" }}
+                        />
+                      </HStack>
+
+                      {/* TikTok */}
+                      <HStack spacing={3} bg="#1a1a1a" p={2} borderRadius="lg" border="1px solid #333" _hover={{ borderColor: "#444" }}>
+                        <Box color="#FF0050" minW="32px" display="flex" alignItems="center" justifyContent="center">
+                          <TikTokIcon size={18} />
+                        </Box>
+                        <Input
+                          value={formData.socialMedia?.tiktok || ''}
+                          onChange={(e) => setFormData(prev => ({
+                            ...prev,
+                            socialMedia: { ...prev.socialMedia, tiktok: e.target.value }
+                          }))}
+                          onBlur={async () => {
+                            try {
+                              await saveFieldValue('socialMedia', { tiktok: formData.socialMedia?.tiktok });
+                              toast({
+                                title: "TikTok updated",
+                                status: "success",
+                                duration: 2000,
+                                isClosable: true,
+                                position: "top-right"
+                              });
+                            } catch (error) {
+                              toast({
+                                title: "Failed to update TikTok",
+                                status: "error",
+                                duration: 3000,
+                                isClosable: true,
+                              });
+                            }
+                          }}
+                          placeholder="@username"
+                          size="sm"
+                          variant="unstyled"
+                          color="white"
+                          fontSize="sm"
+                          _placeholder={{ color: "whiteAlpha.400" }}
+                        />
+                      </HStack>
+
+                      {/* Instagram */}
+                      <HStack spacing={3} bg="#1a1a1a" p={2} borderRadius="lg" border="1px solid #333" _hover={{ borderColor: "#444" }}>
+                        <Box
+                          minW="32px"
+                          display="flex"
+                          alignItems="center"
+                          justifyContent="center"
+                          bgGradient="linear(to-r, #833AB4, #FD1D1D, #F77737)"
+                          borderRadius="md"
+                          p="2px"
+                        >
+                          <Box bg="#1a1a1a" borderRadius="md" p="4px" display="flex">
+                            <Instagram size={14} color="white" />
+                          </Box>
+                        </Box>
+                        <Input
+                          value={formData.socialMedia?.instagram || ''}
+                          onChange={(e) => setFormData(prev => ({
+                            ...prev,
+                            socialMedia: { ...prev.socialMedia, instagram: e.target.value }
+                          }))}
+                          onBlur={async () => {
+                            try {
+                              await saveFieldValue('socialMedia', { instagram: formData.socialMedia?.instagram });
+                              toast({
+                                title: "Instagram updated",
+                                status: "success",
+                                duration: 2000,
+                                isClosable: true,
+                                position: "top-right"
+                              });
+                            } catch (error) {
+                              toast({
+                                title: "Failed to update Instagram",
+                                status: "error",
+                                duration: 3000,
+                                isClosable: true,
+                              });
+                            }
+                          }}
+                          placeholder="@username"
+                          size="sm"
+                          variant="unstyled"
+                          color="white"
+                          fontSize="sm"
+                          _placeholder={{ color: "whiteAlpha.400" }}
+                        />
+                      </HStack>
+
+                      {/* Discord */}
+                      <HStack spacing={3} bg="#1a1a1a" p={2} borderRadius="lg" border="1px solid #333" _hover={{ borderColor: "#444" }}>
+                        <Box color="#5865F2" minW="32px" display="flex" alignItems="center" justifyContent="center">
+                          <MessageCircle size={18} />
+                        </Box>
+                        <Input
+                          value={formData.socialMedia?.discord || ''}
+                          onChange={(e) => setFormData(prev => ({
+                            ...prev,
+                            socialMedia: { ...prev.socialMedia, discord: e.target.value }
+                          }))}
+                          onBlur={async () => {
+                            try {
+                              await saveFieldValue('socialMedia', { discord: formData.socialMedia?.discord });
+                              toast({
+                                title: "Discord updated",
+                                status: "success",
+                                duration: 2000,
+                                isClosable: true,
+                                position: "top-right"
+                              });
+                            } catch (error) {
+                              toast({
+                                title: "Failed to update Discord",
+                                status: "error",
+                                duration: 3000,
+                                isClosable: true,
+                              });
+                            }
+                          }}
+                          placeholder="username"
+                          size="sm"
+                          variant="unstyled"
+                          color="white"
+                          fontSize="sm"
+                          _placeholder={{ color: "whiteAlpha.400" }}
+                        />
+                      </HStack>
+                    </SimpleGrid>
+
+                    <Text color="whiteAlpha.500" fontSize="xs" mt={1}>
+                      Connect your social profiles to build your creator presence
+                    </Text>
+                  </VStack>
                 </VStack>
               </VStack>
             </SectionContainer>

@@ -118,7 +118,7 @@ const DashboardContent = () => {
     const navigate = useNavigate();
     const { isAuthenticated, user, isLoading: authLoading, refreshAuthState } = useAuth();
     const toast = useToast();
-    const { hasMemberChat } = useFeatureFlags();
+    const { hasMemberChat, hasAriaAssistant } = useFeatureFlags();
     
     // Responsive breakpoints
     const isMobile = useBreakpointValue({ base: true, md: false });
@@ -529,8 +529,8 @@ const DashboardContent = () => {
                 </>
             )}
             
-            {/* ARIA Assistant - Floating Chat */}
-            <ARIAAssistant />
+            {/* ARIA Assistant - Floating Chat (Only for Admin and Beta Testers) */}
+            {hasAriaAssistant && <ARIAAssistant />}
         </Flex>
         </>
     );
