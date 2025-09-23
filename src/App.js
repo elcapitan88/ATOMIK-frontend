@@ -23,6 +23,7 @@ const EngineStrategiesPage = lazy(() => import('./components/features/strategies
 const LandingPage = lazy(() => import('./components/pages/landing/LandingPage'));
 const ComingSoon = lazy(() => import('./components/common/ComingSoon'));
 const CreatorHubPage = lazy(() => import('./components/pages/CreatorHub/CreatorHubPage'));
+const CreatorProfilePage = lazy(() => import('./components/pages/CreatorProfile/CreatorProfilePage'));
 
 const AdminDashboard = lazy(() => import('./components/pages/Admin/AdminDashboard').then(module => ({ default: module.default })));
 const OverviewPage = lazy(() => import('./components/pages/Admin/Overview/OverviewPage').then(module => ({ default: module.default })));
@@ -299,6 +300,18 @@ function App() {
             <WithAuth>
               <DashboardLayout>
                 <MarketplacePage />
+              </DashboardLayout>
+            </WithAuth>
+          }
+        />
+
+        {/* Creator Profile Route */}
+        <Route
+          path="/creator/:username"
+          element={
+            <WithAuth>
+              <DashboardLayout>
+                <CreatorProfilePage />
               </DashboardLayout>
             </WithAuth>
           }
