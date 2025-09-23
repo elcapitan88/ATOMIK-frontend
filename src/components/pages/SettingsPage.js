@@ -1435,109 +1435,324 @@ const SettingsPage = () => {
           <VStack spacing={8} align="stretch">
             <SectionContainer icon={User} title="Personal Information">
               <VStack spacing={8} align="stretch">
-                {/* Avatar Section */}
-                <Flex
-                  direction={{ base: "column", md: "row" }}
-                  align={{ base: "center", md: "flex-start" }}
-                  gap={6}
-                >
-                  <ProfilePicture 
-                    user={user}
-                    size="xl"
-                    editable={true}
-                    showStatus={false}
-                  />
-                  
-                  <VStack align={{ base: "center", md: "flex-start" }} spacing={2} flex={1}>
-                    <Box position="relative">
-                      {isEditingName ? (
-                        // Show input field when editing
-                        <Box position="relative">
-                          <Input
-                            value={personalName}
-                            onChange={(e) => setPersonalName(e.target.value)}
-                            fontSize="lg"
-                            fontWeight="semibold"
-                            color="white"
-                            bg="#1a1a1a"
-                            border="1px solid #00C6E0"
-                            borderRadius="md"
-                            px={2}
-                            py={1}
-                            autoFocus
-                            isDisabled={isUpdatingName}
-                            _focus={{
-                              boxShadow: "none",
-                              borderColor: "#00C6E0"
-                            }}
-                          />
-                          
-                          <HStack position="absolute" right={2} top="50%" transform="translateY(-50%)" spacing={1}>
-                            <IconButton
-                              aria-label="Cancel"
-                              icon={<X size={14} />}
-                              size="xs"
-                              variant="ghost"
-                              color="red.400"
-                              _hover={{ color: "red.300", bg: "transparent" }}
-                              onClick={cancelNameEdit}
+                {/* Avatar and Social Media Section */}
+                <Box>
+                  <Flex
+                    direction={{ base: "column", md: "row" }}
+                    align={{ base: "center", md: "flex-start" }}
+                    gap={8}
+                  >
+                    <ProfilePicture
+                      user={user}
+                      size="xl"
+                      editable={true}
+                      showStatus={false}
+                    />
+
+                    <VStack align={{ base: "center", md: "flex-start" }} spacing={4} flex={1}>
+                      <Box position="relative">
+                        {isEditingName ? (
+                          // Show input field when editing
+                          <Box position="relative">
+                            <Input
+                              value={personalName}
+                              onChange={(e) => setPersonalName(e.target.value)}
+                              fontSize="lg"
+                              fontWeight="semibold"
+                              color="white"
+                              bg="#1a1a1a"
+                              border="1px solid #00C6E0"
+                              borderRadius="md"
+                              px={2}
+                              py={1}
+                              autoFocus
+                              isDisabled={isUpdatingName}
+                              _focus={{
+                                boxShadow: "none",
+                                borderColor: "#00C6E0"
+                              }}
                             />
-                            <IconButton
-                              aria-label="Confirm"
-                              icon={<Check size={14} />}
-                              size="xs"
-                              variant="ghost"
-                              color="green.400"
-                              _hover={{ color: "green.300", bg: "transparent" }}
-                              onClick={() => handleNameChange(personalName)}
-                              isLoading={isUpdatingName}
+
+                            <HStack position="absolute" right={2} top="50%" transform="translateY(-50%)" spacing={1}>
+                              <IconButton
+                                aria-label="Cancel"
+                                icon={<X size={14} />}
+                                size="xs"
+                                variant="ghost"
+                                color="red.400"
+                                _hover={{ color: "red.300", bg: "transparent" }}
+                                onClick={cancelNameEdit}
+                              />
+                              <IconButton
+                                aria-label="Confirm"
+                                icon={<Check size={14} />}
+                                size="xs"
+                                variant="ghost"
+                                color="green.400"
+                                _hover={{ color: "green.300", bg: "transparent" }}
+                                onClick={() => handleNameChange(personalName)}
+                                isLoading={isUpdatingName}
+                              />
+                            </HStack>
+                          </Box>
+                        ) : (
+                          // Show name with edit button when not editing
+                          <Box position="relative">
+                            <Text
+                              fontSize="lg"
+                              fontWeight="semibold"
+                              color="white"
+                              px={2}
+                              py={1}
+                              borderRadius="md"
+                              _hover={{
+                                bg: "rgba(0, 198, 224, 0.1)"
+                              }}
+                            >
+                              {personalName}
+                            </Text>
+                            <Tooltip label="Edit name" placement="top">
+                              <IconButton
+                                aria-label="Edit name"
+                                icon={<Edit2 size={14} />}
+                                size="xs"
+                                variant="ghost"
+                                color="#00C6E0"
+                                position="absolute"
+                                top="50%"
+                                right={-6}
+                                transform="translateY(-50%)"
+                                _hover={{ color: "#00A3B8", bg: "transparent" }}
+                                onClick={() => setIsEditingName(true)}
+                              />
+                            </Tooltip>
+                          </Box>
+                        )}
+                      </Box>
+                      <Text color="whiteAlpha.700" fontSize="sm">
+                        Pro Trader
+                      </Text>
+
+                      {/* Social Media Links - Integrated Design */}
+                      <VStack align="stretch" spacing={3} w="full" mt={2}>
+                        <Text color="whiteAlpha.600" fontSize="xs" fontWeight="semibold" textTransform="uppercase" letterSpacing="wider">
+                          Social Profiles
+                        </Text>
+
+                        <SimpleGrid columns={{ base: 1, lg: 2 }} spacing={3} w="full">
+                          {/* Twitter/X */}
+                          <HStack spacing={3} bg="#1a1a1a" p={2} borderRadius="lg" border="1px solid #333" _hover={{ borderColor: "#444" }}>
+                            <Box color="#1DA1F2" minW="32px" display="flex" alignItems="center" justifyContent="center">
+                              <XIcon size={18} />
+                            </Box>
+                            <Input
+                              value={formData.socialMedia?.twitter || ''}
+                              onChange={(e) => setFormData(prev => ({
+                                ...prev,
+                                socialMedia: { ...prev.socialMedia, twitter: e.target.value }
+                              }))}
+                              onBlur={async () => {
+                                try {
+                                  await saveFieldValue('socialMedia', { twitter: formData.socialMedia?.twitter });
+                                  toast({
+                                    title: "Twitter/X updated",
+                                    status: "success",
+                                    duration: 2000,
+                                    isClosable: true,
+                                    position: "top-right"
+                                  });
+                                } catch (error) {
+                                  toast({
+                                    title: "Failed to update Twitter/X",
+                                    status: "error",
+                                    duration: 3000,
+                                    isClosable: true,
+                                  });
+                                }
+                              }}
+                              placeholder="@username"
+                              size="sm"
+                              variant="unstyled"
+                              color="white"
+                              fontSize="sm"
+                              _placeholder={{ color: "whiteAlpha.400" }}
                             />
                           </HStack>
-                        </Box>
-                      ) : (
-                        // Show name with edit button when not editing
-                        <Box position="relative">
-                          <Text
-                            fontSize="lg"
-                            fontWeight="semibold"
-                            color="white"
-                            px={2}
-                            py={1}
-                            borderRadius="md"
-                            _hover={{
-                              bg: "rgba(0, 198, 224, 0.1)"
-                            }}
-                          >
-                            {personalName}
-                          </Text>
-                          <Tooltip label="Edit name" placement="top">
-                            <IconButton
-                              aria-label="Edit name"
-                              icon={<Edit2 size={14} />}
-                              size="xs"
-                              variant="ghost"
-                              color="#00C6E0"
-                              position="absolute"
-                              top="50%"
-                              right={-6}
-                              transform="translateY(-50%)"
-                              _hover={{ color: "#00A3B8", bg: "transparent" }}
-                              onClick={() => setIsEditingName(true)}
+
+                          {/* YouTube */}
+                          <HStack spacing={3} bg="#1a1a1a" p={2} borderRadius="lg" border="1px solid #333" _hover={{ borderColor: "#444" }}>
+                            <Box color="#FF0000" minW="32px" display="flex" alignItems="center" justifyContent="center">
+                              <Youtube size={18} />
+                            </Box>
+                            <Input
+                              value={formData.socialMedia?.youtube || ''}
+                              onChange={(e) => setFormData(prev => ({
+                                ...prev,
+                                socialMedia: { ...prev.socialMedia, youtube: e.target.value }
+                              }))}
+                              onBlur={async () => {
+                                try {
+                                  await saveFieldValue('socialMedia', { youtube: formData.socialMedia?.youtube });
+                                  toast({
+                                    title: "YouTube updated",
+                                    status: "success",
+                                    duration: 2000,
+                                    isClosable: true,
+                                    position: "top-right"
+                                  });
+                                } catch (error) {
+                                  toast({
+                                    title: "Failed to update YouTube",
+                                    status: "error",
+                                    duration: 3000,
+                                    isClosable: true,
+                                  });
+                                }
+                              }}
+                              placeholder="channel or URL"
+                              size="sm"
+                              variant="unstyled"
+                              color="white"
+                              fontSize="sm"
+                              _placeholder={{ color: "whiteAlpha.400" }}
                             />
-                          </Tooltip>
-                        </Box>
-                      )}
-                    </Box>
-                    <Text color="whiteAlpha.700" fontSize="sm">
-                      Pro Trader
-                    </Text>
-                    <Text color="whiteAlpha.600" fontSize="xs" mt={2}>
-                      Your profile picture helps others recognize you across the platform.
-                      <br />
-                      Click on your avatar to upload or change your picture.
-                    </Text>
-                  </VStack>
-                </Flex>
+                          </HStack>
+
+                          {/* TikTok */}
+                          <HStack spacing={3} bg="#1a1a1a" p={2} borderRadius="lg" border="1px solid #333" _hover={{ borderColor: "#444" }}>
+                            <Box color="#FF0050" minW="32px" display="flex" alignItems="center" justifyContent="center">
+                              <TikTokIcon size={18} />
+                            </Box>
+                            <Input
+                              value={formData.socialMedia?.tiktok || ''}
+                              onChange={(e) => setFormData(prev => ({
+                                ...prev,
+                                socialMedia: { ...prev.socialMedia, tiktok: e.target.value }
+                              }))}
+                              onBlur={async () => {
+                                try {
+                                  await saveFieldValue('socialMedia', { tiktok: formData.socialMedia?.tiktok });
+                                  toast({
+                                    title: "TikTok updated",
+                                    status: "success",
+                                    duration: 2000,
+                                    isClosable: true,
+                                    position: "top-right"
+                                  });
+                                } catch (error) {
+                                  toast({
+                                    title: "Failed to update TikTok",
+                                    status: "error",
+                                    duration: 3000,
+                                    isClosable: true,
+                                  });
+                                }
+                              }}
+                              placeholder="@username"
+                              size="sm"
+                              variant="unstyled"
+                              color="white"
+                              fontSize="sm"
+                              _placeholder={{ color: "whiteAlpha.400" }}
+                            />
+                          </HStack>
+
+                          {/* Instagram */}
+                          <HStack spacing={3} bg="#1a1a1a" p={2} borderRadius="lg" border="1px solid #333" _hover={{ borderColor: "#444" }}>
+                            <Box
+                              minW="32px"
+                              display="flex"
+                              alignItems="center"
+                              justifyContent="center"
+                              bgGradient="linear(to-r, #833AB4, #FD1D1D, #F77737)"
+                              borderRadius="md"
+                              p="2px"
+                            >
+                              <Box bg="#1a1a1a" borderRadius="md" p="4px" display="flex">
+                                <Instagram size={14} color="white" />
+                              </Box>
+                            </Box>
+                            <Input
+                              value={formData.socialMedia?.instagram || ''}
+                              onChange={(e) => setFormData(prev => ({
+                                ...prev,
+                                socialMedia: { ...prev.socialMedia, instagram: e.target.value }
+                              }))}
+                              onBlur={async () => {
+                                try {
+                                  await saveFieldValue('socialMedia', { instagram: formData.socialMedia?.instagram });
+                                  toast({
+                                    title: "Instagram updated",
+                                    status: "success",
+                                    duration: 2000,
+                                    isClosable: true,
+                                    position: "top-right"
+                                  });
+                                } catch (error) {
+                                  toast({
+                                    title: "Failed to update Instagram",
+                                    status: "error",
+                                    duration: 3000,
+                                    isClosable: true,
+                                  });
+                                }
+                              }}
+                              placeholder="@username"
+                              size="sm"
+                              variant="unstyled"
+                              color="white"
+                              fontSize="sm"
+                              _placeholder={{ color: "whiteAlpha.400" }}
+                            />
+                          </HStack>
+
+                          {/* Discord */}
+                          <HStack spacing={3} bg="#1a1a1a" p={2} borderRadius="lg" border="1px solid #333" _hover={{ borderColor: "#444" }}>
+                            <Box color="#5865F2" minW="32px" display="flex" alignItems="center" justifyContent="center">
+                              <MessageCircle size={18} />
+                            </Box>
+                            <Input
+                              value={formData.socialMedia?.discord || ''}
+                              onChange={(e) => setFormData(prev => ({
+                                ...prev,
+                                socialMedia: { ...prev.socialMedia, discord: e.target.value }
+                              }))}
+                              onBlur={async () => {
+                                try {
+                                  await saveFieldValue('socialMedia', { discord: formData.socialMedia?.discord });
+                                  toast({
+                                    title: "Discord updated",
+                                    status: "success",
+                                    duration: 2000,
+                                    isClosable: true,
+                                    position: "top-right"
+                                  });
+                                } catch (error) {
+                                  toast({
+                                    title: "Failed to update Discord",
+                                    status: "error",
+                                    duration: 3000,
+                                    isClosable: true,
+                                  });
+                                }
+                              }}
+                              placeholder="username"
+                              size="sm"
+                              variant="unstyled"
+                              color="white"
+                              fontSize="sm"
+                              _placeholder={{ color: "whiteAlpha.400" }}
+                            />
+                          </HStack>
+                        </SimpleGrid>
+
+                        <Text color="whiteAlpha.500" fontSize="xs" mt={1}>
+                          Connect your social profiles to build your creator presence
+                        </Text>
+                      </VStack>
+                    </VStack>
+                  </Flex>
+                </Box>
 
                 <Divider borderColor="#333" />
 
@@ -1592,95 +1807,38 @@ const SettingsPage = () => {
               </VStack>
             </SectionContainer>
 
-            {/* Social Media Section */}
-            <SectionContainer icon={AtSign} title="Social Media">
-              <VStack spacing={6} align="stretch">
-                <SocialInput
-                  icon={XIcon}
-                  label="Twitter/X"
-                  initialValue={formData.socialMedia?.twitter || ''}
-                  fieldName="twitter"
-                  onSave={saveFieldValue}
-                  placeholder="@yourusername"
-                />
-                
-                <SocialInput
-                  icon={Youtube}
-                  label="YouTube"
-                  initialValue={formData.socialMedia?.youtube || ''}
-                  fieldName="youtube"
-                  onSave={saveFieldValue}
-                  placeholder="channel name or URL"
-                />
-                
-                <SocialInput
-                  icon={TikTokIcon}
-                  label="TikTok"
-                  initialValue={formData.socialMedia?.tiktok || ''}
-                  fieldName="tiktok"
-                  onSave={saveFieldValue}
-                  placeholder="@yourusername"
-                />
+            {/* Notification Preferences Section */}
+            <SectionContainer icon={Info} title="Notification Preferences">
+              <VStack spacing={4} align="stretch">
+                <FormControl display="flex" alignItems="center" justifyContent="space-between">
+                  <Box>
+                    <FormLabel color="white" mb="0" fontSize="sm">Email Notifications</FormLabel>
+                    <Text fontSize="xs" color="whiteAlpha.600">
+                      Receive trade alerts and updates via email
+                    </Text>
+                  </Box>
+                  <Switch
+                    colorScheme="cyan"
+                    isChecked={formData.preferences?.emailNotifications}
+                    onChange={(e) => handleNotificationToggle('emailNotifications', e.target.checked)}
+                  />
+                </FormControl>
 
-                <SocialInput
-                  icon={Instagram}
-                  label="Instagram"
-                  initialValue={formData.socialMedia?.instagram || ''}
-                  fieldName="instagram"
-                  onSave={saveFieldValue}
-                  placeholder="@yourusername"
-                />
+                <Divider borderColor="#333" />
 
-                <SocialInput
-                  icon={MessageCircle}
-                  label="Discord"
-                  initialValue={formData.socialMedia?.discord || ''}
-                  fieldName="discord"
-                  onSave={saveFieldValue}
-                  placeholder="username#1234 or username"
-                />
-
-                {/* Email Notifications */}
-                <Box mt={6}>
-                  <VStack spacing={4} align="stretch">
-                    <Flex justify="space-between" align="center">
-                      <HStack>
-                        <Info size={16} color="#00C6E0" />
-                        <Text color="white" fontWeight="medium">Notification Preferences</Text>
-                      </HStack>
-                    </Flex>
-                    
-                    <Divider borderColor="#333" />
-                    
-                    <FormControl display="flex" alignItems="center" justifyContent="space-between">
-                      <Box>
-                        <FormLabel color="white" mb="0" fontSize="sm">Email Notifications</FormLabel>
-                        <Text fontSize="xs" color="whiteAlpha.600">
-                          Receive trade alerts and updates via email
-                        </Text>
-                      </Box>
-                      <Switch 
-                        colorScheme="cyan" 
-                        isChecked={formData.preferences?.emailNotifications}
-                        onChange={(e) => handleNotificationToggle('emailNotifications', e.target.checked)}
-                      />
-                    </FormControl>
-                    
-                    <FormControl display="flex" alignItems="center" justifyContent="space-between">
-                      <Box>
-                        <FormLabel color="white" mb="0" fontSize="sm">Marketing Updates</FormLabel>
-                        <Text fontSize="xs" color="whiteAlpha.600">
-                          Receive news about new features and promotions
-                        </Text>
-                      </Box>
-                      <Switch 
-                        colorScheme="cyan" 
-                        isChecked={formData.preferences?.marketingUpdates}
-                        onChange={(e) => handleNotificationToggle('marketingUpdates', e.target.checked)}
-                      />
-                    </FormControl>
-                  </VStack>
-                </Box>
+                <FormControl display="flex" alignItems="center" justifyContent="space-between">
+                  <Box>
+                    <FormLabel color="white" mb="0" fontSize="sm">Marketing Updates</FormLabel>
+                    <Text fontSize="xs" color="whiteAlpha.600">
+                      Receive news about new features and promotions
+                    </Text>
+                  </Box>
+                  <Switch
+                    colorScheme="cyan"
+                    isChecked={formData.preferences?.marketingUpdates}
+                    onChange={(e) => handleNotificationToggle('marketingUpdates', e.target.checked)}
+                  />
+                </FormControl>
               </VStack>
             </SectionContainer>
 
