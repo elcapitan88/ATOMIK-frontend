@@ -52,7 +52,9 @@ export const useCreatorProfile = (username) => {
 
   // Follow creator
   const followCreator = async () => {
-    if (!profile || !user) return;
+    if (!profile || !user) {
+      throw new Error('Please sign in to follow creators');
+    }
 
     setIsFollowLoading(true);
     try {
@@ -70,7 +72,9 @@ export const useCreatorProfile = (username) => {
 
   // Unfollow creator
   const unfollowCreator = async () => {
-    if (!profile || !user) return;
+    if (!profile || !user) {
+      throw new Error('Please sign in to follow creators');
+    }
 
     setIsFollowLoading(true);
     try {

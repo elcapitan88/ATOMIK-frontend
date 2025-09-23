@@ -17,7 +17,8 @@ const ProfileHeader = ({
   isOwnProfile,
   isFollowing,
   onFollow,
-  isFollowLoading
+  isFollowLoading,
+  isLoggedIn = true
 }) => {
   const getTierColor = (tier) => {
     switch (tier) {
@@ -117,7 +118,7 @@ const ProfileHeader = ({
 
         {/* Action Buttons */}
         <HStack spacing={4} pt={2}>
-          {!isOwnProfile && (
+          {isLoggedIn && !isOwnProfile && (
             <Button
               size="lg"
               bg={isFollowing ? "transparent" : "#00C6E0"}
@@ -139,7 +140,20 @@ const ProfileHeader = ({
             </Button>
           )}
 
-          {isOwnProfile && (
+          {!isLoggedIn && !isOwnProfile && (
+            <Button
+              size="lg"
+              bg="#00C6E0"
+              color="white"
+              px={8}
+              _hover={{ bg: "#00A3B8" }}
+              onClick={() => window.open('/auth', '_self')}
+            >
+              Sign In to Follow
+            </Button>
+          )}
+
+          {isLoggedIn && isOwnProfile && (
             <Button
               size="lg"
               variant="outline"

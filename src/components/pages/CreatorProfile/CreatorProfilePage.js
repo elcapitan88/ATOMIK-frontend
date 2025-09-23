@@ -179,6 +179,7 @@ const CreatorProfilePage = () => {
   }
 
   const isOwnProfile = user?.username === username;
+  const isLoggedIn = !!user;
 
   return (
     <Flex minH="100vh" bg="#000000" color="white">
@@ -238,6 +239,7 @@ const CreatorProfilePage = () => {
                 isFollowing={isFollowing}
                 onFollow={handleFollow}
                 isFollowLoading={isFollowLoading}
+                isLoggedIn={isLoggedIn}
               />
             </DarkCard>
           </MotionBox>

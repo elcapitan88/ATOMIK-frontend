@@ -305,16 +305,10 @@ function App() {
           }
         />
 
-        {/* Creator Profile Route */}
+        {/* Creator Profile Route - Public */}
         <Route
           path="/creator/:username"
-          element={
-            <WithAuth>
-              <DashboardLayout>
-                <CreatorProfilePage />
-              </DashboardLayout>
-            </WithAuth>
-          }
+          element={<CreatorProfilePage />}
         />
         
         {/* Strategy Purchase Success Route */}
