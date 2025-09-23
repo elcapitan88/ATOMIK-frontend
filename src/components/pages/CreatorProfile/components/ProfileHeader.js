@@ -7,9 +7,12 @@ import {
   Text,
   Button,
   Badge,
-  Tooltip
+  Tooltip,
+  Avatar,
+  SimpleGrid,
+  IconButton
 } from '@chakra-ui/react';
-import { CheckCircle, User } from 'lucide-react';
+import { CheckCircle, User, Users, Target, Calendar, TrendingUp, Bell } from 'lucide-react';
 import { ProfilePicture } from '@/components/common/ProfilePicture';
 
 const ProfileHeader = ({
@@ -18,40 +21,106 @@ const ProfileHeader = ({
   isFollowing,
   onFollow,
   isFollowLoading,
-  isLoggedIn = true
+  isLoggedIn = true,
+  followerCount = 0,
+  strategyCount = 0,
+  totalSubscribers = 0,
+  memberSince
 }) => {
-  const getTierColor = (tier) => {
-    switch (tier) {
-      case 'gold':
-        return '#FFD700';
-      case 'silver':
-        return '#C0C0C0';
-      default:
-        return '#CD7F32';
+
+  const formatNumber = (num) => {
+    if (num >= 1000000) {
+      return (num / 1000000).toFixed(1) + 'M';
+    }
+    if (num >= 1000) {
+      return (num / 1000).toFixed(1) + 'K';
+    }
+    return num.toString();
+  };
+
+  const formatDate = (dateString) => {
+    if (!dateString) return 'Unknown';
+
+    try {
+      const date = new Date(dateString);
+      const now = new Date();
+      const diffTime = Math.abs(now - date);
+      const diffYears = Math.floor(diffTime / (1000 * 60 * 60 * 24 * 365));
+      const diffMonths = Math.floor(diffTime / (1000 * 60 * 60 * 24 * 30));
+
+      if (diffYears >= 1) {
+        return `${diffYears} year${diffYears > 1 ? 's' : ''} ago`;
+      } else if (diffMonths >= 1) {
+        return `${diffMonths} month${diffMonths > 1 ? 's' : ''} ago`;
+      } else {
+        return 'Less than a month ago';
+      }
+    } catch (error) {
+      console.error('Error formatting date:', error);
+      return 'Unknown';
     }
   };
 
-  const getTierDisplayName = (tier) => {
-    return tier ? tier.charAt(0).toUpperCase() + tier.slice(1) : 'Bronze';
-  };
+  const StatItem = ({ icon: Icon, label, value, color = "#00C6E0" }) => (
+    <VStack spacing={1} align="center" textAlign="center" minW="80px">
+      <Icon size={16} color={color} />
+      <Text fontSize="lg" fontWeight="bold" color="white">
+        {value}
+      </Text>
+      <Text fontSize="xs" color="whiteAlpha.700" fontWeight="medium">
+        {label}
+      </Text>
+    </VStack>
+  );
+
+  const stats = [
+    {
+      icon: Users,
+      label: "Followers",
+      value: formatNumber(followerCount),
+      color: "#00C6E0"
+    },
+    {
+      icon: Target,
+      label: "Strategies",
+      value: formatNumber(strategyCount),
+      color: "#00C6E0"
+    },
+    {
+      icon: TrendingUp,
+      label: "Subscribers",
+      value: formatNumber(totalSubscribers),
+      color: "#00C6E0"
+    },
+    {
+      icon: Calendar,
+      label: "Member Since",
+      value: formatDate(memberSince),
+      color: "#00C6E0"
+    }
+  ];
 
   return (
-    <Flex
-      direction={{ base: "column", lg: "row" }}
-      align={{ base: "center", lg: "flex-start" }}
-      gap={8}
-    >
-      {/* Avatar */}
-      <Box flexShrink={0}>
-        <ProfilePicture
-          user={{ profile_picture: profile?.profile_picture, username: profile?.username }}
-          size="2xl"
-          showStatus={false}
-        />
-      </Box>
+    <VStack spacing={6} align="stretch">
+      <Flex
+        direction={{ base: "column", lg: "row" }}
+        align={{ base: "center", lg: "flex-start" }}
+        gap={8}
+      >
+        {/* Avatar */}
+        <Box flexShrink={0}>
+          <Avatar
+            src={profile?.profile_picture}
+            name={profile?.username}
+            size="2xl"
+            border="3px solid #333"
+            bg="#1a1a1a"
+            color="white"
+          />
+        </Box>
 
-      {/* Profile Info */}
-      <VStack align={{ base: "center", lg: "flex-start" }} spacing={4} flex={1}>
+        {/* Profile Info */}
+        <VStack align={{ base: "center", lg: "flex-start" }} spacing={4} flex={1}>
         {/* Name and Verification */}
         <VStack spacing={2} align={{ base: "center", lg: "flex-start" }}>
           <HStack spacing={3} align="center">
@@ -73,19 +142,6 @@ const ProfileHeader = ({
               </Tooltip>
             )}
 
-            {/* Tier Badge */}
-            <Badge
-              bg={getTierColor(profile?.current_tier)}
-              color="black"
-              fontSize="xs"
-              fontWeight="bold"
-              px={2}
-              py={1}
-              borderRadius="full"
-              textTransform="uppercase"
-            >
-              {getTierDisplayName(profile?.current_tier)} Creator
-            </Badge>
           </HStack>
 
           {/* Trading Experience */}
@@ -119,25 +175,49 @@ const ProfileHeader = ({
         {/* Action Buttons */}
         <HStack spacing={4} pt={2}>
           {isLoggedIn && !isOwnProfile && (
-            <Button
-              size="lg"
-              bg={isFollowing ? "transparent" : "#00C6E0"}
-              color={isFollowing ? "#00C6E0" : "white"}
-              border={isFollowing ? "1px solid #00C6E0" : "none"}
-              px={8}
-              _hover={{
-                bg: isFollowing ? "rgba(0, 198, 224, 0.1)" : "#00A3B8",
-                borderColor: isFollowing ? "#00A3B8" : undefined
-              }}
-              _active={{
-                bg: isFollowing ? "rgba(0, 198, 224, 0.2)" : "#008C9E"
-              }}
-              onClick={onFollow}
-              isLoading={isFollowLoading}
-              loadingText={isFollowing ? "Unfollowing..." : "Following..."}
-            >
-              {isFollowing ? "Following" : "Follow"}
-            </Button>
+            <>
+              <Button
+                size="lg"
+                bg={isFollowing ? "transparent" : "#00C6E0"}
+                color={isFollowing ? "#00C6E0" : "white"}
+                border={isFollowing ? "1px solid #00C6E0" : "none"}
+                px={8}
+                _hover={{
+                  bg: isFollowing ? "rgba(0, 198, 224, 0.1)" : "#00A3B8",
+                  borderColor: isFollowing ? "#00A3B8" : undefined
+                }}
+                _active={{
+                  bg: isFollowing ? "rgba(0, 198, 224, 0.2)" : "#008C9E"
+                }}
+                onClick={onFollow}
+                isLoading={isFollowLoading}
+                loadingText={isFollowing ? "Unfollowing..." : "Following..."}
+              >
+                {isFollowing ? "Following" : "Follow"}
+              </Button>
+
+              {isFollowing && (
+                <Tooltip label="Get notifications for new strategies" placement="top">
+                  <IconButton
+                    aria-label="Enable notifications"
+                    icon={<Bell size={20} />}
+                    size="lg"
+                    variant="outline"
+                    color="white"
+                    borderColor="#333"
+                    _hover={{
+                      borderColor: "#00C6E0",
+                      color: "#00C6E0",
+                      bg: "rgba(0, 198, 224, 0.1)"
+                    }}
+                    onClick={() => {
+                      // TODO: Implement notification subscription
+                      console.log('Notification subscription for creator:', profile?.username);
+                    }}
+                  />
+                </Tooltip>
+              )}
+            </>
           )}
 
           {!isLoggedIn && !isOwnProfile && (
@@ -152,26 +232,27 @@ const ProfileHeader = ({
               Sign In to Follow
             </Button>
           )}
-
-          {isLoggedIn && isOwnProfile && (
-            <Button
-              size="lg"
-              variant="outline"
-              color="white"
-              borderColor="#333"
-              px={8}
-              _hover={{
-                borderColor: "#00C6E0",
-                color: "#00C6E0"
-              }}
-              onClick={() => window.open('/settings?section=creator', '_self')}
-            >
-              Edit Profile
-            </Button>
-          )}
         </HStack>
-      </VStack>
-    </Flex>
+        </VStack>
+      </Flex>
+
+      {/* Stats Section */}
+      <Box
+        borderTop="1px solid #333"
+        pt={6}
+        mt={2}
+      >
+        <SimpleGrid
+          columns={{ base: 2, md: 4 }}
+          spacing={8}
+          justifyItems="center"
+        >
+          {stats.map((stat) => (
+            <StatItem key={stat.label} {...stat} />
+          ))}
+        </SimpleGrid>
+      </Box>
+    </VStack>
   );
 };
 

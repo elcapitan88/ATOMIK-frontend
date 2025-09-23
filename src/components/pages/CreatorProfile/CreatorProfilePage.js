@@ -19,7 +19,6 @@ import { motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCreatorProfile } from './hooks/useCreatorProfile';
 import ProfileHeader from './components/ProfileHeader';
-import ProfileStats from './components/ProfileStats';
 import SocialLinks from './components/SocialLinks';
 import StrategyGrid from './components/StrategyGrid';
 import ProfileSkeleton from './components/ProfileSkeleton';
@@ -240,18 +239,6 @@ const CreatorProfilePage = () => {
                 onFollow={handleFollow}
                 isFollowLoading={isFollowLoading}
                 isLoggedIn={isLoggedIn}
-              />
-            </DarkCard>
-          </MotionBox>
-
-          {/* Stats Bar */}
-          <MotionBox
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, delay: 0.2 }}
-          >
-            <DarkCard p={6}>
-              <ProfileStats
                 followerCount={followerCount}
                 strategyCount={profile?.strategy_count || 0}
                 totalSubscribers={profile?.total_subscribers || 0}
@@ -260,12 +247,13 @@ const CreatorProfilePage = () => {
             </DarkCard>
           </MotionBox>
 
+
           {/* Social Links */}
           {profile?.social_media && Object.keys(profile.social_media).length > 0 && (
             <MotionBox
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3, delay: 0.3 }}
+              transition={{ duration: 0.3, delay: 0.2 }}
             >
               <DarkCard p={6}>
                 <SocialLinks socialMedia={profile.social_media} />
@@ -277,7 +265,7 @@ const CreatorProfilePage = () => {
           <MotionBox
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, delay: 0.4 }}
+            transition={{ duration: 0.3, delay: 0.3 }}
           >
             <DarkCard p={6}>
               <VStack spacing={6} align="stretch">
