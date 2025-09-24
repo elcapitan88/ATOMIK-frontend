@@ -221,10 +221,9 @@ const ProfileHeader = ({
                   <Box
                     as="button"
                     p={2}
-                    bg="#1a1a1a"
+                    bg="transparent"
                     borderRadius="lg"
-                    border="1px solid #333"
-                    _hover={{ borderColor: "#1DA1F2", bg: "rgba(29, 161, 242, 0.1)" }}
+                    _hover={{ bg: "rgba(29, 161, 242, 0.1)" }}
                     transition="all 0.2s"
                   >
                     <XIcon size={18} color="#1DA1F2" />
@@ -244,10 +243,9 @@ const ProfileHeader = ({
                   <Box
                     as="button"
                     p={2}
-                    bg="#1a1a1a"
+                    bg="transparent"
                     borderRadius="lg"
-                    border="1px solid #333"
-                    _hover={{ borderColor: "#FF0000", bg: "rgba(255, 0, 0, 0.1)" }}
+                    _hover={{ bg: "rgba(255, 0, 0, 0.1)" }}
                     transition="all 0.2s"
                   >
                     <Youtube size={18} color="#FF0000" />
@@ -267,10 +265,9 @@ const ProfileHeader = ({
                   <Box
                     as="button"
                     p={2}
-                    bg="#1a1a1a"
+                    bg="transparent"
                     borderRadius="lg"
-                    border="1px solid #333"
-                    _hover={{ borderColor: "#FF0050", bg: "rgba(255, 0, 80, 0.1)" }}
+                    _hover={{ bg: "rgba(255, 0, 80, 0.1)" }}
                     transition="all 0.2s"
                   >
                     <TikTokIcon size={18} color="#FF0050" />
@@ -290,10 +287,9 @@ const ProfileHeader = ({
                   <Box
                     as="button"
                     p={2}
-                    bg="#1a1a1a"
+                    bg="transparent"
                     borderRadius="lg"
-                    border="1px solid #333"
-                    _hover={{ borderColor: "#E4405F", bg: "rgba(228, 64, 95, 0.1)" }}
+                    _hover={{ bg: "rgba(228, 64, 95, 0.1)" }}
                     transition="all 0.2s"
                   >
                     <Box
@@ -315,10 +311,9 @@ const ProfileHeader = ({
                 <Box
                   as="button"
                   p={2}
-                  bg="#1a1a1a"
+                  bg="transparent"
                   borderRadius="lg"
-                  border="1px solid #333"
-                  _hover={{ borderColor: "#5865F2", bg: "rgba(88, 101, 242, 0.1)" }}
+                  _hover={{ bg: "rgba(88, 101, 242, 0.1)" }}
                   transition="all 0.2s"
                   cursor="pointer"
                   onClick={() => {
