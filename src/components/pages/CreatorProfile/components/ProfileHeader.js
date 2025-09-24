@@ -217,10 +217,17 @@ const ProfileHeader = ({
           {!isLoggedIn && !isOwnProfile && (
             <Button
               size="md"
-              bg="#00C6E0"
-              color="white"
+              bg="black"
+              color="#00C6E0"
+              border="1px solid #00C6E0"
               px={6}
-              _hover={{ bg: "#00A3B8" }}
+              _hover={{
+                bg: "rgba(0, 198, 224, 0.1)",
+                borderColor: "#00A3B8"
+              }}
+              _active={{
+                bg: "rgba(0, 198, 224, 0.2)"
+              }}
               onClick={() => window.open('/auth', '_self')}
             >
               Sign In to Follow
