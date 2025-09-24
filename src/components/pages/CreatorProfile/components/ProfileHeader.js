@@ -13,7 +13,7 @@ import {
   IconButton,
   Link
 } from '@chakra-ui/react';
-import { CheckCircle, User, Users, Target, Calendar, TrendingUp, Bell, Youtube, Instagram, MessageCircle, ExternalLink } from 'lucide-react';
+import { CheckCircle, User, Users, Target, Calendar, TrendingUp, Bell, Youtube, Instagram, MessageCircle, ExternalLink, Share2 } from 'lucide-react';
 import { ProfilePicture } from '@/components/common/ProfilePicture';
 
 // Custom X (formerly Twitter) icon component
@@ -137,25 +137,118 @@ const ProfileHeader = ({
 
   return (
     <VStack spacing={6} align="stretch">
-      <Flex
-        direction={{ base: "column", lg: "row" }}
-        align={{ base: "center", lg: "flex-start" }}
-        gap={8}
-      >
-        {/* Avatar */}
-        <Box flexShrink={0}>
-          <Avatar
-            src={profile?.profile_picture}
-            name={profile?.username}
-            size="2xl"
-            border="3px solid #333"
-            bg="#1a1a1a"
-            color="white"
-          />
-        </Box>
+      {/* Top Section with Action Buttons */}
+      <Box position="relative">
+        {/* Action Buttons - Top Right */}
+        <HStack
+          position="absolute"
+          top={0}
+          right={0}
+          spacing={2}
+          zIndex={1}
+        >
+          {/* Share Button */}
+          <Tooltip label="Share profile" placement="bottom">
+            <IconButton
+              aria-label="Share profile"
+              icon={<Share2 size={18} />}
+              size="md"
+              variant="outline"
+              color="white"
+              borderColor="#333"
+              _hover={{
+                borderColor: "#00C6E0",
+                color: "#00C6E0",
+                bg: "rgba(0, 198, 224, 0.1)"
+              }}
+              onClick={() => {
+                const profileUrl = `${window.location.origin}/creator/${profile?.username}`;
+                navigator.clipboard.writeText(profileUrl);
+                // You could add a toast notification here
+                console.log('Profile link copied:', profileUrl);
+              }}
+            />
+          </Tooltip>
 
-        {/* Profile Info */}
-        <VStack align={{ base: "center", lg: "flex-start" }} spacing={4} flex={1}>
+          {/* Notification Button - Always visible */}
+          <Tooltip label="Get notifications" placement="bottom">
+            <IconButton
+              aria-label="Enable notifications"
+              icon={<Bell size={18} />}
+              size="md"
+              variant="outline"
+              color="white"
+              borderColor="#333"
+              _hover={{
+                borderColor: "#00C6E0",
+                color: "#00C6E0",
+                bg: "rgba(0, 198, 224, 0.1)"
+              }}
+              onClick={() => {
+                // TODO: Implement notification subscription
+                console.log('Notification subscription for creator:', profile?.username);
+              }}
+            />
+          </Tooltip>
+
+          {/* Follow/Following Button */}
+          {isLoggedIn && !isOwnProfile && (
+            <Button
+              size="md"
+              bg={isFollowing ? "transparent" : "#00C6E0"}
+              color={isFollowing ? "#00C6E0" : "white"}
+              border={isFollowing ? "1px solid #00C6E0" : "none"}
+              px={6}
+              _hover={{
+                bg: isFollowing ? "rgba(0, 198, 224, 0.1)" : "#00A3B8",
+                borderColor: isFollowing ? "#00A3B8" : undefined
+              }}
+              _active={{
+                bg: isFollowing ? "rgba(0, 198, 224, 0.2)" : "#008C9E"
+              }}
+              onClick={onFollow}
+              isLoading={isFollowLoading}
+              loadingText={isFollowing ? "Unfollowing..." : "Following..."}
+            >
+              {isFollowing ? "Following" : "Follow"}
+            </Button>
+          )}
+
+          {!isLoggedIn && !isOwnProfile && (
+            <Button
+              size="md"
+              bg="#00C6E0"
+              color="white"
+              px={6}
+              _hover={{ bg: "#00A3B8" }}
+              onClick={() => window.open('/auth', '_self')}
+            >
+              Sign In to Follow
+            </Button>
+          )}
+        </HStack>
+
+        {/* Main Profile Content */}
+        <Flex
+          direction={{ base: "column", lg: "row" }}
+          align={{ base: "center", lg: "flex-start" }}
+          gap={8}
+          pt={{ base: 12, lg: 0 }} // Add padding top on mobile to account for buttons
+        >
+          {/* Avatar */}
+          <Box flexShrink={0}>
+            <Avatar
+              src={profile?.profile_picture}
+              name={profile?.username}
+              size="2xl"
+              border="3px solid #333"
+              bg="#1a1a1a"
+              color="white"
+            />
+          </Box>
+
+          {/* Profile Info */}
+          <VStack align={{ base: "center", lg: "flex-start" }} spacing={4} flex={1}>
         {/* Name and Verification */}
         <VStack spacing={2} align={{ base: "center", lg: "flex-start" }}>
           <HStack spacing={3} align="center">
@@ -328,69 +421,9 @@ const ProfileHeader = ({
           </HStack>
         )}
 
-        {/* Action Buttons */}
-        <HStack spacing={4} pt={2}>
-          {isLoggedIn && !isOwnProfile && (
-            <>
-              <Button
-                size="lg"
-                bg={isFollowing ? "transparent" : "#00C6E0"}
-                color={isFollowing ? "#00C6E0" : "white"}
-                border={isFollowing ? "1px solid #00C6E0" : "none"}
-                px={8}
-                _hover={{
-                  bg: isFollowing ? "rgba(0, 198, 224, 0.1)" : "#00A3B8",
-                  borderColor: isFollowing ? "#00A3B8" : undefined
-                }}
-                _active={{
-                  bg: isFollowing ? "rgba(0, 198, 224, 0.2)" : "#008C9E"
-                }}
-                onClick={onFollow}
-                isLoading={isFollowLoading}
-                loadingText={isFollowing ? "Unfollowing..." : "Following..."}
-              >
-                {isFollowing ? "Following" : "Follow"}
-              </Button>
-
-              {isFollowing && (
-                <Tooltip label="Get notifications for new strategies" placement="top">
-                  <IconButton
-                    aria-label="Enable notifications"
-                    icon={<Bell size={20} />}
-                    size="lg"
-                    variant="outline"
-                    color="white"
-                    borderColor="#333"
-                    _hover={{
-                      borderColor: "#00C6E0",
-                      color: "#00C6E0",
-                      bg: "rgba(0, 198, 224, 0.1)"
-                    }}
-                    onClick={() => {
-                      // TODO: Implement notification subscription
-                      console.log('Notification subscription for creator:', profile?.username);
-                    }}
-                  />
-                </Tooltip>
-              )}
-            </>
-          )}
-
-          {!isLoggedIn && !isOwnProfile && (
-            <Button
-              size="lg"
-              bg="#00C6E0"
-              color="white"
-              px={8}
-              _hover={{ bg: "#00A3B8" }}
-              onClick={() => window.open('/auth', '_self')}
-            >
-              Sign In to Follow
-            </Button>
-          )}
-        </HStack>
         </VStack>
       </Flex>
+      </Box>
 
       {/* Stats Section */}
       <Box
