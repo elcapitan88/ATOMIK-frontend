@@ -90,11 +90,26 @@ const StrategyCard = ({ strategy, onSubscriptionChange }) => {
         }
       } else {
         // Check if strategy is monetized - if so, go directly to purchase flow
-        if (isMonetized) {
+        // Special check for Break N Enter which should always be monetized
+        const isBreakNEnter = token === 'OGgxOp0wOd60YGb4kc4CEh8oSz2ZCscKVVZtfwbCbHg';
+
+        // Debug logging for Break N Enter
+        if (isBreakNEnter) {
+          console.log('[StrategyCard] Break N Enter subscribe attempt:', {
+            name,
+            token,
+            isMonetized,
+            usageIntent,
+            isBreakNEnter
+          });
+        }
+
+        if (isMonetized || usageIntent === 'monetize' || isBreakNEnter) {
+          console.log('[StrategyCard] Strategy is monetized, going to purchase flow');
           await handlePurchaseFlow();
           return;
         }
-        
+
         // For free strategies, handle based on strategy type
         if (strategyType === 'engine') {
           // For engine strategies, use the engine API to subscribe
@@ -109,18 +124,28 @@ const StrategyCard = ({ strategy, onSubscriptionChange }) => {
           });
         } else {
           // For webhook strategies, use the subscription API
-          await webhookApi.subscribeToStrategy(token);
-          toast({
-            title: "Subscribed!",
-            description: "You are now subscribed to this strategy",
-            status: "success",
-            duration: 3000,
-            isClosable: true,
-          });
-        }
-        setSubscribed(true);
-        if (onSubscriptionChange) {
-          onSubscriptionChange(token, true);
+          try {
+            await webhookApi.subscribeToStrategy(token);
+            toast({
+              title: "Subscribed!",
+              description: "You are now subscribed to this strategy",
+              status: "success",
+              duration: 3000,
+              isClosable: true,
+            });
+            setSubscribed(true);
+            if (onSubscriptionChange) {
+              onSubscriptionChange(token, true);
+            }
+          } catch (subscribeError) {
+            // If we get a 402 error, it means this is a paid strategy
+            if (subscribeError.response?.status === 402) {
+              console.log('[StrategyCard] Got 402 error, triggering purchase flow for:', name);
+              await handlePurchaseFlow();
+              return;
+            }
+            throw subscribeError; // Re-throw other errors
+          }
         }
       }
     } catch (error) {
