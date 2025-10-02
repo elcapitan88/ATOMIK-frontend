@@ -283,65 +283,46 @@ const StrategyCard = ({ strategy, onSubscriptionChange }) => {
       <VStack p={4} spacing={3} align="stretch" h="full">
         {/* Header Section */}
         <HStack justify="space-between" align="start">
-          <VStack align="start" spacing={0}>
+          <VStack align="start" spacing={0} flex={1}>
             <HStack align="center" spacing={2}>
-              <Text 
-                fontSize="md" 
-                fontWeight="bold" 
+              <Text
+                fontSize="md"
+                fontWeight="bold"
                 color="white"
                 noOfLines={1}
               >
                 {name}
               </Text>
-              {isMonetized && (
-                <Badge 
-                  colorScheme="yellow" 
-                  size="sm"
-                  variant="solid"
-                >
-                  💰 PAID
-                </Badge>
-              )}
-              {usageIntent === 'share_free' && (
-                <Badge 
-                  colorScheme="green" 
-                  size="sm"
-                  variant="solid"
-                >
-                  FREE
-                </Badge>
-              )}
             </HStack>
             <Text fontSize="sm" color="whiteAlpha.700">
               by {username}
             </Text>
           </VStack>
-          <Tooltip 
-            label={isPublic ? "Public Strategy" : "Private Strategy"} 
-            placement="top"
-          >
-            <Box color="whiteAlpha.600">
-              <Icon 
-                as={isPublic ? Unlock : Lock} 
-                size={16}
-              />
-            </Box>
-          </Tooltip>
+          {/* Pricing Badge - More prominent positioning */}
+          {isMonetized || usageIntent === 'monetize' ? (
+            <Badge
+              colorScheme="yellow"
+              size="sm"
+              variant="solid"
+              fontSize="0.7rem"
+              px={2}
+              py={1}
+            >
+              PREMIUM
+            </Badge>
+          ) : (
+            <Badge
+              colorScheme="green"
+              size="sm"
+              variant="solid"
+              fontSize="0.7rem"
+              px={2}
+              py={1}
+            >
+              FREE
+            </Badge>
+          )}
         </HStack>
-
-        {/* Strategy Type Badge */}
-        <Badge
-          colorScheme="blue"
-          bg="rgba(0, 198, 224, 0.2)"
-          color="white"
-          borderRadius="full"
-          px={2}
-          py={0.5}
-          fontSize="xs"
-          alignSelf="flex-start"
-        >
-          {strategyType}
-        </Badge>
 
         {/* Description */}
         <Text 
@@ -385,10 +366,10 @@ const StrategyCard = ({ strategy, onSubscriptionChange }) => {
           }}
           leftIcon={subscribed ? <CheckCircle2 size={16} /> : null}
         >
-          {subscribed 
-            ? "Subscribed" 
-            : isMonetized 
-              ? "💳 Purchase" 
+          {subscribed
+            ? "Subscribed"
+            : (isMonetized || usageIntent === 'monetize')
+              ? "View Pricing"
               : "Subscribe Free"
           }
         </Button>
