@@ -309,10 +309,10 @@ const ActivateStrategies = () => {
                               {strategy.ticker || 'Unknown Ticker'}
                             </Text>
                             <Text fontSize="xs" color="whiteAlpha.700">
-                              {strategy.webhook?.name || 'Unnamed Webhook'}
+                              {strategy.name || strategy.webhook?.name || 'Unnamed Strategy'}
                             </Text>
                             <Text fontSize="xs" color="whiteAlpha.500">
-                              ({strategy.webhook?.source_type?.toLowerCase() || 'custom'})
+                              ({strategy.execution_type === 'engine' ? 'engine' : strategy.webhook?.source_type?.toLowerCase() || 'webhook'})
                             </Text>
                           </Flex>
                           <Text fontSize="xs" color="whiteAlpha.700">
@@ -404,10 +404,10 @@ const ActivateStrategies = () => {
                               {strategy.group_name || 'Unnamed Group'}
                             </Text>
                             <Text fontSize="xs" color="whiteAlpha.700">
-                              {strategy.webhook?.name || 'Unnamed Webhook'}
+                              {strategy.name || strategy.webhook?.name || 'Unnamed Strategy'}
                             </Text>
                             <Text fontSize="xs" color="whiteAlpha.500">
-                              ({strategy.webhook?.source_type?.toLowerCase() || 'custom'})
+                              ({strategy.execution_type === 'engine' ? 'engine' : strategy.webhook?.source_type?.toLowerCase() || 'webhook'})
                             </Text>
                           </Flex>
                           <Text fontSize="xs" color="whiteAlpha.700">
