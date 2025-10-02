@@ -19,6 +19,7 @@ import StrategyPurchaseModal from './StrategyPurchaseModal';
 const StrategyCard = ({ strategy, onSubscriptionChange }) => {
   const {
     token,
+    source_id, // This is the ID for engine strategies or token for webhooks
     name,
     description,
     username,
@@ -356,9 +357,9 @@ const StrategyCard = ({ strategy, onSubscriptionChange }) => {
 
         {/* Stats Row */}
         <HStack justify="space-between" align="center">
-          <StarRating 
-            rating={currentRating} 
-            token={token}
+          <StarRating
+            rating={currentRating}
+            sourceId={source_id || token} // Use source_id for unified rating endpoint
             onRatingChange={handleRatingChange}
             isInteractive={subscribed}
           />

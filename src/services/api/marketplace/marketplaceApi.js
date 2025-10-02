@@ -35,8 +35,24 @@ class MarketplaceApi {
     }
 
     async updateStrategyPricing(pricingId, pricingData) {
-        return this.errorHandler(() => 
+        return this.errorHandler(() =>
             axiosInstance.put(`${this.baseUrl}/webhook-pricing/${pricingId}`, pricingData)
+        );
+    }
+
+    // Rating Method - works for both webhook and engine strategies
+    async rateStrategy(sourceId, rating) {
+        console.log('Rating strategy:', { sourceId, rating });
+        return this.errorHandler(() =>
+            axiosInstance.post(
+                `${this.baseUrl}/strategies/${sourceId}/rate`,
+                { rating: parseInt(rating) },
+                {
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                }
+            )
         );
     }
 
