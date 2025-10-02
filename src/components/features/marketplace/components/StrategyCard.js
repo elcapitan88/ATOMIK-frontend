@@ -33,6 +33,10 @@ const StrategyCard = ({ strategy, onSubscriptionChange }) => {
     pricingEndpoint
   } = strategy;
 
+  // Special handling for Break N Enter - always treat as monetized
+  const isBreakNEnter = token === 'OGgxOp0wOd60YGb4kc4CEh8oSz2ZCscKVVZtfwbCbHg';
+  const isStrategyMonetized = isMonetized || usageIntent === 'monetize' || isBreakNEnter;
+
   const [currentRating, setCurrentRating] = useState(rating);
   const [isLoading, setIsLoading] = useState(false);
   const [subscribed, setSubscribed] = useState(isSubscribed);
@@ -298,29 +302,45 @@ const StrategyCard = ({ strategy, onSubscriptionChange }) => {
               by {username}
             </Text>
           </VStack>
-          {/* Pricing Badge - More prominent positioning */}
-          {isMonetized || usageIntent === 'monetize' ? (
-            <Badge
-              colorScheme="yellow"
-              size="sm"
-              variant="solid"
-              fontSize="0.7rem"
-              px={2}
-              py={1}
+          {/* Pricing Badge - Glassmorphic style matching app aesthetic */}
+          {isStrategyMonetized ? (
+            <Box
+              bg="rgba(255, 193, 7, 0.15)"
+              backdropFilter="blur(10px)"
+              border="1px solid rgba(255, 193, 7, 0.4)"
+              borderRadius="full"
+              px={3}
+              py={0.5}
             >
-              PREMIUM
-            </Badge>
+              <Text
+                fontSize="0.65rem"
+                fontWeight="bold"
+                color="rgba(255, 193, 7, 1)"
+                textTransform="uppercase"
+                letterSpacing="0.5px"
+              >
+                Premium
+              </Text>
+            </Box>
           ) : (
-            <Badge
-              colorScheme="green"
-              size="sm"
-              variant="solid"
-              fontSize="0.7rem"
-              px={2}
-              py={1}
+            <Box
+              bg="rgba(16, 185, 129, 0.15)"
+              backdropFilter="blur(10px)"
+              border="1px solid rgba(16, 185, 129, 0.4)"
+              borderRadius="full"
+              px={3}
+              py={0.5}
             >
-              FREE
-            </Badge>
+              <Text
+                fontSize="0.65rem"
+                fontWeight="bold"
+                color="rgba(16, 185, 129, 1)"
+                textTransform="uppercase"
+                letterSpacing="0.5px"
+              >
+                Free
+              </Text>
+            </Box>
           )}
         </HStack>
 
@@ -368,7 +388,7 @@ const StrategyCard = ({ strategy, onSubscriptionChange }) => {
         >
           {subscribed
             ? "Subscribed"
-            : (isMonetized || usageIntent === 'monetize')
+            : isStrategyMonetized
               ? "View Pricing"
               : "Subscribe Free"
           }
