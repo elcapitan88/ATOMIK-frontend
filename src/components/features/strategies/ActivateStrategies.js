@@ -311,30 +311,9 @@ const ActivateStrategies = () => {
                             <Text fontSize="xs" color="whiteAlpha.700">
                               {strategy.name || strategy.webhook?.name || 'Unnamed Strategy'}
                             </Text>
-                            {/* Show pricing status instead of technical type */}
-                            {strategy.is_monetized ? (
-                              <Badge
-                                colorScheme="yellow"
-                                size="sm"
-                                variant="solid"
-                                fontSize="0.65rem"
-                                px={2}
-                                py={0.5}
-                              >
-                                PREMIUM
-                              </Badge>
-                            ) : (
-                              <Badge
-                                colorScheme="green"
-                                size="sm"
-                                variant="solid"
-                                fontSize="0.65rem"
-                                px={2}
-                                py={0.5}
-                              >
-                                FREE
-                              </Badge>
-                            )}
+                            <Text fontSize="xs" color="whiteAlpha.500">
+                              ({strategy.execution_type === 'engine' ? 'engine' : strategy.webhook?.source_type?.toLowerCase() || 'webhook'})
+                            </Text>
                           </Flex>
                           <Text fontSize="xs" color="whiteAlpha.700">
                             Account: {String(strategy.broker_account?.account_id || 'N/A')} 
@@ -427,30 +406,9 @@ const ActivateStrategies = () => {
                             <Text fontSize="xs" color="whiteAlpha.700">
                               {strategy.name || strategy.webhook?.name || 'Unnamed Strategy'}
                             </Text>
-                            {/* Show pricing status instead of technical type */}
-                            {strategy.is_monetized ? (
-                              <Badge
-                                colorScheme="yellow"
-                                size="sm"
-                                variant="solid"
-                                fontSize="0.65rem"
-                                px={2}
-                                py={0.5}
-                              >
-                                PREMIUM
-                              </Badge>
-                            ) : (
-                              <Badge
-                                colorScheme="green"
-                                size="sm"
-                                variant="solid"
-                                fontSize="0.65rem"
-                                px={2}
-                                py={0.5}
-                              >
-                                FREE
-                              </Badge>
-                            )}
+                            <Text fontSize="xs" color="whiteAlpha.500">
+                              ({strategy.execution_type === 'engine' ? 'engine' : strategy.webhook?.source_type?.toLowerCase() || 'webhook'})
+                            </Text>
                           </Flex>
                           <Text fontSize="xs" color="whiteAlpha.700">
                             Leader: {String(strategy.leader_broker_account?.account_id || 'N/A')} 
