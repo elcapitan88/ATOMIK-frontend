@@ -9,18 +9,21 @@ import {
 } from '@chakra-ui/react';
 import { Star } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { webhookApi } from '@/services/api/Webhooks/webhookApi';
+import { marketplaceApi } from '@/services/api/marketplace/marketplaceApi';
 
 const MotionHStack = motion(HStack);
 const MotionBox = motion(Box);
 
-const StarRating = ({ 
-  rating, 
-  token, 
+const StarRating = ({
+  rating,
+  token, // Can be either webhook token or engine strategy ID
+  sourceId, // New prop to support both types
   onRatingChange,
   size = 16,
-  isInteractive = true 
+  isInteractive = true
 }) => {
+  // Use sourceId if provided, otherwise fall back to token for backwards compatibility
+  const strategySourceId = sourceId || token;
   const [hoverRating, setHoverRating] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
@@ -31,7 +34,7 @@ const StarRating = ({
 
     try {
       setIsLoading(true);
-      await webhookApi.rateStrategy(token, newRating);
+      await marketplaceApi.rateStrategy(strategySourceId, newRating);
       
       if (onRatingChange) {
         onRatingChange(newRating);

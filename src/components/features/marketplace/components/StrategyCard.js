@@ -19,6 +19,7 @@ import StrategyPurchaseModal from './StrategyPurchaseModal';
 const StrategyCard = ({ strategy, onSubscriptionChange }) => {
   const {
     token,
+    source_id, // This is the ID for engine strategies or token for webhooks
     name,
     description,
     username,
@@ -32,6 +33,10 @@ const StrategyCard = ({ strategy, onSubscriptionChange }) => {
     marketplacePurchaseUrl,
     pricingEndpoint
   } = strategy;
+
+  // Special handling for Break N Enter - always treat as monetized
+  const isBreakNEnter = token === 'OGgxOp0wOd60YGb4kc4CEh8oSz2ZCscKVVZtfwbCbHg';
+  const isStrategyMonetized = isMonetized || usageIntent === 'monetize' || isBreakNEnter;
 
   const [currentRating, setCurrentRating] = useState(rating);
   const [isLoading, setIsLoading] = useState(false);
@@ -283,65 +288,62 @@ const StrategyCard = ({ strategy, onSubscriptionChange }) => {
       <VStack p={4} spacing={3} align="stretch" h="full">
         {/* Header Section */}
         <HStack justify="space-between" align="start">
-          <VStack align="start" spacing={0}>
+          <VStack align="start" spacing={0} flex={1}>
             <HStack align="center" spacing={2}>
-              <Text 
-                fontSize="md" 
-                fontWeight="bold" 
+              <Text
+                fontSize="md"
+                fontWeight="bold"
                 color="white"
                 noOfLines={1}
               >
                 {name}
               </Text>
-              {isMonetized && (
-                <Badge 
-                  colorScheme="yellow" 
-                  size="sm"
-                  variant="solid"
-                >
-                  💰 PAID
-                </Badge>
-              )}
-              {usageIntent === 'share_free' && (
-                <Badge 
-                  colorScheme="green" 
-                  size="sm"
-                  variant="solid"
-                >
-                  FREE
-                </Badge>
-              )}
             </HStack>
             <Text fontSize="sm" color="whiteAlpha.700">
               by {username}
             </Text>
           </VStack>
-          <Tooltip 
-            label={isPublic ? "Public Strategy" : "Private Strategy"} 
-            placement="top"
-          >
-            <Box color="whiteAlpha.600">
-              <Icon 
-                as={isPublic ? Unlock : Lock} 
-                size={16}
-              />
+          {/* Pricing Badge - Glassmorphic style matching app aesthetic */}
+          {isStrategyMonetized ? (
+            <Box
+              bg="rgba(255, 193, 7, 0.15)"
+              backdropFilter="blur(10px)"
+              border="1px solid rgba(255, 193, 7, 0.4)"
+              borderRadius="full"
+              px={3}
+              py={0.5}
+            >
+              <Text
+                fontSize="0.65rem"
+                fontWeight="bold"
+                color="rgba(255, 193, 7, 1)"
+                textTransform="uppercase"
+                letterSpacing="0.5px"
+              >
+                Premium
+              </Text>
             </Box>
-          </Tooltip>
+          ) : (
+            <Box
+              bg="rgba(16, 185, 129, 0.15)"
+              backdropFilter="blur(10px)"
+              border="1px solid rgba(16, 185, 129, 0.4)"
+              borderRadius="full"
+              px={3}
+              py={0.5}
+            >
+              <Text
+                fontSize="0.65rem"
+                fontWeight="bold"
+                color="rgba(16, 185, 129, 1)"
+                textTransform="uppercase"
+                letterSpacing="0.5px"
+              >
+                Free
+              </Text>
+            </Box>
+          )}
         </HStack>
-
-        {/* Strategy Type Badge */}
-        <Badge
-          colorScheme="blue"
-          bg="rgba(0, 198, 224, 0.2)"
-          color="white"
-          borderRadius="full"
-          px={2}
-          py={0.5}
-          fontSize="xs"
-          alignSelf="flex-start"
-        >
-          {strategyType}
-        </Badge>
 
         {/* Description */}
         <Text 
@@ -355,9 +357,9 @@ const StrategyCard = ({ strategy, onSubscriptionChange }) => {
 
         {/* Stats Row */}
         <HStack justify="space-between" align="center">
-          <StarRating 
-            rating={currentRating} 
-            token={token}
+          <StarRating
+            rating={currentRating}
+            sourceId={source_id || token} // Use source_id for unified rating endpoint
             onRatingChange={handleRatingChange}
             isInteractive={subscribed}
           />
@@ -385,10 +387,10 @@ const StrategyCard = ({ strategy, onSubscriptionChange }) => {
           }}
           leftIcon={subscribed ? <CheckCircle2 size={16} /> : null}
         >
-          {subscribed 
-            ? "Subscribed" 
-            : isMonetized 
-              ? "💳 Purchase" 
+          {subscribed
+            ? "Subscribed"
+            : isStrategyMonetized
+              ? "View Pricing"
               : "Subscribe Free"
           }
         </Button>
