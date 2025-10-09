@@ -966,86 +966,108 @@ const ActivateStrategyModal = ({ isOpen, onClose, onSubmit, strategy = null, mar
 
               <Collapse in={enableSchedule} animateOpacity>
                 <VStack align="stretch" spacing={2} mt={3}>
-                  <CheckboxGroup value={selectedMarkets} onChange={setSelectedMarkets}>
-                    <VStack align="stretch" spacing={2}>
+                  <VStack align="stretch" spacing={2}>
 
-                      <Box
-                        p={2}
-                        borderRadius="md"
-                        bg={selectedMarkets.includes('NYSE') ? 'whiteAlpha.100' : 'transparent'}
-                        cursor="pointer"
-                        onClick={() => {
-                          if (selectedMarkets.includes('NYSE')) {
-                            setSelectedMarkets(selectedMarkets.filter(m => m !== 'NYSE'));
-                          } else {
-                            setSelectedMarkets([...selectedMarkets, 'NYSE']);
-                          }
-                        }}
-                        transition="all 0.2s"
-                        _hover={{ bg: 'whiteAlpha.50' }}
-                      >
-                        <Checkbox value="NYSE" colorScheme="cyan" size="sm">
-                          <HStack spacing={2}>
-                            <Text fontSize="sm">NYSE</Text>
-                            <Text fontSize="xs" color="whiteAlpha.600">
-                              9:30 AM - 4:00 PM EST
-                            </Text>
-                          </HStack>
-                        </Checkbox>
-                      </Box>
+                    <Box
+                      p={3}
+                      borderRadius="md"
+                      bg={selectedMarkets.includes('NYSE') ? 'cyan.900' : 'whiteAlpha.50'}
+                      borderWidth={2}
+                      borderColor={selectedMarkets.includes('NYSE') ? 'cyan.500' : 'whiteAlpha.200'}
+                      cursor="pointer"
+                      onClick={() => {
+                        if (selectedMarkets.includes('NYSE')) {
+                          setSelectedMarkets(selectedMarkets.filter(m => m !== 'NYSE'));
+                        } else {
+                          setSelectedMarkets([...selectedMarkets, 'NYSE']);
+                        }
+                      }}
+                      transition="all 0.2s"
+                      _hover={{
+                        borderColor: selectedMarkets.includes('NYSE') ? 'cyan.400' : 'whiteAlpha.400',
+                        transform: 'translateY(-2px)'
+                      }}
+                    >
+                      <VStack align="stretch" spacing={1}>
+                        <HStack justify="space-between">
+                          <Text fontSize="sm" fontWeight="medium">NYSE</Text>
+                          {selectedMarkets.includes('NYSE') && (
+                            <Badge colorScheme="cyan" fontSize="xs">Selected</Badge>
+                          )}
+                        </HStack>
+                        <Text fontSize="xs" color="whiteAlpha.600">
+                          9:30 AM - 4:00 PM EST
+                        </Text>
+                      </VStack>
+                    </Box>
 
-                      <Box
-                        p={2}
-                        borderRadius="md"
-                        bg={selectedMarkets.includes('LONDON') ? 'whiteAlpha.100' : 'transparent'}
-                        cursor="pointer"
-                        onClick={() => {
-                          if (selectedMarkets.includes('LONDON')) {
-                            setSelectedMarkets(selectedMarkets.filter(m => m !== 'LONDON'));
-                          } else {
-                            setSelectedMarkets([...selectedMarkets, 'LONDON']);
-                          }
-                        }}
-                        transition="all 0.2s"
-                        _hover={{ bg: 'whiteAlpha.50' }}
-                      >
-                        <Checkbox value="LONDON" colorScheme="cyan" size="sm">
-                          <HStack spacing={2}>
-                            <Text fontSize="sm">London</Text>
-                            <Text fontSize="xs" color="whiteAlpha.600">
-                              3:00 AM - 11:30 AM EST
-                            </Text>
-                          </HStack>
-                        </Checkbox>
-                      </Box>
+                    <Box
+                      p={3}
+                      borderRadius="md"
+                      bg={selectedMarkets.includes('LONDON') ? 'cyan.900' : 'whiteAlpha.50'}
+                      borderWidth={2}
+                      borderColor={selectedMarkets.includes('LONDON') ? 'cyan.500' : 'whiteAlpha.200'}
+                      cursor="pointer"
+                      onClick={() => {
+                        if (selectedMarkets.includes('LONDON')) {
+                          setSelectedMarkets(selectedMarkets.filter(m => m !== 'LONDON'));
+                        } else {
+                          setSelectedMarkets([...selectedMarkets, 'LONDON']);
+                        }
+                      }}
+                      transition="all 0.2s"
+                      _hover={{
+                        borderColor: selectedMarkets.includes('LONDON') ? 'cyan.400' : 'whiteAlpha.400',
+                        transform: 'translateY(-2px)'
+                      }}
+                    >
+                      <VStack align="stretch" spacing={1}>
+                        <HStack justify="space-between">
+                          <Text fontSize="sm" fontWeight="medium">London</Text>
+                          {selectedMarkets.includes('LONDON') && (
+                            <Badge colorScheme="cyan" fontSize="xs">Selected</Badge>
+                          )}
+                        </HStack>
+                        <Text fontSize="xs" color="whiteAlpha.600">
+                          3:00 AM - 11:30 AM EST
+                        </Text>
+                      </VStack>
+                    </Box>
 
-                      <Box
-                        p={2}
-                        borderRadius="md"
-                        bg={selectedMarkets.includes('ASIA') ? 'whiteAlpha.100' : 'transparent'}
-                        cursor="pointer"
-                        onClick={() => {
-                          if (selectedMarkets.includes('ASIA')) {
-                            setSelectedMarkets(selectedMarkets.filter(m => m !== 'ASIA'));
-                          } else {
-                            setSelectedMarkets([...selectedMarkets, 'ASIA']);
-                          }
-                        }}
-                        transition="all 0.2s"
-                        _hover={{ bg: 'whiteAlpha.50' }}
-                      >
-                        <Checkbox value="ASIA" colorScheme="cyan" size="sm">
-                          <HStack spacing={2}>
-                            <Text fontSize="sm">Tokyo</Text>
-                            <Text fontSize="xs" color="whiteAlpha.600">
-                              7:00 PM - 1:00 AM EST
-                            </Text>
-                          </HStack>
-                        </Checkbox>
-                      </Box>
+                    <Box
+                      p={3}
+                      borderRadius="md"
+                      bg={selectedMarkets.includes('ASIA') ? 'cyan.900' : 'whiteAlpha.50'}
+                      borderWidth={2}
+                      borderColor={selectedMarkets.includes('ASIA') ? 'cyan.500' : 'whiteAlpha.200'}
+                      cursor="pointer"
+                      onClick={() => {
+                        if (selectedMarkets.includes('ASIA')) {
+                          setSelectedMarkets(selectedMarkets.filter(m => m !== 'ASIA'));
+                        } else {
+                          setSelectedMarkets([...selectedMarkets, 'ASIA']);
+                        }
+                      }}
+                      transition="all 0.2s"
+                      _hover={{
+                        borderColor: selectedMarkets.includes('ASIA') ? 'cyan.400' : 'whiteAlpha.400',
+                        transform: 'translateY(-2px)'
+                      }}
+                    >
+                      <VStack align="stretch" spacing={1}>
+                        <HStack justify="space-between">
+                          <Text fontSize="sm" fontWeight="medium">Tokyo</Text>
+                          {selectedMarkets.includes('ASIA') && (
+                            <Badge colorScheme="cyan" fontSize="xs">Selected</Badge>
+                          )}
+                        </HStack>
+                        <Text fontSize="xs" color="whiteAlpha.600">
+                          7:00 PM - 1:00 AM EST
+                        </Text>
+                      </VStack>
+                    </Box>
 
-                    </VStack>
-                  </CheckboxGroup>
+                  </VStack>
 
                   <Alert status="info" size="sm" borderRadius="md" bg="blue.900" color="white">
                     <AlertIcon boxSize="4" />
