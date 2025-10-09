@@ -23,8 +23,13 @@ import {
   AlertIcon,
   ModalCloseButton,
   Badge,
+  Switch,
+  Collapse,
+  RadioGroup,
+  Radio,
+  Flex,
 } from '@chakra-ui/react';
-import { Plus, Minus, Settings } from 'lucide-react';
+import { Plus, Minus, Settings, Clock } from 'lucide-react';
 import axiosInstance from '@/services/axiosConfig';
 import { useStrategies } from '@/hooks/useStrategies';
 import { webhookApi } from '@/services/api/Webhooks/webhookApi';
@@ -115,12 +120,16 @@ const ActivateStrategyModal = ({ isOpen, onClose, onSubmit, strategy = null, mar
     description: '',
     isActive: true
   });
-  
+
   const [accounts, setAccounts] = useState([]);
   const [webhooks, setWebhooks] = useState([]);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [pendingChangeType, setPendingChangeType] = useState(null);
   const [errors, setErrors] = useState({});
+
+  // Schedule state
+  const [enableSchedule, setEnableSchedule] = useState(false);
+  const [marketSchedule, setMarketSchedule] = useState('NYSE');
   const { createStrategy, isCreating, createStrategyError, updateStrategy, isUpdating, updateStrategyError, deleteStrategy, isDeleting } = useStrategies();
   const toast = useToast();
 
@@ -478,6 +487,11 @@ const ActivateStrategyModal = ({ isOpen, onClose, onSubmit, strategy = null, mar
       baseData.group_name = formData.multipleAccount.groupName;
       baseData.follower_account_ids = formData.multipleAccount.followerAccounts.map(f => f.accountId);
       baseData.follower_quantities = formData.multipleAccount.followerAccounts.map(f => Number(f.quantity));
+    }
+
+    // Add market schedule if enabled
+    if (enableSchedule) {
+      baseData.market_schedule = marketSchedule;
     }
 
     console.log('Final strategy data being sent:', baseData);
@@ -924,9 +938,106 @@ const ActivateStrategyModal = ({ isOpen, onClose, onSubmit, strategy = null, mar
                 </VStack>
               </VStack>
             )}
-   
 
-   
+            {/* Market Schedule Section */}
+            <Box
+              p={4}
+              borderRadius="md"
+              border="1px solid"
+              borderColor="whiteAlpha.200"
+              bg="whiteAlpha.50"
+            >
+              <Flex justify="space-between" align="center" mb={enableSchedule ? 3 : 0}>
+                <HStack spacing={2}>
+                  <Clock size={16} />
+                  <Text fontSize="sm" fontWeight="medium">
+                    Schedule by Market Hours
+                  </Text>
+                </HStack>
+                <Switch
+                  isChecked={enableSchedule}
+                  onChange={(e) => setEnableSchedule(e.target.checked)}
+                  colorScheme="cyan"
+                  size="md"
+                />
+              </Flex>
+
+              <Collapse in={enableSchedule} animateOpacity>
+                <VStack align="stretch" spacing={2} mt={3}>
+                  <RadioGroup value={marketSchedule} onChange={setMarketSchedule}>
+                    <VStack align="stretch" spacing={2}>
+
+                      <Box
+                        p={2}
+                        borderRadius="md"
+                        bg={marketSchedule === 'NYSE' ? 'whiteAlpha.100' : 'transparent'}
+                        cursor="pointer"
+                        onClick={() => setMarketSchedule('NYSE')}
+                        transition="all 0.2s"
+                        _hover={{ bg: 'whiteAlpha.50' }}
+                      >
+                        <Radio value="NYSE" colorScheme="cyan" size="sm">
+                          <HStack spacing={2}>
+                            <Text fontSize="sm">NYSE</Text>
+                            <Text fontSize="xs" color="whiteAlpha.600">
+                              9:30 AM - 4:00 PM EST
+                            </Text>
+                          </HStack>
+                        </Radio>
+                      </Box>
+
+                      <Box
+                        p={2}
+                        borderRadius="md"
+                        bg={marketSchedule === 'LONDON' ? 'whiteAlpha.100' : 'transparent'}
+                        cursor="pointer"
+                        onClick={() => setMarketSchedule('LONDON')}
+                        transition="all 0.2s"
+                        _hover={{ bg: 'whiteAlpha.50' }}
+                      >
+                        <Radio value="LONDON" colorScheme="cyan" size="sm">
+                          <HStack spacing={2}>
+                            <Text fontSize="sm">London</Text>
+                            <Text fontSize="xs" color="whiteAlpha.600">
+                              8:00 AM - 4:30 PM GMT
+                            </Text>
+                          </HStack>
+                        </Radio>
+                      </Box>
+
+                      <Box
+                        p={2}
+                        borderRadius="md"
+                        bg={marketSchedule === 'ASIA' ? 'whiteAlpha.100' : 'transparent'}
+                        cursor="pointer"
+                        onClick={() => setMarketSchedule('ASIA')}
+                        transition="all 0.2s"
+                        _hover={{ bg: 'whiteAlpha.50' }}
+                      >
+                        <Radio value="ASIA" colorScheme="cyan" size="sm">
+                          <HStack spacing={2}>
+                            <Text fontSize="sm">Tokyo</Text>
+                            <Text fontSize="xs" color="whiteAlpha.600">
+                              9:00 AM - 3:00 PM JST
+                            </Text>
+                          </HStack>
+                        </Radio>
+                      </Box>
+
+                    </VStack>
+                  </RadioGroup>
+
+                  <Alert status="info" size="sm" borderRadius="md" bg="blue.900" color="white">
+                    <AlertIcon boxSize="4" />
+                    <Text fontSize="xs">
+                      Strategy will auto-toggle based on {marketSchedule} market hours
+                    </Text>
+                  </Alert>
+                </VStack>
+              </Collapse>
+            </Box>
+
+
             <Button
               width="full"
               colorScheme="green"
