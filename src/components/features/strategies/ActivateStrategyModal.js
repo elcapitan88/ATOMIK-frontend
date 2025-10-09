@@ -28,6 +28,8 @@ import {
   RadioGroup,
   Radio,
   Flex,
+  Checkbox,
+  CheckboxGroup,
 } from '@chakra-ui/react';
 import { Plus, Minus, Settings, Clock } from 'lucide-react';
 import axiosInstance from '@/services/axiosConfig';
@@ -129,7 +131,7 @@ const ActivateStrategyModal = ({ isOpen, onClose, onSubmit, strategy = null, mar
 
   // Schedule state
   const [enableSchedule, setEnableSchedule] = useState(false);
-  const [marketSchedule, setMarketSchedule] = useState('NYSE');
+  const [selectedMarkets, setSelectedMarkets] = useState([]);
   const { createStrategy, isCreating, createStrategyError, updateStrategy, isUpdating, updateStrategyError, deleteStrategy, isDeleting } = useStrategies();
   const toast = useToast();
 
@@ -490,8 +492,8 @@ const ActivateStrategyModal = ({ isOpen, onClose, onSubmit, strategy = null, mar
     }
 
     // Add market schedule if enabled
-    if (enableSchedule) {
-      baseData.market_schedule = marketSchedule;
+    if (enableSchedule && selectedMarkets.length > 0) {
+      baseData.market_schedule = selectedMarkets;
     }
 
     console.log('Final strategy data being sent:', baseData);
@@ -964,73 +966,94 @@ const ActivateStrategyModal = ({ isOpen, onClose, onSubmit, strategy = null, mar
 
               <Collapse in={enableSchedule} animateOpacity>
                 <VStack align="stretch" spacing={2} mt={3}>
-                  <RadioGroup value={marketSchedule} onChange={setMarketSchedule}>
+                  <CheckboxGroup value={selectedMarkets} onChange={setSelectedMarkets}>
                     <VStack align="stretch" spacing={2}>
 
                       <Box
                         p={2}
                         borderRadius="md"
-                        bg={marketSchedule === 'NYSE' ? 'whiteAlpha.100' : 'transparent'}
+                        bg={selectedMarkets.includes('NYSE') ? 'whiteAlpha.100' : 'transparent'}
                         cursor="pointer"
-                        onClick={() => setMarketSchedule('NYSE')}
+                        onClick={() => {
+                          if (selectedMarkets.includes('NYSE')) {
+                            setSelectedMarkets(selectedMarkets.filter(m => m !== 'NYSE'));
+                          } else {
+                            setSelectedMarkets([...selectedMarkets, 'NYSE']);
+                          }
+                        }}
                         transition="all 0.2s"
                         _hover={{ bg: 'whiteAlpha.50' }}
                       >
-                        <Radio value="NYSE" colorScheme="cyan" size="sm">
+                        <Checkbox value="NYSE" colorScheme="cyan" size="sm">
                           <HStack spacing={2}>
                             <Text fontSize="sm">NYSE</Text>
                             <Text fontSize="xs" color="whiteAlpha.600">
                               9:30 AM - 4:00 PM EST
                             </Text>
                           </HStack>
-                        </Radio>
+                        </Checkbox>
                       </Box>
 
                       <Box
                         p={2}
                         borderRadius="md"
-                        bg={marketSchedule === 'LONDON' ? 'whiteAlpha.100' : 'transparent'}
+                        bg={selectedMarkets.includes('LONDON') ? 'whiteAlpha.100' : 'transparent'}
                         cursor="pointer"
-                        onClick={() => setMarketSchedule('LONDON')}
+                        onClick={() => {
+                          if (selectedMarkets.includes('LONDON')) {
+                            setSelectedMarkets(selectedMarkets.filter(m => m !== 'LONDON'));
+                          } else {
+                            setSelectedMarkets([...selectedMarkets, 'LONDON']);
+                          }
+                        }}
                         transition="all 0.2s"
                         _hover={{ bg: 'whiteAlpha.50' }}
                       >
-                        <Radio value="LONDON" colorScheme="cyan" size="sm">
+                        <Checkbox value="LONDON" colorScheme="cyan" size="sm">
                           <HStack spacing={2}>
                             <Text fontSize="sm">London</Text>
                             <Text fontSize="xs" color="whiteAlpha.600">
-                              8:00 AM - 4:30 PM GMT
+                              3:00 AM - 11:30 AM EST
                             </Text>
                           </HStack>
-                        </Radio>
+                        </Checkbox>
                       </Box>
 
                       <Box
                         p={2}
                         borderRadius="md"
-                        bg={marketSchedule === 'ASIA' ? 'whiteAlpha.100' : 'transparent'}
+                        bg={selectedMarkets.includes('ASIA') ? 'whiteAlpha.100' : 'transparent'}
                         cursor="pointer"
-                        onClick={() => setMarketSchedule('ASIA')}
+                        onClick={() => {
+                          if (selectedMarkets.includes('ASIA')) {
+                            setSelectedMarkets(selectedMarkets.filter(m => m !== 'ASIA'));
+                          } else {
+                            setSelectedMarkets([...selectedMarkets, 'ASIA']);
+                          }
+                        }}
                         transition="all 0.2s"
                         _hover={{ bg: 'whiteAlpha.50' }}
                       >
-                        <Radio value="ASIA" colorScheme="cyan" size="sm">
+                        <Checkbox value="ASIA" colorScheme="cyan" size="sm">
                           <HStack spacing={2}>
                             <Text fontSize="sm">Tokyo</Text>
                             <Text fontSize="xs" color="whiteAlpha.600">
-                              9:00 AM - 3:00 PM JST
+                              7:00 PM - 1:00 AM EST
                             </Text>
                           </HStack>
-                        </Radio>
+                        </Checkbox>
                       </Box>
 
                     </VStack>
-                  </RadioGroup>
+                  </CheckboxGroup>
 
                   <Alert status="info" size="sm" borderRadius="md" bg="blue.900" color="white">
                     <AlertIcon boxSize="4" />
                     <Text fontSize="xs">
-                      Strategy will auto-toggle based on {marketSchedule} market hours
+                      {selectedMarkets.length > 0
+                        ? `Strategy will run when ANY selected market is open: ${selectedMarkets.join(', ')}`
+                        : 'Select at least one market to enable scheduling'
+                      }
                     </Text>
                   </Alert>
                 </VStack>
