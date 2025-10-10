@@ -35,22 +35,34 @@ const CreatorDashboard = ({ creatorProfile }) => {
     );
   }
 
-  const mockAnalytics = analytics || {
-    totalEarnings: 0,
-    monthlyEarnings: 0,
-    totalSubscribers: creatorProfile?.totalSubscribers || 0,
-    monthlyGrowth: 0,
-    activeStrategies: 0,
+  // Map Stripe analytics data to dashboard format
+  const dashboardData = analytics ? {
+    totalEarnings: analytics.revenue?.total_revenue || 0,
+    monthlyEarnings: analytics.revenue?.total_revenue || 0, // Shows revenue for selected period
+    totalSubscribers: analytics.subscribers?.total_active || 0,
+    monthlyGrowth: 0, // TODO: Calculate from previous period
+    activeStrategies: 0, // TODO: Get from backend
     conversionRate: 0,
-    recentTransactions: []
-  };
+    recentTransactions: analytics.payouts?.recent_payouts || []
+  } : null;
 
-  const mockTierProgress = tierProgress || {
-    currentTier: creatorProfile?.currentTier || 'bronze',
-    currentSubscribers: creatorProfile?.totalSubscribers || 0,
-    nextTierThreshold: 100,
-    progressPercentage: ((creatorProfile?.totalSubscribers || 0) / 100) * 100
-  };
+  const tierData = tierProgress ? {
+    currentTier: tierProgress.currentTier || 'bronze',
+    currentSubscribers: tierProgress.currentSubscribers || 0,
+    nextTierThreshold: tierProgress.nextTierThreshold || 100,
+    progressPercentage: tierProgress.progressPercentage || 0
+  } : null;
+
+  // Show loading or error state if no data
+  if (!dashboardData || !tierData) {
+    return (
+      <div className="dashboard-error">
+        <div className="error-icon">⚠️</div>
+        <h3>Unable to load dashboard data</h3>
+        <p>Please make sure you've completed Stripe Connect setup.</p>
+      </div>
+    );
+  }
 
   const quickActions = [
     {
@@ -110,24 +122,26 @@ const CreatorDashboard = ({ creatorProfile }) => {
           <div className="revenue-card primary">
             <div className="revenue-icon">💰</div>
             <div className="revenue-data">
-              <span className="revenue-amount">${mockAnalytics.totalEarnings.toLocaleString()}</span>
+              <span className="revenue-amount">${dashboardData.totalEarnings.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
               <span className="revenue-label">Total Earnings</span>
             </div>
           </div>
-          
+
           <div className="revenue-card">
             <div className="revenue-icon">📅</div>
             <div className="revenue-data">
-              <span className="revenue-amount">${mockAnalytics.monthlyEarnings.toLocaleString()}</span>
-              <span className="revenue-label">This Month</span>
-              <span className="revenue-growth positive">+{mockAnalytics.monthlyGrowth}%</span>
+              <span className="revenue-amount">${dashboardData.monthlyEarnings.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+              <span className="revenue-label">This Period</span>
+              {dashboardData.monthlyGrowth > 0 && (
+                <span className="revenue-growth positive">+{dashboardData.monthlyGrowth}%</span>
+              )}
             </div>
           </div>
 
           <div className="revenue-card">
             <div className="revenue-icon">👥</div>
             <div className="revenue-data">
-              <span className="revenue-amount">{mockAnalytics.totalSubscribers}</span>
+              <span className="revenue-amount">{dashboardData.totalSubscribers}</span>
               <span className="revenue-label">Total Subscribers</span>
             </div>
           </div>
@@ -135,8 +149,8 @@ const CreatorDashboard = ({ creatorProfile }) => {
           <div className="revenue-card">
             <div className="revenue-icon">📈</div>
             <div className="revenue-data">
-              <span className="revenue-amount">{mockAnalytics.activeStrategies}</span>
-              <span className="revenue-label">Active Strategies</span>
+              <span className="revenue-amount">{analytics.subscribers?.mrr?.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) || 0}</span>
+              <span className="revenue-label">MRR (Monthly Recurring)</span>
             </div>
           </div>
         </div>
@@ -148,44 +162,44 @@ const CreatorDashboard = ({ creatorProfile }) => {
         <div className="tier-card">
           <div className="tier-info">
             <div className="current-tier">
-              <span className="tier-badge" style={{ background: getTierColor(mockTierProgress.currentTier) }}>
-                {mockTierProgress.currentTier.toUpperCase()}
+              <span className="tier-badge" style={{ background: getTierColor(tierData.currentTier) }}>
+                {tierData.currentTier.toUpperCase()}
               </span>
               <span className="tier-subscribers">
-                {mockTierProgress.currentSubscribers} subscribers
+                {tierData.currentSubscribers} subscribers
               </span>
             </div>
             <div className="tier-next">
-              <span className="next-label">Next: {getNextTier(mockTierProgress.currentTier)} Tier</span>
+              <span className="next-label">Next: {getNextTier(tierData.currentTier)} Tier</span>
               <span className="next-target">
-                {mockTierProgress.nextTierThreshold - mockTierProgress.currentSubscribers} more subscribers needed
+                {tierData.nextTierThreshold - tierData.currentSubscribers} more subscribers needed
               </span>
             </div>
           </div>
-          
+
           <div className="progress-container">
             <div className="progress-bar">
-              <div 
-                className="progress-fill" 
-                style={{ 
-                  width: `${Math.min(mockTierProgress.progressPercentage, 100)}%`,
-                  background: getTierColor(mockTierProgress.currentTier)
+              <div
+                className="progress-fill"
+                style={{
+                  width: `${Math.min(tierData.progressPercentage, 100)}%`,
+                  background: getTierColor(tierData.currentTier)
                 }}
               />
             </div>
             <span className="progress-text">
-              {Math.round(mockTierProgress.progressPercentage)}% to {getNextTier(mockTierProgress.currentTier)}
+              {Math.round(tierData.progressPercentage)}% to {getNextTier(tierData.currentTier)}
             </span>
           </div>
 
           <div className="tier-benefits">
             <h4>Current Tier Benefits:</h4>
             <ul>
-              <li>Platform fee: {mockTierProgress.currentTier === 'bronze' ? '20%' : mockTierProgress.currentTier === 'silver' ? '15%' : '10%'}</li>
+              <li>Platform fee: {tierData.currentTier === 'bronze' ? '20%' : tierData.currentTier === 'silver' ? '15%' : '10%'}</li>
               <li>Priority support</li>
               <li>Advanced analytics</li>
-              {mockTierProgress.currentTier !== 'bronze' && <li>Featured placement</li>}
-              {mockTierProgress.currentTier === 'gold' && <li>Custom branding</li>}
+              {tierData.currentTier !== 'bronze' && <li>Featured placement</li>}
+              {tierData.currentTier === 'gold' && <li>Custom branding</li>}
             </ul>
           </div>
         </div>
@@ -213,29 +227,29 @@ const CreatorDashboard = ({ creatorProfile }) => {
       </section>
 
       {/* Recent Activity */}
+      {/* Recent Payouts */}
       <section className="activity-section">
-        <h2>Recent Activity</h2>
+        <h2>Recent Payouts</h2>
         <div className="activity-card">
-          {mockAnalytics.recentTransactions.length > 0 ? (
+          {dashboardData.recentTransactions.length > 0 ? (
             <div className="transactions-list">
-              {mockAnalytics.recentTransactions.map((transaction, index) => (
-                <div key={index} className="transaction-item">
+              {dashboardData.recentTransactions.map((payout, index) => (
+                <div key={payout.id || index} className="transaction-item">
                   <div className="transaction-info">
-                    <span className="transaction-type">{transaction.type}</span>
-                    <span className="transaction-date">{transaction.date}</span>
+                    <span className="transaction-type">{payout.status.toUpperCase()}</span>
+                    <span className="transaction-date">
+                      {new Date(payout.arrival_date).toLocaleDateString()}
+                    </span>
                   </div>
-                  <span className="transaction-amount">+${transaction.amount}</span>
+                  <span className="transaction-amount">${payout.amount.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
                 </div>
               ))}
             </div>
           ) : (
             <div className="empty-activity">
               <div className="empty-icon">📭</div>
-              <h4>No Recent Activity</h4>
-              <p>Your earnings and subscriber activity will appear here once you start monetizing your strategies.</p>
-              <button className="get-started-btn">
-                Get Started
-              </button>
+              <h4>No Recent Payouts</h4>
+              <p>Your payout history will appear here once you start earning from your strategies.</p>
             </div>
           )}
         </div>
@@ -273,6 +287,35 @@ const CreatorDashboard = ({ creatorProfile }) => {
 
         .dashboard-loading p {
           color: rgba(255, 255, 255, 0.7);
+        }
+
+        .dashboard-error {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          min-height: 400px;
+          gap: 16px;
+          background: rgba(255, 255, 255, 0.05);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          border-radius: 16px;
+          padding: 48px;
+          text-align: center;
+        }
+
+        .error-icon {
+          font-size: 48px;
+        }
+
+        .dashboard-error h3 {
+          color: white;
+          font-size: 20px;
+          margin: 0;
+        }
+
+        .dashboard-error p {
+          color: rgba(255, 255, 255, 0.6);
+          margin: 0;
         }
 
         section h2 {

@@ -47,10 +47,10 @@ class CreatorApi {
         );
     }
 
-    // Analytics and Earnings
-    async getCreatorAnalytics() {
-        return this.errorHandler(() => 
-            axiosInstance.get(`${this.baseUrl}/analytics`)
+    // Analytics and Earnings - Uses Stripe-based analytics
+    async getCreatorAnalytics(period = '30d') {
+        return this.errorHandler(() =>
+            axiosInstance.get(`/api/v1/analytics/dashboard?period=${period}`)
         );
     }
 
