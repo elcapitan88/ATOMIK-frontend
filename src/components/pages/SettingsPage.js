@@ -621,10 +621,13 @@ const CreatorSettingsFlow = ({ user }) => {
       if ((isCreator || onboardingCompleted) && currentStep === null) {
         setIsLoadingAnalytics(true);
         try {
+          console.log('[Creator Analytics] Fetching analytics from /api/v1/analytics/dashboard...');
           const response = await axiosInstance.get('/api/v1/analytics/dashboard?period=30d');
+          console.log('[Creator Analytics] Response:', response.data);
           setAnalytics(response.data);
         } catch (error) {
-          console.error('Failed to fetch creator analytics:', error);
+          console.error('[Creator Analytics] Failed to fetch:', error);
+          console.error('[Creator Analytics] Error details:', error.response?.data);
           // Don't show error toast, just use fallback zeros
         } finally {
           setIsLoadingAnalytics(false);
