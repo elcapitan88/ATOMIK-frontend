@@ -472,6 +472,8 @@ const CreatorSettingsFlow = ({ user }) => {
     trading_experience: 'intermediate'
   });
   const [isLoadingOnboarding, setIsLoadingOnboarding] = useState(true);
+  const [analytics, setAnalytics] = useState(null);
+  const [isLoadingAnalytics, setIsLoadingAnalytics] = useState(false);
   const toast = useToast();
   const { updateUserProfile } = useAuth();
   
@@ -613,6 +615,26 @@ const CreatorSettingsFlow = ({ user }) => {
     }
   }, [isCreator, currentStep]);
 
+  // Fetch analytics when showing creator dashboard
+  React.useEffect(() => {
+    const fetchAnalytics = async () => {
+      if ((isCreator || onboardingCompleted) && currentStep === null) {
+        setIsLoadingAnalytics(true);
+        try {
+          const response = await axiosInstance.get('/api/v1/analytics/dashboard?period=30d');
+          setAnalytics(response.data);
+        } catch (error) {
+          console.error('Failed to fetch creator analytics:', error);
+          // Don't show error toast, just use fallback zeros
+        } finally {
+          setIsLoadingAnalytics(false);
+        }
+      }
+    };
+
+    fetchAnalytics();
+  }, [isCreator, onboardingCompleted, currentStep]);
+
   // Show loading state while fetching onboarding status
   if (isLoadingOnboarding) {
     return (
@@ -671,26 +693,38 @@ const CreatorSettingsFlow = ({ user }) => {
               <Text color="white" fontSize="lg" fontWeight="semibold" mb={4}>
                 Earnings Overview
               </Text>
-              <SimpleGrid columns={{ base: 1, md: 3 }} spacing={4}>
-                <Box bg="#1a1a1a" p={4} borderRadius="lg" border="1px solid #333">
-                  <VStack align="start" spacing={2}>
-                    <Text color="whiteAlpha.600" fontSize="sm">Total Earnings</Text>
-                    <Text color="white" fontSize="xl" fontWeight="bold">$0.00</Text>
-                  </VStack>
-                </Box>
-                <Box bg="#1a1a1a" p={4} borderRadius="lg" border="1px solid #333">
-                  <VStack align="start" spacing={2}>
-                    <Text color="whiteAlpha.600" fontSize="sm">This Month</Text>
-                    <Text color="white" fontSize="xl" fontWeight="bold">$0.00</Text>
-                  </VStack>
-                </Box>
-                <Box bg="#1a1a1a" p={4} borderRadius="lg" border="1px solid #333">
-                  <VStack align="start" spacing={2}>
-                    <Text color="whiteAlpha.600" fontSize="sm">Subscribers</Text>
-                    <Text color="white" fontSize="xl" fontWeight="bold">0</Text>
-                  </VStack>
-                </Box>
-              </SimpleGrid>
+              {isLoadingAnalytics ? (
+                <Center py={8}>
+                  <Spinner color="#00C6E0" size="lg" />
+                </Center>
+              ) : (
+                <SimpleGrid columns={{ base: 1, md: 3 }} spacing={4}>
+                  <Box bg="#1a1a1a" p={4} borderRadius="lg" border="1px solid #333">
+                    <VStack align="start" spacing={2}>
+                      <Text color="whiteAlpha.600" fontSize="sm">Total Earnings</Text>
+                      <Text color="white" fontSize="xl" fontWeight="bold">
+                        ${(analytics?.revenue?.total_revenue || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                      </Text>
+                    </VStack>
+                  </Box>
+                  <Box bg="#1a1a1a" p={4} borderRadius="lg" border="1px solid #333">
+                    <VStack align="start" spacing={2}>
+                      <Text color="whiteAlpha.600" fontSize="sm">This Month</Text>
+                      <Text color="white" fontSize="xl" fontWeight="bold">
+                        ${(analytics?.revenue?.total_revenue || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                      </Text>
+                    </VStack>
+                  </Box>
+                  <Box bg="#1a1a1a" p={4} borderRadius="lg" border="1px solid #333">
+                    <VStack align="start" spacing={2}>
+                      <Text color="whiteAlpha.600" fontSize="sm">Subscribers</Text>
+                      <Text color="white" fontSize="xl" fontWeight="bold">
+                        {analytics?.subscribers?.total_active || 0}
+                      </Text>
+                    </VStack>
+                  </Box>
+                </SimpleGrid>
+              )}
             </Box>
           </VStack>
         </SectionContainer>
