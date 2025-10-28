@@ -99,13 +99,15 @@ class StrategiesApi {
       console.log('Activating strategy with data:', JSON.stringify(strategyData, null, 2));
 
         // Normalize the data before sending
-        const normalizedData = strategyData.strategy_type === 'single' 
+        const normalizedData = strategyData.strategy_type === 'single'
             ? {
                 strategy_type: 'single',
                 webhook_id: strategyData.webhook_id,
                 ticker: strategyData.ticker,
                 account_id: strategyData.account_id,
-                quantity: Number(strategyData.quantity)
+                quantity: Number(strategyData.quantity),
+                // Include market_schedule if present
+                ...(strategyData.market_schedule && { market_schedule: strategyData.market_schedule })
             }
             : {
                 strategy_type: 'multiple',
@@ -115,7 +117,9 @@ class StrategiesApi {
                 leader_quantity: Number(strategyData.leader_quantity),
                 follower_account_ids: strategyData.follower_account_ids,
                 follower_quantities: strategyData.follower_quantities.map(Number),
-                group_name: strategyData.group_name
+                group_name: strategyData.group_name,
+                // Include market_schedule if present
+                ...(strategyData.market_schedule && { market_schedule: strategyData.market_schedule })
             };
 
         const response = await this.withRetry(() =>
