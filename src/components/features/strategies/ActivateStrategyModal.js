@@ -274,11 +274,16 @@ const ActivateStrategyModal = ({ isOpen, onClose, onSubmit, strategy = null, mar
             });
 
             // Initialize schedule state if editing a strategy with scheduling
+            console.log('Editing strategy:', strategy);
+            console.log('Strategy market_schedule:', strategy.market_schedule);
+
             if (strategy.market_schedule && strategy.market_schedule.length > 0) {
+              console.log('Loading existing schedule:', strategy.market_schedule);
               setEnableSchedule(true);
               setSelectedMarkets(strategy.market_schedule);
             } else {
               // Reset schedule state when editing a strategy without scheduling
+              console.log('No schedule found, resetting');
               setEnableSchedule(false);
               setSelectedMarkets([]);
             }
