@@ -272,6 +272,12 @@ const ActivateStrategyModal = ({ isOpen, onClose, onSubmit, strategy = null, mar
                 };
               }
             });
+
+            // Initialize schedule state if editing a strategy with scheduling
+            if (strategy.market_schedule && strategy.market_schedule.length > 0) {
+              setEnableSchedule(true);
+              setSelectedMarkets(strategy.market_schedule);
+            }
           }
         } catch (error) {
           console.error('Error fetching data:', error);
@@ -543,8 +549,15 @@ const ActivateStrategyModal = ({ isOpen, onClose, onSubmit, strategy = null, mar
           updateData.is_active = true;
         }
 
-        await updateStrategy({ 
-          strategyId: strategy.id, 
+        // Add market schedule if enabled (or explicitly remove if disabled)
+        if (enableSchedule && selectedMarkets.length > 0) {
+          updateData.market_schedule = selectedMarkets;
+        } else {
+          updateData.market_schedule = null;
+        }
+
+        await updateStrategy({
+          strategyId: strategy.id,
           updateData,
         });
         
