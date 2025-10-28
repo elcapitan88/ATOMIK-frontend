@@ -272,6 +272,20 @@ const ActivateStrategyModal = ({ isOpen, onClose, onSubmit, strategy = null, mar
                 };
               }
             });
+
+            // Initialize schedule state if editing a strategy with scheduling
+            if (strategy.market_schedule && strategy.market_schedule.length > 0) {
+              setEnableSchedule(true);
+              setSelectedMarkets(strategy.market_schedule);
+            } else {
+              // Reset schedule state when editing a strategy without scheduling
+              setEnableSchedule(false);
+              setSelectedMarkets([]);
+            }
+          } else {
+            // Reset schedule state when creating a new strategy
+            setEnableSchedule(false);
+            setSelectedMarkets([]);
           }
         } catch (error) {
           console.error('Error fetching data:', error);
@@ -492,11 +506,17 @@ const ActivateStrategyModal = ({ isOpen, onClose, onSubmit, strategy = null, mar
     }
 
     // Add market schedule if enabled
+    console.log('Building strategy - enableSchedule:', enableSchedule, 'selectedMarkets:', selectedMarkets);
     if (enableSchedule && selectedMarkets.length > 0) {
       baseData.market_schedule = selectedMarkets;
+      console.log('Including market schedule:', selectedMarkets);
+    } else {
+      baseData.market_schedule = null;
+      console.log('No market schedule - manual mode');
     }
 
     console.log('Final strategy data being sent:', baseData);
+    console.log('Schedule state at submission - enabled:', enableSchedule, 'markets:', selectedMarkets);
     return baseData;
   };
 
@@ -543,8 +563,15 @@ const ActivateStrategyModal = ({ isOpen, onClose, onSubmit, strategy = null, mar
           updateData.is_active = true;
         }
 
-        await updateStrategy({ 
-          strategyId: strategy.id, 
+        // Add market schedule if enabled (or explicitly remove if disabled)
+        if (enableSchedule && selectedMarkets.length > 0) {
+          updateData.market_schedule = selectedMarkets;
+        } else {
+          updateData.market_schedule = null;
+        }
+
+        await updateStrategy({
+          strategyId: strategy.id,
           updateData,
         });
         
@@ -958,7 +985,14 @@ const ActivateStrategyModal = ({ isOpen, onClose, onSubmit, strategy = null, mar
                 </HStack>
                 <Switch
                   isChecked={enableSchedule}
-                  onChange={(e) => setEnableSchedule(e.target.checked)}
+                  onChange={(e) => {
+                    setEnableSchedule(e.target.checked);
+                    console.log('Schedule toggled:', e.target.checked);
+                    if (!e.target.checked) {
+                      setSelectedMarkets([]);
+                      console.log('Markets cleared due to schedule disable');
+                    }
+                  }}
                   colorScheme="cyan"
                   size="md"
                 />
@@ -977,9 +1011,13 @@ const ActivateStrategyModal = ({ isOpen, onClose, onSubmit, strategy = null, mar
                       cursor="pointer"
                       onClick={() => {
                         if (selectedMarkets.includes('NYSE')) {
-                          setSelectedMarkets(selectedMarkets.filter(m => m !== 'NYSE'));
+                          const newMarkets = selectedMarkets.filter(m => m !== 'NYSE');
+                          setSelectedMarkets(newMarkets);
+                          console.log('NYSE deselected, markets now:', newMarkets);
                         } else {
-                          setSelectedMarkets([...selectedMarkets, 'NYSE']);
+                          const newMarkets = [...selectedMarkets, 'NYSE'];
+                          setSelectedMarkets(newMarkets);
+                          console.log('NYSE selected, markets now:', newMarkets);
                         }
                       }}
                       transition="all 0.2s"
@@ -1010,9 +1048,13 @@ const ActivateStrategyModal = ({ isOpen, onClose, onSubmit, strategy = null, mar
                       cursor="pointer"
                       onClick={() => {
                         if (selectedMarkets.includes('LONDON')) {
-                          setSelectedMarkets(selectedMarkets.filter(m => m !== 'LONDON'));
+                          const newMarkets = selectedMarkets.filter(m => m !== 'LONDON');
+                          setSelectedMarkets(newMarkets);
+                          console.log('LONDON deselected, markets now:', newMarkets);
                         } else {
-                          setSelectedMarkets([...selectedMarkets, 'LONDON']);
+                          const newMarkets = [...selectedMarkets, 'LONDON'];
+                          setSelectedMarkets(newMarkets);
+                          console.log('LONDON selected, markets now:', newMarkets);
                         }
                       }}
                       transition="all 0.2s"
@@ -1043,9 +1085,13 @@ const ActivateStrategyModal = ({ isOpen, onClose, onSubmit, strategy = null, mar
                       cursor="pointer"
                       onClick={() => {
                         if (selectedMarkets.includes('ASIA')) {
-                          setSelectedMarkets(selectedMarkets.filter(m => m !== 'ASIA'));
+                          const newMarkets = selectedMarkets.filter(m => m !== 'ASIA');
+                          setSelectedMarkets(newMarkets);
+                          console.log('ASIA deselected, markets now:', newMarkets);
                         } else {
-                          setSelectedMarkets([...selectedMarkets, 'ASIA']);
+                          const newMarkets = [...selectedMarkets, 'ASIA'];
+                          setSelectedMarkets(newMarkets);
+                          console.log('ASIA selected, markets now:', newMarkets);
                         }
                       }}
                       transition="all 0.2s"
