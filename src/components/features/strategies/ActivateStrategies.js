@@ -278,7 +278,7 @@ const ActivateStrategies = () => {
             <AlertIcon />
             <Box flex="1">
               <Text fontWeight="bold">Error loading strategies</Text>
-              <Text>{error || 'An unexpected error occurred'}</Text>
+              <Text>{error?.message || error?.toString() || 'An unexpected error occurred'}</Text>
             </Box>
           </Alert>
         ) : strategies.length === 0 ? (

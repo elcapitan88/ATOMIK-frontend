@@ -99,7 +99,7 @@ const EnvironmentOption = ({ title, onClick, isDisabled = false }) => {
 const ErrorDisplay = ({ error }) => (
   <VStack spacing={4} align="center" py={8}>
     <AlertTriangle size={24} color="#F56565" />
-    <Text color="red.400" textAlign="center">{error}</Text>
+    <Text color="red.400" textAlign="center">{error?.message || error?.toString() || error}</Text>
   </VStack>
 );
 
