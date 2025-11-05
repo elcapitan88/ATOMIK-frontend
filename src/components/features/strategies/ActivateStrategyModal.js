@@ -405,16 +405,40 @@ const ActivateStrategyModal = ({ isOpen, onClose, onSubmit, strategy = null, mar
         };
 
     // Check for core field changes that require delete + recreate
-    const coreFieldsChanged = 
+    // IMPORTANT: Only check fields that actually require recreate
+    // Quantity changes should NEVER trigger recreate
+    const coreFieldsChanged =
       currentData.ticker !== strategy.ticker ||
-      currentData.webhook_id !== strategy.webhook_id ||
-      currentData.strategy_code_id !== strategy.strategy_code_id?.toString() ||
+      // Only check webhook_id if both values are truthy (avoid null/undefined comparison issues)
+      (currentData.webhook_id && strategy.webhook_id && currentData.webhook_id !== strategy.webhook_id) ||
+      // Only check strategy_code_id if switching between webhook and engine
+      (currentData.strategy_code_id && strategy.strategy_code_id && currentData.strategy_code_id !== strategy.strategy_code_id?.toString()) ||
+      // Check if switching from webhook to engine or vice versa
+      (!!currentData.webhook_id !== !!strategy.webhook_id && !!currentData.strategy_code_id !== !!strategy.strategy_code_id) ||
       (strategy.strategy_type === 'single' && currentData.account_id !== strategy.account_id) ||
       (strategy.strategy_type === 'multiple' && currentData.leader_account_id !== strategy.leader_account_id) ||
-      (strategy.strategy_type === 'multiple' && 
-        JSON.stringify(currentData.follower_account_ids.sort()) !== JSON.stringify(strategy.follower_account_ids?.sort() || []));
+      (strategy.strategy_type === 'multiple' &&
+        JSON.stringify(currentData.follower_account_ids?.sort() || []) !== JSON.stringify(strategy.follower_account_ids?.sort() || []));
 
+    // Only trigger recreate for actual core field changes, not for missing field comparisons
     if (coreFieldsChanged) {
+      console.log('Core fields changed - would normally recreate, but checking if it\'s just quantity...');
+
+      // Double-check: if only quantities changed, force update instead of recreate
+      const onlyQuantityChanged = strategy.strategy_type === 'single'
+        ? (currentData.ticker === strategy.ticker &&
+           currentData.account_id === strategy.account_id &&
+           currentData.quantity !== strategy.quantity)
+        : (currentData.ticker === strategy.ticker &&
+           currentData.leader_account_id === strategy.leader_account_id &&
+           (currentData.leader_quantity !== strategy.leader_quantity ||
+            JSON.stringify(currentData.follower_quantities) !== JSON.stringify(strategy.follower_quantities || [])));
+
+      if (onlyQuantityChanged) {
+        console.log('Only quantity changed - using update instead of recreate');
+        return 'update';
+      }
+
       return 'recreate';
     }
 
@@ -444,7 +468,12 @@ const ActivateStrategyModal = ({ isOpen, onClose, onSubmit, strategy = null, mar
       setShowConfirmation(false);
       
       // First delete the existing strategy
-      const strategyType = strategy.webhook_id ? 'webhook' : 'engine';
+      // Determine strategy type more reliably
+      // Check execution_type if available, otherwise check for strategy_code_id vs webhook_id
+      const strategyType = strategy.execution_type ||
+                          (strategy.strategy_code_id ? 'engine' : 'webhook');
+
+      console.log('Deleting strategy with type:', strategyType, 'Strategy:', strategy);
       await deleteStrategy({ strategyId: strategy.id, strategyType });
       
       // Then create the new strategy with updated data
@@ -544,23 +573,26 @@ const ActivateStrategyModal = ({ isOpen, onClose, onSubmit, strategy = null, mar
       
       if (changeType === 'update') {
         // For updates, build update data based on strategy type
+        console.log('Update path triggered for strategy:', strategy.id);
         const updateData = {};
-        
+
         if (formData.selectedType === 'single') {
           updateData.quantity = Number(formData.singleAccount.quantity);
+          console.log('Updating single strategy quantity to:', updateData.quantity);
         } else {
           updateData.leader_quantity = Number(formData.multipleAccount.leaderQuantity);
           updateData.follower_quantities = formData.multipleAccount.followerAccounts.map(f => Number(f.quantity));
           if (formData.multipleAccount.groupName !== strategy.group_name) {
             updateData.group_name = formData.multipleAccount.groupName;
           }
+          console.log('Updating multiple strategy quantities:', updateData);
         }
-        
+
         // Add engine-specific update fields if it's an engine strategy
-        const selectedValue = formData.selectedType === 'single' 
+        const selectedValue = formData.selectedType === 'single'
           ? (formData.singleAccount.strategyCodeId || formData.singleAccount.webhookId)
           : (formData.multipleAccount.strategyCodeId || formData.multipleAccount.webhookId);
-        
+
         if (isEngineStrategy(selectedValue)) {
           updateData.description = formData.description;
           updateData.is_active = formData.isActive;
@@ -575,10 +607,13 @@ const ActivateStrategyModal = ({ isOpen, onClose, onSubmit, strategy = null, mar
           updateData.market_schedule = null;
         }
 
+        console.log('Final update data being sent:', updateData);
         await updateStrategy({
           strategyId: strategy.id,
           updateData,
         });
+
+        console.log('Strategy updated successfully');
         
       } else if (changeType === 'recreate') {
         // Show confirmation modal for core field changes
