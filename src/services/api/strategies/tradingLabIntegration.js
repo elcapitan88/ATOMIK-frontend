@@ -5,7 +5,7 @@
  * marketplace data structures and backend API.
  */
 
-import { strategiesApi } from './strategiesApi';
+import unifiedStrategiesApi from './unifiedStrategiesApi';
 import { webhookApi } from '../Webhooks/webhookApi';
 import { STRATEGY_TYPES, STRATEGY_TYPE_LABELS } from '../../../utils/constants/strategyTypes';
 import logger from '../../../utils/logger';
@@ -77,8 +77,8 @@ class TradingLabIntegration {
       }
 
       try {
-        logger.info('[TradingLabIntegration] Calling strategiesApi.listStrategies()...');
-        userStrategies = await strategiesApi.listStrategies(true);
+        logger.info('[TradingLabIntegration] Calling unifiedStrategiesApi.listStrategies()...');
+        userStrategies = await unifiedStrategiesApi.listStrategies({}, true);
         logger.info('[TradingLabIntegration] User strategies response:', {
           isArray: Array.isArray(userStrategies),
           length: userStrategies?.length || 0,

@@ -36,7 +36,7 @@ import {
   AlertTriangle,
   Activity
 } from 'lucide-react';
-import { strategiesApi } from '@/services/api/strategies/strategiesApi';
+import unifiedStrategiesApi from '@/services/api/strategies/unifiedStrategiesApi';
 import { strategyCodesApi } from '@/services/api/strategies/strategyCodesApi';
 import { formatCurrency } from '@/utils/formatting/currency';
 import ActivateStrategyModal from './ActivateStrategyModal';
@@ -199,7 +199,7 @@ const EngineStrategies = () => {
     if (showLoading) setIsLoading(true);
     try {
       const [strategiesResponse, codesResponse] = await Promise.all([
-        strategiesApi.listEngineStrategies(),
+        unifiedStrategiesApi.listStrategies({ execution_type: 'engine' }),
         strategyCodesApi.listStrategyCodes()
       ]);
       
@@ -241,7 +241,7 @@ const EngineStrategies = () => {
   const handleToggleStrategy = async (strategyId) => {
     setActionLoading(prev => ({ ...prev, [strategyId]: true }));
     try {
-      await strategiesApi.updateEngineStrategy(strategyId, { 
+      await unifiedStrategiesApi.updateStrategy(strategyId, { 
         is_active: !engineStrategies.find(s => s.id === strategyId)?.is_active 
       });
       await fetchData(false);
@@ -270,7 +270,7 @@ const EngineStrategies = () => {
     }
 
     try {
-      await strategiesApi.deleteEngineStrategy(strategyId);
+      await unifiedStrategiesApi.deleteStrategy(strategyId);
       await fetchData(false);
       toast({
         title: "Strategy deleted",

@@ -55,7 +55,7 @@ const calculateCurrentContracts = () => {
   const yearSuffix = contractYear.toString().slice(-1);
   
   // Generate contracts for quarterly symbols
-  const quarterlySymbols = ['ES', 'NQ', 'CL', 'GC', 'MES', 'MNQ', 'RTY', 'YM'];
+  const quarterlySymbols = ['ES', 'NQ', 'CL', 'GC', 'MES', 'MNQ', 'MGC', 'RTY', 'YM'];
   const contracts = {};
   
   quarterlySymbols.forEach(symbol => {

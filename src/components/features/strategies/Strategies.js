@@ -22,7 +22,7 @@ import {
   RefreshCw,
   AlertTriangle
 } from 'lucide-react';
-import { strategiesApi } from '@/services/api/strategies/strategiesApi';
+import unifiedStrategiesApi from '@/services/api/strategies/unifiedStrategiesApi';
 import { useWebSocket } from '@/hooks/useWebSocket';
 import { formatCurrency } from '@/utils/formatting/currency';
 
@@ -170,7 +170,7 @@ const Strategies = () => {
   const fetchStrategies = useCallback(async (showLoading = true) => {
     if (showLoading) setIsLoading(true);
     try {
-      const response = await strategiesApi.listStrategies();
+      const response = await unifiedStrategiesApi.listStrategies();
       setStrategies(response);
       calculateStats(response);
     } catch (error) {
