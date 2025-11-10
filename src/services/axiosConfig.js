@@ -63,54 +63,34 @@ axiosInstance.interceptors.response.use(
         // Handle 401 Unauthorized
         if (error.response?.status === 401 && !originalRequest._retry) {
             originalRequest._retry = true;
-            try {
-                // Skip token refresh for checkout-related paths
-                if (originalRequest.url.includes('subscriptions/create') || 
-                    originalRequest.url.includes('checkout')) {
-                  // For checkout flows, just fail gracefully
-                  localStorage.removeItem('access_token');
-                  if (!originalRequest.url.includes('guest-checkout')) {
-                    window.location.href = '/auth';
-                  }
-                  return Promise.reject(error);
-                }
-                
-                // For all other paths, attempt token refresh
-                logger.info('Attempting token refresh');
-                
-                // Check if you have a refresh-token endpoint
-                // If not, use this fallback approach
-                localStorage.removeItem('access_token');
+
+            // Skip token refresh for checkout-related paths
+            if (originalRequest.url.includes('subscriptions/create') ||
+                originalRequest.url.includes('checkout')) {
+              // For checkout flows, just fail gracefully
+              localStorage.removeItem('access_token');
+              if (!originalRequest.url.includes('guest-checkout')) {
                 window.location.href = '/auth';
-                return Promise.reject(error);
-                
-                // If you do have a refresh-token endpoint, uncomment this:
-                /*
-                const refreshResponse = await axios.post(
-                  '/api/v1/auth/refresh-token',
-                  {},
-                  {
-                    headers: {
-                      'Authorization': `Bearer ${localStorage.getItem('access_token')}`
-                    }
-                  }
-                );
-                
-                if (refreshResponse.data.access_token) {
-                  logger.info('Token refresh successful');
-                  localStorage.setItem('access_token', refreshResponse.data.access_token);
-                  axiosInstance.defaults.headers.common['Authorization'] = 
-                    `Bearer ${refreshResponse.data.access_token}`;
-                  return axiosInstance(originalRequest);
-                }
-                */
-              } catch (refreshError) {
-                logger.error('Token refresh failed:', refreshError);
-                // Clear auth state and redirect to login
-                localStorage.removeItem('access_token');
-                window.location.href = '/auth';
-                return Promise.reject(refreshError);
               }
+              return Promise.reject(error);
+            }
+
+            // For all other paths, clear token and redirect to login
+            logger.info('Authentication token expired, redirecting to login');
+
+            // Clear the expired token
+            localStorage.removeItem('access_token');
+
+            // Store the current path to redirect back after login
+            sessionStorage.setItem('redirect_after_login', window.location.pathname);
+
+            // Redirect to auth page
+            window.location.href = '/auth';
+
+            // Return a clear error message instead of the original error
+            const authError = new Error('Authentication required');
+            authError.code = 'AUTH_EXPIRED';
+            return Promise.reject(authError);
         }
 
         // Handle other errors
