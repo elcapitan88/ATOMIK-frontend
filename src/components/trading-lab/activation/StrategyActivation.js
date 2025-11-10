@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { getDisplayTickers, getContractTicker } from '@/utils/formatting/tickerUtils';
 import TradingLabHeader from '../shared/TradingLabHeader';
 import { useAccounts } from '@/hooks/useAccounts';
-import { useStrategies } from '@/hooks/useStrategies';
+import { useUnifiedStrategies as useStrategies } from '@/hooks/useUnifiedStrategies';
 import { webhookApi } from '@/services/api/Webhooks/webhookApi';
 import './StrategyActivation.css';
 

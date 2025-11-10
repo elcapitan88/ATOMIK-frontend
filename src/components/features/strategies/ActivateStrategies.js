@@ -22,7 +22,7 @@ import {
 import { MoreVertical, Settings, Trash2, SlidersHorizontal } from 'lucide-react';
 import ActivateStrategyModal from './ActivateStrategyModal';
 import DeleteStrategy from './DeleteStrategy';
-import { useStrategies } from '@/hooks/useStrategies';
+import { useUnifiedStrategies as useStrategies } from '@/hooks/useUnifiedStrategies';
 import { strategyCodesApi } from '@/services/api/strategies/strategyCodesApi';
 
 // Helper function to get broker display info
