@@ -22,7 +22,7 @@ const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
 class UnifiedStrategiesApi {
   constructor() {
-    this.baseUrl = '/api/v1/strategies/unified';
+    this.baseUrl = '/api/v1/strategies';
     this.retryAttempts = 3;
     this.retryDelay = 1000;
   }
