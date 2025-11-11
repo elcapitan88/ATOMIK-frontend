@@ -130,8 +130,10 @@ class UnifiedStrategiesApi {
       if (filters.ticker) params.append('ticker', filters.ticker);
       if (filters.account_id) params.append('account_id', filters.account_id);
 
+      // TEMPORARY: Use /all endpoint instead of root path which is broken
+      // TODO: Fix root path issue and revert this change
       const response = await this.withRetry(() =>
-        axiosInstance.get(`${this.baseUrl}?${params.toString()}`)
+        axiosInstance.get(`${this.baseUrl}/all`)
       );
 
       // Cache the unfiltered results
