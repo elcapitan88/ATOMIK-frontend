@@ -223,8 +223,13 @@ class StrategiesApi {
     try {
       console.log('Configuring Engine strategy:', JSON.stringify(strategyData, null, 2));
 
+      // Updated: Use unified create endpoint with execution_type: "ENGINE"
+      // Backend migration removed /engine/configure path
       const response = await this.withRetry(() =>
-        axiosInstance.post(`${this.baseUrl}/engine/configure`, strategyData)
+        axiosInstance.post(`${this.baseUrl}`, {
+          ...strategyData,
+          execution_type: 'ENGINE'  // Ensure execution type is set for backend
+        })
       );
 
       this.clearCache();
@@ -237,8 +242,12 @@ class StrategiesApi {
 
   async listEngineStrategies() {
     try {
+      // Updated: Use unified list endpoint with execution_type filter
+      // Backend migration removed /engine/list path
       const response = await this.withRetry(() =>
-        axiosInstance.get(`${this.baseUrl}/engine/list`)
+        axiosInstance.get(`${this.baseUrl}`, {
+          params: { execution_type: 'ENGINE' }
+        })
       );
       return response.data;
     } catch (error) {
@@ -248,8 +257,10 @@ class StrategiesApi {
 
   async updateEngineStrategy(strategyId, updateData) {
     try {
+      // Updated: Use unified update endpoint (removed /engine/ subdirectory)
+      // Backend migration consolidated all endpoints under /strategies
       const response = await this.withRetry(() =>
-        axiosInstance.put(`${this.baseUrl}/engine/${strategyId}`, updateData)
+        axiosInstance.put(`${this.baseUrl}/${strategyId}`, updateData)
       );
 
       this.clearCache();
@@ -261,8 +272,10 @@ class StrategiesApi {
 
   async deleteEngineStrategy(strategyId) {
     try {
+      // Updated: Use unified delete endpoint (removed /engine/ subdirectory)
+      // Backend migration consolidated all endpoints under /strategies
       await this.withRetry(() =>
-        axiosInstance.delete(`${this.baseUrl}/engine/${strategyId}`)
+        axiosInstance.delete(`${this.baseUrl}/${strategyId}`)
       );
 
       this.clearCache();

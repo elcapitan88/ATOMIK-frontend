@@ -4,7 +4,9 @@ import { envConfig } from '@/config/environment';
 
 class EngineStrategiesApi {
     constructor() {
-        this.baseUrl = envConfig.getApiUrl('/strategies/engine');
+        // Updated: Use unified strategies endpoint (removed /engine/ subdirectory)
+        // Backend migration consolidated all endpoints under /strategies
+        this.baseUrl = envConfig.getApiUrl('/strategies');
     }
 
     async errorHandler(apiCall) {
