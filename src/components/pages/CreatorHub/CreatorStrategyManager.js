@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { useStrategies } from '../../../hooks/useStrategies';
+import { useUnifiedStrategies as useStrategies } from '@/hooks/useUnifiedStrategies';
 
 const CreatorStrategyManager = ({ creatorProfile }) => {
-  const { strategies, loading, fetchUserStrategies } = useStrategies();
+  const { strategies, isLoading: loading, refetch: fetchUserStrategies } = useStrategies();
   const [filter, setFilter] = useState('all'); // all, monetized, free
   const [sortBy, setSortBy] = useState('newest'); // newest, earnings, subscribers
 
