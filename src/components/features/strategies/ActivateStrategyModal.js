@@ -207,9 +207,36 @@ const ActivateStrategyModal = ({
           const accountsResponse = await axiosInstance.get('/api/v1/brokers/accounts');
           setAccounts(accountsResponse.data || []);
 
-          // Fetch webhooks
-          const webhooksResponse = await axiosInstance.get('/api/v1/webhooks');
-          setWebhooks(webhooksResponse.data || []);
+          // Fetch user's own webhooks
+          const ownWebhooksResponse = await axiosInstance.get('/api/v1/webhooks');
+          const ownWebhooks = ownWebhooksResponse.data || [];
+
+          // Fetch subscribed marketplace webhooks
+          let subscribedWebhooks = [];
+          try {
+            const subscribedResponse = await axiosInstance.get('/api/v1/webhooks/subscribed');
+            subscribedWebhooks = subscribedResponse.data || [];
+          } catch (error) {
+            console.log('No subscribed webhooks or error fetching:', error.message);
+            // Continue without subscribed webhooks - not a critical error
+          }
+
+          // Merge own and subscribed webhooks (remove duplicates by token)
+          const webhookMap = new Map();
+          [...ownWebhooks, ...subscribedWebhooks].forEach(webhook => {
+            if (!webhookMap.has(webhook.token)) {
+              webhookMap.set(webhook.token, webhook);
+            }
+          });
+          const allWebhooks = Array.from(webhookMap.values());
+
+          console.log('Loaded webhooks:', {
+            own: ownWebhooks.length,
+            subscribed: subscribedWebhooks.length,
+            total: allWebhooks.length
+          });
+
+          setWebhooks(allWebhooks);
         } catch (error) {
           console.error('Error fetching data:', error);
           toast({
@@ -234,12 +261,14 @@ const ActivateStrategyModal = ({
     const fetchStrategyCodes = async () => {
       setLoadingStrategyCodes(true);
       try {
-        const response = await axiosInstance.get('/api/v1/strategies/codes/available');
-        console.log('Fetched strategy codes:', response.data);
+        // Fetch user's own strategies + subscribed marketplace strategies
+        const response = await axiosInstance.get('/api/v1/strategies/codes/my-strategies');
+        console.log('Fetched strategy codes (owned + subscribed):', response.data);
         setStrategyCodes(response.data || []);
       } catch (error) {
         console.error('Error fetching strategy codes:', error);
         setStrategyCodes([]);
+        // Don't show error toast - modal will still work with webhooks only
       } finally {
         setLoadingStrategyCodes(false);
       }
