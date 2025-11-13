@@ -130,10 +130,10 @@ class UnifiedStrategiesApi {
       if (filters.ticker) params.append('ticker', filters.ticker);
       if (filters.account_id) params.append('account_id', filters.account_id);
 
-      // Updated: Use root path now that backend enrichment is fixed
-      // Backend migration applied enrichment to GET / endpoint
+      // Fixed: Use /user-activated endpoint to avoid 307 redirect loop
+      // Root path /strategies causes redirect, /user-activated returns enriched array directly
       const response = await this.withRetry(() =>
-        axiosInstance.get(this.baseUrl, {
+        axiosInstance.get(`${this.baseUrl}/user-activated`, {
           params: Object.fromEntries(params)
         })
       );
