@@ -9,7 +9,10 @@ function getCookie(name) {
 }
 
 const axiosInstance = axios.create({
-    baseURL: process.env.REACT_APP_API_URL || 'http://localhost:8000',
+    baseURL: process.env.REACT_APP_API_URL ||
+        (process.env.NODE_ENV === 'production'
+            ? 'https://api.atomiktrading.io'
+            : 'http://localhost:8000'),
     withCredentials: true,
 });
 
