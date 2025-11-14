@@ -2,10 +2,17 @@ import axios from 'axios';
 import logger from '@/utils/logger';
 
 // Determine API URL based on environment
-const API_URL = process.env.REACT_APP_API_URL || 
-    (process.env.NODE_ENV === 'production' 
+let API_URL = process.env.REACT_APP_API_URL ||
+    (process.env.NODE_ENV === 'production'
         ? 'https://api.atomiktrading.io'
         : 'http://localhost:8000');
+
+// Safety check: Force HTTPS for api.atomiktrading.io in production
+// This prevents CSP violations if environment variables aren't loaded properly
+if (API_URL.includes('api.atomiktrading.io') && API_URL.startsWith('http://')) {
+    API_URL = API_URL.replace('http://', 'https://');
+    logger.warn('Forced HTTPS for api.atomiktrading.io to comply with CSP');
+}
 
 const axiosInstance = axios.create({
     baseURL: API_URL,

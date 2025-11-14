@@ -46,14 +46,22 @@ export const getBaseUrl = () => {
  */
 export const getApiUrl = () => {
   // Always use environment variable if available
-  if (process.env.REACT_APP_API_URL) {
-    return process.env.REACT_APP_API_URL;
+  let apiUrl = process.env.REACT_APP_API_URL;
+
+  // Fallback to runtime detection if env var not available
+  if (!apiUrl) {
+    apiUrl = isLocalEnvironment()
+      ? 'http://localhost:8000'
+      : 'https://api.atomiktrading.io';
   }
-  
-  // Fallback to runtime detection
-  return isLocalEnvironment()
-    ? 'http://localhost:8000'
-    : 'https://api.atomiktrading.io';
+
+  // Safety check: Force HTTPS for api.atomiktrading.io to prevent CSP violations
+  if (apiUrl.includes('api.atomiktrading.io') && apiUrl.startsWith('http://')) {
+    apiUrl = apiUrl.replace('http://', 'https://');
+    logger.warn('Forced HTTPS for api.atomiktrading.io to comply with CSP');
+  }
+
+  return apiUrl;
 };
 
 /**
