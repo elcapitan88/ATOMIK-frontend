@@ -1,0 +1,125 @@
+//@version=5
+strategy("Purple Reign PSAR", overlay=true, margin_long=100)
+
+src = input.source(close, "Source", group="Settings")
+color_candles = input.bool(true, "Color purple candles", group="Settings")
+signal_longs = input.bool(true, "Signal long positions", group="Settings")
+in_signals_from = input.string("MACD", "Get entry signals from", ["MACD", "TTM"], group="Settings")
+stop_loss_len = input.int(18, "Stop loss length on entry", minval=1, group="Settings")
+trading_session = input.session("0730-1550", "Trading session hours in the market's timezone")
+
+// PSAR Settings
+psar_start = input.float(0.02, "PSAR Start", minval=0.01, step=0.01, group="PSAR")
+psar_inc = input.float(0.02, "PSAR Increment", minval=0.01, step=0.01, group="PSAR")
+psar_max = input.float(0.2, "PSAR Maximum", minval=0.1, step=0.1, group="PSAR")
+
+var bool macd_in_signals = na
+var bool ttm_in_signals = na
+if in_signals_from == "MACD"
+    macd_in_signals := true
+    ttm_in_signals := false
+else
+    macd_in_signals := false
+    ttm_in_signals := true
+
+macd_fast_len = input.int(8, "Fast MACD length", minval=1, group="MACD")
+macd_slow_len = input.int(17, "Slow MACD length", minval=1, group="MACD")
+macd_sig_len = input.int(9, "Signal MACD length", minval=1, group="MACD")
+
+bb_len = input.int(18, "BB length", minval=1, group="Bollinger bands")
+bb_mult = input.float(2.0, "BB multiplier", step=0.1, group="Bollinger bands")
+
+kc_len = input.int(18, "KC length", minval=1, group="Keltner channels")
+kc_mult = input.float(1.5, "KC multiplier", step=0.1, group="Keltner channels")
+kc_mom_len = input.int(18, "KC momentum length", minval=1, group="Keltner channels")
+
+[_, _, macd_hist] = ta.macd(src, macd_fast_len, macd_slow_len, macd_sig_len)
+
+macd_long_in = (macd_hist > macd_hist[1] or macd_hist > macd_hist[2]) and macd_hist > 0 and barstate.isconfirmed
+
+[bb_mean, bb_upper, bb_lower] = ta.bb(src, bb_len, bb_mult)
+[kc_mean, kc_upper, kc_lower] = ta.kc(src, kc_len, kc_mult)
+
+ttm_sqz = bb_upper < kc_upper and bb_lower > kc_lower
+ttm_mom = ta.linreg(src - math.avg(math.avg(ta.highest(high, kc_mom_len), ta.lowest(low, kc_mom_len)), ta.sma(src, kc_mom_len)), kc_mom_len, 0)
+
+ttm_long_in = (ttm_mom > ttm_mom[1] or ttm_mom > ttm_mom[2]) and ttm_mom > 0 and barstate.isconfirmed
+
+time_in_range(res, sess) => not na(time(res, sess))
+
+var bool is_open = na
+if (dayofweek == dayofweek.monday or
+      dayofweek == dayofweek.tuesday or
+      dayofweek == dayofweek.wednesday or
+      dayofweek == dayofweek.thursday or
+      dayofweek == dayofweek.friday) and
+      time_in_range(timeframe.period, trading_session)
+    is_open := true
+else
+    is_open := false
+
+barcolor(color_candles and is_open and signal_longs and ((macd_in_signals and macd_long_in and ttm_sqz and strategy.position_size == 0) or (strategy.position_size > 0)) ? color.purple : na)
+barcolor(color_candles and is_open and signal_longs and ((ttm_in_signals and ttm_long_in and ttm_sqz and strategy.position_size == 0) or (strategy.position_size > 0)) ? color.purple : na)
+
+// Calculate PSAR
+psar = ta.sar(psar_start, psar_inc, psar_max)
+
+// Track if SAR was below price in previous bar for detecting crossovers
+var bool prev_psar_below_price = false
+bool curr_psar_below_price = psar < low
+
+// Tracking variables
+var float initial_stop_loss = na
+var float active_stop_loss = na
+var float entry_price = na
+var bool using_psar_stop = false
+var bool psar_crossover = false
+lowest_low = ta.lowest(low, stop_loss_len)
+
+// Update active stop loss for trailing
+if strategy.position_size > 0
+    // Detect PSAR signal (price crossing below PSAR)
+    psar_crossover := prev_psar_below_price and not curr_psar_below_price
+    
+    // Only use PSAR when:
+    // 1. It's below the current price (bullish configuration)
+    // 2. It's above the entry price (protecting profit)
+    if curr_psar_below_price and psar > entry_price
+        active_stop_loss := psar
+        using_psar_stop := true
+    else
+        // Keep using initial stop loss
+        active_stop_loss := initial_stop_loss
+        using_psar_stop := false
+
+// Update previous SAR state
+prev_psar_below_price := curr_psar_below_price
+
+// Entry logic
+if is_open and signal_longs and ttm_sqz and ((macd_in_signals and macd_long_in) or (ttm_in_signals and ttm_long_in))
+    if strategy.position_size == 0
+        initial_stop_loss := lowest_low
+        active_stop_loss := lowest_low
+        entry_price := close
+        using_psar_stop := false
+        psar_crossover := false
+    strategy.entry("Purple Power Long", strategy.long)
+
+// Exit logic - UPDATED to prioritize PSAR crossover regardless of stop type
+if (signal_longs and not using_psar_stop and ta.crossunder(close, active_stop_loss)) or 
+   (signal_longs and psar_crossover) or 
+   not is_open
+    strategy.close("Purple Power Long")
+
+// Plotting - Only show PSAR when it's being used as a stop (bullish configuration)
+plotshape(strategy.position_size > 0 and using_psar_stop ? psar : na,style=shape.cross,color=color.fuchsia,location=location.absolute,size=size.tiny,title="PSAR Stop (Active)")
+
+// Plot initial stop loss as a small horizontal line when in a trade
+if barstate.islast and strategy.position_size > 0 and not using_psar_stop
+    line.new(x1=bar_index - 5,y1=initial_stop_loss,x2=bar_index,y2=initial_stop_loss,color=color.maroon,width=2)
+
+// Plot active stop loss
+plot(strategy.position_size > 0 ? active_stop_loss : na,color=using_psar_stop ? color.fuchsia : color.maroon,style=plot.style_line,linewidth=2,title="Active Stop Loss")
+
+// Plot entry price for reference
+plot(entry_price, color=color.blue, style=plot.style_circles, title="Entry Price", display=display.data_window)
