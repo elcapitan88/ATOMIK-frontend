@@ -29,6 +29,16 @@ function getCookie(name) {
 // Request interceptor
 axiosInstance.interceptors.request.use(
     function (config) {
+        // AGGRESSIVE HTTPS ENFORCEMENT - Fix CSP violations
+        if (config.url && config.url.includes("http://api.atomiktrading.io")) {
+            console.warn("[HTTPS FIX] Forcing HTTP to HTTPS in URL:", config.url);
+            config.url = config.url.replace("http://", "https://");
+        }
+        if (config.baseURL && config.baseURL.includes("http://api.atomiktrading.io")) {
+            console.warn("[HTTPS FIX] Forcing HTTP to HTTPS in baseURL:", config.baseURL);
+            config.baseURL = config.baseURL.replace("http://", "https://");
+        }
+
         // Add CSRF token if available
         const csrfToken = getCookie('csrftoken');
         if (csrfToken) {
