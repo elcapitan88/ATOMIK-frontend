@@ -35,6 +35,7 @@ import { Plus, Minus, Settings, Clock } from 'lucide-react';
 import axiosInstance from '@/services/axiosConfig';
 import { useUnifiedStrategies as useStrategies } from '@/hooks/useUnifiedStrategies';
 import { webhookApi } from '@/services/api/Webhooks/webhookApi';
+import { strategyCodesApi } from '@/services/api/strategies/strategyCodesApi';
 import { getDisplayTickers, getContractTicker } from '@/utils/formatting/tickerUtils';
 
 // Helper function to get broker display info
@@ -202,6 +203,9 @@ const ActivateStrategyModal = ({
       setErrors({});
 
       const fetchData = async () => {
+        // TODO: Future improvement - Create a single unified endpoint that returns all
+        // accessible strategies (webhooks + engine) in one call instead of multiple API calls
+        // This would simplify the frontend and reduce network overhead
         try {
           // Fetch accounts
           const accountsResponse = await axiosInstance.get('/api/v1/brokers/accounts');
@@ -288,10 +292,11 @@ const ActivateStrategyModal = ({
     const fetchStrategyCodes = async () => {
       setLoadingStrategyCodes(true);
       try {
-        // Fetch user's own strategies + subscribed marketplace strategies
-        const response = await axiosInstance.get('/api/v1/strategies/codes/my-strategies');
-        console.log('Fetched strategy codes (owned + subscribed):', response.data);
-        setStrategyCodes(response.data || []);
+        // Fetch user's own strategies + subscribed marketplace strategies using strategyCodesApi to avoid CORS issues
+        console.log('Fetching strategy codes using strategyCodesApi...');
+        const codes = await strategyCodesApi.listStrategyCodes();
+        console.log('Fetched strategy codes (owned + subscribed):', codes);
+        setStrategyCodes(codes || []);
       } catch (error) {
         console.error('Error fetching strategy codes:', error);
         setStrategyCodes([]);
