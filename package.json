@@ -51,7 +51,7 @@
     "start": "node server.js",
     "dev": "craco start",
     "generate-sitemap": "node scripts/generate-sitemap.js",
-    "prebuild": "npm run generate-sitemap",
+    "prebuild": "echo 'Skipping sitemap generation temporarily'",
     "build": "CI=false BABEL_ENV=production NODE_OPTIONS=--openssl-legacy-provider craco build",
     "test": "set NODE_OPTIONS=--openssl-legacy-provider && craco test",
     "optimize:images": "node scripts/optimize-images-manual.js",
