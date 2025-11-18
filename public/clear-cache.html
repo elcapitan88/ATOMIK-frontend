@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Clear Cache - Atomik Trading</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #1a1a2e;
+            color: white;
+        }
+        button {
+            background: #00c6e0;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            margin: 10px 5px;
+            border-radius: 5px;
+        }
+        button:hover {
+            background: #0099b0;
+        }
+        .status {
+            margin: 20px 0;
+            padding: 15px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Clear Cache & Service Workers</h1>
+    <p>Use this page to completely clear all caches and force a fresh reload of the application.</p>
+
+    <button onclick="clearServiceWorker()">1. Clear Service Worker</button>
+    <button onclick="clearAllCaches()">2. Clear All Caches</button>
+    <button onclick="forceReload()">3. Force Reload</button>
+    <button onclick="doEverything()">Do All Steps</button>
+
+    <div id="status" class="status"></div>
+
+    <script>
+        function updateStatus(message) {
+            const status = document.getElementById('status');
+            status.innerHTML += message + '<br>';
+            console.log(message);
+        }
+
+        async function clearServiceWorker() {
+            try {
+                const registrations = await navigator.serviceWorker.getRegistrations();
+                for(let registration of registrations) {
+                    await registration.unregister();
+                    updateStatus('✅ Service Worker unregistered: ' + registration.scope);
+                }
+                if (registrations.length === 0) {
+                    updateStatus('ℹ️ No service workers found');
+                }
+            } catch(e) {
+                updateStatus('❌ Error clearing service worker: ' + e.message);
+            }
+        }
+
+        async function clearAllCaches() {
+            try {
+                const cacheNames = await caches.keys();
+                for(let name of cacheNames) {
+                    await caches.delete(name);
+                    updateStatus('✅ Cache deleted: ' + name);
+                }
+                if (cacheNames.length === 0) {
+                    updateStatus('ℹ️ No caches found');
+                }
+
+                // Clear localStorage and sessionStorage
+                localStorage.clear();
+                sessionStorage.clear();
+                updateStatus('✅ Local and session storage cleared');
+            } catch(e) {
+                updateStatus('❌ Error clearing caches: ' + e.message);
+            }
+        }
+
+        function forceReload() {
+            updateStatus('🔄 Forcing hard reload in 2 seconds...');
+            setTimeout(() => {
+                window.location.href = '/?cachebust=' + Date.now();
+            }, 2000);
+        }
+
+        async function doEverything() {
+            updateStatus('🚀 Starting complete cache clear...');
+            await clearServiceWorker();
+            await clearAllCaches();
+            forceReload();
+        }
+    </script>
+</body>
+</html>

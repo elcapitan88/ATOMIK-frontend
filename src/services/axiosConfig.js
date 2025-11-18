@@ -18,6 +18,20 @@ const axiosInstance = axios.create({
     baseURL: API_URL,
     withCredentials: true,
 });
+// CRITICAL FIX: Force HTTPS after instance creation if baseURL has HTTP
+if (axiosInstance.defaults.baseURL && axiosInstance.defaults.baseURL.includes("api.atomiktrading.io")) {
+    if (axiosInstance.defaults.baseURL.startsWith("http://")) {
+        console.warn("[AxiosConfig] CRITICAL: Forcing baseURL from HTTP to HTTPS after instance creation");
+        axiosInstance.defaults.baseURL = axiosInstance.defaults.baseURL.replace("http://", "https://");
+    }
+}
+// Log the actual baseURL being used
+console.log("[AxiosConfig] Instance created with baseURL:", axiosInstance.defaults.baseURL);
+console.log("[AxiosConfig] Environment check:", {
+    API_URL,
+    envVar: process.env.REACT_APP_API_URL,
+    nodeEnv: process.env.NODE_ENV
+});
 
 // Function to get cookies
 function getCookie(name) {
@@ -29,6 +43,17 @@ function getCookie(name) {
 // Request interceptor
 axiosInstance.interceptors.request.use(
     function (config) {
+        // AGGRESSIVE HTTPS ENFORCEMENT - Fix CSP violations
+        console.log("[Axios Interceptor] Processing request to:", config.url || config.baseURL);
+        if (config.url && config.url.includes("http://api.atomiktrading.io")) {
+            console.warn("[HTTPS FIX] Forcing HTTP to HTTPS in URL:", config.url);
+            config.url = config.url.replace("http://", "https://");
+        }
+        if (config.baseURL && config.baseURL.includes("http://api.atomiktrading.io")) {
+            console.warn("[HTTPS FIX] Forcing HTTP to HTTPS in baseURL:", config.baseURL);
+            config.baseURL = config.baseURL.replace("http://", "https://");
+        }
+
         // Add CSRF token if available
         const csrfToken = getCookie('csrftoken');
         if (csrfToken) {
