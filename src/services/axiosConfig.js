@@ -30,6 +30,7 @@ function getCookie(name) {
 axiosInstance.interceptors.request.use(
     function (config) {
         // AGGRESSIVE HTTPS ENFORCEMENT - Fix CSP violations
+        console.log("[Axios Interceptor] Processing request to:", config.url || config.baseURL);
         if (config.url && config.url.includes("http://api.atomiktrading.io")) {
             console.warn("[HTTPS FIX] Forcing HTTP to HTTPS in URL:", config.url);
             config.url = config.url.replace("http://", "https://");

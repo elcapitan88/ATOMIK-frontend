@@ -5,7 +5,7 @@ class EnvironmentConfig {
       
       this.config = {
         api: {
-          baseUrl: process.env.REACT_APP_API_URL,
+          baseUrl: process.env.REACT_APP_API_URL || "https://api.atomiktrading.io",
           webhookPath: '/api/v1/webhooks',
           version: '/api/v1'
         },
@@ -28,10 +28,14 @@ class EnvironmentConfig {
   
     validateEnvironmentVariables() {
       const required = [
-        'REACT_APP_API_URL',
         'REACT_APP_FRONTEND_URL'
       ];
-  
+
+      // REACT_APP_API_URL is optional since we have a fallback
+      if (!process.env.REACT_APP_API_URL) {
+        console.warn('REACT_APP_API_URL not set, using default: https://api.atomiktrading.io');
+      }
+
       required.forEach(key => {
         if (!process.env[key]) {
           throw new Error(`Missing required environment variable: ${key}`);
