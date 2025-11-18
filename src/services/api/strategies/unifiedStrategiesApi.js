@@ -124,13 +124,10 @@ class UnifiedStrategiesApi {
       if (useCache) {
         const cached = this.getCachedStrategies();
         if (cached) {
-          console.log('[UnifiedStrategiesApi] Using cached strategies:', cached.length);
           // Apply client-side filters if using cache
           return this.applyFilters(cached, filters);
         }
       }
-
-      console.log('[UnifiedStrategiesApi] Fetching strategies from server...');
 
       // Build query params
       const params = new URLSearchParams();
@@ -147,8 +144,6 @@ class UnifiedStrategiesApi {
           params: Object.fromEntries(params)
         })
       );
-
-      console.log('[UnifiedStrategiesApi] Received strategies from server:', response.data?.length || 0);
 
       // Cache the unfiltered results
       if (!Object.keys(filters).length) {
@@ -329,11 +324,8 @@ class UnifiedStrategiesApi {
    * Force refresh strategies - bypasses cache and logs results
    */
   async forceRefreshStrategies() {
-    console.log('[UnifiedStrategiesApi] Force refreshing strategies...');
     this.clearCache();
-    const strategies = await this.listStrategies({}, false);
-    console.log('[UnifiedStrategiesApi] Force refresh complete. Found strategies:', strategies);
-    return strategies;
+    return await this.listStrategies({}, false);
   }
 
   // Legacy compatibility methods (will be removed after migration)
