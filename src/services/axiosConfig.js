@@ -2,10 +2,17 @@ import axios from 'axios';
 import logger from '@/utils/logger';
 
 // Determine API URL based on environment
-const API_URL = process.env.REACT_APP_API_URL || 
-    (process.env.NODE_ENV === 'production' 
+let API_URL = process.env.REACT_APP_API_URL ||
+    (process.env.NODE_ENV === 'production'
         ? 'https://api.atomiktrading.io'
         : 'http://localhost:8000');
+
+// Safety check: Force HTTPS for api.atomiktrading.io in production
+// This prevents CSP violations if environment variables aren't loaded properly
+if (API_URL.includes('api.atomiktrading.io') && API_URL.startsWith('http://')) {
+    API_URL = API_URL.replace('http://', 'https://');
+    logger.warn('Forced HTTPS for api.atomiktrading.io to comply with CSP');
+}
 
 const axiosInstance = axios.create({
     baseURL: API_URL,
@@ -65,7 +72,7 @@ axiosInstance.interceptors.response.use(
             originalRequest._retry = true;
             try {
                 // Skip token refresh for checkout-related paths
-                if (originalRequest.url.includes('subscriptions/create') || 
+                if (originalRequest.url.includes('subscriptions/create') ||
                     originalRequest.url.includes('checkout')) {
                   // For checkout flows, just fail gracefully
                   localStorage.removeItem('access_token');
@@ -74,16 +81,16 @@ axiosInstance.interceptors.response.use(
                   }
                   return Promise.reject(error);
                 }
-                
+
                 // For all other paths, attempt token refresh
                 logger.info('Attempting token refresh');
-                
+
                 // Check if you have a refresh-token endpoint
                 // If not, use this fallback approach
                 localStorage.removeItem('access_token');
                 window.location.href = '/auth';
                 return Promise.reject(error);
-                
+
                 // If you do have a refresh-token endpoint, uncomment this:
                 /*
                 const refreshResponse = await axios.post(
@@ -95,11 +102,11 @@ axiosInstance.interceptors.response.use(
                     }
                   }
                 );
-                
+
                 if (refreshResponse.data.access_token) {
                   logger.info('Token refresh successful');
                   localStorage.setItem('access_token', refreshResponse.data.access_token);
-                  axiosInstance.defaults.headers.common['Authorization'] = 
+                  axiosInstance.defaults.headers.common['Authorization'] =
                     `Bearer ${refreshResponse.data.access_token}`;
                   return axiosInstance(originalRequest);
                 }

@@ -207,24 +207,49 @@ const ActivateStrategyModal = ({
           const accountsResponse = await axiosInstance.get('/api/v1/brokers/accounts');
           setAccounts(accountsResponse.data || []);
 
-          // Fetch user's own webhooks
-          const ownWebhooksResponse = await axiosInstance.get('/api/v1/webhooks');
-          const ownWebhooks = ownWebhooksResponse.data || [];
+          // Fetch user's own webhooks using webhookApi to avoid CORS/CSP issues
+          console.log('Fetching webhooks using webhookApi...');
+          const ownWebhooks = await webhookApi.listWebhooks() || [];
+          console.log('Own webhooks fetched:', ownWebhooks);
 
-          // Fetch subscribed marketplace webhooks
+          // Fetch subscribed marketplace webhooks using webhookApi
           let subscribedWebhooks = [];
           try {
-            const subscribedResponse = await axiosInstance.get('/api/v1/webhooks/subscribed');
-            subscribedWebhooks = subscribedResponse.data || [];
+            console.log('Fetching subscribed strategies using webhookApi...');
+            subscribedWebhooks = await webhookApi.getSubscribedStrategies() || [];
+            console.log('Subscribed webhooks fetched:', subscribedWebhooks);
           } catch (error) {
-            console.log('No subscribed webhooks or error fetching:', error.message);
+            console.log('No subscribed webhooks or error fetching:', error.message, error);
             // Continue without subscribed webhooks - not a critical error
           }
 
-          // Merge own and subscribed webhooks (remove duplicates by token)
+          // Fetch purchased webhooks
+          let purchasedWebhooks = [];
+          try {
+            // Import marketplaceApi dynamically to avoid circular dependency
+            const { marketplaceApi } = await import('@/services/api/marketplace/marketplaceApi');
+            const purchasedResponse = await marketplaceApi.getUserPurchases();
+            console.log('Purchased strategies response:', purchasedResponse);
+
+            if (purchasedResponse?.purchases) {
+              purchasedWebhooks = purchasedResponse.purchases
+                .filter(p => p.webhook_token && p.webhook_name)
+                .map(p => ({
+                  token: p.webhook_token,
+                  name: p.webhook_name,
+                  isPurchased: true
+                }));
+              console.log('Purchased webhooks mapped:', purchasedWebhooks);
+            }
+          } catch (error) {
+            console.log('Error fetching purchased strategies:', error.message);
+            // Continue without purchased webhooks - not a critical error
+          }
+
+          // Merge own, subscribed, and purchased webhooks (remove duplicates by token)
           const webhookMap = new Map();
-          [...ownWebhooks, ...subscribedWebhooks].forEach(webhook => {
-            if (!webhookMap.has(webhook.token)) {
+          [...ownWebhooks, ...subscribedWebhooks, ...purchasedWebhooks].forEach(webhook => {
+            if (webhook && webhook.token && !webhookMap.has(webhook.token)) {
               webhookMap.set(webhook.token, webhook);
             }
           });
@@ -233,7 +258,9 @@ const ActivateStrategyModal = ({
           console.log('Loaded webhooks:', {
             own: ownWebhooks.length,
             subscribed: subscribedWebhooks.length,
-            total: allWebhooks.length
+            purchased: purchasedWebhooks.length,
+            total: allWebhooks.length,
+            webhooks: allWebhooks
           });
 
           setWebhooks(allWebhooks);
