@@ -421,12 +421,14 @@ const ActivateStrategyModal = ({
       : (formData.multipleAccount.strategyCodeId || formData.multipleAccount.webhookId);
 
     if (isEngineStrategy(selectedValue)) {
+      baseData.execution_type = 'engine'; // Add execution_type for engine strategies
       baseData.strategy_code_id = parseInt(selectedValue);
       baseData.webhook_id = null; // Explicitly set to null for engine strategies
       baseData.description = formData.description;
       baseData.is_active = formData.isActive;
       console.log('Creating ENGINE strategy with code_id:', baseData.strategy_code_id);
     } else {
+      baseData.execution_type = 'webhook'; // Add execution_type for webhook strategies
       baseData.webhook_id = selectedValue;
       baseData.strategy_code_id = null; // Explicitly set to null for webhook strategies
       console.log('Creating WEBHOOK strategy with webhook_id:', baseData.webhook_id);

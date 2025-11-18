@@ -90,8 +90,13 @@ class UnifiedStrategiesApi {
         throw new Error('execution_type is required (webhook or engine)');
       }
 
+      // Use explicit path construction to ensure proper URL handling
       const response = await this.withRetry(() =>
-        axiosInstance.post(this.baseUrl, strategyData)
+        axiosInstance.post(`${this.baseUrl}`, strategyData, {
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        })
       );
 
       this.clearCache();
