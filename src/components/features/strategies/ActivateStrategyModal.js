@@ -34,8 +34,7 @@ import {
 import { Plus, Minus, Settings, Clock } from 'lucide-react';
 import axiosInstance from '@/services/axiosConfig';
 import { useUnifiedStrategies as useStrategies } from '@/hooks/useUnifiedStrategies';
-import { webhookApi } from '@/services/api/Webhooks/webhookApi';
-import { strategyCodesApi } from '@/services/api/strategies/strategyCodesApi';
+import { unifiedAccessibleApi } from '@/services/api/strategies/unifiedAccessibleApi';
 import { getDisplayTickers, getContractTicker } from '@/utils/formatting/tickerUtils';
 
 // Helper function to get broker display info
@@ -203,71 +202,62 @@ const ActivateStrategyModal = ({
       setErrors({});
 
       const fetchData = async () => {
-        // TODO: Future improvement - Create a single unified endpoint that returns all
-        // accessible strategies (webhooks + engine) in one call instead of multiple API calls
-        // This would simplify the frontend and reduce network overhead
         try {
-          // Fetch accounts
+          // Fetch accounts (still needed separately for account selection)
           const accountsResponse = await axiosInstance.get('/api/v1/brokers/accounts');
           setAccounts(accountsResponse.data || []);
 
-          // Fetch user's own webhooks using webhookApi to avoid CORS/CSP issues
-          console.log('Fetching webhooks using webhookApi...');
-          const ownWebhooks = await webhookApi.listWebhooks() || [];
-          console.log('Own webhooks fetched:', ownWebhooks);
+          // Single unified API call to get all accessible strategies
+          console.log('Fetching all accessible strategies using unified API...');
+          const accessibleStrategies = await unifiedAccessibleApi.getAccessibleStrategies();
 
-          // Fetch subscribed marketplace webhooks using webhookApi
-          let subscribedWebhooks = [];
-          try {
-            console.log('Fetching subscribed strategies using webhookApi...');
-            subscribedWebhooks = await webhookApi.getSubscribedStrategies() || [];
-            console.log('Subscribed webhooks fetched:', subscribedWebhooks);
-          } catch (error) {
-            console.log('No subscribed webhooks or error fetching:', error.message, error);
-            // Continue without subscribed webhooks - not a critical error
-          }
+          // Separate strategies by type
+          const { webhooks, engines } = unifiedAccessibleApi.separateByType(accessibleStrategies);
 
-          // Fetch purchased webhooks
-          let purchasedWebhooks = [];
-          try {
-            // Import marketplaceApi dynamically to avoid circular dependency
-            const { marketplaceApi } = await import('@/services/api/marketplace/marketplaceApi');
-            const purchasedResponse = await marketplaceApi.getUserPurchases();
-            console.log('Purchased strategies response:', purchasedResponse);
+          // Transform webhook strategies to match existing format
+          const formattedWebhooks = webhooks.map(strategy => ({
+            token: strategy.source_id,
+            name: strategy.name,
+            details: strategy.description,
+            strategy_type: strategy.category.toUpperCase(),
+            is_active: strategy.is_active,
+            usage_intent: strategy.is_premium ? 'monetize' : 'personal',
+            subscriber_count: strategy.subscriber_count,
+            rating: strategy.rating,
+            created_at: strategy.created_at,
+            // Add access info for UI display
+            accessType: strategy.access_type,
+            creator: strategy.creator
+          }));
 
-            if (purchasedResponse?.purchases) {
-              purchasedWebhooks = purchasedResponse.purchases
-                .filter(p => p.webhook_token && p.webhook_name)
-                .map(p => ({
-                  token: p.webhook_token,
-                  name: p.webhook_name,
-                  isPurchased: true
-                }));
-              console.log('Purchased webhooks mapped:', purchasedWebhooks);
-            }
-          } catch (error) {
-            console.log('Error fetching purchased strategies:', error.message);
-            // Continue without purchased webhooks - not a critical error
-          }
-
-          // Merge own, subscribed, and purchased webhooks (remove duplicates by token)
-          const webhookMap = new Map();
-          [...ownWebhooks, ...subscribedWebhooks, ...purchasedWebhooks].forEach(webhook => {
-            if (webhook && webhook.token && !webhookMap.has(webhook.token)) {
-              webhookMap.set(webhook.token, webhook);
+          console.log('Unified API Results:', {
+            totalStrategies: accessibleStrategies.length,
+            webhooks: webhooks.length,
+            engines: engines.length,
+            byAccess: {
+              owned: accessibleStrategies.filter(s => s.access_type === 'owned').length,
+              subscribed: accessibleStrategies.filter(s => s.access_type === 'subscribed').length,
+              purchased: accessibleStrategies.filter(s => s.access_type === 'purchased').length
             }
           });
-          const allWebhooks = Array.from(webhookMap.values());
 
-          console.log('Loaded webhooks:', {
-            own: ownWebhooks.length,
-            subscribed: subscribedWebhooks.length,
-            purchased: purchasedWebhooks.length,
-            total: allWebhooks.length,
-            webhooks: allWebhooks
-          });
+          setWebhooks(formattedWebhooks);
 
-          setWebhooks(allWebhooks);
+          // Transform engine strategies to match existing format
+          const formattedEngines = engines.map(strategy => ({
+            id: strategy.source_id,
+            name: strategy.name,
+            description: strategy.description,
+            is_active: strategy.is_active,
+            is_validated: true,
+            created_at: strategy.created_at,
+            // Add access info for UI display
+            accessType: strategy.access_type,
+            creator: strategy.creator
+          }));
+
+          // Set engine strategies (this replaces the separate fetch below)
+          setStrategyCodes(formattedEngines);
         } catch (error) {
           console.error('Error fetching data:', error);
           toast({
@@ -284,32 +274,12 @@ const ActivateStrategyModal = ({
     }
   }, [isOpen, toast]);
 
-  // Strategy code fetching
+  // Strategy code state - now populated from unified API
   const [strategyCodes, setStrategyCodes] = useState([]);
   const [loadingStrategyCodes, setLoadingStrategyCodes] = useState(false);
 
-  useEffect(() => {
-    const fetchStrategyCodes = async () => {
-      setLoadingStrategyCodes(true);
-      try {
-        // Fetch user's own strategies + subscribed marketplace strategies using strategyCodesApi to avoid CORS issues
-        console.log('Fetching strategy codes using strategyCodesApi...');
-        const codes = await strategyCodesApi.listStrategyCodes();
-        console.log('Fetched strategy codes (owned + subscribed):', codes);
-        setStrategyCodes(codes || []);
-      } catch (error) {
-        console.error('Error fetching strategy codes:', error);
-        setStrategyCodes([]);
-        // Don't show error toast - modal will still work with webhooks only
-      } finally {
-        setLoadingStrategyCodes(false);
-      }
-    };
-
-    if (isOpen) {
-      fetchStrategyCodes();
-    }
-  }, [isOpen]);
+  // NOTE: Strategy codes are now fetched via the unified API in the main fetchData function above
+  // This separate fetching is no longer needed and has been removed to avoid duplicate API calls
 
   // Set default webhook/strategy code when modal opens with marketplaceStrategy
   useEffect(() => {
