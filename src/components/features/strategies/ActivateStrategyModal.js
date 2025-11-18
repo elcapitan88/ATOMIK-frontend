@@ -544,11 +544,18 @@ const ActivateStrategyModal = ({
     } catch (error) {
       console.error('Strategy submission error:', error);
       const operation = strategy ? 'updating' : 'creating';
+
+      // Check if it's a duplicate strategy error
+      let errorMessage = error.message;
+      if (error.response?.data?.detail?.includes('already exists')) {
+        errorMessage = 'This strategy already exists. Please check your Activated Strategies page or try different parameters.';
+      }
+
       toast({
         title: `Error ${operation} strategy`,
-        description: error.message,
+        description: errorMessage,
         status: "error",
-        duration: 5000,
+        duration: 7000,
         isClosable: true,
       });
     }
