@@ -22,6 +22,7 @@ const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
 class UnifiedStrategiesApi {
   constructor() {
+    // NOTE: Backend endpoint is defined with trailing slash - must match to avoid redirects
     this.baseUrl = '/api/v1/strategies';
     this.retryAttempts = 3;
     this.retryDelay = 1000;
@@ -91,8 +92,9 @@ class UnifiedStrategiesApi {
       }
 
       // Use explicit path construction to ensure proper URL handling
+      // IMPORTANT: Use trailing slash to match backend endpoint and avoid 307 redirects
       const response = await this.withRetry(() =>
-        axiosInstance.post(`${this.baseUrl}`, strategyData, {
+        axiosInstance.post(`${this.baseUrl}/`, strategyData, {
           headers: {
             'Content-Type': 'application/json',
           }
@@ -234,7 +236,7 @@ class UnifiedStrategiesApi {
   async toggleStrategy(strategyId) {
     try {
       const response = await this.withRetry(() =>
-        axiosInstance.post(`${this.baseUrl}/${strategyId}/toggle`)
+        axiosInstance.post(`${this.baseUrl}/${strategyId}/toggle/`)
       );
 
       this.clearCache();
@@ -251,7 +253,7 @@ class UnifiedStrategiesApi {
    */
   async validateStrategy(strategyData) {
     try {
-      const response = await axiosInstance.post(`${this.baseUrl}/validate`, {
+      const response = await axiosInstance.post(`${this.baseUrl}/validate/`, {
         strategy_data: strategyData
       });
       return response.data;
@@ -268,7 +270,7 @@ class UnifiedStrategiesApi {
    */
   async batchOperation(strategyIds, operation) {
     try {
-      const response = await axiosInstance.post(`${this.baseUrl}/batch`, {
+      const response = await axiosInstance.post(`${this.baseUrl}/batch/`, {
         strategy_ids: strategyIds,
         operation
       });
