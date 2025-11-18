@@ -4,7 +4,8 @@ import { envConfig } from '@/config/environment';
 
 class WebhookApi {
     constructor() {
-        this.baseUrl = envConfig.getApiUrl('/webhooks');
+        // Use relative URL for axiosInstance (which already has baseURL set)
+        this.baseUrl = '/api/v1/webhooks';
     }
 
     async errorHandler(apiCall) {
