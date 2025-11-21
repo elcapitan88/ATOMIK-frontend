@@ -564,560 +564,563 @@ const ActivateStrategyModal = ({
   // Modal render
   return (
     <>
-    <Modal
-      isOpen={isOpen}
-      onClose={onClose}
-      isCentered
-      size="xl"
-      closeOnOverlayClick={!isCreating}
-    >
-      <ModalOverlay bg="blackAlpha.300" backdropFilter="blur(5px)" />
-      <ModalContent
-        bg="rgba(255, 255, 255, 0.1)"
-        backdropFilter="blur(10px)"
-        boxShadow="0 8px 32px 0 rgba(0, 198, 224, 0.37)"
-        border="1px solid rgba(255, 255, 255, 0.18)"
-        borderRadius="xl"
-        color="white"
-        p={4}
+      <Modal
+        isOpen={isOpen}
+        onClose={onClose}
+        isCentered
+        size="xl"
+        closeOnOverlayClick={!isCreating}
       >
-        <ModalHeader borderBottom="1px solid rgba(255, 255, 255, 0.18)" pb={4}>
-          <VStack spacing={2} align="start">
-            <Text fontSize="lg" fontWeight="bold">
-              {strategy ? 'Update Strategy' : 'Activate Strategy'}
-            </Text>
-            {marketplaceStrategy && (
-              <Text fontSize="sm" color="whiteAlpha.700">
-                {marketplaceStrategy.name}
+        <ModalOverlay bg="blackAlpha.300" backdropFilter="blur(5px)" />
+        <ModalContent
+          bg="rgba(255, 255, 255, 0.1)"
+          backdropFilter="blur(10px)"
+          boxShadow="0 8px 32px 0 rgba(0, 198, 224, 0.37)"
+          border="1px solid rgba(255, 255, 255, 0.18)"
+          borderRadius="xl"
+          color="white"
+          p={4}
+        >
+          <ModalHeader borderBottom="1px solid rgba(255, 255, 255, 0.18)" pb={4}>
+            <VStack spacing={2} align="start">
+              <Text fontSize="lg" fontWeight="bold">
+                {strategy ? 'Update Strategy' : 'Activate Strategy'}
               </Text>
-            )}
-          </VStack>
-        </ModalHeader>
-        <ModalCloseButton />
+              {marketplaceStrategy && (
+                <Text fontSize="sm" color="whiteAlpha.700">
+                  {marketplaceStrategy.name}
+                </Text>
+              )}
+            </VStack>
+          </ModalHeader>
+          <ModalCloseButton />
 
-        <ModalBody py={4}>
-          <VStack spacing={4} align="stretch">
-            {createStrategyError && (
-              <Alert status="error" borderRadius="md">
-                <AlertIcon />
-                {createStrategyError.message}
-              </Alert>
-            )}
+          <ModalBody py={4}>
+            <VStack spacing={4} align="stretch">
+              {createStrategyError && (
+                <Alert status="error" borderRadius="md">
+                  <AlertIcon />
+                  {createStrategyError.message}
+                </Alert>
+              )}
 
-            <HStack width="full" spacing={4}>
-              <Button
-                flex={1}
-                variant="ghost"
-                bg={formData.selectedType === 'single' ? 'whiteAlpha.200' : 'transparent'}
-                color="white"
-                borderWidth={1}
-                borderColor={formData.selectedType === 'single' ? "rgba(0, 198, 224, 1)" : "whiteAlpha.300"}
-                onClick={() => handleStrategyTypeChange('single')}
-                _hover={{ bg: 'whiteAlpha.300' }}
-                transform={formData.selectedType === 'single' ? 'translateY(-2px)' : 'none'}
-                transition="all 0.2s"
-                isDisabled={!!strategy}
-              >
-                Single Account
-              </Button>
-              <Button
-                flex={1}
-                variant="ghost"
-                bg={formData.selectedType === 'multiple' ? 'whiteAlpha.200' : 'transparent'}
-                color="white"
-                borderWidth={1}
-                borderColor={formData.selectedType === 'multiple' ? "rgba(0, 198, 224, 1)" : "whiteAlpha.300"}
-                onClick={() => handleStrategyTypeChange('multiple')}
-                _hover={{ bg: 'whiteAlpha.300' }}
-                transform={formData.selectedType === 'multiple' ? 'translateY(-2px)' : 'none'}
-                transition="all 0.2s"
-                isDisabled={!!strategy}
-              >
-                Multiple Accounts
-              </Button>
-            </HStack>
+              <HStack width="full" spacing={4}>
+                <Button
+                  flex={1}
+                  variant="ghost"
+                  bg={formData.selectedType === 'single' ? 'whiteAlpha.200' : 'transparent'}
+                  color="white"
+                  borderWidth={1}
+                  borderColor={formData.selectedType === 'single' ? "rgba(0, 198, 224, 1)" : "whiteAlpha.300"}
+                  onClick={() => handleStrategyTypeChange('single')}
+                  _hover={{ bg: 'whiteAlpha.300' }}
+                  transform={formData.selectedType === 'single' ? 'translateY(-2px)' : 'none'}
+                  transition="all 0.2s"
+                  isDisabled={!!strategy}
+                >
+                  Single Account
+                </Button>
+                <Button
+                  flex={1}
+                  variant="ghost"
+                  bg={formData.selectedType === 'multiple' ? 'whiteAlpha.200' : 'transparent'}
+                  color="white"
+                  borderWidth={1}
+                  borderColor={formData.selectedType === 'multiple' ? "rgba(0, 198, 224, 1)" : "whiteAlpha.300"}
+                  onClick={() => handleStrategyTypeChange('multiple')}
+                  _hover={{ bg: 'whiteAlpha.300' }}
+                  transform={formData.selectedType === 'multiple' ? 'translateY(-2px)' : 'none'}
+                  transition="all 0.2s"
+                  isDisabled={!!strategy}
+                >
+                  Multiple Accounts
+                </Button>
+              </HStack>
 
-            {formData.selectedType === 'single' ? (
-              // Single Account Configuration
-              <VStack spacing={4}>
-                <Box width="full">
-                  <Text fontSize="sm" mb={2} color="whiteAlpha.700">Strategy</Text>
-                  <Select
-                    value={formData.singleAccount.strategyCodeId || formData.singleAccount.webhookId || ''}
-                    onChange={(e) => {
-                      const value = e.target.value;
-                      const isEngine = isEngineStrategy(value);
-                      setFormData(prev => ({
-                        ...prev,
-                        singleAccount: {
-                          ...prev.singleAccount,
-                          webhookId: isEngine ? '' : value,
-                          strategyCodeId: isEngine ? value : ''
-                        }
-                      }));
-                    }}
-                    bg="whiteAlpha.100"
-                    border="1px solid"
-                    borderColor={errors.strategy ? "red.300" : "whiteAlpha.300"}
-                    _hover={{ borderColor: 'whiteAlpha.400' }}
-                    _focus={{ borderColor: 'rgba(0, 198, 224, 0.6)', boxShadow: '0 0 0 1px rgba(0, 198, 224, 0.6)' }}
-                    isDisabled={!!strategy}
-                  >
-                    <option value="" style={{ background: '#1a1a1a' }}>Select Strategy</option>
-                    {webhooks.length > 0 && (
-                      <optgroup label="Webhook Strategies" style={{ background: '#1a1a1a' }}>
-                        {webhooks.map(webhook => (
-                          <option key={webhook.token} value={webhook.token} style={{ background: '#1a1a1a' }}>
-                            {webhook.name}
-                          </option>
-                        ))}
-                      </optgroup>
-                    )}
-                    {strategyCodes.length > 0 && (
-                      <optgroup label="Engine Strategies" style={{ background: '#1a1a1a' }}>
-                        {strategyCodes.map(code => (
-                          <option key={code.id} value={code.id.toString()} style={{ background: '#1a1a1a' }}>
-                            {code.name} {code.is_premium && '⭐'}
-                          </option>
-                        ))}
-                      </optgroup>
-                    )}
-                  </Select>
-                  {errors.strategy && <Text fontSize="xs" color="red.300" mt={1}>{errors.strategy}</Text>}
-                </Box>
-
-                <Box width="full">
-                  <Text fontSize="sm" mb={2} color="whiteAlpha.700">Ticker</Text>
-                  <Select
-                    value={formData.singleAccount.ticker}
-                    onChange={(e) => setFormData(prev => ({
-                      ...prev,
-                      singleAccount: { ...prev.singleAccount, ticker: e.target.value }
-                    }))}
-                    bg="whiteAlpha.100"
-                    border="1px solid"
-                    borderColor={errors.ticker ? "red.300" : "whiteAlpha.300"}
-                    _hover={{ borderColor: 'whiteAlpha.400' }}
-                    _focus={{ borderColor: 'rgba(0, 198, 224, 0.6)', boxShadow: '0 0 0 1px rgba(0, 198, 224, 0.6)' }}
-                    isDisabled={!!strategy}
-                  >
-                    {Object.entries(displayTickers).map(([symbol, name]) => (
-                      <option key={symbol} value={symbol} style={{ background: '#1a1a1a' }}>
-                        {symbol} - {name}
-                      </option>
-                    ))}
-                  </Select>
-                  {errors.ticker && <Text fontSize="xs" color="red.300" mt={1}>{errors.ticker}</Text>}
-                </Box>
-
-                <Box width="full">
-                  <Text fontSize="sm" mb={2} color="whiteAlpha.700">Account</Text>
-                  <Select
-                    value={formData.singleAccount.accountId}
-                    onChange={(e) => handleAccountChange(e.target.value)}
-                    bg="whiteAlpha.100"
-                    border="1px solid"
-                    borderColor={errors.account ? "red.300" : "whiteAlpha.300"}
-                    _hover={{ borderColor: 'whiteAlpha.400' }}
-                    _focus={{ borderColor: 'rgba(0, 198, 224, 0.6)', boxShadow: '0 0 0 1px rgba(0, 198, 224, 0.6)' }}
-                    isDisabled={!!strategy}
-                  >
-                    <option value="" style={{ background: '#1a1a1a' }}>Select Account</option>
-                    {accounts.map(account => {
-                      const broker = getBrokerInfo(account.broker_id);
-                      return (
-                        <option key={account.account_id} value={account.account_id} style={{ background: '#1a1a1a' }}>
-                          {account.display_name} ({broker.name})
-                        </option>
-                      );
-                    })}
-                  </Select>
-                  {errors.account && <Text fontSize="xs" color="red.300" mt={1}>{errors.account}</Text>}
-                </Box>
-
-                <Box width="full">
-                  <Text fontSize="sm" mb={2} color="whiteAlpha.700">Quantity</Text>
-                  <NumberInput
-                    value={formData.singleAccount.quantity}
-                    onChange={(valueString) => setFormData(prev => ({
-                      ...prev,
-                      singleAccount: { ...prev.singleAccount, quantity: parseInt(valueString) || 1 }
-                    }))}
-                    min={1}
-                  >
-                    <NumberInputField
+              {formData.selectedType === 'single' ? (
+                // Single Account Configuration
+                <VStack spacing={4}>
+                  <Box width="full">
+                    <Text fontSize="sm" mb={2} color="whiteAlpha.700">Strategy</Text>
+                    <Select
+                      value={formData.singleAccount.strategyCodeId || formData.singleAccount.webhookId || ''}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        const isEngine = isEngineStrategy(value);
+                        setFormData(prev => ({
+                          ...prev,
+                          singleAccount: {
+                            ...prev.singleAccount,
+                            webhookId: isEngine ? '' : value,
+                            strategyCodeId: isEngine ? value : ''
+                          }
+                        }));
+                      }}
                       bg="whiteAlpha.100"
                       border="1px solid"
-                      borderColor={errors.quantity ? "red.300" : "whiteAlpha.300"}
+                      borderColor={errors.strategy ? "red.300" : "whiteAlpha.300"}
                       _hover={{ borderColor: 'whiteAlpha.400' }}
                       _focus={{ borderColor: 'rgba(0, 198, 224, 0.6)', boxShadow: '0 0 0 1px rgba(0, 198, 224, 0.6)' }}
-                    />
-                    <NumberInputStepper>
-                      <NumberIncrementStepper color="whiteAlpha.600" />
-                      <NumberDecrementStepper color="whiteAlpha.600" />
-                    </NumberInputStepper>
-                  </NumberInput>
-                  {errors.quantity && <Text fontSize="xs" color="red.300" mt={1}>{errors.quantity}</Text>}
-                </Box>
-              </VStack>
-            ) : (
-              // Multiple Account Configuration
-              <VStack spacing={4}>
-                {/* Strategy, Ticker, Leader Account, Leader Quantity - same as single */}
-                <Box width="full">
-                  <Text fontSize="sm" mb={2} color="whiteAlpha.700">Strategy</Text>
-                  <Select
-                    value={formData.multipleAccount.strategyCodeId || formData.multipleAccount.webhookId || ''}
-                    onChange={(e) => {
-                      const value = e.target.value;
-                      const isEngine = isEngineStrategy(value);
-                      setFormData(prev => ({
+                      isDisabled={!!strategy}
+                    >
+                      <option value="" style={{ background: '#1a1a1a' }}>Select Strategy</option>
+                      {webhooks.length > 0 && (
+                        <optgroup label="Webhook Strategies" style={{ background: '#1a1a1a' }}>
+                          {webhooks.map(webhook => (
+                            <option key={webhook.token} value={webhook.token} style={{ background: '#1a1a1a' }}>
+                              {webhook.name}
+                            </option>
+                          ))}
+                        </optgroup>
+                      )}
+                      {strategyCodes.length > 0 && (
+                        <optgroup label="Engine Strategies" style={{ background: '#1a1a1a' }}>
+                          {strategyCodes.map(code => (
+                            <option key={code.id} value={code.id.toString()} style={{ background: '#1a1a1a' }}>
+                              {code.name} {code.is_premium && '⭐'}
+                            </option>
+                          ))}
+                        </optgroup>
+                      )}
+                    </Select>
+                    {errors.strategy && <Text fontSize="xs" color="red.300" mt={1}>{errors.strategy}</Text>}
+                  </Box>
+
+                  <Box width="full">
+                    <Text fontSize="sm" mb={2} color="whiteAlpha.700">Ticker</Text>
+                    <Select
+                      value={formData.singleAccount.ticker}
+                      onChange={(e) => setFormData(prev => ({
                         ...prev,
-                        multipleAccount: {
-                          ...prev.multipleAccount,
-                          webhookId: isEngine ? '' : value,
-                          strategyCodeId: isEngine ? value : ''
-                        }
-                      }));
-                    }}
-                    bg="whiteAlpha.100"
-                    border="1px solid"
-                    borderColor={errors.strategy ? "red.300" : "whiteAlpha.300"}
-                    _hover={{ borderColor: 'whiteAlpha.400' }}
-                    _focus={{ borderColor: 'rgba(0, 198, 224, 0.6)', boxShadow: '0 0 0 1px rgba(0, 198, 224, 0.6)' }}
-                    isDisabled={!!strategy}
-                  >
-                    <option value="" style={{ background: '#1a1a1a' }}>Select Strategy</option>
-                    {webhooks.length > 0 && (
-                      <optgroup label="Webhook Strategies" style={{ background: '#1a1a1a' }}>
-                        {webhooks.map(webhook => (
-                          <option key={webhook.token} value={webhook.token} style={{ background: '#1a1a1a' }}>
-                            {webhook.name}
-                          </option>
-                        ))}
-                      </optgroup>
-                    )}
-                    {strategyCodes.length > 0 && (
-                      <optgroup label="Engine Strategies" style={{ background: '#1a1a1a' }}>
-                        {strategyCodes.map(code => (
-                          <option key={code.id} value={code.id.toString()} style={{ background: '#1a1a1a' }}>
-                            {code.name} {code.is_premium && '⭐'}
-                          </option>
-                        ))}
-                      </optgroup>
-                    )}
-                  </Select>
-                  {errors.strategy && <Text fontSize="xs" color="red.300" mt={1}>{errors.strategy}</Text>}
-                </Box>
-
-                <Box width="full">
-                  <Text fontSize="sm" mb={2} color="whiteAlpha.700">Ticker</Text>
-                  <Select
-                    value={formData.multipleAccount.ticker}
-                    onChange={(e) => setFormData(prev => ({
-                      ...prev,
-                      multipleAccount: { ...prev.multipleAccount, ticker: e.target.value }
-                    }))}
-                    bg="whiteAlpha.100"
-                    border="1px solid"
-                    borderColor={errors.ticker ? "red.300" : "whiteAlpha.300"}
-                    _hover={{ borderColor: 'whiteAlpha.400' }}
-                    _focus={{ borderColor: 'rgba(0, 198, 224, 0.6)', boxShadow: '0 0 0 1px rgba(0, 198, 224, 0.6)' }}
-                    isDisabled={!!strategy}
-                  >
-                    {Object.entries(displayTickers).map(([symbol, name]) => (
-                      <option key={symbol} value={symbol} style={{ background: '#1a1a1a' }}>
-                        {symbol} - {name}
-                      </option>
-                    ))}
-                  </Select>
-                  {errors.ticker && <Text fontSize="xs" color="red.300" mt={1}>{errors.ticker}</Text>}
-                </Box>
-
-                <Box width="full">
-                  <Text fontSize="sm" mb={2} color="whiteAlpha.700">Leader Account</Text>
-                  <Select
-                    value={formData.multipleAccount.leaderAccountId}
-                    onChange={(e) => handleLeaderAccountChange(e.target.value)}
-                    bg="whiteAlpha.100"
-                    border="1px solid"
-                    borderColor={errors.leaderAccount ? "red.300" : "whiteAlpha.300"}
-                    _hover={{ borderColor: 'whiteAlpha.400' }}
-                    _focus={{ borderColor: 'rgba(0, 198, 224, 0.6)', boxShadow: '0 0 0 1px rgba(0, 198, 224, 0.6)' }}
-                    isDisabled={!!strategy}
-                  >
-                    <option value="" style={{ background: '#1a1a1a' }}>Select Leader Account</option>
-                    {accounts.map(account => {
-                      const broker = getBrokerInfo(account.broker_id);
-                      return (
-                        <option key={account.account_id} value={account.account_id} style={{ background: '#1a1a1a' }}>
-                          {account.display_name} ({broker.name})
-                        </option>
-                      );
-                    })}
-                  </Select>
-                  {errors.leaderAccount && <Text fontSize="xs" color="red.300" mt={1}>{errors.leaderAccount}</Text>}
-                </Box>
-
-                <Box width="full">
-                  <Text fontSize="sm" mb={2} color="whiteAlpha.700">Leader Quantity</Text>
-                  <NumberInput
-                    value={formData.multipleAccount.leaderQuantity}
-                    onChange={(valueString) => setFormData(prev => ({
-                      ...prev,
-                      multipleAccount: { ...prev.multipleAccount, leaderQuantity: parseInt(valueString) || 1 }
-                    }))}
-                    min={1}
-                  >
-                    <NumberInputField
+                        singleAccount: { ...prev.singleAccount, ticker: e.target.value }
+                      }))}
                       bg="whiteAlpha.100"
                       border="1px solid"
-                      borderColor={errors.leaderQuantity ? "red.300" : "whiteAlpha.300"}
+                      borderColor={errors.ticker ? "red.300" : "whiteAlpha.300"}
                       _hover={{ borderColor: 'whiteAlpha.400' }}
                       _focus={{ borderColor: 'rgba(0, 198, 224, 0.6)', boxShadow: '0 0 0 1px rgba(0, 198, 224, 0.6)' }}
-                    />
-                    <NumberInputStepper>
-                      <NumberIncrementStepper color="whiteAlpha.600" />
-                      <NumberDecrementStepper color="whiteAlpha.600" />
-                    </NumberInputStepper>
-                  </NumberInput>
-                  {errors.leaderQuantity && <Text fontSize="xs" color="red.300" mt={1}>{errors.leaderQuantity}</Text>}
-                </Box>
-
-                <Divider borderColor="whiteAlpha.200" />
-
-                <Box width="full">
-                  <HStack justify="space-between" mb={3}>
-                    <Text fontSize="sm" color="whiteAlpha.700">Follower Accounts</Text>
-                    <Button
-                      size="sm"
-                      leftIcon={<Plus size={16} />}
-                      onClick={addFollowerAccount}
-                      variant="ghost"
-                      color="white"
-                      _hover={{ bg: 'whiteAlpha.200' }}
-                      isDisabled={!!strategy && formData.multipleAccount.followerAccounts.length > 0}
+                      isDisabled={!!strategy}
                     >
-                      Add Follower
-                    </Button>
-                  </HStack>
+                      {Object.entries(displayTickers).map(([symbol, name]) => (
+                        <option key={symbol} value={symbol} style={{ background: '#1a1a1a' }}>
+                          {symbol} - {name}
+                        </option>
+                      ))}
+                    </Select>
+                    {errors.ticker && <Text fontSize="xs" color="red.300" mt={1}>{errors.ticker}</Text>}
+                  </Box>
 
-                  {formData.multipleAccount.followerAccounts.length === 0 ? (
-                    <Box
-                      p={4}
-                      borderRadius="md"
-                      border="1px dashed"
-                      borderColor="whiteAlpha.300"
-                      textAlign="center"
+                  <Box width="full">
+                    <Text fontSize="sm" mb={2} color="whiteAlpha.700">Account</Text>
+                    <Select
+                      value={formData.singleAccount.accountId}
+                      onChange={(e) => handleAccountChange(e.target.value)}
+                      bg="whiteAlpha.100"
+                      border="1px solid"
+                      borderColor={errors.account ? "red.300" : "whiteAlpha.300"}
+                      _hover={{ borderColor: 'whiteAlpha.400' }}
+                      _focus={{ borderColor: 'rgba(0, 198, 224, 0.6)', boxShadow: '0 0 0 1px rgba(0, 198, 224, 0.6)' }}
+                      isDisabled={!!strategy}
                     >
-                      <Text fontSize="sm" color="whiteAlpha.500">
-                        No follower accounts added
-                      </Text>
-                    </Box>
-                  ) : (
-                    <VStack spacing={3}>
-                      {formData.multipleAccount.followerAccounts.map((follower, index) => (
-                        <HStack key={index} width="full" spacing={2}>
-                          <Select
-                            value={follower.accountId}
-                            onChange={(e) => updateFollowerAccount(index, 'accountId', e.target.value)}
-                            bg="whiteAlpha.100"
-                            border="1px solid"
-                            borderColor="whiteAlpha.300"
-                            _hover={{ borderColor: 'whiteAlpha.400' }}
-                            _focus={{ borderColor: 'rgba(0, 198, 224, 0.6)', boxShadow: '0 0 0 1px rgba(0, 198, 224, 0.6)' }}
-                            flex={2}
-                            isDisabled={!!strategy}
-                          >
-                            <option value="" style={{ background: '#1a1a1a' }}>Select Account</option>
-                            {accounts
-                              .filter(acc =>
-                                acc.account_id !== formData.multipleAccount.leaderAccountId &&
-                                !formData.multipleAccount.followerAccounts.some((f, i) => i !== index && f.accountId === acc.account_id)
-                              )
-                              .map(account => {
-                                const broker = getBrokerInfo(account.broker_id);
-                                return (
-                                  <option key={account.account_id} value={account.account_id} style={{ background: '#1a1a1a' }}>
-                                    {account.display_name} ({broker.name})
-                                  </option>
-                                );
-                              })}
-                          </Select>
-                          <NumberInput
-                            value={follower.quantity}
-                            onChange={(valueString) => updateFollowerAccount(index, 'quantity', parseInt(valueString) || 1)}
-                            min={1}
-                            flex={1}
-                          >
-                            <NumberInputField
+                      <option value="" style={{ background: '#1a1a1a' }}>Select Account</option>
+                      {accounts.map(account => {
+                        const broker = getBrokerInfo(account.broker_id);
+                        const accountLabel = account.nickname || account.display_name || account.account_id;
+                        return (
+                          <option key={account.account_id} value={account.account_id} style={{ background: '#1a1a1a' }}>
+                            {accountLabel} ({broker.name})
+                          </option>
+                        );
+                      })}
+                    </Select>
+                    {errors.account && <Text fontSize="xs" color="red.300" mt={1}>{errors.account}</Text>}
+                  </Box>
+
+                  <Box width="full">
+                    <Text fontSize="sm" mb={2} color="whiteAlpha.700">Quantity</Text>
+                    <NumberInput
+                      value={formData.singleAccount.quantity}
+                      onChange={(valueString) => setFormData(prev => ({
+                        ...prev,
+                        singleAccount: { ...prev.singleAccount, quantity: parseInt(valueString) || 1 }
+                      }))}
+                      min={1}
+                    >
+                      <NumberInputField
+                        bg="whiteAlpha.100"
+                        border="1px solid"
+                        borderColor={errors.quantity ? "red.300" : "whiteAlpha.300"}
+                        _hover={{ borderColor: 'whiteAlpha.400' }}
+                        _focus={{ borderColor: 'rgba(0, 198, 224, 0.6)', boxShadow: '0 0 0 1px rgba(0, 198, 224, 0.6)' }}
+                      />
+                      <NumberInputStepper>
+                        <NumberIncrementStepper color="whiteAlpha.600" />
+                        <NumberDecrementStepper color="whiteAlpha.600" />
+                      </NumberInputStepper>
+                    </NumberInput>
+                    {errors.quantity && <Text fontSize="xs" color="red.300" mt={1}>{errors.quantity}</Text>}
+                  </Box>
+                </VStack>
+              ) : (
+                // Multiple Account Configuration
+                <VStack spacing={4}>
+                  {/* Strategy, Ticker, Leader Account, Leader Quantity - same as single */}
+                  <Box width="full">
+                    <Text fontSize="sm" mb={2} color="whiteAlpha.700">Strategy</Text>
+                    <Select
+                      value={formData.multipleAccount.strategyCodeId || formData.multipleAccount.webhookId || ''}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        const isEngine = isEngineStrategy(value);
+                        setFormData(prev => ({
+                          ...prev,
+                          multipleAccount: {
+                            ...prev.multipleAccount,
+                            webhookId: isEngine ? '' : value,
+                            strategyCodeId: isEngine ? value : ''
+                          }
+                        }));
+                      }}
+                      bg="whiteAlpha.100"
+                      border="1px solid"
+                      borderColor={errors.strategy ? "red.300" : "whiteAlpha.300"}
+                      _hover={{ borderColor: 'whiteAlpha.400' }}
+                      _focus={{ borderColor: 'rgba(0, 198, 224, 0.6)', boxShadow: '0 0 0 1px rgba(0, 198, 224, 0.6)' }}
+                      isDisabled={!!strategy}
+                    >
+                      <option value="" style={{ background: '#1a1a1a' }}>Select Strategy</option>
+                      {webhooks.length > 0 && (
+                        <optgroup label="Webhook Strategies" style={{ background: '#1a1a1a' }}>
+                          {webhooks.map(webhook => (
+                            <option key={webhook.token} value={webhook.token} style={{ background: '#1a1a1a' }}>
+                              {webhook.name}
+                            </option>
+                          ))}
+                        </optgroup>
+                      )}
+                      {strategyCodes.length > 0 && (
+                        <optgroup label="Engine Strategies" style={{ background: '#1a1a1a' }}>
+                          {strategyCodes.map(code => (
+                            <option key={code.id} value={code.id.toString()} style={{ background: '#1a1a1a' }}>
+                              {code.name} {code.is_premium && '⭐'}
+                            </option>
+                          ))}
+                        </optgroup>
+                      )}
+                    </Select>
+                    {errors.strategy && <Text fontSize="xs" color="red.300" mt={1}>{errors.strategy}</Text>}
+                  </Box>
+
+                  <Box width="full">
+                    <Text fontSize="sm" mb={2} color="whiteAlpha.700">Ticker</Text>
+                    <Select
+                      value={formData.multipleAccount.ticker}
+                      onChange={(e) => setFormData(prev => ({
+                        ...prev,
+                        multipleAccount: { ...prev.multipleAccount, ticker: e.target.value }
+                      }))}
+                      bg="whiteAlpha.100"
+                      border="1px solid"
+                      borderColor={errors.ticker ? "red.300" : "whiteAlpha.300"}
+                      _hover={{ borderColor: 'whiteAlpha.400' }}
+                      _focus={{ borderColor: 'rgba(0, 198, 224, 0.6)', boxShadow: '0 0 0 1px rgba(0, 198, 224, 0.6)' }}
+                      isDisabled={!!strategy}
+                    >
+                      {Object.entries(displayTickers).map(([symbol, name]) => (
+                        <option key={symbol} value={symbol} style={{ background: '#1a1a1a' }}>
+                          {symbol} - {name}
+                        </option>
+                      ))}
+                    </Select>
+                    {errors.ticker && <Text fontSize="xs" color="red.300" mt={1}>{errors.ticker}</Text>}
+                  </Box>
+
+                  <Box width="full">
+                    <Text fontSize="sm" mb={2} color="whiteAlpha.700">Leader Account</Text>
+                    <Select
+                      value={formData.multipleAccount.leaderAccountId}
+                      onChange={(e) => handleLeaderAccountChange(e.target.value)}
+                      bg="whiteAlpha.100"
+                      border="1px solid"
+                      borderColor={errors.leaderAccount ? "red.300" : "whiteAlpha.300"}
+                      _hover={{ borderColor: 'whiteAlpha.400' }}
+                      _focus={{ borderColor: 'rgba(0, 198, 224, 0.6)', boxShadow: '0 0 0 1px rgba(0, 198, 224, 0.6)' }}
+                      isDisabled={!!strategy}
+                    >
+                      <option value="" style={{ background: '#1a1a1a' }}>Select Leader Account</option>
+                      {accounts.map(account => {
+                        const broker = getBrokerInfo(account.broker_id);
+                        const accountLabel = account.nickname || account.display_name || account.account_id;
+                        return (
+                          <option key={account.account_id} value={account.account_id} style={{ background: '#1a1a1a' }}>
+                            {accountLabel} ({broker.name})
+                          </option>
+                        );
+                      })}
+                    </Select>
+                    {errors.leaderAccount && <Text fontSize="xs" color="red.300" mt={1}>{errors.leaderAccount}</Text>}
+                  </Box>
+
+                  <Box width="full">
+                    <Text fontSize="sm" mb={2} color="whiteAlpha.700">Leader Quantity</Text>
+                    <NumberInput
+                      value={formData.multipleAccount.leaderQuantity}
+                      onChange={(valueString) => setFormData(prev => ({
+                        ...prev,
+                        multipleAccount: { ...prev.multipleAccount, leaderQuantity: parseInt(valueString) || 1 }
+                      }))}
+                      min={1}
+                    >
+                      <NumberInputField
+                        bg="whiteAlpha.100"
+                        border="1px solid"
+                        borderColor={errors.leaderQuantity ? "red.300" : "whiteAlpha.300"}
+                        _hover={{ borderColor: 'whiteAlpha.400' }}
+                        _focus={{ borderColor: 'rgba(0, 198, 224, 0.6)', boxShadow: '0 0 0 1px rgba(0, 198, 224, 0.6)' }}
+                      />
+                      <NumberInputStepper>
+                        <NumberIncrementStepper color="whiteAlpha.600" />
+                        <NumberDecrementStepper color="whiteAlpha.600" />
+                      </NumberInputStepper>
+                    </NumberInput>
+                    {errors.leaderQuantity && <Text fontSize="xs" color="red.300" mt={1}>{errors.leaderQuantity}</Text>}
+                  </Box>
+
+                  <Divider borderColor="whiteAlpha.200" />
+
+                  <Box width="full">
+                    <HStack justify="space-between" mb={3}>
+                      <Text fontSize="sm" color="whiteAlpha.700">Follower Accounts</Text>
+                      <Button
+                        size="sm"
+                        leftIcon={<Plus size={16} />}
+                        onClick={addFollowerAccount}
+                        variant="ghost"
+                        color="white"
+                        _hover={{ bg: 'whiteAlpha.200' }}
+                        isDisabled={!!strategy && formData.multipleAccount.followerAccounts.length > 0}
+                      >
+                        Add Follower
+                      </Button>
+                    </HStack>
+
+                    {formData.multipleAccount.followerAccounts.length === 0 ? (
+                      <Box
+                        p={4}
+                        borderRadius="md"
+                        border="1px dashed"
+                        borderColor="whiteAlpha.300"
+                        textAlign="center"
+                      >
+                        <Text fontSize="sm" color="whiteAlpha.500">
+                          No follower accounts added
+                        </Text>
+                      </Box>
+                    ) : (
+                      <VStack spacing={3}>
+                        {formData.multipleAccount.followerAccounts.map((follower, index) => (
+                          <HStack key={index} width="full" spacing={2}>
+                            <Select
+                              value={follower.accountId}
+                              onChange={(e) => updateFollowerAccount(index, 'accountId', e.target.value)}
                               bg="whiteAlpha.100"
                               border="1px solid"
                               borderColor="whiteAlpha.300"
                               _hover={{ borderColor: 'whiteAlpha.400' }}
                               _focus={{ borderColor: 'rgba(0, 198, 224, 0.6)', boxShadow: '0 0 0 1px rgba(0, 198, 224, 0.6)' }}
-                            />
-                            <NumberInputStepper>
-                              <NumberIncrementStepper color="whiteAlpha.600" />
-                              <NumberDecrementStepper color="whiteAlpha.600" />
-                            </NumberInputStepper>
-                          </NumberInput>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            color="red.300"
-                            onClick={() => removeFollowerAccount(index)}
-                            _hover={{ bg: 'whiteAlpha.200', color: 'red.400' }}
-                            p={1}
-                            isDisabled={!!strategy}
-                          >
-                            <Minus size={16} />
-                          </Button>
-                        </HStack>
-                      ))}
-                    </VStack>
-                  )}
-                  {errors.followers && <Text fontSize="xs" color="red.300" mt={2}>{errors.followers}</Text>}
-                </Box>
+                              flex={2}
+                              isDisabled={!!strategy}
+                            >
+                              <option value="" style={{ background: '#1a1a1a' }}>Select Account</option>
+                              {accounts
+                                .filter(acc =>
+                                  acc.account_id !== formData.multipleAccount.leaderAccountId &&
+                                  !formData.multipleAccount.followerAccounts.some((f, i) => i !== index && f.accountId === acc.account_id)
+                                )
+                                .map(account => {
+                                  const broker = getBrokerInfo(account.broker_id);
+                                  const accountLabel = account.nickname || account.display_name || account.account_id;
+                                  return (
+                                    <option key={account.account_id} value={account.account_id} style={{ background: '#1a1a1a' }}>
+                                      {accountLabel} ({broker.name})
+                                    </option>
+                                  );
+                                })}
+                            </Select>
+                            <NumberInput
+                              value={follower.quantity}
+                              onChange={(valueString) => updateFollowerAccount(index, 'quantity', parseInt(valueString) || 1)}
+                              min={1}
+                              flex={1}
+                            >
+                              <NumberInputField
+                                bg="whiteAlpha.100"
+                                border="1px solid"
+                                borderColor="whiteAlpha.300"
+                                _hover={{ borderColor: 'whiteAlpha.400' }}
+                                _focus={{ borderColor: 'rgba(0, 198, 224, 0.6)', boxShadow: '0 0 0 1px rgba(0, 198, 224, 0.6)' }}
+                              />
+                              <NumberInputStepper>
+                                <NumberIncrementStepper color="whiteAlpha.600" />
+                                <NumberDecrementStepper color="whiteAlpha.600" />
+                              </NumberInputStepper>
+                            </NumberInput>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              color="red.300"
+                              onClick={() => removeFollowerAccount(index)}
+                              _hover={{ bg: 'whiteAlpha.200', color: 'red.400' }}
+                              p={1}
+                              isDisabled={!!strategy}
+                            >
+                              <Minus size={16} />
+                            </Button>
+                          </HStack>
+                        ))}
+                      </VStack>
+                    )}
+                    {errors.followers && <Text fontSize="xs" color="red.300" mt={2}>{errors.followers}</Text>}
+                  </Box>
 
-                <Box width="full">
-                  <Text fontSize="sm" mb={2} color="whiteAlpha.700">Group Name (Optional)</Text>
-                  <Input
-                    value={formData.multipleAccount.groupName}
-                    onChange={(e) => setFormData(prev => ({
-                      ...prev,
-                      multipleAccount: { ...prev.multipleAccount, groupName: e.target.value }
-                    }))}
-                    placeholder="e.g., Conservative Group"
-                    bg="whiteAlpha.100"
-                    border="1px solid"
-                    borderColor="whiteAlpha.300"
-                    _hover={{ borderColor: 'whiteAlpha.400' }}
-                    _focus={{ borderColor: 'rgba(0, 198, 224, 0.6)', boxShadow: '0 0 0 1px rgba(0, 198, 224, 0.6)' }}
-                  />
-                </Box>
-              </VStack>
-            )}
-
-            {/* Market Schedule Section */}
-            <Box width="full" borderTop="1px solid" borderColor="whiteAlpha.200" pt={4}>
-              <HStack justify="space-between" align="center" mb={3}>
-                <HStack spacing={2}>
-                  <Clock size={16} color="rgba(0, 198, 224, 1)" />
-                  <Text fontSize="sm" fontWeight="medium" color="whiteAlpha.900">
-                    Market Schedule
-                  </Text>
-                  <Badge colorScheme={enableSchedule ? "green" : "gray"} fontSize="xs">
-                    {enableSchedule ? "Auto" : "Manual"}
-                  </Badge>
-                </HStack>
-                <Switch
-                  isChecked={enableSchedule}
-                  onChange={(e) => {
-                    const newValue = e.target.checked;
-                    console.log('Schedule toggle changed to:', newValue);
-                    setEnableSchedule(newValue);
-                    if (!newValue) {
-                      console.log('Schedule disabled - clearing markets');
-                      setSelectedMarkets([]);
-                    }
-                  }}
-                  colorScheme="cyan"
-                  size="sm"
-                />
-              </HStack>
-
-              <Collapse in={enableSchedule} animateOpacity>
-                <VStack spacing={3} align="stretch">
-                  <Text fontSize="xs" color="whiteAlpha.600">
-                    Strategy will automatically activate/deactivate based on selected market hours
-                  </Text>
-                  <CheckboxGroup value={selectedMarkets} onChange={(values) => {
-                    console.log('Markets selected:', values);
-                    setSelectedMarkets(values);
-                  }}>
-                    <VStack align="start" spacing={2}>
-                      {availableMarkets.map((market) => (
-                        <Checkbox
-                          key={market.value}
-                          value={market.value}
-                          colorScheme="cyan"
-                          size="sm"
-                        >
-                          <Text fontSize="xs" color="whiteAlpha.800">{market.label}</Text>
-                        </Checkbox>
-                      ))}
-                    </VStack>
-                  </CheckboxGroup>
-                  {enableSchedule && selectedMarkets.length === 0 && (
-                    <Alert status="warning" variant="subtle" borderRadius="md" size="sm">
-                      <AlertIcon />
-                      <Text fontSize="xs">Please select at least one market schedule</Text>
-                    </Alert>
-                  )}
-                  <Text fontSize="xs" color="whiteAlpha.500" fontStyle="italic">
-                    Current state at save: Schedule {enableSchedule ? 'enabled' : 'disabled'} with {selectedMarkets.length} markets selected
-                  </Text>
+                  <Box width="full">
+                    <Text fontSize="sm" mb={2} color="whiteAlpha.700">Group Name (Optional)</Text>
+                    <Input
+                      value={formData.multipleAccount.groupName}
+                      onChange={(e) => setFormData(prev => ({
+                        ...prev,
+                        multipleAccount: { ...prev.multipleAccount, groupName: e.target.value }
+                      }))}
+                      placeholder="e.g., Conservative Group"
+                      bg="whiteAlpha.100"
+                      border="1px solid"
+                      borderColor="whiteAlpha.300"
+                      _hover={{ borderColor: 'whiteAlpha.400' }}
+                      _focus={{ borderColor: 'rgba(0, 198, 224, 0.6)', boxShadow: '0 0 0 1px rgba(0, 198, 224, 0.6)' }}
+                    />
+                  </Box>
                 </VStack>
-              </Collapse>
-            </Box>
+              )}
 
-            {/* Engine-specific fields */}
-            {(isEngineStrategy(formData.selectedType === 'single'
-              ? (formData.singleAccount.strategyCodeId || formData.singleAccount.webhookId)
-              : (formData.multipleAccount.strategyCodeId || formData.multipleAccount.webhookId))) && (
-              <>
-                <Divider borderColor="whiteAlpha.200" />
-                <Box width="full">
-                  <Text fontSize="sm" mb={2} color="whiteAlpha.700">Description (Optional)</Text>
-                  <Input
-                    value={formData.description}
-                    onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                    placeholder="Strategy description..."
-                    bg="whiteAlpha.100"
-                    border="1px solid"
-                    borderColor="whiteAlpha.300"
-                    _hover={{ borderColor: 'whiteAlpha.400' }}
-                    _focus={{ borderColor: 'rgba(0, 198, 224, 0.6)', boxShadow: '0 0 0 1px rgba(0, 198, 224, 0.6)' }}
-                  />
-                </Box>
-                <HStack justify="space-between">
-                  <Text fontSize="sm" color="whiteAlpha.700">Active on Creation</Text>
+              {/* Market Schedule Section */}
+              <Box width="full" borderTop="1px solid" borderColor="whiteAlpha.200" pt={4}>
+                <HStack justify="space-between" align="center" mb={3}>
+                  <HStack spacing={2}>
+                    <Clock size={16} color="rgba(0, 198, 224, 1)" />
+                    <Text fontSize="sm" fontWeight="medium" color="whiteAlpha.900">
+                      Market Schedule
+                    </Text>
+                    <Badge colorScheme={enableSchedule ? "green" : "gray"} fontSize="xs">
+                      {enableSchedule ? "Auto" : "Manual"}
+                    </Badge>
+                  </HStack>
                   <Switch
-                    isChecked={formData.isActive}
-                    onChange={(e) => setFormData(prev => ({ ...prev, isActive: e.target.checked }))}
-                    colorScheme="green"
+                    isChecked={enableSchedule}
+                    onChange={(e) => {
+                      const newValue = e.target.checked;
+                      console.log('Schedule toggle changed to:', newValue);
+                      setEnableSchedule(newValue);
+                      if (!newValue) {
+                        console.log('Schedule disabled - clearing markets');
+                        setSelectedMarkets([]);
+                      }
+                    }}
+                    colorScheme="cyan"
+                    size="sm"
                   />
                 </HStack>
-              </>
-            )}
 
-            <Divider borderColor="whiteAlpha.200" />
+                <Collapse in={enableSchedule} animateOpacity>
+                  <VStack spacing={3} align="stretch">
+                    <Text fontSize="xs" color="whiteAlpha.600">
+                      Strategy will automatically activate/deactivate based on selected market hours
+                    </Text>
+                    <CheckboxGroup value={selectedMarkets} onChange={(values) => {
+                      console.log('Markets selected:', values);
+                      setSelectedMarkets(values);
+                    }}>
+                      <VStack align="start" spacing={2}>
+                        {availableMarkets.map((market) => (
+                          <Checkbox
+                            key={market.value}
+                            value={market.value}
+                            colorScheme="cyan"
+                            size="sm"
+                          >
+                            <Text fontSize="xs" color="whiteAlpha.800">{market.label}</Text>
+                          </Checkbox>
+                        ))}
+                      </VStack>
+                    </CheckboxGroup>
+                    {enableSchedule && selectedMarkets.length === 0 && (
+                      <Alert status="warning" variant="subtle" borderRadius="md" size="sm">
+                        <AlertIcon />
+                        <Text fontSize="xs">Please select at least one market schedule</Text>
+                      </Alert>
+                    )}
+                    <Text fontSize="xs" color="whiteAlpha.500" fontStyle="italic">
+                      Current state at save: Schedule {enableSchedule ? 'enabled' : 'disabled'} with {selectedMarkets.length} markets selected
+                    </Text>
+                  </VStack>
+                </Collapse>
+              </Box>
 
-            <Button
-              width="full"
-              bg="linear-gradient(135deg, rgba(0, 198, 224, 0.8), rgba(0, 140, 255, 0.8))"
-              color="white"
-              size="lg"
-              onClick={handleSubmit}
-              isLoading={isCreating || isUpdating}
-              loadingText={strategy ? "Updating..." : "Activating..."}
-              _hover={{
-                bg: "linear-gradient(135deg, rgba(0, 198, 224, 1), rgba(0, 140, 255, 1))",
-                transform: 'translateY(-2px)',
-                boxShadow: 'lg'
-              }}
-              _active={{ transform: 'translateY(0)' }}
-              borderRadius="lg"
-            >
-              {strategy ? 'Update Strategy' : 'Activate Strategy'}
-            </Button>
-          </VStack>
-        </ModalBody>
-      </ModalContent>
-    </Modal>
+              {/* Engine-specific fields */}
+              {(isEngineStrategy(formData.selectedType === 'single'
+                ? (formData.singleAccount.strategyCodeId || formData.singleAccount.webhookId)
+                : (formData.multipleAccount.strategyCodeId || formData.multipleAccount.webhookId))) && (
+                  <>
+                    <Divider borderColor="whiteAlpha.200" />
+                    <Box width="full">
+                      <Text fontSize="sm" mb={2} color="whiteAlpha.700">Description (Optional)</Text>
+                      <Input
+                        value={formData.description}
+                        onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                        placeholder="Strategy description..."
+                        bg="whiteAlpha.100"
+                        border="1px solid"
+                        borderColor="whiteAlpha.300"
+                        _hover={{ borderColor: 'whiteAlpha.400' }}
+                        _focus={{ borderColor: 'rgba(0, 198, 224, 0.6)', boxShadow: '0 0 0 1px rgba(0, 198, 224, 0.6)' }}
+                      />
+                    </Box>
+                    <HStack justify="space-between">
+                      <Text fontSize="sm" color="whiteAlpha.700">Active on Creation</Text>
+                      <Switch
+                        isChecked={formData.isActive}
+                        onChange={(e) => setFormData(prev => ({ ...prev, isActive: e.target.checked }))}
+                        colorScheme="green"
+                      />
+                    </HStack>
+                  </>
+                )}
 
-    {/* Removed Confirmation Modal - no longer needed with unified API that properly handles updates */}
+              <Divider borderColor="whiteAlpha.200" />
+
+              <Button
+                width="full"
+                bg="linear-gradient(135deg, rgba(0, 198, 224, 0.8), rgba(0, 140, 255, 0.8))"
+                color="white"
+                size="lg"
+                onClick={handleSubmit}
+                isLoading={isCreating || isUpdating}
+                loadingText={strategy ? "Updating..." : "Activating..."}
+                _hover={{
+                  bg: "linear-gradient(135deg, rgba(0, 198, 224, 1), rgba(0, 140, 255, 1))",
+                  transform: 'translateY(-2px)',
+                  boxShadow: 'lg'
+                }}
+                _active={{ transform: 'translateY(0)' }}
+                borderRadius="lg"
+              >
+                {strategy ? 'Update Strategy' : 'Activate Strategy'}
+              </Button>
+            </VStack>
+          </ModalBody>
+        </ModalContent>
+      </Modal>
+
+      {/* Removed Confirmation Modal - no longer needed with unified API that properly handles updates */}
     </>
   );
 };
