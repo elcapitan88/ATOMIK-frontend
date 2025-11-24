@@ -46,7 +46,6 @@ const getBrokerInfo = (brokerId) => {
 };
 
 // Helper function to determine if a webhook is an engine strategy
-// Helper function to determine if a webhook is an engine strategy
 const isEngineStrategy = (webhookId) => {
   // Engine strategies have integer IDs, while webhooks have UUIDs
   // Use regex to check if the ID consists ONLY of digits
@@ -728,14 +727,21 @@ const ActivateStrategyModal = ({
                       <option value="" style={{ background: '#1a1a1a' }}>Select Account</option>
                       {accounts.map(account => {
                         const broker = getBrokerInfo(account.broker_id);
+<<<<<<< HEAD
                         return (
                           <option key={account.account_id} value={account.account_id} style={{ background: '#1a1a1a' }}>
                             {account.display_name} ({broker.name})
-                          </option>
-                        );
+=======
+                        const accountLabel = account.nickname || account.display_name || account.account_id;
+                        return (
+                          <option key={account.account_id} value={account.account_id} style={{ background: '#1a1a1a' }}>
+                              {accountLabel} ({broker.name})
+>>>>>>> 764e256c755a43a0ea4295b7a3acbe0b9903113a
+                            </option>
+                            );
                       })}
-                    </Select>
-                    {errors.account && <Text fontSize="xs" color="red.300" mt={1}>{errors.account}</Text>}
+                          </Select>
+                    { errors.account && <Text fontSize="xs" color="red.300" mt={1}>{errors.account}</Text> }
                   </Box>
 
                   <Box width="full">
@@ -852,14 +858,21 @@ const ActivateStrategyModal = ({
                       <option value="" style={{ background: '#1a1a1a' }}>Select Leader Account</option>
                       {accounts.map(account => {
                         const broker = getBrokerInfo(account.broker_id);
+<<<<<<< HEAD
                         return (
                           <option key={account.account_id} value={account.account_id} style={{ background: '#1a1a1a' }}>
                             {account.display_name} ({broker.name})
-                          </option>
-                        );
+=======
+                        const accountLabel = account.nickname || account.display_name || account.account_id;
+                        return (
+                          <option key={account.account_id} value={account.account_id} style={{ background: '#1a1a1a' }}>
+                              {accountLabel} ({broker.name})
+>>>>>>> 764e256c755a43a0ea4295b7a3acbe0b9903113a
+                            </option>
+                            );
                       })}
-                    </Select>
-                    {errors.leaderAccount && <Text fontSize="xs" color="red.300" mt={1}>{errors.leaderAccount}</Text>}
+                          </Select>
+                    { errors.leaderAccount && <Text fontSize="xs" color="red.300" mt={1}>{errors.leaderAccount}</Text> }
                   </Box>
 
                   <Box width="full">
@@ -940,42 +953,49 @@ const ActivateStrategyModal = ({
                                 )
                                 .map(account => {
                                   const broker = getBrokerInfo(account.broker_id);
+<<<<<<< HEAD
                                   return (
                                     <option key={account.account_id} value={account.account_id} style={{ background: '#1a1a1a' }}>
                                       {account.display_name} ({broker.name})
-                                    </option>
-                                  );
+=======
+                                  const accountLabel = account.nickname || account.display_name || account.account_id;
+                                  return (
+                                    <option key={account.account_id} value={account.account_id} style={{ background: '#1a1a1a' }}>
+                                        {accountLabel} ({broker.name})
+>>>>>>> 764e256c755a43a0ea4295b7a3acbe0b9903113a
+                                      </option>
+                                      );
                                 })}
-                            </Select>
-                            <NumberInput
-                              value={follower.quantity}
-                              onChange={(valueString) => updateFollowerAccount(index, 'quantity', parseInt(valueString) || 1)}
-                              min={1}
-                              flex={1}
-                            >
-                              <NumberInputField
-                                bg="whiteAlpha.100"
-                                border="1px solid"
-                                borderColor="whiteAlpha.300"
-                                _hover={{ borderColor: 'whiteAlpha.400' }}
-                                _focus={{ borderColor: 'rgba(0, 198, 224, 0.6)', boxShadow: '0 0 0 1px rgba(0, 198, 224, 0.6)' }}
-                              />
-                              <NumberInputStepper>
-                                <NumberIncrementStepper color="whiteAlpha.600" />
-                                <NumberDecrementStepper color="whiteAlpha.600" />
-                              </NumberInputStepper>
-                            </NumberInput>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              color="red.300"
-                              onClick={() => removeFollowerAccount(index)}
-                              _hover={{ bg: 'whiteAlpha.200', color: 'red.400' }}
-                              p={1}
-                              isDisabled={!!strategy}
-                            >
-                              <Minus size={16} />
-                            </Button>
+                                    </Select>
+                                    <NumberInput
+                                      value={follower.quantity}
+                                      onChange={(valueString) => updateFollowerAccount(index, 'quantity', parseInt(valueString) || 1)}
+                                      min={1}
+                                      flex={1}
+                                    >
+                                      <NumberInputField
+                                        bg="whiteAlpha.100"
+                                        border="1px solid"
+                                        borderColor="whiteAlpha.300"
+                                        _hover={{ borderColor: 'whiteAlpha.400' }}
+                                        _focus={{ borderColor: 'rgba(0, 198, 224, 0.6)', boxShadow: '0 0 0 1px rgba(0, 198, 224, 0.6)' }}
+                                      />
+                                      <NumberInputStepper>
+                                        <NumberIncrementStepper color="whiteAlpha.600" />
+                                        <NumberDecrementStepper color="whiteAlpha.600" />
+                                      </NumberInputStepper>
+                                    </NumberInput>
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      color="red.300"
+                                      onClick={() => removeFollowerAccount(index)}
+                                      _hover={{ bg: 'whiteAlpha.200', color: 'red.400' }}
+                                      p={1}
+                                      isDisabled={!!strategy}
+                                    >
+                                      <Minus size={16} />
+                                    </Button>
                           </HStack>
                         ))}
                       </VStack>
