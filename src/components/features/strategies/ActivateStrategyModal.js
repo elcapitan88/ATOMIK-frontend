@@ -852,20 +852,15 @@ const ActivateStrategyModal = ({
                       <option value="" style={{ background: '#1a1a1a' }}>Select Leader Account</option>
                       {accounts.map(account => {
                         const broker = getBrokerInfo(account.broker_id);
-<<<<<<< HEAD
-                        return (
-                          <option key={account.account_id} value={account.account_id} style={{ background: '#1a1a1a' }}>
-                            {account.display_name} ({broker.name})
-=======
                         const accountLabel = account.nickname || account.display_name || account.account_id;
                         return (
                           <option key={account.account_id} value={account.account_id} style={{ background: '#1a1a1a' }}>
-                              {accountLabel} ({broker.name})
-                            </option>
-                            );
+                            {accountLabel} ({broker.name})
+                          </option>
+                        );
                       })}
-                          </Select>
-                    { errors.leaderAccount && <Text fontSize="xs" color="red.300" mt={1}>{errors.leaderAccount}</Text> }
+                    </Select>
+                    {errors.leaderAccount && <Text fontSize="xs" color="red.300" mt={1}>{errors.leaderAccount}</Text>}
                   </Box>
 
                   <Box width="full">
@@ -949,42 +944,40 @@ const ActivateStrategyModal = ({
                                   const accountLabel = account.nickname || account.display_name || account.account_id;
                                   return (
                                     <option key={account.account_id} value={account.account_id} style={{ background: '#1a1a1a' }}>
-                                        {accountLabel} ({broker.name})
-                                      </option>
-                                      );
-                                      </option>
-                                      );
+                                      {accountLabel} ({broker.name})
+                                    </option>
+                                  );
                                 })}
-                                    </Select>
-                                    <NumberInput
-                                      value={follower.quantity}
-                                      onChange={(valueString) => updateFollowerAccount(index, 'quantity', parseInt(valueString) || 1)}
-                                      min={1}
-                                      flex={1}
-                                    >
-                                      <NumberInputField
-                                        bg="whiteAlpha.100"
-                                        border="1px solid"
-                                        borderColor="whiteAlpha.300"
-                                        _hover={{ borderColor: 'whiteAlpha.400' }}
-                                        _focus={{ borderColor: 'rgba(0, 198, 224, 0.6)', boxShadow: '0 0 0 1px rgba(0, 198, 224, 0.6)' }}
-                                      />
-                                      <NumberInputStepper>
-                                        <NumberIncrementStepper color="whiteAlpha.600" />
-                                        <NumberDecrementStepper color="whiteAlpha.600" />
-                                      </NumberInputStepper>
-                                    </NumberInput>
-                                    <Button
-                                      size="sm"
-                                      variant="ghost"
-                                      color="red.300"
-                                      onClick={() => removeFollowerAccount(index)}
-                                      _hover={{ bg: 'whiteAlpha.200', color: 'red.400' }}
-                                      p={1}
-                                      isDisabled={!!strategy}
-                                    >
-                                      <Minus size={16} />
-                                    </Button>
+                            </Select>
+                            <NumberInput
+                              value={follower.quantity}
+                              onChange={(valueString) => updateFollowerAccount(index, 'quantity', parseInt(valueString) || 1)}
+                              min={1}
+                              flex={1}
+                            >
+                              <NumberInputField
+                                bg="whiteAlpha.100"
+                                border="1px solid"
+                                borderColor="whiteAlpha.300"
+                                _hover={{ borderColor: 'whiteAlpha.400' }}
+                                _focus={{ borderColor: 'rgba(0, 198, 224, 0.6)', boxShadow: '0 0 0 1px rgba(0, 198, 224, 0.6)' }}
+                              />
+                              <NumberInputStepper>
+                                <NumberIncrementStepper color="whiteAlpha.600" />
+                                <NumberDecrementStepper color="whiteAlpha.600" />
+                              </NumberInputStepper>
+                            </NumberInput>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              color="red.300"
+                              onClick={() => removeFollowerAccount(index)}
+                              _hover={{ bg: 'whiteAlpha.200', color: 'red.400' }}
+                              p={1}
+                              isDisabled={!!strategy}
+                            >
+                              <Minus size={16} />
+                            </Button>
                           </HStack>
                         ))}
                       </VStack>
@@ -1126,8 +1119,8 @@ const ActivateStrategyModal = ({
               </Button>
             </VStack>
           </ModalBody>
-        </ModalContent>
-      </Modal>
+        </ModalContent >
+      </Modal >
 
       {/* Removed Confirmation Modal - no longer needed with unified API that properly handles updates */}
     </>
