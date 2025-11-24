@@ -23,8 +23,8 @@ const TVAdvancedChart = ({
         let widget = null;
 
         const initWidget = () => {
-            if (!window.TradingView) {
-                setError('TradingView library not loaded');
+            if (!window.TradingView || !window.Datafeeds) {
+                setError('TradingView library or Datafeeds not loaded');
                 setIsLoading(false);
                 return;
             }
@@ -62,20 +62,41 @@ const TVAdvancedChart = ({
             }
         };
 
-        // Load the script if it doesn't exist
-        if (!window.TradingView) {
+        const loadDatafeedScript = (callback) => {
+            if (window.Datafeeds) {
+                callback();
+                return;
+            }
+
+            const datafeedScript = document.createElement('script');
+            datafeedScript.src = '/datafeeds/udf/dist/bundle.js';
+            datafeedScript.async = true;
+            datafeedScript.onload = callback;
+            datafeedScript.onerror = () => {
+                setError('Failed to load datafeed script');
+                setIsLoading(false);
+            };
+            document.head.appendChild(datafeedScript);
+        };
+
+        const loadChartingLibrary = () => {
+            if (window.TradingView) {
+                loadDatafeedScript(initWidget);
+                return;
+            }
+
             const script = document.createElement('script');
             script.src = `${libraryPath}charting_library.standalone.js`;
             script.async = true;
-            script.onload = initWidget;
+            script.onload = () => loadDatafeedScript(initWidget);
             script.onerror = () => {
                 setError('Failed to load charting library script');
                 setIsLoading(false);
             };
             document.head.appendChild(script);
-        } else {
-            initWidget();
-        }
+        };
+
+        loadChartingLibrary();
 
         return () => {
             if (widget) {
