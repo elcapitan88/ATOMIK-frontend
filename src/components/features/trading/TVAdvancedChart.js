@@ -1,0 +1,141 @@
+import React, { useEffect, useRef, useState } from 'react';
+import { Box, Spinner, Text, VStack } from '@chakra-ui/react';
+
+const TVAdvancedChart = ({
+    symbol = 'AMEX:SPY',
+    interval = '5',
+    theme = 'Dark',
+    containerId = 'tv_chart_container',
+    libraryPath = '/charting_library/',
+    chartsStorageUrl = 'https://saveload.tradingview.com',
+    chartsStorageApiVersion = '1.1',
+    clientId = 'tradingview.com',
+    userId = 'public_user_id',
+    fullscreen = false,
+    autosize = true,
+    studiesOverrides = {},
+}) => {
+    const containerRef = useRef(null);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState(null);
+
+    useEffect(() => {
+        let widget = null;
+
+        const initWidget = () => {
+            if (!window.TradingView) {
+                setError('TradingView library not loaded');
+                setIsLoading(false);
+                return;
+            }
+
+            const widgetOptions = {
+                symbol: symbol,
+                datafeed: new window.Datafeeds.UDFCompatibleDatafeed("https://demo_feed.tradingview.com"),
+                interval: interval,
+                container: containerRef.current,
+                library_path: libraryPath,
+                locale: 'en',
+                disabled_features: ['use_localstorage_for_settings'],
+                enabled_features: ['study_templates'],
+                charts_storage_url: chartsStorageUrl,
+                charts_storage_api_version: chartsStorageApiVersion,
+                client_id: clientId,
+                user_id: userId,
+                fullscreen: fullscreen,
+                autosize: autosize,
+                studies_overrides: studiesOverrides,
+                theme: theme,
+            };
+
+            try {
+                widget = new window.TradingView.widget(widgetOptions);
+
+                widget.onChartReady(() => {
+                    console.log('Chart has loaded!');
+                    setIsLoading(false);
+                });
+            } catch (err) {
+                console.error('Error initializing TradingView widget:', err);
+                setError('Failed to initialize chart');
+                setIsLoading(false);
+            }
+        };
+
+        // Load the script if it doesn't exist
+        if (!window.TradingView) {
+            const script = document.createElement('script');
+            script.src = `${libraryPath}charting_library.standalone.js`;
+            script.async = true;
+            script.onload = initWidget;
+            script.onerror = () => {
+                setError('Failed to load charting library script');
+                setIsLoading(false);
+            };
+            document.head.appendChild(script);
+        } else {
+            initWidget();
+        }
+
+        return () => {
+            if (widget) {
+                try {
+                    widget.remove();
+                } catch (e) {
+                    console.warn('Error removing widget:', e);
+                }
+            }
+        };
+    }, [symbol, interval, theme, libraryPath, chartsStorageUrl, chartsStorageApiVersion, clientId, userId, fullscreen, autosize, studiesOverrides]);
+
+    return (
+        <Box
+            position="relative"
+            height="100%"
+            width="100%"
+            bg="#1C1C1C"
+            borderRadius="xl"
+            overflow="hidden"
+        >
+            {isLoading && (
+                <VStack
+                    position="absolute"
+                    top="0"
+                    left="0"
+                    right="0"
+                    bottom="0"
+                    justify="center"
+                    align="center"
+                    bg="#1C1C1C"
+                    zIndex={10}
+                >
+                    <Spinner size="xl" color="blue.500" />
+                    <Text color="whiteAlpha.700">Loading Advanced Chart...</Text>
+                </VStack>
+            )}
+
+            {error && (
+                <VStack
+                    position="absolute"
+                    top="0"
+                    left="0"
+                    right="0"
+                    bottom="0"
+                    justify="center"
+                    align="center"
+                    bg="#1C1C1C"
+                    zIndex={10}
+                >
+                    <Text color="red.400">{error}</Text>
+                </VStack>
+            )}
+
+            <div
+                ref={containerRef}
+                style={{ height: '100%', width: '100%' }}
+            />
+        </Box>
+    );
+};
+
+export default TVAdvancedChart;

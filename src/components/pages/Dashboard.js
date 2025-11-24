@@ -1,11 +1,11 @@
 import React, { useState, lazy, Suspense, useEffect, useRef } from 'react';
-import { 
-    Box, 
-    Flex, 
-    Spinner, 
-    Text, 
+import {
+    Box,
+    Flex,
+    Spinner,
+    Text,
     VStack,
-    useToast, 
+    useToast,
     Alert,
     AlertIcon,
     Button,
@@ -18,7 +18,7 @@ import axiosInstance from '@/services/axiosConfig';
 import useFeatureFlags from '@/hooks/useFeatureFlags';
 import AdminService from '@/services/api/admin';
 import Menu from '../layout/Sidebar/Menu';
-import TradingViewWidget from '../features/trading/TradingViewWidget';
+import TradingViewWidget from '../features/trading/TVAdvancedChart';
 import MemberChatMenu from '../chat/MemberChatMenu';
 import MemberChatComponent from '../chat/MemberChat';
 import MaintenanceBanner from '@/components/common/MaintenanceBanner';
@@ -28,7 +28,7 @@ import logger from '@/utils/logger';
 
 // Lazy loaded components
 const Management = lazy(() => import('../features/trading/Management'));
-const OrderControl = lazy(() => import('../features/trading/OrderControl')); 
+const OrderControl = lazy(() => import('../features/trading/OrderControl'));
 const StrategyGroups = lazy(() => import('../features/strategies/ActivateStrategies'));
 const TradesTable = lazy(() => import('../features/trading/TradesTable'));
 const MarketplacePage = lazy(() => import('./MarketplacePage'));
@@ -81,8 +81,8 @@ class ErrorBoundary extends React.Component {
     render() {
         if (this.state.hasError) {
             return (
-                <ErrorDisplay 
-                    error={this.state.error} 
+                <ErrorDisplay
+                    error={this.state.error}
                     onRetry={() => {
                         this.setState({ hasError: false });
                         window.location.reload();
@@ -119,25 +119,25 @@ const DashboardContent = () => {
     const { isAuthenticated, user, isLoading: authLoading, refreshAuthState } = useAuth();
     const toast = useToast();
     const { hasMemberChat, hasAriaAssistant } = useFeatureFlags();
-    
+
     // Responsive breakpoints
     const isMobile = useBreakpointValue({ base: true, md: false });
-    
+
     // Set up API request interception for caching
     useEffect(() => {
         // Store original fetch
         const originalFetch = window.fetch;
-        
+
         // Replace fetch with our caching version
         window.fetch = async (...args) => {
             const [resource, config] = args;
             let url = resource;
-            
+
             // Handle Request objects
             if (resource instanceof Request) {
                 url = resource.url;
             }
-            
+
             // Check if this is one of our API endpoints with cached data
             if (typeof url === 'string') {
                 // Accounts endpoint
@@ -148,7 +148,7 @@ const DashboardContent = () => {
                         status: 200
                     });
                 }
-                
+
                 // Strategies endpoint - now using unified marketplace endpoint
                 if ((url.includes('/api/v1/strategies/list') || url.includes('/api/v1/marketplace/strategies/available')) && dataCache.current.strategies) {
                     logger.debug('Using cached strategies data');
@@ -157,7 +157,7 @@ const DashboardContent = () => {
                         status: 200
                     });
                 }
-                
+
                 // Webhooks endpoint
                 if (url.includes('/api/v1/webhooks/list') && dataCache.current.webhooks) {
                     logger.debug('Using cached webhooks data');
@@ -166,7 +166,7 @@ const DashboardContent = () => {
                         status: 200
                     });
                 }
-                
+
                 // Subscribed webhooks endpoint
                 if (url.includes('/api/v1/webhooks/subscribed') && dataCache.current.subscribedWebhooks) {
                     logger.debug('Using cached subscribed webhooks data');
@@ -176,16 +176,16 @@ const DashboardContent = () => {
                     });
                 }
             }
-            
+
             // For all other requests, use original fetch
             const response = await originalFetch(...args);
-            
+
             // Cache the response if it's one of our dashboard endpoints
             if (response.ok && typeof url === 'string') {
                 try {
                     const responseClone = response.clone();
                     const data = await responseClone.json();
-                    
+
                     if (url.includes('/api/v1/brokers/accounts')) {
                         dataCache.current.accounts = data;
                     } else if (url.includes('/api/v1/strategies/list') || url.includes('/api/v1/marketplace/strategies/available')) {
@@ -199,10 +199,10 @@ const DashboardContent = () => {
                     logger.error('Error caching response:', e);
                 }
             }
-            
+
             return response;
         };
-        
+
         // Cleanup function to restore original fetch
         return () => {
             window.fetch = originalFetch;
@@ -243,7 +243,7 @@ const DashboardContent = () => {
                 // Extract strategies from unified response format
                 const strategiesData = strategiesResponse.data?.strategies || strategiesResponse.data || [];
                 dataCache.current.strategies = strategiesData;
-                
+
                 setDashboardData({
                     accounts: accountsResponse.data,
                     strategies: strategiesData,
@@ -293,7 +293,7 @@ const DashboardContent = () => {
     // Error state
     if (error) {
         return (
-            <ErrorDisplay 
+            <ErrorDisplay
                 error={error}
                 onRetry={() => window.location.reload()}
             />
@@ -309,113 +309,113 @@ const DashboardContent = () => {
                         <VStack spacing={4} align="stretch" h="full">
                             {/* Payment Status Warning - Global Dashboard Warning */}
                             <PaymentStatusWarning />
-                            
-                            <Flex 
-                                position="relative" 
-                                h="full" 
-                                p={4} 
-                                zIndex={2} 
+
+                            <Flex
+                                position="relative"
+                                h="full"
+                                p={4}
+                                zIndex={2}
                                 gap={4}
                                 direction={{ base: "column", lg: "row" }}
                             >
-                            {/* Left Column */}
-                            <Flex 
-                                flexDirection="column" 
-                                flex={{ base: "1", lg: 7 }}
-                                width="100%"
-                            >
-                                {/* Chart container */}
-                                <Box 
-                                    h={{ base: "300px", md: "50%" }} 
-                                    maxH={{ base: "none", md: "50%" }} 
-                                    flex={{ base: "0 0 auto", md: "0 0 50%" }} 
-                                    bg="whiteAlpha.100" 
-                                    borderRadius="xl" 
-                                    overflow="hidden"
-                                    mb={{ base: 4, md: 0 }}
+                                {/* Left Column */}
+                                <Flex
+                                    flexDirection="column"
+                                    flex={{ base: "1", lg: 7 }}
+                                    width="100%"
                                 >
-                                    <ErrorBoundary>
-                                        <Suspense fallback={<LoadingSpinner />}>
-                                            <TradingViewWidget />
-                                        </Suspense>
-                                    </ErrorBoundary>
-                                </Box>
-                                
-                                {/* Bottom section */}
-                                <Flex 
-                                    mt={4} 
-                                    gap={4} 
-                                    flex="1" 
-                                    minH="0"
-                                    direction={{ base: "column", xl: "row" }}
-                                >
-                                    {/* TradesTable container */}
-                                    <Box 
-                                        flex="1" 
-                                        borderRadius="xl" 
+                                    {/* Chart container */}
+                                    <Box
+                                        h={{ base: "300px", md: "50%" }}
+                                        maxH={{ base: "none", md: "50%" }}
+                                        flex={{ base: "0 0 auto", md: "0 0 50%" }}
+                                        bg="whiteAlpha.100"
+                                        borderRadius="xl"
                                         overflow="hidden"
-                                        mb={{ base: 4, xl: 0 }}
+                                        mb={{ base: 4, md: 0 }}
                                     >
                                         <ErrorBoundary>
                                             <Suspense fallback={<LoadingSpinner />}>
-                                                <TradesTable 
+                                                <TradingViewWidget />
+                                            </Suspense>
+                                        </ErrorBoundary>
+                                    </Box>
+
+                                    {/* Bottom section */}
+                                    <Flex
+                                        mt={4}
+                                        gap={4}
+                                        flex="1"
+                                        minH="0"
+                                        direction={{ base: "column", xl: "row" }}
+                                    >
+                                        {/* TradesTable container */}
+                                        <Box
+                                            flex="1"
+                                            borderRadius="xl"
+                                            overflow="hidden"
+                                            mb={{ base: 4, xl: 0 }}
+                                        >
+                                            <ErrorBoundary>
+                                                <Suspense fallback={<LoadingSpinner />}>
+                                                    <TradesTable
+                                                        accounts={dashboardData.accounts}
+                                                        activeAccountId={dashboardData.activeAccountId}
+                                                    />
+                                                </Suspense>
+                                            </ErrorBoundary>
+                                        </Box>
+
+                                        {/* OrderControl container */}
+                                        <Box
+                                            flex={{ base: "1", xl: "0 0 400px" }}
+                                            bg="whiteAlpha.100"
+                                            borderRadius="xl"
+                                        >
+                                            <ErrorBoundary>
+                                                <Suspense fallback={<LoadingSpinner />}>
+                                                    <OrderControl
+                                                        accounts={dashboardData.accounts}
+                                                        activeAccountId={dashboardData.activeAccountId}
+                                                    />
+                                                </Suspense>
+                                            </ErrorBoundary>
+                                        </Box>
+                                    </Flex>
+                                </Flex>
+
+                                {/* Right Column */}
+                                <Flex
+                                    flex={{ base: "1", lg: 3 }}
+                                    flexDirection="column"
+                                    gap={4}
+                                    mt={{ base: 4, lg: 0 }}
+                                >
+                                    {/* Management Section */}
+                                    <Box flex="0 0 auto">
+                                        <ErrorBoundary>
+                                            <Suspense fallback={<LoadingSpinner />}>
+                                                <Management
                                                     accounts={dashboardData.accounts}
-                                                    activeAccountId={dashboardData.activeAccountId}
+                                                    onAccountSelect={handleAccountSelect}
                                                 />
                                             </Suspense>
                                         </ErrorBoundary>
                                     </Box>
-                                    
-                                    {/* OrderControl container */}
-                                    <Box 
-                                        flex={{ base: "1", xl: "0 0 400px" }} 
-                                        bg="whiteAlpha.100" 
-                                        borderRadius="xl"
-                                    >
+
+                                    {/* Strategy Groups Section */}
+                                    <Box flex="1">
                                         <ErrorBoundary>
                                             <Suspense fallback={<LoadingSpinner />}>
-                                                <OrderControl 
+                                                <StrategyGroups
+                                                    strategies={dashboardData.strategies}
                                                     accounts={dashboardData.accounts}
-                                                    activeAccountId={dashboardData.activeAccountId}
                                                 />
                                             </Suspense>
                                         </ErrorBoundary>
                                     </Box>
                                 </Flex>
                             </Flex>
-                            
-                            {/* Right Column */}
-                            <Flex 
-                                flex={{ base: "1", lg: 3 }} 
-                                flexDirection="column" 
-                                gap={4}
-                                mt={{ base: 4, lg: 0 }}
-                            >
-                                {/* Management Section */}
-                                <Box flex="0 0 auto">
-                                    <ErrorBoundary>
-                                        <Suspense fallback={<LoadingSpinner />}>
-                                            <Management 
-                                                accounts={dashboardData.accounts}
-                                                onAccountSelect={handleAccountSelect}
-                                            />
-                                        </Suspense>
-                                    </ErrorBoundary>
-                                </Box>
-                                
-                                {/* Strategy Groups Section */}
-                                <Box flex="1">
-                                    <ErrorBoundary>
-                                        <Suspense fallback={<LoadingSpinner />}>
-                                            <StrategyGroups 
-                                                strategies={dashboardData.strategies}
-                                                accounts={dashboardData.accounts}
-                                            />
-                                        </Suspense>
-                                    </ErrorBoundary>
-                                </Box>
-                            </Flex>
-                        </Flex>
                         </VStack>
                     </ErrorBoundary>
                 );
@@ -443,95 +443,95 @@ const DashboardContent = () => {
     return (
         <>
             <MaintenanceBanner />
-            <Flex 
-                minH="100vh" 
-                bg="background" 
-                color="text.primary" 
+            <Flex
+                minH="100vh"
+                bg="background"
+                color="text.primary"
                 fontFamily="body"
                 flexDirection="column"
             >
                 <ErrorBoundary>
                     <Menu onSelectItem={setSelectedItem} />
-            </ErrorBoundary>
-            
-            <Box 
-                flexGrow={1} 
-                ml={{ base: 0, md: 16 }}
-                mt={{ base: 0, md: 0 }}
-                mb={{ base: "70px", md: 0 }} // Add bottom margin for mobile to account for bottom nav
-            >
-                <Box 
-                    h={{ base: "auto", md: "100vh" }} 
-                    w="full" 
-                    p={{ base: 3, md: 6 }} 
-                    overflow="auto" 
-                    position="relative"
+                </ErrorBoundary>
+
+                <Box
+                    flexGrow={1}
+                    ml={{ base: 0, md: 16 }}
+                    mt={{ base: 0, md: 0 }}
+                    mb={{ base: "70px", md: 0 }} // Add bottom margin for mobile to account for bottom nav
                 >
-                    {/* Background Effects */}
-                    <Box 
-                        position="absolute" 
-                        inset={0} 
-                        bgGradient="linear(to-br, blackAlpha.400, blackAlpha.200, blackAlpha.400)" 
-                        pointerEvents="none"
-                    />
-                    <Box 
-                        position="absolute" 
-                        inset={0} 
-                        backdropFilter="blur(16px)" 
-                        bg="blackAlpha.300"
-                    />
-                    <Box 
-                        position="absolute" 
-                        inset={0} 
-                        boxShadow="inset 0 0 15px rgba(0, 0, 0, 0.2)" 
-                        borderRadius="xl" 
-                        pointerEvents="none"
-                    />
-                    
-                    {/* Content */}
-                    <Box position="relative" h="full" zIndex={1}>
-                        {renderContent()}
+                    <Box
+                        h={{ base: "auto", md: "100vh" }}
+                        w="full"
+                        p={{ base: 3, md: 6 }}
+                        overflow="auto"
+                        position="relative"
+                    >
+                        {/* Background Effects */}
+                        <Box
+                            position="absolute"
+                            inset={0}
+                            bgGradient="linear(to-br, blackAlpha.400, blackAlpha.200, blackAlpha.400)"
+                            pointerEvents="none"
+                        />
+                        <Box
+                            position="absolute"
+                            inset={0}
+                            backdropFilter="blur(16px)"
+                            bg="blackAlpha.300"
+                        />
+                        <Box
+                            position="absolute"
+                            inset={0}
+                            boxShadow="inset 0 0 15px rgba(0, 0, 0, 0.2)"
+                            borderRadius="xl"
+                            pointerEvents="none"
+                        />
+
+                        {/* Content */}
+                        <Box position="relative" h="full" zIndex={1}>
+                            {renderContent()}
+                        </Box>
                     </Box>
                 </Box>
-            </Box>
-            
-            {/* Chat Components - Feature Gated */}
-            {hasMemberChat && (
-                <>
-                    <MemberChatMenu
-                        isOpen={chat.isOpen}
-                        onToggle={chat.toggleChat}
-                        unreadCount={chat.getTotalUnreadCount()}
-                        channels={chat.channels}
-                        onChannelSelect={chat.selectChannel}
-                        activeChannelId={chat.activeChannelId}
-                    />
-                    
-                    <MemberChatComponent
-                        isOpen={chat.isOpen}
-                        onClose={() => chat.toggleChat()}
-                        channels={chat.channels}
-                        activeChannelId={chat.activeChannelId}
-                        onChannelSelect={chat.selectChannel}
-                        messages={chat.messages}
-                        userRoles={{}} // TODO: Implement role fetching
-                        isLoading={chat.isLoading}
-                        error={chat.error}
-                        onSendMessage={chat.sendMessage}
-                        onEditMessage={chat.editMessage}
-                        onDeleteMessage={chat.deleteMessage}
-                        onAddReaction={chat.addReaction}
-                        onRemoveReaction={chat.removeReaction}
-                        currentUser={chat.currentUser}
-                        chatSettings={chat.settings}
-                        onUpdateChatSettings={() => {}} // TODO: Implement settings update
-                    />
-                </>
-            )}
-            
-            {/* ARIA Assistant - Floating Chat (Only for Admin and Beta Testers) */}
-            {hasAriaAssistant && <ARIAAssistant />}
-        </Flex>
+
+                {/* Chat Components - Feature Gated */}
+                {hasMemberChat && (
+                    <>
+                        <MemberChatMenu
+                            isOpen={chat.isOpen}
+                            onToggle={chat.toggleChat}
+                            unreadCount={chat.getTotalUnreadCount()}
+                            channels={chat.channels}
+                            onChannelSelect={chat.selectChannel}
+                            activeChannelId={chat.activeChannelId}
+                        />
+
+                        <MemberChatComponent
+                            isOpen={chat.isOpen}
+                            onClose={() => chat.toggleChat()}
+                            channels={chat.channels}
+                            activeChannelId={chat.activeChannelId}
+                            onChannelSelect={chat.selectChannel}
+                            messages={chat.messages}
+                            userRoles={{}} // TODO: Implement role fetching
+                            isLoading={chat.isLoading}
+                            error={chat.error}
+                            onSendMessage={chat.sendMessage}
+                            onEditMessage={chat.editMessage}
+                            onDeleteMessage={chat.deleteMessage}
+                            onAddReaction={chat.addReaction}
+                            onRemoveReaction={chat.removeReaction}
+                            currentUser={chat.currentUser}
+                            chatSettings={chat.settings}
+                            onUpdateChatSettings={() => { }} // TODO: Implement settings update
+                        />
+                    </>
+                )}
+
+                {/* ARIA Assistant - Floating Chat (Only for Admin and Beta Testers) */}
+                {hasAriaAssistant && <ARIAAssistant />}
+            </Flex>
         </>
     );
 };
