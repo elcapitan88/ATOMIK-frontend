@@ -1,0 +1,388 @@
+ Service Worker: Loaded successfully
+ [AxiosConfig] Instance created with baseURL: https://api.atomiktrading.io
+ [AxiosConfig] Environment check: Object
+ [2025-11-18T06:33:26.087Z] INFO: IBStatusService initialized 
+ [2025-11-18T06:33:26.103Z] INFO: WebSocket cache loaded from storage 
+ [2025-11-18T06:33:26.122Z] INFO: Initializing referral tracking 
+ [2025-11-18T06:33:26.122Z] INFO: Initializing auth with token 
+ [Axios Interceptor] Processing request to: /api/v1/auth/verify
+ [App] Futures contracts initialized
+ ✅ Service Worker registered successfully
+ Scope: https://www.atomiktrading.io/
+ Service Worker active and running!
+ [2025-11-18T06:33:26.666Z] INFO: Auth initialized with user: cruzh5150@gmail.com {"id":39,"email":"cruzh5150@gmail.com","username":"Elcapitan14","full_name":"Cruz Hernandez","phone":null,"profile_picture":"https://firebasestorage.googleapis.com/v0/b/atomik-16b5a.firebasestorage.app/o/profile-pictures%2F39%2F1748131583536.jpg?alt=media&token=564d8509-dcbc-498c-96c1-2057c8a4f43a","app_role":"admin","is_creator":false,"creator_profile":{"id":"a9ef066b-9b37-49ea-9499-d26591546635","stripe_account_id":"acct_1Rov1cD0s0Yzjtw2","is_verified":false},"fullName":"Cruz Hernandez","profilePicture":"https://firebasestorage.googleapis.com/v0/b/atomik-16b5a.firebasestorage.app/o/profile-pictures%2F39%2F1748131583536.jpg?alt=media&token=564d8509-dcbc-498c-96c1-2057c8a4f43a"}
+ [FeatureFlags] Checking feature 'advanced-analytics': false Object
+ [FeatureFlags] Checking feature 'new-dashboard': false Object
+ [FeatureFlags] Checking feature 'experimental-trading': false Object
+ [FeatureFlags] Checking feature 'ai-insights': false Object
+ [FeatureFlags] Checking feature 'advanced-charts': false Object
+ [FeatureFlags] Checking feature 'broker-integration-v2': false Object
+ [FeatureFlags] Checking feature 'social-trading': false Object
+ [FeatureFlags] Checking feature 'mobile-app-preview': false Object
+ [FeatureFlags] Checking feature 'member-chat': false Object
+ [FeatureFlags] Checking feature 'strategy-builder': false Object
+ [FeatureFlags] hasStrategyBuilder result: false
+ [FeatureFlags] Checking feature 'atomik-trading-lab': false Object
+ [FeatureFlags] Checking feature 'aria-assistant': false Object
+ [FeatureFlags] Fetching features for user: cruzh5150@gmail.com
+ [FeatureFlags] User app_role: admin
+ 🔍 ChatContext: useEffect triggered Object
+ 🔍 ChatContext: User and token available - Loading initial data...
+ 🔍 ChatContext: Loading channels...
+ 🔍 ChatContext: Calling getChannels API...
+ 🔍 ChatContext: connectToRealTime called Object
+ 🔍 ChatContext: Real-time connection disabled during WebSocket migration
+ [FeatureFlags] Checking feature 'advanced-analytics': false Object
+ [FeatureFlags] Checking feature 'new-dashboard': false Object
+ [FeatureFlags] Checking feature 'experimental-trading': false Object
+ [FeatureFlags] Checking feature 'ai-insights': false Object
+ [FeatureFlags] Checking feature 'advanced-charts': false Object
+ [FeatureFlags] Checking feature 'broker-integration-v2': false Object
+ [FeatureFlags] Checking feature 'social-trading': false Object
+ [FeatureFlags] Checking feature 'mobile-app-preview': false Object
+ [FeatureFlags] Checking feature 'member-chat': false Object
+ [FeatureFlags] Checking feature 'strategy-builder': false Object
+ [FeatureFlags] hasStrategyBuilder result: false
+ [FeatureFlags] Checking feature 'atomik-trading-lab': false Object
+ [FeatureFlags] Checking feature 'aria-assistant': false Object
+ [Axios Interceptor] Processing request to: /api/v1/auth/verify
+ [Axios Interceptor] Processing request to: /api/v1/brokers/accounts
+ [Axios Interceptor] Processing request to: /api/v1/marketplace/strategies/available
+ [Axios Interceptor] Processing request to: https://api.atomiktrading.io/api/v1/chat/channels
+ [Axios Interceptor] Processing request to: https://api.atomiktrading.io/api/v1/chat/settings
+ [Axios Interceptor] Processing request to: /api/v1/subscriptions/status
+ [Axios Interceptor] Processing request to: /api/v1/subscriptions/payment-status
+ [2025-11-18T06:33:26.891Z] INFO: Auth state refreshed on dashboard mount 
+ [FeatureFlags] Checking feature 'advanced-analytics': false Object
+ [FeatureFlags] Checking feature 'new-dashboard': false Object
+ [FeatureFlags] Checking feature 'experimental-trading': false Object
+ [FeatureFlags] Checking feature 'ai-insights': false Object
+ [FeatureFlags] Checking feature 'advanced-charts': false Object
+ [FeatureFlags] Checking feature 'broker-integration-v2': false Object
+ [FeatureFlags] Checking feature 'social-trading': false Object
+ [FeatureFlags] Checking feature 'mobile-app-preview': false Object
+ [FeatureFlags] Checking feature 'member-chat': false Object
+ [FeatureFlags] Checking feature 'strategy-builder': false Object
+ [FeatureFlags] hasStrategyBuilder result: false
+ [FeatureFlags] Checking feature 'atomik-trading-lab': false Object
+ [FeatureFlags] Checking feature 'aria-assistant': false Object
+ 🔍 ChatContext: useEffect cleanup - real-time disconnect removed
+ [FeatureFlags] Fetching features for user: cruzh5150@gmail.com
+ [FeatureFlags] User app_role: admin
+ 🔍 ChatContext: useEffect triggered Object
+ 🔍 ChatContext: User and token available - Loading initial data...
+ 🔍 ChatContext: Loading channels...
+ 🔍 ChatContext: Calling getChannels API...
+ 🔍 ChatContext: connectToRealTime called Object
+ 🔍 ChatContext: Real-time connection disabled during WebSocket migration
+ [FeatureFlags] Checking feature 'advanced-analytics': false Object
+ [FeatureFlags] Checking feature 'new-dashboard': false Object
+ [FeatureFlags] Checking feature 'experimental-trading': false Object
+ [FeatureFlags] Checking feature 'ai-insights': false Object
+ [FeatureFlags] Checking feature 'advanced-charts': false Object
+ [FeatureFlags] Checking feature 'broker-integration-v2': false Object
+ [FeatureFlags] Checking feature 'social-trading': false Object
+ [FeatureFlags] Checking feature 'mobile-app-preview': false Object
+ [FeatureFlags] Checking feature 'member-chat': false Object
+ [FeatureFlags] Checking feature 'strategy-builder': false Object
+ [FeatureFlags] hasStrategyBuilder result: false
+ [FeatureFlags] Checking feature 'atomik-trading-lab': false Object
+ [FeatureFlags] Checking feature 'aria-assistant': false Object
+ [Axios Interceptor] Processing request to: https://api.atomiktrading.io/api/v1/chat/channels
+ [Axios Interceptor] Processing request to: https://api.atomiktrading.io/api/v1/chat/settings
+ [FeatureFlags] API response status: 200
+ [FeatureFlags] API response data: Object
+ [FeatureFlags] Features received: Object
+ [FeatureFlags] Strategy builder enabled: true
+ [FeatureFlags] Checking feature 'advanced-analytics': false Object
+ [FeatureFlags] Checking feature 'new-dashboard': false Object
+ [FeatureFlags] Checking feature 'experimental-trading': false Object
+ [FeatureFlags] Checking feature 'ai-insights': false Object
+ [FeatureFlags] Checking feature 'advanced-charts': true Object
+ [FeatureFlags] Checking feature 'broker-integration-v2': false Object
+ [FeatureFlags] Checking feature 'social-trading': false Object
+ [FeatureFlags] Checking feature 'mobile-app-preview': true Object
+ [FeatureFlags] Checking feature 'member-chat': true Object
+ [FeatureFlags] Checking feature 'strategy-builder': true Object
+ [FeatureFlags] hasStrategyBuilder result: true
+ [FeatureFlags] Checking feature 'atomik-trading-lab': false Object
+ [FeatureFlags] Checking feature 'aria-assistant': true Object
+ [FeatureFlags] API response status: 200
+ [FeatureFlags] API response data: Object
+ [FeatureFlags] Features received: Object
+ [FeatureFlags] Strategy builder enabled: true
+ [FeatureFlags] Checking feature 'advanced-analytics': false Object
+ [FeatureFlags] Checking feature 'new-dashboard': false Object
+ [FeatureFlags] Checking feature 'experimental-trading': false Object
+ [FeatureFlags] Checking feature 'ai-insights': false Object
+ [FeatureFlags] Checking feature 'advanced-charts': true Object
+ [FeatureFlags] Checking feature 'broker-integration-v2': false Object
+ [FeatureFlags] Checking feature 'social-trading': false Object
+ [FeatureFlags] Checking feature 'mobile-app-preview': true Object
+ [FeatureFlags] Checking feature 'member-chat': true Object
+ [FeatureFlags] Checking feature 'strategy-builder': true Object
+ [FeatureFlags] hasStrategyBuilder result: true
+ [FeatureFlags] Checking feature 'atomik-trading-lab': false Object
+ [FeatureFlags] Checking feature 'aria-assistant': true Object
+ 🔍 ChatContext: Channels received: Array(4)
+ 🔍 ChatContext: Setting channels: Array(4)
+ 🔍 ChatContext: Setting active channel: Object
+ [FeatureFlags] Checking feature 'advanced-analytics': false Object
+ [FeatureFlags] Checking feature 'new-dashboard': false Object
+ [FeatureFlags] Checking feature 'experimental-trading': false Object
+ [FeatureFlags] Checking feature 'ai-insights': false Object
+ [FeatureFlags] Checking feature 'advanced-charts': true Object
+ [FeatureFlags] Checking feature 'broker-integration-v2': false Object
+ [FeatureFlags] Checking feature 'social-trading': false Object
+ [FeatureFlags] Checking feature 'mobile-app-preview': true Object
+ [FeatureFlags] Checking feature 'member-chat': true Object
+ [FeatureFlags] Checking feature 'strategy-builder': true Object
+ [FeatureFlags] hasStrategyBuilder result: true
+ [FeatureFlags] Checking feature 'atomik-trading-lab': false Object
+ [FeatureFlags] Checking feature 'aria-assistant': true Object
+ [2025-11-18T06:33:27.147Z] INFO: Subscription data fetched successfully {"subscription":{"id":10,"status":"active","tier":"elite","is_lifetime":false,"stripe_customer_id":"cus_RsvGQACUHA9sIW","limits":{"connected_accounts":{"limit":null,"available":true},"active_webhooks":{"limit":null,"available":true},"active_strategies":{"limit":null,"available":true}}},"resources":{"connected_accounts":24,"active_webhooks":6,"active_strategies":0}}
+ [2025-11-18T06:33:27.148Z] INFO: Payment status fetched successfully {"has_subscription":true,"status":"active","tier":"elite","is_lifetime":false,"has_payment_issues":false,"dunning_stage":"none","is_in_grace_period":false,"days_left_in_grace_period":0,"payment_failed_at":null,"grace_period_ends_at":null}
+ [FeatureFlags] Checking feature 'advanced-analytics': false Object
+ [FeatureFlags] Checking feature 'new-dashboard': false Object
+ [FeatureFlags] Checking feature 'experimental-trading': false Object
+ [FeatureFlags] Checking feature 'ai-insights': false Object
+ [FeatureFlags] Checking feature 'advanced-charts': true Object
+ [FeatureFlags] Checking feature 'broker-integration-v2': false Object
+ [FeatureFlags] Checking feature 'social-trading': false Object
+ [FeatureFlags] Checking feature 'mobile-app-preview': true Object
+ [FeatureFlags] Checking feature 'member-chat': true Object
+ [FeatureFlags] Checking feature 'strategy-builder': true Object
+ [FeatureFlags] hasStrategyBuilder result: true
+ [FeatureFlags] Checking feature 'atomik-trading-lab': false Object
+ [FeatureFlags] Checking feature 'aria-assistant': true Object
+ 🔍 ChatContext: Channels received: Array(4)
+ 🔍 ChatContext: Setting channels: Array(4)
+ 🔍 ChatContext: Setting active channel: Object
+ [FeatureFlags] Checking feature 'advanced-analytics': false Object
+ [FeatureFlags] Checking feature 'new-dashboard': false Object
+ [FeatureFlags] Checking feature 'experimental-trading': false Object
+ [FeatureFlags] Checking feature 'ai-insights': false Object
+ [FeatureFlags] Checking feature 'advanced-charts': true Object
+ [FeatureFlags] Checking feature 'broker-integration-v2': false Object
+ [FeatureFlags] Checking feature 'social-trading': false Object
+ [FeatureFlags] Checking feature 'mobile-app-preview': true Object
+ [FeatureFlags] Checking feature 'member-chat': true Object
+ [FeatureFlags] Checking feature 'strategy-builder': true Object
+ [FeatureFlags] hasStrategyBuilder result: true
+ [FeatureFlags] Checking feature 'atomik-trading-lab': false Object
+ [FeatureFlags] Checking feature 'aria-assistant': true Object
+ [FeatureFlags] Checking feature 'advanced-analytics': false Object
+ [FeatureFlags] Checking feature 'new-dashboard': false Object
+ [FeatureFlags] Checking feature 'experimental-trading': false Object
+ [FeatureFlags] Checking feature 'ai-insights': false Object
+ [FeatureFlags] Checking feature 'advanced-charts': true Object
+ [FeatureFlags] Checking feature 'broker-integration-v2': false Object
+ [FeatureFlags] Checking feature 'social-trading': false Object
+ [FeatureFlags] Checking feature 'mobile-app-preview': true Object
+ [FeatureFlags] Checking feature 'member-chat': true Object
+ [FeatureFlags] Checking feature 'strategy-builder': true Object
+ [FeatureFlags] hasStrategyBuilder result: true
+ [FeatureFlags] Checking feature 'atomik-trading-lab': false Object
+ [FeatureFlags] Checking feature 'aria-assistant': true Object
+ 🔍 Dashboard: Rendering content for selectedItem: Dashboard
+ [Axios Interceptor] Processing request to: /api/v1/admin/maintenance/status
+ [2025-11-18T06:33:27.496Z] INFO: Fetching accounts... 
+ TradovateApi: Initiating account fetch
+ [Axios Interceptor] Processing request to: /api/v1/webhooks/list
+ [Axios Interceptor] Processing request to: /api/v1/webhooks/subscribed
+ [Axios Interceptor] Processing request to: /api/v1/brokers/accounts
+ [Axios Interceptor] Processing request to: /api/v1/marketplace/strategies/available
+ [Axios Interceptor] Processing request to: /api/v1/brokers/accounts
+ [Axios Interceptor] Processing request to: /api/v1/strategies/user-activated
+ [Axios Interceptor] Processing request to: /api/v1/strategies/codes/my-strategies
+ Fetched strategy codes: Array(1)
+api.atomiktrading.io/v1/users/39/feature-flags:1  Failed to load resource: the server responded with a status of 404 ()
+ TradovateApi: Raw response: Object
+ TradovateApi: Processed accounts: Array(1)
+ [AccountStatusIndicator] State evaluation: Object
+ [AccountStatusIndicator] → TOKEN_VALID (WebSocket disconnected/error but token still valid)
+ Connection state: Object
+ [2025-11-18T06:33:29.529Z] INFO: Auto-connecting to tradovate:21610093 
+ [WebSocketContext] Attempting to connect: broker=tradovate, account=21610093
+ [WebSocketContext] Access token length: 187
+ [2025-11-18T06:33:29.529Z] INFO: Connecting to tradovate:21610093 
+ [WebSocketManager] Connect called: broker=tradovate, account=21610093, options= Object
+ [WebSocketContext] Connection state update: Object
+ [2025-11-18T06:33:29.529Z] INFO: Connection progress for tradovate:21610093 - State: connecting 
+ [WebSocketManager] Getting WebSocket URL: broker=tradovate, account=21610093
+ [WebSocketManager] Raw token length: 187
+ [WebSocketManager] Using base URL: wss://tradesocket-production.up.railway.app
+ [2025-11-18T06:33:29.530Z] INFO: Creating new WebSocket connection to wss://tradesocket-production.up.railway.app/ws/tradovate?broker_account_id=21610093&token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NjM0NTAzMjcsInN1YiI6ImNydXpoNTE1MEBnbWFpbC5jb20iLCJ0eXBlIjoiYWNjZXNzIiwiaWF0IjoxNzYzNDQ0OTI3fQ.fJny_Kyr8FZX_fgk2uGs2Qr7lLS0uEIU0zqh2s53U1k 
+ [2025-11-18T06:33:29.530Z] INFO: Connecting to WebSocket: wss://tradesocket-production.up.railway.app/ws/tradovate?broker_account_id=21610093&token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NjM0NTAzMjcsInN1YiI6ImNydXpoNTE1MEBnbWFpbC5jb20iLCJ0eXBlIjoiYWNjZXNzIiwiaWF0IjoxNzYzNDQ0OTI3fQ.fJny_Kyr8FZX_fgk2uGs2Qr7lLS0uEIU0zqh2s53U1k 
+ [AccountStatusIndicator] State evaluation: Object
+ [AccountStatusIndicator] → WS_CONNECTING (WebSocket connecting)
+ Connection state: Object
+ [2025-11-18T06:33:29.976Z] INFO: WebSocket opened, waiting for server initialization... 
+ [2025-11-18T06:33:30.043Z] INFO: Received connection test from server 
+ [WebSocketClient] send() called: Object
+ [WebSocketClient] Queueing message until connection ready
+ [2025-11-18T06:33:30.120Z] INFO: Connection established with ID: cruzh5150@gmail.com_21610093_1763447610.03158 
+ [2025-11-18T06:33:30.120Z] INFO: Validation progress: validating_user - Validating user credentials... 
+ [2025-11-18T06:33:30.204Z] INFO: Validation progress: checking_subscription - Checking subscription status... 
+ [2025-11-18T06:33:30.204Z] INFO: Validation progress: checking_broker_access - Validating broker account access... 
+main.3de4746b.js:1 [2025-11-18T06:33:30.204Z] INFO: Validation complete, waiting for broker connection 
+main.3de4746b.js:1 [2025-11-18T06:33:30.204Z] INFO: Broker connection status: connecting_to_broker 
+main.3de4746b.js:1 [2025-11-18T06:33:30.204Z] INFO: Initialization progress: Initializing broker connection 
+main.3de4746b.js:1 [2025-11-18T06:33:30.204Z] INFO: Initialization progress: Connecting to broker WebSocket 
+main.3de4746b.js:1 [WebSocketClient] Emitting message: broker_websocket_connected
+main.3de4746b.js:1 [WebSocketManager] handleMessage received: Object
+main.3de4746b.js:1 [2025-11-18T06:33:30.286Z] INFO: [WebSocketManager] Connection progress: broker_websocket_connected 
+main.3de4746b.js:1 [WebSocketClient] Emitting message: account_info
+main.3de4746b.js:1 [WebSocketManager] handleMessage received: Object
+main.3de4746b.js:1 [2025-11-18T06:33:30.352Z] INFO: [WebSocketManager] Connection fully ready: tradovate:21610093 
+main.3de4746b.js:1 [WebSocketContext] Connection state update: Object
+main.3de4746b.js:1 [2025-11-18T06:33:30.352Z] INFO: Connected to tradovate:21610093 - State: ready 
+5104.5ba57ab2.chunk.js:1 [AccountStatusIndicator] State evaluation: Object
+5104.5ba57ab2.chunk.js:1 [AccountStatusIndicator] → FULLY_CONNECTED (ready for trading)
+5104.5ba57ab2.chunk.js:1 Connection state: Object
+main.3de4746b.js:1 [WebSocketClient] Emitting message: user_data
+main.3de4746b.js:1 [WebSocketClient] DEBUGGING: user_data emission details: Object
+main.3de4746b.js:1 [WebSocketManager] handleMessage received: Object
+main.3de4746b.js:1 [WebSocketManager] DEBUGGING: user_data message details: Object
+main.3de4746b.js:1 [WebSocketManager] User data received, data available: true
+main.3de4746b.js:1 [WebSocketManager] User data keys: Array(10)
+main.3de4746b.js:1 [WebSocketManager] Positions in user_data: 0
+main.3de4746b.js:1 [2025-11-18T06:33:30.431Z] INFO: [WebSocketManager] User data received - connection ready 
+main.3de4746b.js:1 [WebSocketContext] Connection state update: Object
+main.3de4746b.js:1 [2025-11-18T06:33:30.431Z] INFO: Connected to tradovate:21610093 - State: ready 
+main.3de4746b.js:1 [WebSocketManager] About to call handleUserData with data: true
+main.3de4746b.js:1 [WebSocketManager] handleUserData called: Object
+main.3de4746b.js:1 [WebSocketManager] Processing contracts: 0
+main.3de4746b.js:1 [WebSocketManager] Processing accounts: 1
+main.3de4746b.js:1 [WebSocketManager] Processing positions: 0
+5104.5ba57ab2.chunk.js:1 [AccountStatusIndicator] State evaluation: Object
+5104.5ba57ab2.chunk.js:1 [AccountStatusIndicator] → FULLY_CONNECTED (ready for trading)
+5104.5ba57ab2.chunk.js:1 Connection state: Object
+main.3de4746b.js:1 [2025-11-18T06:33:30.437Z] INFO: Connection ready: Connection ready for trading 
+main.3de4746b.js:1 [WebSocketContext] Connection state update: Object
+main.3de4746b.js:1 [2025-11-18T06:33:30.437Z] INFO: Connected to tradovate:21610093 - State: ready 
+main.3de4746b.js:1 [2025-11-18T06:33:30.437Z] INFO: Successfully connected to tradovate:21610093 
+main.3de4746b.js:1 [2025-11-18T06:33:30.437Z] INFO: Broker connection status: ready 
+5104.5ba57ab2.chunk.js:1 [AccountStatusIndicator] State evaluation: Object
+5104.5ba57ab2.chunk.js:1 [AccountStatusIndicator] → FULLY_CONNECTED (ready for trading)
+5104.5ba57ab2.chunk.js:1 Connection state: Object
+main.3de4746b.js:1 [Axios Interceptor] Processing request to: /api/v1/brokers/accounts
+4550.8bebe1b9.chunk.js:1 Fetching all accessible strategies using unified API...
+main.3de4746b.js:1 [Axios Interceptor] Processing request to: /api/v1/strategies/accessible
+main.3de4746b.js:1 [2025-11-18T06:33:31.443Z] INFO: Active connections found, skipping auto-connect 
+4550.8bebe1b9.chunk.js:1 [UnifiedAccessibleApi] Fetched accessible strategies: Object
+4550.8bebe1b9.chunk.js:1 Unified API Results: Object
+4550.8bebe1b9.chunk.js:1 Building strategy data from formData: Object
+4550.8bebe1b9.chunk.js:1 Creating WEBHOOK strategy with webhook_id: rgx_k7QJdaD99VFNkU5DXEtAA8G5dFaMx4DyJjfbmuE
+4550.8bebe1b9.chunk.js:1 Building strategy - enableSchedule: false selectedMarkets: Array(0)
+4550.8bebe1b9.chunk.js:1 No market schedule - manual mode
+4550.8bebe1b9.chunk.js:1 Final strategy data being sent: Object
+4550.8bebe1b9.chunk.js:1 Schedule state at submission - enabled: false markets: Array(0)
+4550.8bebe1b9.chunk.js:1 Creating new strategy: Object
+main.3de4746b.js:1 [Axios Interceptor] Processing request to: /api/v1/strategies
+Connecting to '<URL>' violates the following Content Security Policy directive: "connect-src 'self' <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL>". The action has been blocked.
+Connecting to '<URL>' violates the following Content Security Policy directive: "connect-src 'self' <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL>". The action has been blocked.
+Connecting to '<URL>' violates the following Content Security Policy directive: "connect-src 'self' <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL>". The action has been blocked.
+Connecting to '<URL>' violates the following Content Security Policy directive: "connect-src 'self' <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL>". The action has been blocked.
+Connecting to '<URL>' violates the following Content Security Policy directive: "connect-src 'self' <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL>". The action has been blocked.
+Connecting to '<URL>' violates the following Content Security Policy directive: "connect-src 'self' <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL>". The action has been blocked.
+main.3de4746b.js:1 [2025-11-18T06:33:50.212Z] ERROR: No response received: {}
+error @ main.3de4746b.js:1
+(anonymous) @ main.3de4746b.js:1
+main.3de4746b.js:1 [WebSocketClient] send() called: Object
+main.3de4746b.js:1 [WebSocketClient] Sending message immediately
+main.3de4746b.js:1 [Axios Interceptor] Processing request to: /api/v1/strategies
+main.3de4746b.js:1 [2025-11-18T06:33:51.300Z] ERROR: No response received: {}
+error @ main.3de4746b.js:1
+(anonymous) @ main.3de4746b.js:1
+main.3de4746b.js:1 [Axios Interceptor] Processing request to: /api/v1/strategies
+main.3de4746b.js:1 [2025-11-18T06:33:53.400Z] ERROR: No response received: {}
+error @ main.3de4746b.js:1
+(anonymous) @ main.3de4746b.js:1
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'advanced-analytics': false Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'new-dashboard': false Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'experimental-trading': false Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'ai-insights': false Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'advanced-charts': true Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'broker-integration-v2': false Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'social-trading': false Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'mobile-app-preview': true Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'member-chat': true Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'strategy-builder': true Object
+9488.56f24373.chunk.js:1 [FeatureFlags] hasStrategyBuilder result: true
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'atomik-trading-lab': false Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'aria-assistant': true Object
+4454.c18d1fa3.chunk.js:1 🔍 Dashboard: Rendering content for selectedItem: Dashboard
+5104.5ba57ab2.chunk.js:1 [AccountStatusIndicator] State evaluation: Object
+5104.5ba57ab2.chunk.js:1 [AccountStatusIndicator] → FULLY_CONNECTED (ready for trading)
+5104.5ba57ab2.chunk.js:1 Connection state: Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'advanced-analytics': false Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'new-dashboard': false Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'experimental-trading': false Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'ai-insights': false Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'advanced-charts': true Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'broker-integration-v2': false Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'social-trading': false Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'mobile-app-preview': true Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'member-chat': true Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'strategy-builder': true Object
+9488.56f24373.chunk.js:1 [FeatureFlags] hasStrategyBuilder result: true
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'atomik-trading-lab': false Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'aria-assistant': true Object
+4454.c18d1fa3.chunk.js:1 🔍 Dashboard: Rendering content for selectedItem: Dashboard
+5104.5ba57ab2.chunk.js:1 [AccountStatusIndicator] State evaluation: Object
+5104.5ba57ab2.chunk.js:1 [AccountStatusIndicator] → FULLY_CONNECTED (ready for trading)
+5104.5ba57ab2.chunk.js:1 Connection state: Object
+main.3de4746b.js:1 [Axios Interceptor] Processing request to: /api/v1/admin/maintenance/status
+main.3de4746b.js:1 [Axios Interceptor] Processing request to: /api/v1/strategies
+main.3de4746b.js:1 [2025-11-18T06:33:58.527Z] ERROR: No response received: {}
+error @ main.3de4746b.js:1
+main.3de4746b.js:1 [Axios Interceptor] Processing request to: /api/v1/strategies
+main.3de4746b.js:1 [2025-11-18T06:33:59.652Z] ERROR: No response received: {}
+error @ main.3de4746b.js:1
+main.3de4746b.js:1 [Axios Interceptor] Processing request to: /api/v1/strategies
+main.3de4746b.js:1 [2025-11-18T06:34:01.745Z] ERROR: No response received: {}
+error @ main.3de4746b.js:1
+main.3de4746b.js:1 [WebSocketClient] send() called: Object
+main.3de4746b.js:1 [WebSocketClient] Sending message immediately
+main.3de4746b.js:1 [WebSocketClient] send() called: Object
+main.3de4746b.js:1 [WebSocketClient] Sending message immediately
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'advanced-analytics': false Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'new-dashboard': false Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'experimental-trading': false Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'ai-insights': false Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'advanced-charts': true Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'broker-integration-v2': false Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'social-trading': false Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'mobile-app-preview': true Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'member-chat': true Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'strategy-builder': true Object
+9488.56f24373.chunk.js:1 [FeatureFlags] hasStrategyBuilder result: true
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'atomik-trading-lab': false Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'aria-assistant': true Object
+4454.c18d1fa3.chunk.js:1 🔍 Dashboard: Rendering content for selectedItem: Dashboard
+5104.5ba57ab2.chunk.js:1 [AccountStatusIndicator] State evaluation: Object
+5104.5ba57ab2.chunk.js:1 [AccountStatusIndicator] → FULLY_CONNECTED (ready for trading)
+5104.5ba57ab2.chunk.js:1 Connection state: Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'advanced-analytics': false Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'new-dashboard': false Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'experimental-trading': false Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'ai-insights': false Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'advanced-charts': true Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'broker-integration-v2': false Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'social-trading': false Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'mobile-app-preview': true Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'member-chat': true Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'strategy-builder': true Object
+9488.56f24373.chunk.js:1 [FeatureFlags] hasStrategyBuilder result: true
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'atomik-trading-lab': false Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'aria-assistant': true Object
+4454.c18d1fa3.chunk.js:1 🔍 Dashboard: Rendering content for selectedItem: Dashboard
+5104.5ba57ab2.chunk.js:1 [AccountStatusIndicator] State evaluation: Object
+5104.5ba57ab2.chunk.js:1 [AccountStatusIndicator] → FULLY_CONNECTED (ready for trading)
+5104.5ba57ab2.chunk.js:1 Connection state: Object
+main.3de4746b.js:1 [WebSocketClient] send() called: {message: '{"type":"ping","timestamp":1763447650447}', socketState: 1, clientState: 'ready', isOpen: true}
+main.3de4746b.js:1 [WebSocketClient] Sending message immediately
+main.3de4746b.js:1 [Axios Interceptor] Processing request to: /api/v1/admin/maintenance/status
+main.3de4746b.js:1 [WebSocketClient] send() called: {message: '{"type":"ping","timestamp":1763447670438}', socketState: 1, clientState: 'ready', isOpen: true}
+main.3de4746b.js:1 [WebSocketClient] Sending message immediately

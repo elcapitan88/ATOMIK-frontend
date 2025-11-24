@@ -41,3 +41,5 @@ yarn-error.log*
 .Trashes
 ehthumbs.db
 Thumbs.db
+venv/
+temp_tv_repo/

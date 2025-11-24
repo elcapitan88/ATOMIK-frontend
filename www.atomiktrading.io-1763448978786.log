@@ -1,0 +1,577 @@
+sw.js:223 Service Worker: Loaded successfully
+main.684f443a.js:1 [AxiosConfig] Instance created with baseURL: https://api.atomiktrading.io
+main.684f443a.js:1 [AxiosConfig] Environment check: Object
+main.684f443a.js:1 [2025-11-18T06:53:59.126Z] INFO: IBStatusService initialized 
+main.684f443a.js:1 [2025-11-18T06:53:59.141Z] INFO: WebSocket cache loaded from storage 
+main.684f443a.js:1 [2025-11-18T06:53:59.159Z] INFO: Initializing referral tracking 
+main.684f443a.js:1 [2025-11-18T06:53:59.159Z] INFO: Initializing auth with token 
+main.684f443a.js:1 [Axios Interceptor] Processing request to: /api/v1/auth/verify
+main.684f443a.js:1 [App] Futures contracts initialized
+dashboard:14 ✅ Service Worker registered successfully
+dashboard:14 Scope: https://www.atomiktrading.io/
+dashboard:14 Service Worker active and running!
+main.684f443a.js:1 [2025-11-18T06:53:59.385Z] INFO: Auth initialized with user: cruzh5150@gmail.com {"id":39,"email":"cruzh5150@gmail.com","username":"Elcapitan14","full_name":"Cruz Hernandez","phone":null,"profile_picture":"https://firebasestorage.googleapis.com/v0/b/atomik-16b5a.firebasestorage.app/o/profile-pictures%2F39%2F1748131583536.jpg?alt=media&token=564d8509-dcbc-498c-96c1-2057c8a4f43a","app_role":"admin","is_creator":false,"creator_profile":{"id":"a9ef066b-9b37-49ea-9499-d26591546635","stripe_account_id":"acct_1Rov1cD0s0Yzjtw2","is_verified":false},"fullName":"Cruz Hernandez","profilePicture":"https://firebasestorage.googleapis.com/v0/b/atomik-16b5a.firebasestorage.app/o/profile-pictures%2F39%2F1748131583536.jpg?alt=media&token=564d8509-dcbc-498c-96c1-2057c8a4f43a"}
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'advanced-analytics': false Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'new-dashboard': false Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'experimental-trading': false Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'ai-insights': false Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'advanced-charts': false Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'broker-integration-v2': false Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'social-trading': false Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'mobile-app-preview': false Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'member-chat': false Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'strategy-builder': false Object
+9488.56f24373.chunk.js:1 [FeatureFlags] hasStrategyBuilder result: false
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'atomik-trading-lab': false Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'aria-assistant': false Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Fetching features for user: cruzh5150@gmail.com
+9488.56f24373.chunk.js:1 [FeatureFlags] User app_role: admin
+4454.c18d1fa3.chunk.js:1 🔍 ChatContext: useEffect triggered Object
+4454.c18d1fa3.chunk.js:1 🔍 ChatContext: User and token available - Loading initial data...
+4454.c18d1fa3.chunk.js:1 🔍 ChatContext: Loading channels...
+4454.c18d1fa3.chunk.js:1 🔍 ChatContext: Calling getChannels API...
+4454.c18d1fa3.chunk.js:1 🔍 ChatContext: connectToRealTime called Object
+4454.c18d1fa3.chunk.js:1 🔍 ChatContext: Real-time connection disabled during WebSocket migration
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'advanced-analytics': false Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'new-dashboard': false Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'experimental-trading': false Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'ai-insights': false Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'advanced-charts': false Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'broker-integration-v2': false Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'social-trading': false Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'mobile-app-preview': false Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'member-chat': false Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'strategy-builder': false Object
+9488.56f24373.chunk.js:1 [FeatureFlags] hasStrategyBuilder result: false
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'atomik-trading-lab': false Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'aria-assistant': false Object
+main.684f443a.js:1 [Axios Interceptor] Processing request to: /api/v1/auth/verify
+main.684f443a.js:1 [Axios Interceptor] Processing request to: /api/v1/brokers/accounts
+main.684f443a.js:1 [Axios Interceptor] Processing request to: /api/v1/marketplace/strategies/available
+main.684f443a.js:1 [Axios Interceptor] Processing request to: https://api.atomiktrading.io/api/v1/chat/channels
+main.684f443a.js:1 [Axios Interceptor] Processing request to: https://api.atomiktrading.io/api/v1/chat/settings
+main.684f443a.js:1 [Axios Interceptor] Processing request to: /api/v1/subscriptions/status
+main.684f443a.js:1 [Axios Interceptor] Processing request to: /api/v1/subscriptions/payment-status
+main.684f443a.js:1 [2025-11-18T06:53:59.493Z] INFO: Auth state refreshed on dashboard mount 
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'advanced-analytics': false Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'new-dashboard': false Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'experimental-trading': false Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'ai-insights': false Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'advanced-charts': false Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'broker-integration-v2': false Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'social-trading': false Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'mobile-app-preview': false Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'member-chat': false Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'strategy-builder': false Object
+9488.56f24373.chunk.js:1 [FeatureFlags] hasStrategyBuilder result: false
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'atomik-trading-lab': false Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'aria-assistant': false Object
+4454.c18d1fa3.chunk.js:1 🔍 ChatContext: useEffect cleanup - real-time disconnect removed
+9488.56f24373.chunk.js:1 [FeatureFlags] Fetching features for user: cruzh5150@gmail.com
+9488.56f24373.chunk.js:1 [FeatureFlags] User app_role: admin
+4454.c18d1fa3.chunk.js:1 🔍 ChatContext: useEffect triggered Object
+4454.c18d1fa3.chunk.js:1 🔍 ChatContext: User and token available - Loading initial data...
+4454.c18d1fa3.chunk.js:1 🔍 ChatContext: Loading channels...
+4454.c18d1fa3.chunk.js:1 🔍 ChatContext: Calling getChannels API...
+4454.c18d1fa3.chunk.js:1 🔍 ChatContext: connectToRealTime called Object
+4454.c18d1fa3.chunk.js:1 🔍 ChatContext: Real-time connection disabled during WebSocket migration
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'advanced-analytics': false Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'new-dashboard': false Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'experimental-trading': false Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'ai-insights': false Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'advanced-charts': false Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'broker-integration-v2': false Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'social-trading': false Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'mobile-app-preview': false Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'member-chat': false Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'strategy-builder': false Object
+9488.56f24373.chunk.js:1 [FeatureFlags] hasStrategyBuilder result: false
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'atomik-trading-lab': false Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'aria-assistant': false Object
+main.684f443a.js:1 [Axios Interceptor] Processing request to: https://api.atomiktrading.io/api/v1/chat/channels
+main.684f443a.js:1 [Axios Interceptor] Processing request to: https://api.atomiktrading.io/api/v1/chat/settings
+9488.56f24373.chunk.js:1 [FeatureFlags] API response status: 200
+9488.56f24373.chunk.js:1 [FeatureFlags] API response data: Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Features received: Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Strategy builder enabled: true
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'advanced-analytics': false Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'new-dashboard': false Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'experimental-trading': false Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'ai-insights': false Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'advanced-charts': true Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'broker-integration-v2': false Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'social-trading': false Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'mobile-app-preview': true Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'member-chat': true Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'strategy-builder': true Object
+9488.56f24373.chunk.js:1 [FeatureFlags] hasStrategyBuilder result: true
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'atomik-trading-lab': false Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'aria-assistant': true Object
+9488.56f24373.chunk.js:1 [FeatureFlags] API response status: 200
+9488.56f24373.chunk.js:1 [FeatureFlags] API response data: Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Features received: Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Strategy builder enabled: true
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'advanced-analytics': false Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'new-dashboard': false Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'experimental-trading': false Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'ai-insights': false Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'advanced-charts': true Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'broker-integration-v2': false Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'social-trading': false Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'mobile-app-preview': true Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'member-chat': true Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'strategy-builder': true Object
+9488.56f24373.chunk.js:1 [FeatureFlags] hasStrategyBuilder result: true
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'atomik-trading-lab': false Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'aria-assistant': true Object
+4454.c18d1fa3.chunk.js:1 🔍 ChatContext: Channels received: Array(4)
+4454.c18d1fa3.chunk.js:1 🔍 ChatContext: Setting channels: Array(4)
+4454.c18d1fa3.chunk.js:1 🔍 ChatContext: Setting active channel: Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'advanced-analytics': false Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'new-dashboard': false Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'experimental-trading': false Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'ai-insights': false Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'advanced-charts': true Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'broker-integration-v2': false Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'social-trading': false Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'mobile-app-preview': true Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'member-chat': true Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'strategy-builder': true Object
+9488.56f24373.chunk.js:1 [FeatureFlags] hasStrategyBuilder result: true
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'atomik-trading-lab': false Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'aria-assistant': true Object
+main.684f443a.js:1 [2025-11-18T06:53:59.679Z] INFO: Subscription data fetched successfully {"subscription":{"id":10,"status":"active","tier":"elite","is_lifetime":false,"stripe_customer_id":"cus_RsvGQACUHA9sIW","limits":{"connected_accounts":{"limit":null,"available":true},"active_webhooks":{"limit":null,"available":true},"active_strategies":{"limit":null,"available":true}}},"resources":{"connected_accounts":24,"active_webhooks":6,"active_strategies":0}}
+main.684f443a.js:1 [2025-11-18T06:53:59.679Z] INFO: Payment status fetched successfully {"has_subscription":true,"status":"active","tier":"elite","is_lifetime":false,"has_payment_issues":false,"dunning_stage":"none","is_in_grace_period":false,"days_left_in_grace_period":0,"payment_failed_at":null,"grace_period_ends_at":null}
+4454.c18d1fa3.chunk.js:1 🔍 ChatContext: Channels received: Array(4)
+4454.c18d1fa3.chunk.js:1 🔍 ChatContext: Setting channels: Array(4)
+4454.c18d1fa3.chunk.js:1 🔍 ChatContext: Setting active channel: Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'advanced-analytics': false Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'new-dashboard': false Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'experimental-trading': false Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'ai-insights': false Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'advanced-charts': true Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'broker-integration-v2': false Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'social-trading': false Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'mobile-app-preview': true Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'member-chat': true Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'strategy-builder': true Object
+9488.56f24373.chunk.js:1 [FeatureFlags] hasStrategyBuilder result: true
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'atomik-trading-lab': false Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'aria-assistant': true Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'advanced-analytics': false Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'new-dashboard': false Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'experimental-trading': false Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'ai-insights': false Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'advanced-charts': true Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'broker-integration-v2': false Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'social-trading': false Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'mobile-app-preview': true Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'member-chat': true Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'strategy-builder': true Object
+9488.56f24373.chunk.js:1 [FeatureFlags] hasStrategyBuilder result: true
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'atomik-trading-lab': false Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'aria-assistant': true Object
+4454.c18d1fa3.chunk.js:1 🔍 Dashboard: Rendering content for selectedItem: Dashboard
+main.684f443a.js:1 [Axios Interceptor] Processing request to: /api/v1/admin/maintenance/status
+main.684f443a.js:1 [2025-11-18T06:54:00.057Z] INFO: Fetching accounts... 
+5104.5ba57ab2.chunk.js:1 TradovateApi: Initiating account fetch
+main.684f443a.js:1 [Axios Interceptor] Processing request to: /api/v1/webhooks/list
+main.684f443a.js:1 [Axios Interceptor] Processing request to: /api/v1/webhooks/subscribed
+main.684f443a.js:1 [Axios Interceptor] Processing request to: /api/v1/brokers/accounts
+main.684f443a.js:1 [Axios Interceptor] Processing request to: /api/v1/marketplace/strategies/available
+main.684f443a.js:1 [Axios Interceptor] Processing request to: /api/v1/brokers/accounts
+main.684f443a.js:1 [Axios Interceptor] Processing request to: /api/v1/strategies/codes/my-strategies
+api/v1/users/39/feature-flags:1  Failed to load resource: the server responded with a status of 404 ()
+7562.cbaa8f60.chunk.js:1 Fetched strategy codes: Array(1)
+5104.5ba57ab2.chunk.js:1 TradovateApi: Raw response: Object
+5104.5ba57ab2.chunk.js:1 TradovateApi: Processed accounts: Array(1)
+5104.5ba57ab2.chunk.js:1 [AccountStatusIndicator] State evaluation: Object
+5104.5ba57ab2.chunk.js:1 [AccountStatusIndicator] → TOKEN_VALID (WebSocket disconnected/error but token still valid)
+5104.5ba57ab2.chunk.js:1 Connection state: Object
+main.684f443a.js:1 [2025-11-18T06:54:02.080Z] INFO: Auto-connecting to tradovate:21610093 
+main.684f443a.js:1 [WebSocketContext] Attempting to connect: broker=tradovate, account=21610093
+main.684f443a.js:1 [WebSocketContext] Access token length: 187
+main.684f443a.js:1 [2025-11-18T06:54:02.080Z] INFO: Connecting to tradovate:21610093 
+main.684f443a.js:1 [WebSocketManager] Connect called: broker=tradovate, account=21610093, options= Object
+main.684f443a.js:1 [WebSocketContext] Connection state update: Object
+main.684f443a.js:1 [2025-11-18T06:54:02.081Z] INFO: Connection progress for tradovate:21610093 - State: connecting 
+main.684f443a.js:1 [WebSocketManager] Getting WebSocket URL: broker=tradovate, account=21610093
+main.684f443a.js:1 [WebSocketManager] Raw token length: 187
+main.684f443a.js:1 [WebSocketManager] Using base URL: wss://tradesocket-production.up.railway.app
+main.684f443a.js:1 [2025-11-18T06:54:02.081Z] INFO: Creating new WebSocket connection to wss://tradesocket-production.up.railway.app/ws/tradovate?broker_account_id=21610093&token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NjM0NTAzMjcsInN1YiI6ImNydXpoNTE1MEBnbWFpbC5jb20iLCJ0eXBlIjoiYWNjZXNzIiwiaWF0IjoxNzYzNDQ0OTI3fQ.fJny_Kyr8FZX_fgk2uGs2Qr7lLS0uEIU0zqh2s53U1k 
+main.684f443a.js:1 [2025-11-18T06:54:02.081Z] INFO: Connecting to WebSocket: wss://tradesocket-production.up.railway.app/ws/tradovate?broker_account_id=21610093&token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NjM0NTAzMjcsInN1YiI6ImNydXpoNTE1MEBnbWFpbC5jb20iLCJ0eXBlIjoiYWNjZXNzIiwiaWF0IjoxNzYzNDQ0OTI3fQ.fJny_Kyr8FZX_fgk2uGs2Qr7lLS0uEIU0zqh2s53U1k 
+5104.5ba57ab2.chunk.js:1 [AccountStatusIndicator] State evaluation: Object
+5104.5ba57ab2.chunk.js:1 [AccountStatusIndicator] → WS_CONNECTING (WebSocket connecting)
+5104.5ba57ab2.chunk.js:1 Connection state: Object
+main.684f443a.js:1 [2025-11-18T06:54:02.477Z] INFO: WebSocket opened, waiting for server initialization... 
+main.684f443a.js:1 [2025-11-18T06:54:02.543Z] INFO: Received connection test from server 
+main.684f443a.js:1 [WebSocketClient] send() called: Object
+main.684f443a.js:1 [WebSocketClient] Queueing message until connection ready
+main.684f443a.js:1 [2025-11-18T06:54:02.625Z] INFO: Connection established with ID: cruzh5150@gmail.com_21610093_1763448842.534175 
+main.684f443a.js:1 [2025-11-18T06:54:02.625Z] INFO: Validation progress: validating_user - Validating user credentials... 
+main.684f443a.js:1 [2025-11-18T06:54:02.698Z] INFO: Validation progress: checking_subscription - Checking subscription status... 
+main.684f443a.js:1 [2025-11-18T06:54:02.698Z] INFO: Validation progress: checking_broker_access - Validating broker account access... 
+main.684f443a.js:1 [2025-11-18T06:54:02.698Z] INFO: Validation complete, waiting for broker connection 
+main.684f443a.js:1 [2025-11-18T06:54:02.698Z] INFO: Broker connection status: connecting_to_broker 
+main.684f443a.js:1 [Axios Interceptor] Processing request to: /api/v1/brokers/accounts
+main.684f443a.js:1 [2025-11-18T06:54:02.821Z] INFO: Broker connection status: ready 
+main.684f443a.js:1 [WebSocketClient] send() called: Object
+main.684f443a.js:1 [WebSocketClient] Queueing message until connection ready
+main.684f443a.js:1 [WebSocketClient] send() called: Object
+main.684f443a.js:1 [WebSocketClient] Queueing message until connection ready
+main.684f443a.js:1 [2025-11-18T06:54:03.085Z] INFO: Active connections found, skipping auto-connect 
+4550.3b0af0ce.chunk.js:1 Fetching all accessible strategies using unified API...
+main.684f443a.js:1 [Axios Interceptor] Processing request to: /api/v1/strategies/accessible
+4550.3b0af0ce.chunk.js:1 [UnifiedAccessibleApi] Fetched accessible strategies: Objectengines: 1owned: 7purchased: 1subscribed: 1total: 9webhooks: 8[[Prototype]]: Object
+4550.3b0af0ce.chunk.js:1 Unified API Results: Object
+4550.3b0af0ce.chunk.js:1 Building strategy data from formData: Objectdescription: ""isActive: truemultipleAccount: {webhookId: '', strategyCodeId: '', ticker: 'MES', leaderAccountId: '', leaderQuantity: 1, …}selectedType: "single"singleAccount: {webhookId: 'rgx_k7QJdaD99VFNkU5DXEtAA8G5dFaMx4DyJjfbmuE', strategyCodeId: '', ticker: 'MES', accountId: '21610093', quantity: 1}[[Prototype]]: Object
+4550.3b0af0ce.chunk.js:1 Creating WEBHOOK strategy with webhook_id: rgx_k7QJdaD99VFNkU5DXEtAA8G5dFaMx4DyJjfbmuE
+4550.3b0af0ce.chunk.js:1 Building strategy - enableSchedule: false selectedMarkets: Array(0)length: 0[[Prototype]]: Array(0)
+4550.3b0af0ce.chunk.js:1 No market schedule - manual mode
+4550.3b0af0ce.chunk.js:1 Final strategy data being sent: Objectaccount_id: "21610093"execution_type: "webhook"market_schedule: nullquantity: 1strategy_code_id: nullstrategy_type: "single"ticker: "MES"webhook_id: "rgx_k7QJdaD99VFNkU5DXEtAA8G5dFaMx4DyJjfbmuE"[[Prototype]]: Object
+4550.3b0af0ce.chunk.js:1 Schedule state at submission - enabled: false markets: Array(0)length: 0[[Prototype]]: Array(0)at: ƒ at()concat: ƒ concat()constructor: ƒ Array()copyWithin: ƒ copyWithin()entries: ƒ entries()every: ƒ every()fill: ƒ fill()filter: ƒ filter()find: ƒ find()findIndex: ƒ findIndex()findLast: ƒ findLast()findLastIndex: ƒ findLastIndex()flat: ƒ flat()flatMap: ƒ flatMap()forEach: ƒ forEach()includes: ƒ includes()indexOf: ƒ indexOf()join: ƒ join()keys: ƒ keys()lastIndexOf: ƒ lastIndexOf()length: 0map: ƒ map()pop: ƒ pop()push: ƒ push()reduce: ƒ reduce()reduceRight: ƒ reduceRight()reverse: ƒ reverse()shift: ƒ shift()slice: ƒ slice()some: ƒ some()sort: ƒ sort()splice: ƒ splice()toLocaleString: ƒ toLocaleString()toReversed: ƒ toReversed()toSorted: ƒ toSorted()toSpliced: ƒ toSpliced()toString: ƒ toString()unshift: ƒ unshift()values: ƒ values()with: ƒ with()Symbol(Symbol.iterator): ƒ values()Symbol(Symbol.unscopables): {at: true, copyWithin: true, entries: true, fill: true, find: true, …}[[Prototype]]: Object
+4550.3b0af0ce.chunk.js:1 Creating new strategy: Objectaccount_id: "21610093"execution_type: "webhook"market_schedule: nullquantity: 1strategy_code_id: nullstrategy_type: "single"ticker: "MES"webhook_id: "rgx_k7QJdaD99VFNkU5DXEtAA8G5dFaMx4DyJjfbmuE"[[Prototype]]: Object
+main.684f443a.js:1 [Axios Interceptor] Processing request to: /api/v1/strategies
+Connecting to '<URL>' violates the following Content Security Policy directive: "connect-src 'self' <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL>". The action has been blocked.
+Connecting to '<URL>' violates the following Content Security Policy directive: "connect-src 'self' <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL>". The action has been blocked.
+Connecting to '<URL>' violates the following Content Security Policy directive: "connect-src 'self' <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL>". The action has been blocked.
+Connecting to '<URL>' violates the following Content Security Policy directive: "connect-src 'self' <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL>". The action has been blocked.
+Connecting to '<URL>' violates the following Content Security Policy directive: "connect-src 'self' <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL>". The action has been blocked.
+Connecting to '<URL>' violates the following Content Security Policy directive: "connect-src 'self' <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL> <URL>". The action has been blocked.
+main.684f443a.js:1 [2025-11-18T06:54:13.534Z] ERROR: No response received: {}
+error @ main.684f443a.js:1
+main.684f443a.js:1 [Axios Interceptor] Processing request to: /api/v1/strategies
+main.684f443a.js:1 [2025-11-18T06:54:14.644Z] ERROR: No response received: {}
+error @ main.684f443a.js:1
+main.684f443a.js:1 [Axios Interceptor] Processing request to: /api/v1/strategies
+main.684f443a.js:1 [2025-11-18T06:54:16.747Z] ERROR: No response received: {}
+error @ main.684f443a.js:1
+main.684f443a.js:1 [Axios Interceptor] Processing request to: /api/v1/strategies
+main.684f443a.js:1 [2025-11-18T06:54:21.862Z] ERROR: No response received: {}
+error @ main.684f443a.js:1
+main.684f443a.js:1 [Axios Interceptor] Processing request to: /api/v1/strategies
+main.684f443a.js:1 [2025-11-18T06:54:22.967Z] ERROR: No response received: {}
+error @ main.684f443a.js:1
+main.684f443a.js:1 [Axios Interceptor] Processing request to: /api/v1/strategies
+main.684f443a.js:1 [2025-11-18T06:54:25.068Z] ERROR: No response received: {}
+error @ main.684f443a.js:1
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'advanced-analytics': false Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'new-dashboard': false Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'experimental-trading': false Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'ai-insights': false Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'advanced-charts': true Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'broker-integration-v2': false Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'social-trading': false Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'mobile-app-preview': true Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'member-chat': true Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'strategy-builder': true Object
+9488.56f24373.chunk.js:1 [FeatureFlags] hasStrategyBuilder result: true
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'atomik-trading-lab': false Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'aria-assistant': true Object
+4454.c18d1fa3.chunk.js:1 🔍 Dashboard: Rendering content for selectedItem: Dashboard
+5104.5ba57ab2.chunk.js:1 [AccountStatusIndicator] State evaluation: Object
+5104.5ba57ab2.chunk.js:1 [AccountStatusIndicator] → WS_CONNECTING (WebSocket connecting)
+5104.5ba57ab2.chunk.js:1 Connection state: Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'advanced-analytics': false Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'new-dashboard': false Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'experimental-trading': false Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'ai-insights': false Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'advanced-charts': true Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'broker-integration-v2': false Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'social-trading': false Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'mobile-app-preview': true Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'member-chat': true Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'strategy-builder': true Object
+9488.56f24373.chunk.js:1 [FeatureFlags] hasStrategyBuilder result: true
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'atomik-trading-lab': false Object
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'aria-assistant': true Object
+4454.c18d1fa3.chunk.js:1 🔍 Dashboard: Rendering content for selectedItem: Dashboard
+5104.5ba57ab2.chunk.js:1 [AccountStatusIndicator] State evaluation: Object
+5104.5ba57ab2.chunk.js:1 [AccountStatusIndicator] → WS_CONNECTING (WebSocket connecting)
+5104.5ba57ab2.chunk.js:1 Connection state: Object
+main.684f443a.js:1 [Axios Interceptor] Processing request to: /api/v1/admin/maintenance/status
+main.684f443a.js:1 [WebSocketClient] send() called: {message: {…}, socketState: 1, clientState: 'disconnected', isOpen: true}
+main.684f443a.js:1 [WebSocketClient] Queueing message until connection ready
+main.684f443a.js:1 [WebSocketClient] send() called: {message: {…}, socketState: 1, clientState: 'disconnected', isOpen: true}
+main.684f443a.js:1 [WebSocketClient] Queueing message until connection ready
+main.684f443a.js:1 [Axios Interceptor] Processing request to: /api/v1/admin/maintenance/status
+main.684f443a.js:1 [2025-11-18T06:55:02.081Z] ERROR: Connection timeout for tradovate:21610093 after 60 seconds 
+error @ main.684f443a.js:1
+(anonymous) @ main.684f443a.js:1
+main.684f443a.js:1 [2025-11-18T06:55:02.081Z] ERROR: Failed to auto-connect to tradovate:21610093: Error: Connection timeout
+    at main.684f443a.js:1:123749
+error @ main.684f443a.js:1
+(anonymous) @ 5104.5ba57ab2.chunk.js:1
+5104.5ba57ab2.chunk.js:1 [AccountStatusIndicator] State evaluation: {tokenValid: true, wsStatus: 'connecting', account: '21610093'}
+5104.5ba57ab2.chunk.js:1 [AccountStatusIndicator] → WS_CONNECTING (WebSocket connecting)
+5104.5ba57ab2.chunk.js:1 Connection state: {state: 'ws_connecting', color: 'blue.400', message: 'Connecting to WebSocket'}
+main.684f443a.js:1 [2025-11-18T06:55:03.092Z] INFO: Active connections found, skipping auto-connect 
+main.684f443a.js:1 [WebSocketClient] send() called: {message: {…}, socketState: 1, clientState: 'disconnected', isOpen: true}
+main.684f443a.js:1 [WebSocketClient] Queueing message until connection ready
+main.684f443a.js:1 [WebSocketClient] send() called: {message: {…}, socketState: 1, clientState: 'disconnected', isOpen: true}
+main.684f443a.js:1 [WebSocketClient] Queueing message until connection ready
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'advanced-analytics': false {features: {…}}
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'new-dashboard': false {features: {…}}
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'experimental-trading': false {features: {…}}
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'ai-insights': false {features: {…}}
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'advanced-charts': true {features: {…}}
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'broker-integration-v2': false {features: {…}}
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'social-trading': false {features: {…}}
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'mobile-app-preview': true {features: {…}}
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'member-chat': true {features: {…}}
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'strategy-builder': true {features: {…}}
+9488.56f24373.chunk.js:1 [FeatureFlags] hasStrategyBuilder result: true
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'atomik-trading-lab': false {features: {…}}
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'aria-assistant': true {features: {…}}
+4454.c18d1fa3.chunk.js:1 🔍 Dashboard: Rendering content for selectedItem: Dashboard
+5104.5ba57ab2.chunk.js:1 [AccountStatusIndicator] State evaluation: {tokenValid: true, wsStatus: 'connecting', account: '21610093'}
+5104.5ba57ab2.chunk.js:1 [AccountStatusIndicator] → WS_CONNECTING (WebSocket connecting)
+5104.5ba57ab2.chunk.js:1 Connection state: {state: 'ws_connecting', color: 'blue.400', message: 'Connecting to WebSocket'}
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'advanced-analytics': false {features: {…}}
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'new-dashboard': false {features: {…}}
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'experimental-trading': false {features: {…}}
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'ai-insights': false {features: {…}}
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'advanced-charts': true {features: {…}}
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'broker-integration-v2': false {features: {…}}
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'social-trading': false {features: {…}}
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'mobile-app-preview': true {features: {…}}
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'member-chat': true {features: {…}}
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'strategy-builder': true {features: {…}}
+9488.56f24373.chunk.js:1 [FeatureFlags] hasStrategyBuilder result: true
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'atomik-trading-lab': false {features: {…}}
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'aria-assistant': true {features: {…}}
+4454.c18d1fa3.chunk.js:1 🔍 Dashboard: Rendering content for selectedItem: Dashboard
+5104.5ba57ab2.chunk.js:1 [AccountStatusIndicator] State evaluation: {tokenValid: true, wsStatus: 'connecting', account: '21610093'}
+5104.5ba57ab2.chunk.js:1 [AccountStatusIndicator] → WS_CONNECTING (WebSocket connecting)
+5104.5ba57ab2.chunk.js:1 Connection state: {state: 'ws_connecting', color: 'blue.400', message: 'Connecting to WebSocket'}
+main.684f443a.js:1 [Axios Interceptor] Processing request to: /api/v1/admin/maintenance/status
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'advanced-analytics': false {features: {…}}
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'new-dashboard': false {features: {…}}
+9488.56f24373.chunk.js:1 [FeatureFlags] Checking feature 'experimental-trading': false {features: {…}}
+ [FeatureFlags] Checking feature 'ai-insights': false {features: {…}}
+ [FeatureFlags] Checking feature 'advanced-charts': true {features: {…}}
+ [FeatureFlags] Checking feature 'broker-integration-v2': false {features: {…}}
+ [FeatureFlags] Checking feature 'social-trading': false {features: {…}}
+ [FeatureFlags] Checking feature 'mobile-app-preview': true {features: {…}}
+ [FeatureFlags] Checking feature 'member-chat': true {features: {…}}
+ [FeatureFlags] Checking feature 'strategy-builder': true {features: {…}}
+ [FeatureFlags] hasStrategyBuilder result: true
+ [FeatureFlags] Checking feature 'atomik-trading-lab': false {features: {…}}
+ [FeatureFlags] Checking feature 'aria-assistant': true {features: {…}}
+ 🔍 Dashboard: Rendering content for selectedItem: Dashboard
+ [AccountStatusIndicator] State evaluation: {tokenValid: true, wsStatus: 'connecting', account: '21610093'}
+ [AccountStatusIndicator] → WS_CONNECTING (WebSocket connecting)
+ Connection state: {state: 'ws_connecting', color: 'blue.400', message: 'Connecting to WebSocket'}
+ [FeatureFlags] Checking feature 'advanced-analytics': false {features: {…}}
+ [FeatureFlags] Checking feature 'new-dashboard': false {features: {…}}
+ [FeatureFlags] Checking feature 'experimental-trading': false {features: {…}}
+ [FeatureFlags] Checking feature 'ai-insights': false {features: {…}}
+ [FeatureFlags] Checking feature 'advanced-charts': true {features: {…}}
+ [FeatureFlags] Checking feature 'broker-integration-v2': false {features: {…}}
+ [FeatureFlags] Checking feature 'social-trading': false {features: {…}}
+ [FeatureFlags] Checking feature 'mobile-app-preview': true {features: {…}}
+ [FeatureFlags] Checking feature 'member-chat': true {features: {…}}
+ [FeatureFlags] Checking feature 'strategy-builder': true {features: {…}}
+ [FeatureFlags] hasStrategyBuilder result: true
+ [FeatureFlags] Checking feature 'atomik-trading-lab': false {features: {…}}
+ [FeatureFlags] Checking feature 'aria-assistant': true {features: {…}}
+ 🔍 Dashboard: Rendering content for selectedItem: Dashboard
+ [AccountStatusIndicator] State evaluation: {tokenValid: true, wsStatus: 'connecting', account: '21610093'}
+ [AccountStatusIndicator] → WS_CONNECTING (WebSocket connecting)
+ Connection state: {state: 'ws_connecting', color: 'blue.400', message: 'Connecting to WebSocket'}
+ [Axios Interceptor] Processing request to: /api/v1/admin/maintenance/status
+ [WebSocketContext] Connection state update: {connectionId: 'tradovate:21610093', state: 'error', message: undefined, error: 'Connection timeout'}
+ [2025-11-18T06:56:02.086Z] ERROR: Connection error for tradovate:21610093: Connection timeout 
+error @ main.684f443a.js:1
+e @ main.684f443a.js:1
+i.emit @ vendors-2b4841d6.1c54ea8b.js:2
+_createConnection @ main.684f443a.js:1
+ [2025-11-18T06:56:02.086Z] ERROR: Failed to connect to tradovate:21610093: Error: Connection timeout
+    at main.684f443a.js:1:89101
+error @ main.684f443a.js:1
+_createConnection @ main.684f443a.js:1
+ [2025-11-18T06:56:02.086Z] ERROR: WebSocketManager.connect error for tradovate:21610093: Error: Connection timeout
+    at main.684f443a.js:1:89101
+error @ main.684f443a.js:1
+(anonymous) @ main.684f443a.js:1
+ [AccountStatusIndicator] State evaluation: {tokenValid: true, wsStatus: 'error', account: '21610093'}
+ [AccountStatusIndicator] → TOKEN_VALID (WebSocket disconnected/error but token still valid)
+ Connection state: {state: 'token_valid', color: 'yellow.400', message: 'Account Connected - Token Valid'}
+ Unhandled promise rejection: 
+(anonymous) @ main.684f443a.js:1
+main.684f443a.js:1 Uncaught (in promise) 
+(anonymous) @ main.684f443a.js:1
+ [2025-11-18T06:56:02.147Z] INFO: WebSocket closed: 1005 - No reason 
+ [WebSocketContext] Connection state update: {connectionId: 'tradovate:21610093', state: 'disconnected', message: undefined, error: undefined}
+ [2025-11-18T06:56:02.147Z] INFO: Disconnected from tradovate:21610093 
+ [WebSocketContext] Connection state update: {connectionId: 'tradovate:21610093', state: 'disconnected', message: 'Connection closed', error: undefined}
+ [2025-11-18T06:56:02.147Z] INFO: Scheduling reconnection attempt 1 in 2000ms 
+ [AccountStatusIndicator] State evaluation: {tokenValid: true, wsStatus: 'disconnected', account: '21610093'}
+ [AccountStatusIndicator] → TOKEN_VALID (WebSocket disconnected/error but token still valid)
+ Connection state: {state: 'token_valid', color: 'yellow.400', message: 'Account Connected - Token Valid'}
+ [2025-11-18T06:56:03.154Z] INFO: Auto-connecting to tradovate:21610093 
+ [WebSocketContext] Attempting to connect: broker=tradovate, account=21610093
+ [WebSocketContext] Access token length: 187
+ [2025-11-18T06:56:03.155Z] INFO: Connecting to tradovate:21610093 
+ [WebSocketManager] Connect called: broker=tradovate, account=21610093, options= {}
+ [WebSocketContext] Connection state update: {connectionId: 'tradovate:21610093', state: 'connecting', message: undefined, error: undefined}
+ [2025-11-18T06:56:03.155Z] INFO: Connection progress for tradovate:21610093 - State: connecting 
+ [WebSocketManager] Getting WebSocket URL: broker=tradovate, account=21610093
+ [WebSocketManager] Raw token length: 187
+ [WebSocketManager] Using base URL: wss://tradesocket-production.up.railway.app
+ [2025-11-18T06:56:03.155Z] INFO: Creating new WebSocket connection to wss://tradesocket-production.up.railway.app/ws/tradovate?broker_account_id=21610093&token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NjM0NTAzMjcsInN1YiI6ImNydXpoNTE1MEBnbWFpbC5jb20iLCJ0eXBlIjoiYWNjZXNzIiwiaWF0IjoxNzYzNDQ0OTI3fQ.fJny_Kyr8FZX_fgk2uGs2Qr7lLS0uEIU0zqh2s53U1k 
+ [2025-11-18T06:56:03.155Z] INFO: Connecting to WebSocket: wss://tradesocket-production.up.railway.app/ws/tradovate?broker_account_id=21610093&token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NjM0NTAzMjcsInN1YiI6ImNydXpoNTE1MEBnbWFpbC5jb20iLCJ0eXBlIjoiYWNjZXNzIiwiaWF0IjoxNzYzNDQ0OTI3fQ.fJny_Kyr8FZX_fgk2uGs2Qr7lLS0uEIU0zqh2s53U1k 
+ [AccountStatusIndicator] State evaluation: {tokenValid: true, wsStatus: 'connecting', account: '21610093'}
+ [AccountStatusIndicator] → WS_CONNECTING (WebSocket connecting)
+ Connection state: {state: 'ws_connecting', color: 'blue.400', message: 'Connecting to WebSocket'}
+ [2025-11-18T06:56:03.454Z] INFO: WebSocket opened, waiting for server initialization... 
+ [2025-11-18T06:56:03.522Z] INFO: Received connection test from server 
+ [WebSocketClient] send() called: {message: {…}, socketState: 1, clientState: 'disconnected', isOpen: true}
+ [WebSocketClient] Queueing message until connection ready
+ [2025-11-18T06:56:03.598Z] INFO: Connection established with ID: cruzh5150@gmail.com_21610093_1763448963.510628 
+ [2025-11-18T06:56:03.598Z] INFO: Validation progress: validating_user - Validating user credentials... 
+ [2025-11-18T06:56:03.675Z] INFO: Validation progress: checking_subscription - Checking subscription status... 
+ [2025-11-18T06:56:03.675Z] INFO: Validation progress: checking_broker_access - Validating broker account access... 
+ [2025-11-18T06:56:03.675Z] INFO: Validation complete, waiting for broker connection 
+ [2025-11-18T06:56:03.675Z] INFO: Broker connection status: connecting_to_broker 
+ [2025-11-18T06:56:03.675Z] INFO: Initialization progress: Initializing broker connection 
+ [2025-11-18T06:56:03.675Z] INFO: Initialization progress: Connecting to broker WebSocket 
+ [WebSocketClient] Emitting message: broker_websocket_connected
+ [WebSocketManager] handleMessage received: {connectionId: 'tradovate:21610093', messageType: 'broker_websocket_connected', message: {…}}
+ [2025-11-18T06:56:03.768Z] INFO: [WebSocketManager] Connection progress: broker_websocket_connected 
+ [WebSocketClient] Emitting message: account_info
+ [WebSocketManager] handleMessage received: {connectionId: 'tradovate:21610093', messageType: 'account_info', message: {…}}
+ [2025-11-18T06:56:03.833Z] INFO: [WebSocketManager] Connection fully ready: tradovate:21610093 
+ [WebSocketContext] Connection state update: {connectionId: 'tradovate:21610093', state: 'ready', message: 'Ready for Trading', error: undefined}
+ [2025-11-18T06:56:03.834Z] INFO: Connected to tradovate:21610093 - State: ready 
+ [AccountStatusIndicator] State evaluation: {tokenValid: true, wsStatus: 'ready', account: '21610093'}
+ [AccountStatusIndicator] → FULLY_CONNECTED (ready for trading)
+ Connection state: {state: 'fully_connected', color: 'green.400', message: 'Ready for Trading'}
+ [WebSocketClient] Emitting message: user_data
+ [WebSocketClient] DEBUGGING: user_data emission details: {hasData: true, dataType: 'object', dataKeys: Array(10), messageStructure: '{\n  "type": "user_data",\n  "data": {\n    "users": … "products": [],\n    "user_sync_status": {}\n  }\n}'}
+ [WebSocketManager] handleMessage received: {connectionId: 'tradovate:21610093', messageType: 'user_data', message: {…}}
+ [WebSocketManager] DEBUGGING: user_data message details: {hasData: true, dataType: 'object', dataKeys: Array(10), fullMessage: '{\n  "type": "user_data",\n  "data": {\n    "users": … "products": [],\n    "user_sync_status": {}\n  }\n}'}
+ [WebSocketManager] User data received, data available: true
+ [WebSocketManager] User data keys: (10) ['users', 'accounts', 'cash_balances', 'positions', 'orders', 'fills', 'contracts', 'contractMaturities', 'products', 'user_sync_status']
+ [WebSocketManager] Positions in user_data: 0
+ [2025-11-18T06:56:03.910Z] INFO: [WebSocketManager] User data received - connection ready 
+ [WebSocketContext] Connection state update: {connectionId: 'tradovate:21610093', state: 'ready', message: 'Ready for Trading', error: undefined}
+ [2025-11-18T06:56:03.910Z] INFO: Connected to tradovate:21610093 - State: ready 
+ [WebSocketManager] About to call handleUserData with data: true
+ [WebSocketManager] handleUserData called: {brokerId: 'tradovate', accountId: '21610093', data: {…}}
+ [WebSocketManager] Processing contracts: 0
+ [WebSocketManager] Processing accounts: 1
+ [WebSocketManager] Processing positions: 0
+ [AccountStatusIndicator] State evaluation: {tokenValid: true, wsStatus: 'ready', account: '21610093'}
+ [AccountStatusIndicator] → FULLY_CONNECTED (ready for trading)
+ Connection state: {state: 'fully_connected', color: 'green.400', message: 'Ready for Trading'}
+ [2025-11-18T06:56:03.915Z] INFO: Connection ready: Connection ready for trading 
+ [WebSocketContext] Connection state update: {connectionId: 'tradovate:21610093', state: 'ready', message: 'Connection ready for trading', error: undefined}
+ [2025-11-18T06:56:03.915Z] INFO: Connected to tradovate:21610093 - State: ready 
+ [2025-11-18T06:56:03.916Z] INFO: Successfully connected to tradovate:21610093 
+ [2025-11-18T06:56:03.916Z] INFO: Broker connection status: ready 
+ [AccountStatusIndicator] State evaluation: {tokenValid: true, wsStatus: 'ready', account: '21610093'}
+ [AccountStatusIndicator] → FULLY_CONNECTED (ready for trading)
+ Connection state: {state: 'fully_connected', color: 'green.400', message: 'Ready for Trading'}
+ [2025-11-18T06:56:04.148Z] INFO: Connecting to WebSocket: wss://tradesocket-production.up.railway.app/ws/tradovate?broker_account_id=21610093&token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NjM0NTAzMjcsInN1YiI6ImNydXpoNTE1MEBnbWFpbC5jb20iLCJ0eXBlIjoiYWNjZXNzIiwiaWF0IjoxNzYzNDQ0OTI3fQ.fJny_Kyr8FZX_fgk2uGs2Qr7lLS0uEIU0zqh2s53U1k 
+ [2025-11-18T06:56:04.590Z] INFO: WebSocket opened, waiting for server initialization... 
+ [2025-11-18T06:56:04.669Z] INFO: Received connection test from server 
+ [WebSocketClient] send() called: {message: {…}, socketState: 1, clientState: 'disconnected', isOpen: true}
+ [WebSocketClient] Queueing message until connection ready
+ [2025-11-18T06:56:04.745Z] INFO: Connection established with ID: cruzh5150@gmail.com_21610093_1763448964.645155 
+ [2025-11-18T06:56:04.746Z] INFO: Validation progress: validating_user - Validating user credentials... 
+ [2025-11-18T06:56:04.746Z] INFO: Validation progress: checking_subscription - Checking subscription status... 
+ [2025-11-18T06:56:04.746Z] INFO: Validation progress: checking_broker_access - Validating broker account access... 
+ [2025-11-18T06:56:04.746Z] INFO: Validation complete, waiting for broker connection 
+ [2025-11-18T06:56:04.746Z] INFO: Broker connection status: connecting_to_broker 
+ [2025-11-18T06:56:04.822Z] INFO: Broker connection status: ready 
+ [2025-11-18T06:56:04.923Z] INFO: Active connections found, skipping auto-connect 
+ [2025-11-18T06:56:07.285Z] INFO: WebSocket closed: 1000 - No reason 
+ [WebSocketContext] Connection state update: {connectionId: 'tradovate:21610093', state: 'disconnected', message: undefined, error: undefined}
+ [2025-11-18T06:56:07.285Z] INFO: Disconnected from tradovate:21610093 
+ [WebSocketContext] Connection state update: {connectionId: 'tradovate:21610093', state: 'disconnected', message: 'Connection closed', error: undefined}
+ [2025-11-18T06:56:07.285Z] INFO: Scheduling reconnection attempt 1 in 2000ms 
+ [AccountStatusIndicator] State evaluation: {tokenValid: true, wsStatus: 'disconnected', account: '21610093'}
+ [AccountStatusIndicator] → TOKEN_VALID (WebSocket disconnected/error but token still valid)
+ Connection state: {state: 'token_valid', color: 'yellow.400', message: 'Account Connected - Token Valid'}
+ [2025-11-18T06:56:07.290Z] ERROR: Reconnection failed: Error: Connection closed: Unknown reason
+    at Promise.socket.onclose (main.684f443a.js:1:92730)
+error @ main.684f443a.js:1
+(anonymous) @ main.684f443a.js:1
+Promise.catch
+(anonymous) @ main.684f443a.js:1
+setTimeout
+scheduleReconnect @ main.684f443a.js:1
+Promise.socket.onclose @ main.684f443a.js:1
+ [2025-11-18T06:56:08.299Z] INFO: Skipping tradovate:21610093 - cooldown period active (55s remaining) 
+ [2025-11-18T06:56:09.289Z] INFO: Connecting to WebSocket: wss://tradesocket-production.up.railway.app/ws/tradovate?broker_account_id=21610093&token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NjM0NTAzMjcsInN1YiI6ImNydXpoNTE1MEBnbWFpbC5jb20iLCJ0eXBlIjoiYWNjZXNzIiwiaWF0IjoxNzYzNDQ0OTI3fQ.fJny_Kyr8FZX_fgk2uGs2Qr7lLS0uEIU0zqh2s53U1k 
+ [2025-11-18T06:56:09.655Z] INFO: WebSocket opened, waiting for server initialization... 
+ [2025-11-18T06:56:09.734Z] INFO: Received connection test from server 
+ [WebSocketClient] send() called: {message: {…}, socketState: 1, clientState: 'disconnected', isOpen: true}
+ [WebSocketClient] Queueing message until connection ready
+ [2025-11-18T06:56:09.809Z] INFO: Connection established with ID: cruzh5150@gmail.com_21610093_1763448969.70785 
+ [2025-11-18T06:56:09.809Z] INFO: Validation progress: validating_user - Validating user credentials... 
+ [2025-11-18T06:56:09.809Z] INFO: Validation progress: checking_subscription - Checking subscription status... 
+ [2025-11-18T06:56:09.809Z] INFO: Validation progress: checking_broker_access - Validating broker account access... 
+ [2025-11-18T06:56:09.809Z] INFO: Validation complete, waiting for broker connection 
+ [2025-11-18T06:56:09.809Z] INFO: Broker connection status: connecting_to_broker 
+ [2025-11-18T06:56:09.830Z] INFO: WebSocket closed: 1000 - No reason 
+ [WebSocketContext] Connection state update: {connectionId: 'tradovate:21610093', state: 'disconnected', message: undefined, error: undefined}
+ [2025-11-18T06:56:09.831Z] INFO: Disconnected from tradovate:21610093 
+ [WebSocketContext] Connection state update: {connectionId: 'tradovate:21610093', state: 'disconnected', message: 'Connection closed', error: undefined}
+ [2025-11-18T06:56:09.831Z] INFO: Scheduling reconnection attempt 1 in 2000ms 
+ [AccountStatusIndicator] State evaluation: {tokenValid: true, wsStatus: 'disconnected', account: '21610093'}
+ [AccountStatusIndicator] → TOKEN_VALID (WebSocket disconnected/error but token still valid)
+ Connection state: {state: 'token_valid', color: 'yellow.400', message: 'Account Connected - Token Valid'}
+ [2025-11-18T06:56:09.885Z] INFO: Broker connection status: ready 
+ [2025-11-18T06:56:10.840Z] INFO: Skipping tradovate:21610093 - cooldown period active (52s remaining) 
+ [2025-11-18T06:56:11.845Z] INFO: Connecting to WebSocket: wss://tradesocket-production.up.railway.app/ws/tradovate?broker_account_id=21610093&token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NjM0NTAzMjcsInN1YiI6ImNydXpoNTE1MEBnbWFpbC5jb20iLCJ0eXBlIjoiYWNjZXNzIiwiaWF0IjoxNzYzNDQ0OTI3fQ.fJny_Kyr8FZX_fgk2uGs2Qr7lLS0uEIU0zqh2s53U1k 
+ [2025-11-18T06:56:12.149Z] INFO: WebSocket opened, waiting for server initialization... 
+ [2025-11-18T06:56:12.222Z] INFO: Received connection test from server 
+ [WebSocketClient] send() called: {message: {…}, socketState: 1, clientState: 'disconnected', isOpen: true}
+ [WebSocketClient] Queueing message until connection ready
+ [2025-11-18T06:56:12.301Z] INFO: Connection established with ID: cruzh5150@gmail.com_21610093_1763448972.20683 
+ [2025-11-18T06:56:12.301Z] INFO: Validation progress: validating_user - Validating user credentials... 
+ [2025-11-18T06:56:12.301Z] INFO: Validation progress: checking_subscription - Checking subscription status... 
+ [2025-11-18T06:56:12.301Z] INFO: Validation progress: checking_broker_access - Validating broker account access... 
+ [2025-11-18T06:56:12.301Z] INFO: Validation complete, waiting for broker connection 
+ [2025-11-18T06:56:12.301Z] INFO: Broker connection status: connecting_to_broker 
+ [2025-11-18T06:56:12.301Z] INFO: Initialization progress: Initializing broker connection 
+ [2025-11-18T06:56:12.301Z] INFO: Initialization progress: Connecting to broker WebSocket 
+ [WebSocketClient] Emitting message: broker_websocket_connected
+ [WebSocketManager] handleMessage received: {connectionId: 'tradovate:21610093', messageType: 'broker_websocket_connected', message: {…}}
+ [2025-11-18T06:56:12.381Z] INFO: [WebSocketManager] Connection progress: broker_websocket_connected 
+ [WebSocketClient] Emitting message: account_info
+ [WebSocketManager] handleMessage received: {connectionId: 'tradovate:21610093', messageType: 'account_info', message: {…}}
+ [2025-11-18T06:56:12.457Z] INFO: [WebSocketManager] Connection fully ready: tradovate:21610093 
+ [WebSocketContext] Connection state update: {connectionId: 'tradovate:21610093', state: 'ready', message: 'Ready for Trading', error: undefined}
+ [2025-11-18T06:56:12.457Z] INFO: Connected to tradovate:21610093 - State: ready 
+ [AccountStatusIndicator] State evaluation: {tokenValid: true, wsStatus: 'ready', account: '21610093'}
+ [AccountStatusIndicator] → FULLY_CONNECTED (ready for trading)
+ Connection state: {state: 'fully_connected', color: 'green.400', message: 'Ready for Trading'}
+ [WebSocketClient] Emitting message: user_data
+ [WebSocketClient] DEBUGGING: user_data emission details: {hasData: true, dataType: 'object', dataKeys: Array(10), messageStructure: '{\n  "type": "user_data",\n  "data": {\n    "users": … "products": [],\n    "user_sync_status": {}\n  }\n}'}
+ [WebSocketManager] handleMessage received: {connectionId: 'tradovate:21610093', messageType: 'user_data', message: {…}}
+ [WebSocketManager] DEBUGGING: user_data message details: {hasData: true, dataType: 'object', dataKeys: Array(10), fullMessage: '{\n  "type": "user_data",\n  "data": {\n    "users": … "products": [],\n    "user_sync_status": {}\n  }\n}'}
+ [WebSocketManager] User data received, data available: true
+ [WebSocketManager] User data keys: (10) ['users', 'accounts', 'cash_balances', 'positions', 'orders', 'fills', 'contracts', 'contractMaturities', 'products', 'user_sync_status']
+ [WebSocketManager] Positions in user_data: 0
+ [2025-11-18T06:56:12.537Z] INFO: [WebSocketManager] User data received - connection ready 
+ [WebSocketContext] Connection state update: {connectionId: 'tradovate:21610093', state: 'ready', message: 'Ready for Trading', error: undefined}
+ [2025-11-18T06:56:12.537Z] INFO: Connected to tradovate:21610093 - State: ready 
+ [WebSocketManager] About to call handleUserData with data: true
+ [WebSocketManager] handleUserData called: {brokerId: 'tradovate', accountId: '21610093', data: {…}}
+ [WebSocketManager] Processing contracts: 0
+ [WebSocketManager] Processing accounts: 1
+ [WebSocketManager] Processing positions: 0
+ [AccountStatusIndicator] State evaluation: {tokenValid: true, wsStatus: 'ready', account: '21610093'}
+ [AccountStatusIndicator] → FULLY_CONNECTED (ready for trading)
+ Connection state: {state: 'fully_connected', color: 'green.400', message: 'Ready for Trading'}
+ [2025-11-18T06:56:12.542Z] INFO: Connection ready: Connection ready for trading 
+ [WebSocketContext] Connection state update: {connectionId: 'tradovate:21610093', state: 'ready', message: 'Connection ready for trading', error: undefined}
+ [2025-11-18T06:56:12.542Z] INFO: Connected to tradovate:21610093 - State: ready 
+ [2025-11-18T06:56:12.542Z] INFO: Broker connection status: ready 
+ [AccountStatusIndicator] State evaluation: {tokenValid: true, wsStatus: 'ready', account: '21610093'}
+ [AccountStatusIndicator] → FULLY_CONNECTED (ready for trading)
+ Connection state: {state: 'fully_connected', color: 'green.400', message: 'Ready for Trading'}
+ [2025-11-18T06:56:13.550Z] INFO: Active connections found, skipping auto-connect 

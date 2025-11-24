@@ -1,0 +1,918 @@
+    work_item.run()
+  File "/usr/local/lib/python3.11/concurrent/futures/thread.py", line 58, in run
+    result = self.fn(*self.args, **self.kwargs)
+  File "/opt/venv/lib/python3.11/site-packages/apscheduler/executors/base.py", line 125, in run_job
+    retval = job.func(*job.args, **job.kwargs)
+  File "/srv/ibeam/src/gateway_client.py", line 115, in _maintenance
+    success, shutdown, status = self.start_and_authenticate(request_retries=self.request_retries)
+  File "/srv/ibeam/src/gateway_client.py", line 62, in start_and_authenticate
+    success, shutdown, status = self.strategy_handler.try_authenticating(request_retries=request_retries)
+  File "/srv/ibeam/src/handlers/strategy_handler.py", line 85, in try_authenticating
+    return self._authentication_strategy_B(status, request_retries)
+  File "/srv/ibeam/src/handlers/strategy_handler.py", line 140, in _authentication_strategy_B
+    return self._log_in(status)
+  File "/srv/ibeam/src/handlers/strategy_handler.py", line 151, in _log_in
+    success, shutdown = self.login_handler.login()
+  File "/srv/ibeam/src/handlers/login_handler.py", line 504, in login
+    self.handle_timeout_exception(e, targets, driver, website_version, self.route_auth, self.base_url, self.outputs_dir)
+  File "/srv/ibeam/src/handlers/login_handler.py", line 485, in login
+    self.attempt(targets, wait_and_identify_trigger, driver)
+  File "/srv/ibeam/src/handlers/login_handler.py", line 406, in attempt
+    trigger, target = self.step_login(targets, wait_and_identify_trigger, driver, self.secrets_handler.account, self.secrets_handler.password, self.secrets_handler.key, self.presubmit_buffer)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/srv/ibeam/src/handlers/login_handler.py", line 196, in step_login
+    trigger, target = wait_and_identify_trigger(
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/srv/ibeam/src/handlers/login_handler.py", line 67, in _wait_and_identify_trigger
+    trigger = WebDriverWait(driver, timeout).until(any_of(*expected_conditions))
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/venv/lib/python3.11/site-packages/selenium/webdriver/support/wait.py", line 95, in until
+    raise TimeoutException(message, screen, stacktrace)
+
+  <class 'selenium.common.exceptions.TimeoutException'> Message: 
+
+2025-10-26 23:34:45,957|I| Cleaning up the resources. Display: <pyvirtualdisplay.display.Display object at 0x7f163ce85490> | Driver: <selenium.webdriver.chrome.webdriver.WebDriver (session="7f31f3b71311efe0c87074b413b7726f")>
+2025-10-26 23:34:46,001|I| Logging in failed
+2025-10-26 23:35:14,809|I| Maintenance
+2025-10-26 23:35:14,906|I| Attempt number 2
+2025-10-26 23:35:15,006|I| Max request retries reached after 2 attempts. Consider increasing the retries by setting IBEAM_REQUEST_RETRIES environment variable
+2025-10-26 23:35:15,006|I| NO SESSION Status(running=True, session=False, connected=False, authenticated=False, competing=False, collision=False, session_id=None, server_name=None, server_version=None, expires=None)
+2025-10-26 23:35:15,006|I| Authentication strategy: "B"
+2025-10-26 23:35:15,006|I| No active sessions, logging in...
+2025-10-26 23:35:15,007|I| Loading auth webpage at https://localhost:5000/sso/Login?forwardTo=22&RL=1&ip2loc=on
+2025-10-26 23:35:21,811|I| Gateway auth webpage loaded
+2025-10-26 23:35:21,811|I| Login attempt number 1
+2025-10-26 23:35:22,040|I| Switching to paper mode
+2025-10-26 23:35:30,417|I| Submitting the form
+2025-10-26 23:35:45,653|E| Timeout reached when waiting for authentication. The website seems to not be loaded correctly. Consider increasing IBEAM_PAGE_LOAD_TIMEOUT. 
+Website URL: https://localhost:5000/sso/Login?forwardTo=22&RL=1&ip2loc=on 
+ 
+Exception:
+  File "/usr/local/lib/python3.11/threading.py", line 995, in _bootstrap
+    self._bootstrap_inner()
+  File "/usr/local/lib/python3.11/threading.py", line 1038, in _bootstrap_inner
+    self.run()
+  File "/usr/local/lib/python3.11/threading.py", line 975, in run
+    self._target(*self._args, **self._kwargs)
+  File "/usr/local/lib/python3.11/concurrent/futures/thread.py", line 83, in _worker
+    work_item.run()
+  File "/usr/local/lib/python3.11/concurrent/futures/thread.py", line 58, in run
+    result = self.fn(*self.args, **self.kwargs)
+  File "/opt/venv/lib/python3.11/site-packages/apscheduler/executors/base.py", line 125, in run_job
+    retval = job.func(*job.args, **job.kwargs)
+  File "/srv/ibeam/src/gateway_client.py", line 115, in _maintenance
+    success, shutdown, status = self.start_and_authenticate(request_retries=self.request_retries)
+  File "/srv/ibeam/src/gateway_client.py", line 62, in start_and_authenticate
+    success, shutdown, status = self.strategy_handler.try_authenticating(request_retries=request_retries)
+  File "/srv/ibeam/src/handlers/strategy_handler.py", line 85, in try_authenticating
+    return self._authentication_strategy_B(status, request_retries)
+  File "/srv/ibeam/src/handlers/strategy_handler.py", line 140, in _authentication_strategy_B
+    return self._log_in(status)
+  File "/srv/ibeam/src/handlers/strategy_handler.py", line 151, in _log_in
+    success, shutdown = self.login_handler.login()
+  File "/srv/ibeam/src/handlers/login_handler.py", line 504, in login
+    self.handle_timeout_exception(e, targets, driver, website_version, self.route_auth, self.base_url, self.outputs_dir)
+  File "/srv/ibeam/src/handlers/login_handler.py", line 485, in login
+    self.attempt(targets, wait_and_identify_trigger, driver)
+  File "/srv/ibeam/src/handlers/login_handler.py", line 406, in attempt
+    trigger, target = self.step_login(targets, wait_and_identify_trigger, driver, self.secrets_handler.account, self.secrets_handler.password, self.secrets_handler.key, self.presubmit_buffer)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/srv/ibeam/src/handlers/login_handler.py", line 196, in step_login
+    trigger, target = wait_and_identify_trigger(
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/srv/ibeam/src/handlers/login_handler.py", line 67, in _wait_and_identify_trigger
+    trigger = WebDriverWait(driver, timeout).until(any_of(*expected_conditions))
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/venv/lib/python3.11/site-packages/selenium/webdriver/support/wait.py", line 95, in until
+    raise TimeoutException(message, screen, stacktrace)
+
+  <class 'selenium.common.exceptions.TimeoutException'> Message: 
+
+2025-10-26 23:35:45,654|I| Cleaning up the resources. Display: <pyvirtualdisplay.display.Display object at 0x7f163cf91610> | Driver: <selenium.webdriver.chrome.webdriver.WebDriver (session="3dc4d3351a8579f64a4d1e61acfd20e1")>
+2025-10-26 23:35:45,709|I| Logging in failed
+2025-10-26 23:36:14,809|I| Maintenance
+2025-10-26 23:36:14,902|I| Attempt number 2
+2025-10-26 23:36:15,118|I| Max request retries reached after 2 attempts. Consider increasing the retries by setting IBEAM_REQUEST_RETRIES environment variable
+2025-10-26 23:36:15,118|I| NO SESSION Status(running=True, session=False, connected=False, authenticated=False, competing=False, collision=False, session_id=None, server_name=None, server_version=None, expires=None)
+2025-10-26 23:36:15,118|I| Authentication strategy: "B"
+2025-10-26 23:36:15,120|I| No active sessions, logging in...
+2025-10-26 23:36:15,120|I| Loading auth webpage at https://localhost:5000/sso/Login?forwardTo=22&RL=1&ip2loc=on
+2025-10-26 23:36:22,162|I| Gateway auth webpage loaded
+2025-10-26 23:36:22,162|I| Login attempt number 1
+2025-10-26 23:36:22,391|I| Switching to paper mode
+2025-10-26 23:36:30,821|I| Submitting the form
+2025-10-26 23:36:46,181|E| Timeout reached when waiting for authentication. The website seems to not be loaded correctly. Consider increasing IBEAM_PAGE_LOAD_TIMEOUT. 
+Website URL: https://localhost:5000/sso/Login?forwardTo=22&RL=1&ip2loc=on 
+ 
+Exception:
+  File "/usr/local/lib/python3.11/threading.py", line 995, in _bootstrap
+    self._bootstrap_inner()
+  File "/usr/local/lib/python3.11/threading.py", line 1038, in _bootstrap_inner
+    self.run()
+  File "/usr/local/lib/python3.11/threading.py", line 975, in run
+    self._target(*self._args, **self._kwargs)
+  File "/usr/local/lib/python3.11/concurrent/futures/thread.py", line 83, in _worker
+    work_item.run()
+  File "/usr/local/lib/python3.11/concurrent/futures/thread.py", line 58, in run
+    result = self.fn(*self.args, **self.kwargs)
+  File "/opt/venv/lib/python3.11/site-packages/apscheduler/executors/base.py", line 125, in run_job
+    retval = job.func(*job.args, **job.kwargs)
+  File "/srv/ibeam/src/gateway_client.py", line 115, in _maintenance
+    success, shutdown, status = self.start_and_authenticate(request_retries=self.request_retries)
+  File "/srv/ibeam/src/gateway_client.py", line 62, in start_and_authenticate
+    success, shutdown, status = self.strategy_handler.try_authenticating(request_retries=request_retries)
+  File "/srv/ibeam/src/handlers/strategy_handler.py", line 85, in try_authenticating
+    return self._authentication_strategy_B(status, request_retries)
+  File "/srv/ibeam/src/handlers/strategy_handler.py", line 140, in _authentication_strategy_B
+    return self._log_in(status)
+  File "/srv/ibeam/src/handlers/strategy_handler.py", line 151, in _log_in
+    success, shutdown = self.login_handler.login()
+  File "/srv/ibeam/src/handlers/login_handler.py", line 504, in login
+    self.handle_timeout_exception(e, targets, driver, website_version, self.route_auth, self.base_url, self.outputs_dir)
+  File "/srv/ibeam/src/handlers/login_handler.py", line 485, in login
+    self.attempt(targets, wait_and_identify_trigger, driver)
+  File "/srv/ibeam/src/handlers/login_handler.py", line 406, in attempt
+    trigger, target = self.step_login(targets, wait_and_identify_trigger, driver, self.secrets_handler.account, self.secrets_handler.password, self.secrets_handler.key, self.presubmit_buffer)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/srv/ibeam/src/handlers/login_handler.py", line 196, in step_login
+    trigger, target = wait_and_identify_trigger(
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/srv/ibeam/src/handlers/login_handler.py", line 67, in _wait_and_identify_trigger
+    trigger = WebDriverWait(driver, timeout).until(any_of(*expected_conditions))
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/venv/lib/python3.11/site-packages/selenium/webdriver/support/wait.py", line 95, in until
+    raise TimeoutException(message, screen, stacktrace)
+
+  <class 'selenium.common.exceptions.TimeoutException'> Message: 
+
+2025-10-26 23:36:46,181|I| Cleaning up the resources. Display: <pyvirtualdisplay.display.Display object at 0x7f163cd9d910> | Driver: <selenium.webdriver.chrome.webdriver.WebDriver (session="437870a69095ad8ecb2164ed5c08c21f")>
+2025-10-26 23:36:46,222|I| Logging in failed
+2025-10-26 23:37:14,809|I| Maintenance
+2025-10-26 23:37:14,981|I| Attempt number 2
+2025-10-26 23:37:15,153|I| Max request retries reached after 2 attempts. Consider increasing the retries by setting IBEAM_REQUEST_RETRIES environment variable
+2025-10-26 23:37:15,153|I| NO SESSION Status(running=True, session=False, connected=False, authenticated=False, competing=False, collision=False, session_id=None, server_name=None, server_version=None, expires=None)
+2025-10-26 23:37:15,153|I| Authentication strategy: "B"
+2025-10-26 23:37:15,153|I| No active sessions, logging in...
+2025-10-26 23:37:15,154|I| Loading auth webpage at https://localhost:5000/sso/Login?forwardTo=22&RL=1&ip2loc=on
+2025-10-26 23:37:21,830|I| Gateway auth webpage loaded
+2025-10-26 23:37:21,831|I| Login attempt number 1
+2025-10-26 23:37:22,057|I| Switching to paper mode
+2025-10-26 23:37:30,426|I| Submitting the form
+2025-10-26 23:37:45,665|E| Timeout reached when waiting for authentication. The website seems to not be loaded correctly. Consider increasing IBEAM_PAGE_LOAD_TIMEOUT. 
+Website URL: https://localhost:5000/sso/Login?forwardTo=22&RL=1&ip2loc=on 
+ 
+Exception:
+  File "/usr/local/lib/python3.11/threading.py", line 995, in _bootstrap
+    self._bootstrap_inner()
+  File "/usr/local/lib/python3.11/threading.py", line 1038, in _bootstrap_inner
+    self.run()
+  File "/usr/local/lib/python3.11/threading.py", line 975, in run
+    self._target(*self._args, **self._kwargs)
+  File "/usr/local/lib/python3.11/concurrent/futures/thread.py", line 83, in _worker
+    work_item.run()
+  File "/usr/local/lib/python3.11/concurrent/futures/thread.py", line 58, in run
+    result = self.fn(*self.args, **self.kwargs)
+  File "/opt/venv/lib/python3.11/site-packages/apscheduler/executors/base.py", line 125, in run_job
+    retval = job.func(*job.args, **job.kwargs)
+  File "/srv/ibeam/src/gateway_client.py", line 115, in _maintenance
+    success, shutdown, status = self.start_and_authenticate(request_retries=self.request_retries)
+  File "/srv/ibeam/src/gateway_client.py", line 62, in start_and_authenticate
+    success, shutdown, status = self.strategy_handler.try_authenticating(request_retries=request_retries)
+  File "/srv/ibeam/src/handlers/strategy_handler.py", line 85, in try_authenticating
+    return self._authentication_strategy_B(status, request_retries)
+  File "/srv/ibeam/src/handlers/strategy_handler.py", line 140, in _authentication_strategy_B
+    return self._log_in(status)
+  File "/srv/ibeam/src/handlers/strategy_handler.py", line 151, in _log_in
+    success, shutdown = self.login_handler.login()
+  File "/srv/ibeam/src/handlers/login_handler.py", line 504, in login
+    self.handle_timeout_exception(e, targets, driver, website_version, self.route_auth, self.base_url, self.outputs_dir)
+  File "/srv/ibeam/src/handlers/login_handler.py", line 485, in login
+    self.attempt(targets, wait_and_identify_trigger, driver)
+  File "/srv/ibeam/src/handlers/login_handler.py", line 406, in attempt
+    trigger, target = self.step_login(targets, wait_and_identify_trigger, driver, self.secrets_handler.account, self.secrets_handler.password, self.secrets_handler.key, self.presubmit_buffer)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/srv/ibeam/src/handlers/login_handler.py", line 196, in step_login
+    trigger, target = wait_and_identify_trigger(
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/srv/ibeam/src/handlers/login_handler.py", line 67, in _wait_and_identify_trigger
+    trigger = WebDriverWait(driver, timeout).until(any_of(*expected_conditions))
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/venv/lib/python3.11/site-packages/selenium/webdriver/support/wait.py", line 95, in until
+    raise TimeoutException(message, screen, stacktrace)
+
+  <class 'selenium.common.exceptions.TimeoutException'> Message: 
+
+2025-10-26 23:37:45,666|I| Cleaning up the resources. Display: <pyvirtualdisplay.display.Display object at 0x7f163cd9de50> | Driver: <selenium.webdriver.chrome.webdriver.WebDriver (session="5567d78dcf9488032999a0ee34c7fac3")>
+2025-10-26 23:37:45,713|I| Logging in failed
+2025-10-26 23:38:14,809|I| Maintenance
+2025-10-26 23:38:14,933|I| Attempt number 2
+2025-10-26 23:38:15,062|I| Max request retries reached after 2 attempts. Consider increasing the retries by setting IBEAM_REQUEST_RETRIES environment variable
+2025-10-26 23:38:15,063|I| NO SESSION Status(running=True, session=False, connected=False, authenticated=False, competing=False, collision=False, session_id=None, server_name=None, server_version=None, expires=None)
+2025-10-26 23:38:15,063|I| Authentication strategy: "B"
+2025-10-26 23:38:15,064|I| No active sessions, logging in...
+2025-10-26 23:38:15,064|I| Loading auth webpage at https://localhost:5000/sso/Login?forwardTo=22&RL=1&ip2loc=on
+2025-10-26 23:38:22,030|I| Gateway auth webpage loaded
+2025-10-26 23:38:22,031|I| Login attempt number 1
+2025-10-26 23:38:22,260|I| Switching to paper mode
+2025-10-26 23:38:30,639|I| Submitting the form
+2025-10-26 23:38:46,236|E| Timeout reached when waiting for authentication. The website seems to not be loaded correctly. Consider increasing IBEAM_PAGE_LOAD_TIMEOUT. 
+Website URL: https://localhost:5000/sso/Login?forwardTo=22&RL=1&ip2loc=on 
+ 
+Exception:
+  File "/usr/local/lib/python3.11/threading.py", line 995, in _bootstrap
+    self._bootstrap_inner()
+  File "/usr/local/lib/python3.11/threading.py", line 1038, in _bootstrap_inner
+    self.run()
+  File "/usr/local/lib/python3.11/threading.py", line 975, in run
+    self._target(*self._args, **self._kwargs)
+  File "/usr/local/lib/python3.11/concurrent/futures/thread.py", line 83, in _worker
+    work_item.run()
+  File "/usr/local/lib/python3.11/concurrent/futures/thread.py", line 58, in run
+    result = self.fn(*self.args, **self.kwargs)
+  File "/opt/venv/lib/python3.11/site-packages/apscheduler/executors/base.py", line 125, in run_job
+    retval = job.func(*job.args, **job.kwargs)
+  File "/srv/ibeam/src/gateway_client.py", line 115, in _maintenance
+    success, shutdown, status = self.start_and_authenticate(request_retries=self.request_retries)
+  File "/srv/ibeam/src/gateway_client.py", line 62, in start_and_authenticate
+    success, shutdown, status = self.strategy_handler.try_authenticating(request_retries=request_retries)
+  File "/srv/ibeam/src/handlers/strategy_handler.py", line 85, in try_authenticating
+    return self._authentication_strategy_B(status, request_retries)
+  File "/srv/ibeam/src/handlers/strategy_handler.py", line 140, in _authentication_strategy_B
+    return self._log_in(status)
+  File "/srv/ibeam/src/handlers/strategy_handler.py", line 151, in _log_in
+    success, shutdown = self.login_handler.login()
+  File "/srv/ibeam/src/handlers/login_handler.py", line 504, in login
+    self.handle_timeout_exception(e, targets, driver, website_version, self.route_auth, self.base_url, self.outputs_dir)
+  File "/srv/ibeam/src/handlers/login_handler.py", line 485, in login
+    self.attempt(targets, wait_and_identify_trigger, driver)
+  File "/srv/ibeam/src/handlers/login_handler.py", line 406, in attempt
+    trigger, target = self.step_login(targets, wait_and_identify_trigger, driver, self.secrets_handler.account, self.secrets_handler.password, self.secrets_handler.key, self.presubmit_buffer)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/srv/ibeam/src/handlers/login_handler.py", line 196, in step_login
+    trigger, target = wait_and_identify_trigger(
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/srv/ibeam/src/handlers/login_handler.py", line 67, in _wait_and_identify_trigger
+    trigger = WebDriverWait(driver, timeout).until(any_of(*expected_conditions))
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/venv/lib/python3.11/site-packages/selenium/webdriver/support/wait.py", line 95, in until
+    raise TimeoutException(message, screen, stacktrace)
+
+  <class 'selenium.common.exceptions.TimeoutException'> Message: 
+
+2025-10-26 23:38:46,239|I| Cleaning up the resources. Display: <pyvirtualdisplay.display.Display object at 0x7f163ce67990> | Driver: <selenium.webdriver.chrome.webdriver.WebDriver (session="f693aa2652f65d436cf3e40678a043c3")>
+2025-10-26 23:38:46,308|I| Logging in failed
+2025-10-26 23:39:14,809|I| Maintenance
+2025-10-26 23:39:14,920|I| Attempt number 2
+2025-10-26 23:39:15,024|I| Max request retries reached after 2 attempts. Consider increasing the retries by setting IBEAM_REQUEST_RETRIES environment variable
+2025-10-26 23:39:15,025|I| NO SESSION Status(running=True, session=False, connected=False, authenticated=False, competing=False, collision=False, session_id=None, server_name=None, server_version=None, expires=None)
+2025-10-26 23:39:15,025|I| Authentication strategy: "B"
+2025-10-26 23:39:15,025|I| No active sessions, logging in...
+2025-10-26 23:39:15,025|I| Loading auth webpage at https://localhost:5000/sso/Login?forwardTo=22&RL=1&ip2loc=on
+2025-10-26 23:39:21,721|I| Gateway auth webpage loaded
+2025-10-26 23:39:21,721|I| Login attempt number 1
+2025-10-26 23:39:21,933|I| Switching to paper mode
+2025-10-26 23:39:30,302|I| Submitting the form
+2025-10-26 23:39:45,716|E| Timeout reached when waiting for authentication. The website seems to not be loaded correctly. Consider increasing IBEAM_PAGE_LOAD_TIMEOUT. 
+Website URL: https://localhost:5000/sso/Login?forwardTo=22&RL=1&ip2loc=on 
+ 
+Exception:
+  File "/usr/local/lib/python3.11/threading.py", line 995, in _bootstrap
+    self._bootstrap_inner()
+  File "/usr/local/lib/python3.11/threading.py", line 1038, in _bootstrap_inner
+    self.run()
+  File "/usr/local/lib/python3.11/threading.py", line 975, in run
+    self._target(*self._args, **self._kwargs)
+  File "/usr/local/lib/python3.11/concurrent/futures/thread.py", line 83, in _worker
+    work_item.run()
+  File "/usr/local/lib/python3.11/concurrent/futures/thread.py", line 58, in run
+    result = self.fn(*self.args, **self.kwargs)
+  File "/opt/venv/lib/python3.11/site-packages/apscheduler/executors/base.py", line 125, in run_job
+    retval = job.func(*job.args, **job.kwargs)
+  File "/srv/ibeam/src/gateway_client.py", line 115, in _maintenance
+    success, shutdown, status = self.start_and_authenticate(request_retries=self.request_retries)
+  File "/srv/ibeam/src/gateway_client.py", line 62, in start_and_authenticate
+    success, shutdown, status = self.strategy_handler.try_authenticating(request_retries=request_retries)
+  File "/srv/ibeam/src/handlers/strategy_handler.py", line 85, in try_authenticating
+    return self._authentication_strategy_B(status, request_retries)
+  File "/srv/ibeam/src/handlers/strategy_handler.py", line 140, in _authentication_strategy_B
+    return self._log_in(status)
+  File "/srv/ibeam/src/handlers/strategy_handler.py", line 151, in _log_in
+    success, shutdown = self.login_handler.login()
+  File "/srv/ibeam/src/handlers/login_handler.py", line 504, in login
+    self.handle_timeout_exception(e, targets, driver, website_version, self.route_auth, self.base_url, self.outputs_dir)
+  File "/srv/ibeam/src/handlers/login_handler.py", line 485, in login
+    self.attempt(targets, wait_and_identify_trigger, driver)
+  File "/srv/ibeam/src/handlers/login_handler.py", line 406, in attempt
+    trigger, target = self.step_login(targets, wait_and_identify_trigger, driver, self.secrets_handler.account, self.secrets_handler.password, self.secrets_handler.key, self.presubmit_buffer)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/srv/ibeam/src/handlers/login_handler.py", line 196, in step_login
+    trigger, target = wait_and_identify_trigger(
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/srv/ibeam/src/handlers/login_handler.py", line 67, in _wait_and_identify_trigger
+    trigger = WebDriverWait(driver, timeout).until(any_of(*expected_conditions))
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/venv/lib/python3.11/site-packages/selenium/webdriver/support/wait.py", line 95, in until
+    raise TimeoutException(message, screen, stacktrace)
+
+  <class 'selenium.common.exceptions.TimeoutException'> Message: 
+
+2025-10-26 23:39:45,718|I| Cleaning up the resources. Display: <pyvirtualdisplay.display.Display object at 0x7f163ce461d0> | Driver: <selenium.webdriver.chrome.webdriver.WebDriver (session="ff696e7813e7d184bd3b21d0d5b4c776")>
+2025-10-26 23:39:45,774|I| Logging in failed
+2025-10-26 23:40:14,809|I| Maintenance
+2025-10-26 23:40:14,988|I| Attempt number 2
+2025-10-26 23:40:15,184|I| Max request retries reached after 2 attempts. Consider increasing the retries by setting IBEAM_REQUEST_RETRIES environment variable
+2025-10-26 23:40:15,184|I| NO SESSION Status(running=True, session=False, connected=False, authenticated=False, competing=False, collision=False, session_id=None, server_name=None, server_version=None, expires=None)
+2025-10-26 23:40:15,184|I| Authentication strategy: "B"
+2025-10-26 23:40:15,185|I| No active sessions, logging in...
+2025-10-26 23:40:15,185|I| Loading auth webpage at https://localhost:5000/sso/Login?forwardTo=22&RL=1&ip2loc=on
+2025-10-26 23:40:21,954|I| Gateway auth webpage loaded
+2025-10-26 23:40:21,955|I| Login attempt number 1
+2025-10-26 23:40:22,207|I| Switching to paper mode
+2025-10-26 23:40:30,601|I| Submitting the form
+2025-10-26 23:40:45,873|E| Timeout reached when waiting for authentication. The website seems to not be loaded correctly. Consider increasing IBEAM_PAGE_LOAD_TIMEOUT. 
+Website URL: https://localhost:5000/sso/Login?forwardTo=22&RL=1&ip2loc=on 
+ 
+Exception:
+  File "/usr/local/lib/python3.11/threading.py", line 995, in _bootstrap
+    self._bootstrap_inner()
+  File "/usr/local/lib/python3.11/threading.py", line 1038, in _bootstrap_inner
+    self.run()
+  File "/usr/local/lib/python3.11/threading.py", line 975, in run
+    self._target(*self._args, **self._kwargs)
+  File "/usr/local/lib/python3.11/concurrent/futures/thread.py", line 83, in _worker
+    work_item.run()
+  File "/usr/local/lib/python3.11/concurrent/futures/thread.py", line 58, in run
+    result = self.fn(*self.args, **self.kwargs)
+  File "/opt/venv/lib/python3.11/site-packages/apscheduler/executors/base.py", line 125, in run_job
+    retval = job.func(*job.args, **job.kwargs)
+  File "/srv/ibeam/src/gateway_client.py", line 115, in _maintenance
+    success, shutdown, status = self.start_and_authenticate(request_retries=self.request_retries)
+  File "/srv/ibeam/src/gateway_client.py", line 62, in start_and_authenticate
+    success, shutdown, status = self.strategy_handler.try_authenticating(request_retries=request_retries)
+  File "/srv/ibeam/src/handlers/strategy_handler.py", line 85, in try_authenticating
+    return self._authentication_strategy_B(status, request_retries)
+  File "/srv/ibeam/src/handlers/strategy_handler.py", line 140, in _authentication_strategy_B
+    return self._log_in(status)
+  File "/srv/ibeam/src/handlers/strategy_handler.py", line 151, in _log_in
+    success, shutdown = self.login_handler.login()
+  File "/srv/ibeam/src/handlers/login_handler.py", line 504, in login
+    self.handle_timeout_exception(e, targets, driver, website_version, self.route_auth, self.base_url, self.outputs_dir)
+  File "/srv/ibeam/src/handlers/login_handler.py", line 485, in login
+    self.attempt(targets, wait_and_identify_trigger, driver)
+  File "/srv/ibeam/src/handlers/login_handler.py", line 406, in attempt
+    trigger, target = self.step_login(targets, wait_and_identify_trigger, driver, self.secrets_handler.account, self.secrets_handler.password, self.secrets_handler.key, self.presubmit_buffer)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/srv/ibeam/src/handlers/login_handler.py", line 196, in step_login
+    trigger, target = wait_and_identify_trigger(
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/srv/ibeam/src/handlers/login_handler.py", line 67, in _wait_and_identify_trigger
+    trigger = WebDriverWait(driver, timeout).until(any_of(*expected_conditions))
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/venv/lib/python3.11/site-packages/selenium/webdriver/support/wait.py", line 95, in until
+    raise TimeoutException(message, screen, stacktrace)
+
+  <class 'selenium.common.exceptions.TimeoutException'> Message: 
+
+2025-10-26 23:40:45,874|I| Cleaning up the resources. Display: <pyvirtualdisplay.display.Display object at 0x7f163ce68410> | Driver: <selenium.webdriver.chrome.webdriver.WebDriver (session="2bf42a7e2518d66781a2c9d6a8d87585")>
+2025-10-26 23:40:45,912|I| Logging in failed
+2025-10-26 23:41:14,809|I| Maintenance
+2025-10-26 23:41:14,903|I| Attempt number 2
+2025-10-26 23:41:15,199|I| Max request retries reached after 2 attempts. Consider increasing the retries by setting IBEAM_REQUEST_RETRIES environment variable
+2025-10-26 23:41:15,200|I| NO SESSION Status(running=True, session=False, connected=False, authenticated=False, competing=False, collision=False, session_id=None, server_name=None, server_version=None, expires=None)
+2025-10-26 23:41:15,200|I| Authentication strategy: "B"
+2025-10-26 23:41:15,200|I| No active sessions, logging in...
+2025-10-26 23:41:15,201|I| Loading auth webpage at https://localhost:5000/sso/Login?forwardTo=22&RL=1&ip2loc=on
+2025-10-26 23:41:21,917|I| Gateway auth webpage loaded
+2025-10-26 23:41:21,917|I| Login attempt number 1
+2025-10-26 23:41:22,121|I| Switching to paper mode
+2025-10-26 23:41:30,483|I| Submitting the form
+2025-10-26 23:41:45,651|E| Timeout reached when waiting for authentication. The website seems to not be loaded correctly. Consider increasing IBEAM_PAGE_LOAD_TIMEOUT. 
+Website URL: https://localhost:5000/sso/Login?forwardTo=22&RL=1&ip2loc=on 
+ 
+Exception:
+  File "/usr/local/lib/python3.11/threading.py", line 995, in _bootstrap
+    self._bootstrap_inner()
+  File "/usr/local/lib/python3.11/threading.py", line 1038, in _bootstrap_inner
+    self.run()
+  File "/usr/local/lib/python3.11/threading.py", line 975, in run
+    self._target(*self._args, **self._kwargs)
+  File "/usr/local/lib/python3.11/concurrent/futures/thread.py", line 83, in _worker
+    work_item.run()
+  File "/usr/local/lib/python3.11/concurrent/futures/thread.py", line 58, in run
+    result = self.fn(*self.args, **self.kwargs)
+  File "/opt/venv/lib/python3.11/site-packages/apscheduler/executors/base.py", line 125, in run_job
+    retval = job.func(*job.args, **job.kwargs)
+  File "/srv/ibeam/src/gateway_client.py", line 115, in _maintenance
+    success, shutdown, status = self.start_and_authenticate(request_retries=self.request_retries)
+  File "/srv/ibeam/src/gateway_client.py", line 62, in start_and_authenticate
+    success, shutdown, status = self.strategy_handler.try_authenticating(request_retries=request_retries)
+  File "/srv/ibeam/src/handlers/strategy_handler.py", line 85, in try_authenticating
+    return self._authentication_strategy_B(status, request_retries)
+  File "/srv/ibeam/src/handlers/strategy_handler.py", line 140, in _authentication_strategy_B
+    return self._log_in(status)
+  File "/srv/ibeam/src/handlers/strategy_handler.py", line 151, in _log_in
+    success, shutdown = self.login_handler.login()
+  File "/srv/ibeam/src/handlers/login_handler.py", line 504, in login
+    self.handle_timeout_exception(e, targets, driver, website_version, self.route_auth, self.base_url, self.outputs_dir)
+  File "/srv/ibeam/src/handlers/login_handler.py", line 485, in login
+    self.attempt(targets, wait_and_identify_trigger, driver)
+  File "/srv/ibeam/src/handlers/login_handler.py", line 406, in attempt
+    trigger, target = self.step_login(targets, wait_and_identify_trigger, driver, self.secrets_handler.account, self.secrets_handler.password, self.secrets_handler.key, self.presubmit_buffer)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/srv/ibeam/src/handlers/login_handler.py", line 196, in step_login
+    trigger, target = wait_and_identify_trigger(
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/srv/ibeam/src/handlers/login_handler.py", line 67, in _wait_and_identify_trigger
+    trigger = WebDriverWait(driver, timeout).until(any_of(*expected_conditions))
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/venv/lib/python3.11/site-packages/selenium/webdriver/support/wait.py", line 95, in until
+    raise TimeoutException(message, screen, stacktrace)
+
+  <class 'selenium.common.exceptions.TimeoutException'> Message: 
+
+2025-10-26 23:41:45,652|I| Cleaning up the resources. Display: <pyvirtualdisplay.display.Display object at 0x7f163ce84990> | Driver: <selenium.webdriver.chrome.webdriver.WebDriver (session="776c4b9d45608dfb23afe3b84bb91f56")>
+2025-10-26 23:41:45,709|I| Logging in failed
+2025-10-26 23:42:14,809|I| Maintenance
+2025-10-26 23:42:14,893|I| Attempt number 2
+2025-10-26 23:42:14,971|I| Max request retries reached after 2 attempts. Consider increasing the retries by setting IBEAM_REQUEST_RETRIES environment variable
+2025-10-26 23:42:14,971|I| NO SESSION Status(running=True, session=False, connected=False, authenticated=False, competing=False, collision=False, session_id=None, server_name=None, server_version=None, expires=None)
+2025-10-26 23:42:14,971|I| Authentication strategy: "B"
+2025-10-26 23:42:14,972|I| No active sessions, logging in...
+2025-10-26 23:42:14,972|I| Loading auth webpage at https://localhost:5000/sso/Login?forwardTo=22&RL=1&ip2loc=on
+2025-10-26 23:42:23,335|I| Gateway auth webpage loaded
+2025-10-26 23:42:23,336|I| Login attempt number 1
+2025-10-26 23:42:23,587|I| Switching to paper mode
+2025-10-26 23:42:31,993|I| Submitting the form
+2025-10-26 23:42:47,134|E| Timeout reached when waiting for authentication. The website seems to not be loaded correctly. Consider increasing IBEAM_PAGE_LOAD_TIMEOUT. 
+Website URL: https://localhost:5000/sso/Login?forwardTo=22&RL=1&ip2loc=on 
+ 
+Exception:
+  File "/usr/local/lib/python3.11/threading.py", line 995, in _bootstrap
+    self._bootstrap_inner()
+  File "/usr/local/lib/python3.11/threading.py", line 1038, in _bootstrap_inner
+    self.run()
+  File "/usr/local/lib/python3.11/threading.py", line 975, in run
+    self._target(*self._args, **self._kwargs)
+  File "/usr/local/lib/python3.11/concurrent/futures/thread.py", line 83, in _worker
+    work_item.run()
+  File "/usr/local/lib/python3.11/concurrent/futures/thread.py", line 58, in run
+    result = self.fn(*self.args, **self.kwargs)
+  File "/opt/venv/lib/python3.11/site-packages/apscheduler/executors/base.py", line 125, in run_job
+    retval = job.func(*job.args, **job.kwargs)
+  File "/srv/ibeam/src/gateway_client.py", line 115, in _maintenance
+    success, shutdown, status = self.start_and_authenticate(request_retries=self.request_retries)
+  File "/srv/ibeam/src/gateway_client.py", line 62, in start_and_authenticate
+    success, shutdown, status = self.strategy_handler.try_authenticating(request_retries=request_retries)
+  File "/srv/ibeam/src/handlers/strategy_handler.py", line 85, in try_authenticating
+    return self._authentication_strategy_B(status, request_retries)
+  File "/srv/ibeam/src/handlers/strategy_handler.py", line 140, in _authentication_strategy_B
+    return self._log_in(status)
+  File "/srv/ibeam/src/handlers/strategy_handler.py", line 151, in _log_in
+    success, shutdown = self.login_handler.login()
+  File "/srv/ibeam/src/handlers/login_handler.py", line 504, in login
+    self.handle_timeout_exception(e, targets, driver, website_version, self.route_auth, self.base_url, self.outputs_dir)
+  File "/srv/ibeam/src/handlers/login_handler.py", line 485, in login
+    self.attempt(targets, wait_and_identify_trigger, driver)
+  File "/srv/ibeam/src/handlers/login_handler.py", line 406, in attempt
+    trigger, target = self.step_login(targets, wait_and_identify_trigger, driver, self.secrets_handler.account, self.secrets_handler.password, self.secrets_handler.key, self.presubmit_buffer)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/srv/ibeam/src/handlers/login_handler.py", line 196, in step_login
+    trigger, target = wait_and_identify_trigger(
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/srv/ibeam/src/handlers/login_handler.py", line 67, in _wait_and_identify_trigger
+    trigger = WebDriverWait(driver, timeout).until(any_of(*expected_conditions))
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/venv/lib/python3.11/site-packages/selenium/webdriver/support/wait.py", line 95, in until
+    raise TimeoutException(message, screen, stacktrace)
+
+  <class 'selenium.common.exceptions.TimeoutException'> Message: 
+
+2025-10-26 23:42:47,135|I| Cleaning up the resources. Display: <pyvirtualdisplay.display.Display object at 0x7f163ce6ac10> | Driver: <selenium.webdriver.chrome.webdriver.WebDriver (session="fceecf2f4a430bc24c54411409bd1a19")>
+2025-10-26 23:42:47,191|I| Logging in failed
+2025-10-26 23:43:14,809|I| Maintenance
+2025-10-26 23:43:14,907|I| Attempt number 2
+2025-10-26 23:43:15,018|I| Max request retries reached after 2 attempts. Consider increasing the retries by setting IBEAM_REQUEST_RETRIES environment variable
+2025-10-26 23:43:15,018|I| NO SESSION Status(running=True, session=False, connected=False, authenticated=False, competing=False, collision=False, session_id=None, server_name=None, server_version=None, expires=None)
+2025-10-26 23:43:15,019|I| Authentication strategy: "B"
+2025-10-26 23:43:15,019|I| No active sessions, logging in...
+2025-10-26 23:43:15,019|I| Loading auth webpage at https://localhost:5000/sso/Login?forwardTo=22&RL=1&ip2loc=on
+2025-10-26 23:43:22,380|I| Gateway auth webpage loaded
+2025-10-26 23:43:22,380|I| Login attempt number 1
+2025-10-26 23:43:22,584|I| Switching to paper mode
+2025-10-26 23:43:30,985|I| Submitting the form
+2025-10-26 23:43:46,493|E| Timeout reached when waiting for authentication. The website seems to not be loaded correctly. Consider increasing IBEAM_PAGE_LOAD_TIMEOUT. 
+Website URL: https://localhost:5000/sso/Login?forwardTo=22&RL=1&ip2loc=on 
+ 
+Exception:
+  File "/usr/local/lib/python3.11/threading.py", line 995, in _bootstrap
+    self._bootstrap_inner()
+  File "/usr/local/lib/python3.11/threading.py", line 1038, in _bootstrap_inner
+    self.run()
+  File "/usr/local/lib/python3.11/threading.py", line 975, in run
+    self._target(*self._args, **self._kwargs)
+  File "/usr/local/lib/python3.11/concurrent/futures/thread.py", line 83, in _worker
+    work_item.run()
+  File "/usr/local/lib/python3.11/concurrent/futures/thread.py", line 58, in run
+    result = self.fn(*self.args, **self.kwargs)
+  File "/opt/venv/lib/python3.11/site-packages/apscheduler/executors/base.py", line 125, in run_job
+    retval = job.func(*job.args, **job.kwargs)
+  File "/srv/ibeam/src/gateway_client.py", line 115, in _maintenance
+    success, shutdown, status = self.start_and_authenticate(request_retries=self.request_retries)
+  File "/srv/ibeam/src/gateway_client.py", line 62, in start_and_authenticate
+    success, shutdown, status = self.strategy_handler.try_authenticating(request_retries=request_retries)
+  File "/srv/ibeam/src/handlers/strategy_handler.py", line 85, in try_authenticating
+    return self._authentication_strategy_B(status, request_retries)
+  File "/srv/ibeam/src/handlers/strategy_handler.py", line 140, in _authentication_strategy_B
+    return self._log_in(status)
+  File "/srv/ibeam/src/handlers/strategy_handler.py", line 151, in _log_in
+    success, shutdown = self.login_handler.login()
+  File "/srv/ibeam/src/handlers/login_handler.py", line 504, in login
+    self.handle_timeout_exception(e, targets, driver, website_version, self.route_auth, self.base_url, self.outputs_dir)
+  File "/srv/ibeam/src/handlers/login_handler.py", line 485, in login
+    self.attempt(targets, wait_and_identify_trigger, driver)
+  File "/srv/ibeam/src/handlers/login_handler.py", line 406, in attempt
+    trigger, target = self.step_login(targets, wait_and_identify_trigger, driver, self.secrets_handler.account, self.secrets_handler.password, self.secrets_handler.key, self.presubmit_buffer)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/srv/ibeam/src/handlers/login_handler.py", line 196, in step_login
+    trigger, target = wait_and_identify_trigger(
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/srv/ibeam/src/handlers/login_handler.py", line 67, in _wait_and_identify_trigger
+    trigger = WebDriverWait(driver, timeout).until(any_of(*expected_conditions))
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/venv/lib/python3.11/site-packages/selenium/webdriver/support/wait.py", line 95, in until
+    raise TimeoutException(message, screen, stacktrace)
+
+  <class 'selenium.common.exceptions.TimeoutException'> Message: 
+
+2025-10-26 23:43:46,493|I| Cleaning up the resources. Display: <pyvirtualdisplay.display.Display object at 0x7f163ce78f90> | Driver: <selenium.webdriver.chrome.webdriver.WebDriver (session="b7fac488178ddca94ba690fb9481daed")>
+2025-10-26 23:43:46,535|I| Logging in failed
+2025-10-26 23:44:14,809|I| Maintenance
+2025-10-26 23:44:14,893|I| Attempt number 2
+2025-10-26 23:44:15,037|I| Max request retries reached after 2 attempts. Consider increasing the retries by setting IBEAM_REQUEST_RETRIES environment variable
+2025-10-26 23:44:15,038|I| NO SESSION Status(running=True, session=False, connected=False, authenticated=False, competing=False, collision=False, session_id=None, server_name=None, server_version=None, expires=None)
+2025-10-26 23:44:15,038|I| Authentication strategy: "B"
+2025-10-26 23:44:15,038|I| No active sessions, logging in...
+2025-10-26 23:44:15,038|I| Loading auth webpage at https://localhost:5000/sso/Login?forwardTo=22&RL=1&ip2loc=on
+2025-10-26 23:44:21,744|I| Gateway auth webpage loaded
+2025-10-26 23:44:21,745|I| Login attempt number 1
+2025-10-26 23:44:21,979|I| Switching to paper mode
+2025-10-26 23:44:30,336|I| Submitting the form
+2025-10-26 23:44:45,583|E| Timeout reached when waiting for authentication. The website seems to not be loaded correctly. Consider increasing IBEAM_PAGE_LOAD_TIMEOUT. 
+Website URL: https://localhost:5000/sso/Login?forwardTo=22&RL=1&ip2loc=on 
+ 
+Exception:
+  File "/usr/local/lib/python3.11/threading.py", line 995, in _bootstrap
+    self._bootstrap_inner()
+  File "/usr/local/lib/python3.11/threading.py", line 1038, in _bootstrap_inner
+    self.run()
+  File "/usr/local/lib/python3.11/threading.py", line 975, in run
+    self._target(*self._args, **self._kwargs)
+  File "/usr/local/lib/python3.11/concurrent/futures/thread.py", line 83, in _worker
+    work_item.run()
+  File "/usr/local/lib/python3.11/concurrent/futures/thread.py", line 58, in run
+    result = self.fn(*self.args, **self.kwargs)
+  File "/opt/venv/lib/python3.11/site-packages/apscheduler/executors/base.py", line 125, in run_job
+    retval = job.func(*job.args, **job.kwargs)
+  File "/srv/ibeam/src/gateway_client.py", line 115, in _maintenance
+    success, shutdown, status = self.start_and_authenticate(request_retries=self.request_retries)
+  File "/srv/ibeam/src/gateway_client.py", line 62, in start_and_authenticate
+    success, shutdown, status = self.strategy_handler.try_authenticating(request_retries=request_retries)
+  File "/srv/ibeam/src/handlers/strategy_handler.py", line 85, in try_authenticating
+    return self._authentication_strategy_B(status, request_retries)
+  File "/srv/ibeam/src/handlers/strategy_handler.py", line 140, in _authentication_strategy_B
+    return self._log_in(status)
+  File "/srv/ibeam/src/handlers/strategy_handler.py", line 151, in _log_in
+    success, shutdown = self.login_handler.login()
+  File "/srv/ibeam/src/handlers/login_handler.py", line 504, in login
+    self.handle_timeout_exception(e, targets, driver, website_version, self.route_auth, self.base_url, self.outputs_dir)
+  File "/srv/ibeam/src/handlers/login_handler.py", line 485, in login
+    self.attempt(targets, wait_and_identify_trigger, driver)
+  File "/srv/ibeam/src/handlers/login_handler.py", line 406, in attempt
+    trigger, target = self.step_login(targets, wait_and_identify_trigger, driver, self.secrets_handler.account, self.secrets_handler.password, self.secrets_handler.key, self.presubmit_buffer)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/srv/ibeam/src/handlers/login_handler.py", line 196, in step_login
+    trigger, target = wait_and_identify_trigger(
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/srv/ibeam/src/handlers/login_handler.py", line 67, in _wait_and_identify_trigger
+    trigger = WebDriverWait(driver, timeout).until(any_of(*expected_conditions))
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/venv/lib/python3.11/site-packages/selenium/webdriver/support/wait.py", line 95, in until
+    raise TimeoutException(message, screen, stacktrace)
+
+  <class 'selenium.common.exceptions.TimeoutException'> Message: 
+
+2025-10-26 23:44:45,583|I| Cleaning up the resources. Display: <pyvirtualdisplay.display.Display object at 0x7f163ce73750> | Driver: <selenium.webdriver.chrome.webdriver.WebDriver (session="80941f7b507d8452883c10523e57eb3d")>
+2025-10-26 23:44:46,616|I| Logging in failed
+2025-10-26 23:45:14,809|I| Maintenance
+2025-10-26 23:45:14,921|I| Attempt number 2
+2025-10-26 23:45:15,016|I| Max request retries reached after 2 attempts. Consider increasing the retries by setting IBEAM_REQUEST_RETRIES environment variable
+2025-10-26 23:45:15,016|I| NO SESSION Status(running=True, session=False, connected=False, authenticated=False, competing=False, collision=False, session_id=None, server_name=None, server_version=None, expires=None)
+2025-10-26 23:45:15,016|I| Authentication strategy: "B"
+2025-10-26 23:45:15,017|I| No active sessions, logging in...
+2025-10-26 23:45:15,017|I| Loading auth webpage at https://localhost:5000/sso/Login?forwardTo=22&RL=1&ip2loc=on
+2025-10-26 23:45:56,967|I| ############ Starting IBeam version 0.5.9 ############
+2025-10-26 23:45:56,970|I| Custom conf.yaml found and will be used by the Gateway
+2025-10-26 23:45:56,977|I| Secrets source: env
+2025-10-26 23:45:56,982|I| Health server started at port=5001
+2025-10-26 23:45:56,982|I| Configuration:
+{'INPUTS_DIR': '/srv/inputs/', 'OUTPUTS_DIR': '/srv/outputs', 'GATEWAY_DIR': '/srv/clientportal.gw', 'CHROME_DRIVER_PATH': '/usr/bin/chromedriver', 'GATEWAY_STARTUP': 20, 'GATEWAY_PROCESS_MATCH': 'ibgroup.web.core.clientportal.gw.GatewayStart', 'MAINTENANCE_INTERVAL': 60, 'SPAWN_NEW_PROCESSES': False, 'LOG_LEVEL': 'INFO', 'LOG_TO_FILE': True, 'LOG_FORMAT': '%(asctime)s|%(levelname)-.1s| %(message)s', 'REQUEST_RETRIES': 2, 'REQUEST_TIMEOUT': 15, 'RESTART_FAILED_SESSIONS': True, 'RESTART_WAIT': 15, 'REAUTHENTICATE_WAIT': 15, 'HEALTH_SERVER_PORT': 5001, 'SECRETS_SOURCE': 'env', 'GCP_SECRETS_URL': None, 'START_ACTIVE': True, 'GATEWAY_BASE_URL': 'https://localhost:5000', 'ROUTE_AUTH': '/sso/Login?forwardTo=22&RL=1&ip2loc=on', 'ROUTE_VALIDATE': '/v1/portal/sso/validate', 'ROUTE_REAUTHENTICATE': '/v1/portal/iserver/reauthenticate?force=true', 'ROUTE_INITIALISE': '/v1/api/iserver/auth/ssodh/init', 'ROUTE_AUTH_STATUS': '/v1/api/iserver/auth/status', 'ROUTE_TICKLE': '/v1/api/tickle', 'ROUTE_LOGOUT': '/v1/api/logout', 'USER_NAME_EL': None, 'PASSWORD_EL': 'NAME@@password', 'SUBMIT_EL': 'CSS_SELECTOR@@.btn.btn-lg.btn-primary', 'ERROR_EL': None, 'SUCCESS_EL_TEXT': 'TAG_NAME@@Client login succeeds', 'LIVE_PAPER_TOGGLE_EL': 'FOR@@label[for=toggle1]', 'USE_PAPER_ACCOUNT': True, 'OAUTH_TIMEOUT': 15, 'PAGE_LOAD_TIMEOUT': 15, 'ERROR_SCREENSHOTS': False, 'MAX_FAILED_AUTH': 5, 'MIN_PRESUBMIT_BUFFER': 5, 'MAX_PRESUBMIT_BUFFER': 30, 'MAX_IMMEDIATE_ATTEMPTS': 10, 'IBKEY_PROMO_EL_CLASS': 'CLASS_NAME@@ibkey-promo-skip', 'AUTHENTICATION_STRATEGY': 'B', 'MAX_STATUS_CHECK_RETRIES': 120, 'MAX_REAUTHENTICATE_RETRIES': 3, 'UI_SCALING': 1.0, 'TWO_FA_EL_ID': 'ID@@twofactbase', 'TWO_FA_NOTIFICATION_EL': 'CLASS_NAME@@login-step-notification', 'TWO_FA_INPUT_EL_ID': 'ID@@xyz-field-bronze-response', 'TWO_FA_HANDLER': None, 'STRICT_TWO_FA_CODE': True, 'TWO_FA_SELECT_EL_ID': 'ID@@xyz-field-bronze-response', 'TWO_FA_SELECT_TARGET': 'IB Key', 'CUSTOM_TWO_FA_HANDLER': 'custom_two_fa_handler.CustomTwoFaHandler'}
+2025-10-26 23:45:56,983|I| Gateway not found, starting new one...
+2025-10-26 23:45:56,983|I| Note that the Gateway log below may display "Open https://localhost:[PORT] to login" - ignore this command.
+2025-10-26 23:45:56,984|I| Starting Gateway as Linux process with params: ['bash', 'bin/run.sh', 'root/conf.yaml']
+running  
+ runtime path : root:dist/ibgroup.web.core.iblink.router.clientportal.gw.jar:build/lib/runtime/*
+ config file  : root/conf.yaml
+2025-10-26 23:45:57,004|I| Gateway started with pids: [11]
+2025-10-26 23:45:57,006|I| Cannot ping Gateway. Retrying for another 20 seconds
+WARNING: An illegal reflective access operation has occurred
+WARNING: Illegal reflective access by io.netty.util.internal.ReflectionUtil (file:/srv/clientportal.gw/build/lib/runtime/netty-common-4.1.15.Final.jar) to constructor java.nio.DirectByteBuffer(long,int)
+WARNING: Please consider reporting this to the maintainers of io.netty.util.internal.ReflectionUtil
+WARNING: Use --illegal-access=warn to enable warnings of further illegal reflective access operations
+WARNING: All illegal access operations will be denied in a future release
+2025-10-26 23:45:58,008|I| Cannot ping Gateway. Retrying for another 19 seconds
+ -> mount demo on /demo
+Java Version: 11.0.24
+****************************************************
+version: a27ed42161ad96c53e715ca5c5e3e3fa4cff5262 Mon, 24 Apr 2023 15:41:53 -0400
+****************************************************
+This is the Client Portal Gateway
+for any issues, please contact api@ibkr.com
+and include a copy of your logs
+****************************************************
+https://www.interactivebrokers.com/api/doc.html
+****************************************************
+Open https://localhost:5000 to login
+App demo is available after you login under: https://localhost:5000/demo#/
+2025-10-26 23:45:59,903|I| Gateway connection established
+2025-10-26 23:46:00,112|I| NO SESSION Status(running=True, session=False, connected=False, authenticated=False, competing=False, collision=False, session_id=None, server_name=None, server_version=None, expires=None)
+2025-10-26 23:46:00,112|I| Authentication strategy: "B"
+2025-10-26 23:46:00,113|I| No active sessions, logging in...
+2025-10-26 23:46:00,113|I| Loading auth webpage at https://localhost:5000/sso/Login?forwardTo=22&RL=1&ip2loc=on
+2025-10-26 23:46:09,295|I| Gateway auth webpage loaded
+2025-10-26 23:46:09,295|I| Login attempt number 1
+2025-10-26 23:46:09,523|I| Switching to paper mode
+2025-10-26 23:46:17,937|I| Submitting the form
+2025-10-26 23:46:33,316|E| Timeout reached when waiting for authentication. The website seems to not be loaded correctly. Consider increasing IBEAM_PAGE_LOAD_TIMEOUT. 
+Website URL: https://localhost:5000/sso/Login?forwardTo=22&RL=1&ip2loc=on 
+ 
+Exception:
+  File "/srv/ibeam/ibeam_starter.py", line 181, in <module>
+    success, shutdown, status = client.start_and_authenticate()
+  File "/srv/ibeam/src/gateway_client.py", line 62, in start_and_authenticate
+    success, shutdown, status = self.strategy_handler.try_authenticating(request_retries=request_retries)
+  File "/srv/ibeam/src/handlers/strategy_handler.py", line 85, in try_authenticating
+    return self._authentication_strategy_B(status, request_retries)
+  File "/srv/ibeam/src/handlers/strategy_handler.py", line 140, in _authentication_strategy_B
+    return self._log_in(status)
+  File "/srv/ibeam/src/handlers/strategy_handler.py", line 151, in _log_in
+    success, shutdown = self.login_handler.login()
+  File "/srv/ibeam/src/handlers/login_handler.py", line 504, in login
+    self.handle_timeout_exception(e, targets, driver, website_version, self.route_auth, self.base_url, self.outputs_dir)
+  File "/srv/ibeam/src/handlers/login_handler.py", line 485, in login
+    self.attempt(targets, wait_and_identify_trigger, driver)
+  File "/srv/ibeam/src/handlers/login_handler.py", line 406, in attempt
+    trigger, target = self.step_login(targets, wait_and_identify_trigger, driver, self.secrets_handler.account, self.secrets_handler.password, self.secrets_handler.key, self.presubmit_buffer)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/srv/ibeam/src/handlers/login_handler.py", line 196, in step_login
+    trigger, target = wait_and_identify_trigger(
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/srv/ibeam/src/handlers/login_handler.py", line 67, in _wait_and_identify_trigger
+    trigger = WebDriverWait(driver, timeout).until(any_of(*expected_conditions))
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/venv/lib/python3.11/site-packages/selenium/webdriver/support/wait.py", line 95, in until
+    raise TimeoutException(message, screen, stacktrace)
+
+  <class 'selenium.common.exceptions.TimeoutException'> Message: 
+
+2025-10-26 23:46:33,316|I| Cleaning up the resources. Display: <pyvirtualdisplay.display.Display object at 0x7f0f193cf350> | Driver: <selenium.webdriver.chrome.webdriver.WebDriver (session="2c1f4d62723d379eb503655e266f95d1")>
+2025-10-26 23:46:33,375|I| Logging in failed
+2025-10-26 23:46:33,380|I| Starting maintenance with interval 60 seconds
+2025-10-26 23:47:33,382|I| Maintenance
+2025-10-26 23:47:33,558|I| Attempt number 2
+2025-10-26 23:47:33,665|I| Max request retries reached after 2 attempts. Consider increasing the retries by setting IBEAM_REQUEST_RETRIES environment variable
+2025-10-26 23:47:33,665|I| NO SESSION Status(running=True, session=False, connected=False, authenticated=False, competing=False, collision=False, session_id=None, server_name=None, server_version=None, expires=None)
+2025-10-26 23:47:33,665|I| Authentication strategy: "B"
+2025-10-26 23:47:33,665|I| No active sessions, logging in...
+2025-10-26 23:47:33,665|I| Loading auth webpage at https://localhost:5000/sso/Login?forwardTo=22&RL=1&ip2loc=on
+2025-10-26 23:47:40,469|I| Gateway auth webpage loaded
+2025-10-26 23:47:40,470|I| Login attempt number 1
+2025-10-26 23:47:40,690|I| Switching to paper mode
+2025-10-26 23:47:49,033|I| Submitting the form
+2025-10-26 23:48:04,378|E| Timeout reached when waiting for authentication. The website seems to not be loaded correctly. Consider increasing IBEAM_PAGE_LOAD_TIMEOUT. 
+Website URL: https://localhost:5000/sso/Login?forwardTo=22&RL=1&ip2loc=on 
+ 
+Exception:
+  File "/usr/local/lib/python3.11/threading.py", line 995, in _bootstrap
+    self._bootstrap_inner()
+  File "/usr/local/lib/python3.11/threading.py", line 1038, in _bootstrap_inner
+    self.run()
+  File "/usr/local/lib/python3.11/threading.py", line 975, in run
+    self._target(*self._args, **self._kwargs)
+  File "/usr/local/lib/python3.11/concurrent/futures/thread.py", line 83, in _worker
+    work_item.run()
+  File "/usr/local/lib/python3.11/concurrent/futures/thread.py", line 58, in run
+    result = self.fn(*self.args, **self.kwargs)
+  File "/opt/venv/lib/python3.11/site-packages/apscheduler/executors/base.py", line 125, in run_job
+    retval = job.func(*job.args, **job.kwargs)
+  File "/srv/ibeam/src/gateway_client.py", line 115, in _maintenance
+    success, shutdown, status = self.start_and_authenticate(request_retries=self.request_retries)
+  File "/srv/ibeam/src/gateway_client.py", line 62, in start_and_authenticate
+    success, shutdown, status = self.strategy_handler.try_authenticating(request_retries=request_retries)
+  File "/srv/ibeam/src/handlers/strategy_handler.py", line 85, in try_authenticating
+    return self._authentication_strategy_B(status, request_retries)
+  File "/srv/ibeam/src/handlers/strategy_handler.py", line 140, in _authentication_strategy_B
+    return self._log_in(status)
+  File "/srv/ibeam/src/handlers/strategy_handler.py", line 151, in _log_in
+    success, shutdown = self.login_handler.login()
+  File "/srv/ibeam/src/handlers/login_handler.py", line 504, in login
+    self.handle_timeout_exception(e, targets, driver, website_version, self.route_auth, self.base_url, self.outputs_dir)
+  File "/srv/ibeam/src/handlers/login_handler.py", line 485, in login
+    self.attempt(targets, wait_and_identify_trigger, driver)
+  File "/srv/ibeam/src/handlers/login_handler.py", line 406, in attempt
+    trigger, target = self.step_login(targets, wait_and_identify_trigger, driver, self.secrets_handler.account, self.secrets_handler.password, self.secrets_handler.key, self.presubmit_buffer)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/srv/ibeam/src/handlers/login_handler.py", line 196, in step_login
+    trigger, target = wait_and_identify_trigger(
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/srv/ibeam/src/handlers/login_handler.py", line 67, in _wait_and_identify_trigger
+    trigger = WebDriverWait(driver, timeout).until(any_of(*expected_conditions))
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/venv/lib/python3.11/site-packages/selenium/webdriver/support/wait.py", line 95, in until
+    raise TimeoutException(message, screen, stacktrace)
+
+  <class 'selenium.common.exceptions.TimeoutException'> Message: 
+
+2025-10-26 23:48:04,379|I| Cleaning up the resources. Display: <pyvirtualdisplay.display.Display object at 0x7f0f19439b90> | Driver: <selenium.webdriver.chrome.webdriver.WebDriver (session="2dc0279995b7bd666d1be961528f1054")>
+2025-10-26 23:48:04,441|I| Logging in failed
+2025-10-26 23:48:33,380|I| Maintenance
+2025-10-26 23:48:33,669|I| Attempt number 2
+2025-10-26 23:48:34,028|I| Max request retries reached after 2 attempts. Consider increasing the retries by setting IBEAM_REQUEST_RETRIES environment variable
+2025-10-26 23:48:34,029|I| NO SESSION Status(running=True, session=False, connected=False, authenticated=False, competing=False, collision=False, session_id=None, server_name=None, server_version=None, expires=None)
+2025-10-26 23:48:34,029|I| Authentication strategy: "B"
+2025-10-26 23:48:34,030|I| No active sessions, logging in...
+2025-10-26 23:48:34,030|I| Loading auth webpage at https://localhost:5000/sso/Login?forwardTo=22&RL=1&ip2loc=on
+2025-10-26 23:48:40,866|I| Gateway auth webpage loaded
+2025-10-26 23:48:40,866|I| Login attempt number 1
+2025-10-26 23:48:41,076|I| Switching to paper mode
+2025-10-26 23:48:49,487|I| Submitting the form
+2025-10-26 23:49:04,756|E| Timeout reached when waiting for authentication. The website seems to not be loaded correctly. Consider increasing IBEAM_PAGE_LOAD_TIMEOUT. 
+Website URL: https://localhost:5000/sso/Login?forwardTo=22&RL=1&ip2loc=on 
+ 
+Exception:
+  File "/usr/local/lib/python3.11/threading.py", line 995, in _bootstrap
+    self._bootstrap_inner()
+  File "/usr/local/lib/python3.11/threading.py", line 1038, in _bootstrap_inner
+    self.run()
+  File "/usr/local/lib/python3.11/threading.py", line 975, in run
+    self._target(*self._args, **self._kwargs)
+  File "/usr/local/lib/python3.11/concurrent/futures/thread.py", line 83, in _worker
+    work_item.run()
+  File "/usr/local/lib/python3.11/concurrent/futures/thread.py", line 58, in run
+    result = self.fn(*self.args, **self.kwargs)
+  File "/opt/venv/lib/python3.11/site-packages/apscheduler/executors/base.py", line 125, in run_job
+    retval = job.func(*job.args, **job.kwargs)
+  File "/srv/ibeam/src/gateway_client.py", line 115, in _maintenance
+    success, shutdown, status = self.start_and_authenticate(request_retries=self.request_retries)
+  File "/srv/ibeam/src/gateway_client.py", line 62, in start_and_authenticate
+    success, shutdown, status = self.strategy_handler.try_authenticating(request_retries=request_retries)
+  File "/srv/ibeam/src/handlers/strategy_handler.py", line 85, in try_authenticating
+    return self._authentication_strategy_B(status, request_retries)
+  File "/srv/ibeam/src/handlers/strategy_handler.py", line 140, in _authentication_strategy_B
+    return self._log_in(status)
+  File "/srv/ibeam/src/handlers/strategy_handler.py", line 151, in _log_in
+    success, shutdown = self.login_handler.login()
+  File "/srv/ibeam/src/handlers/login_handler.py", line 504, in login
+    self.handle_timeout_exception(e, targets, driver, website_version, self.route_auth, self.base_url, self.outputs_dir)
+  File "/srv/ibeam/src/handlers/login_handler.py", line 485, in login
+    self.attempt(targets, wait_and_identify_trigger, driver)
+  File "/srv/ibeam/src/handlers/login_handler.py", line 406, in attempt
+    trigger, target = self.step_login(targets, wait_and_identify_trigger, driver, self.secrets_handler.account, self.secrets_handler.password, self.secrets_handler.key, self.presubmit_buffer)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/srv/ibeam/src/handlers/login_handler.py", line 196, in step_login
+    trigger, target = wait_and_identify_trigger(
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/srv/ibeam/src/handlers/login_handler.py", line 67, in _wait_and_identify_trigger
+    trigger = WebDriverWait(driver, timeout).until(any_of(*expected_conditions))
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/venv/lib/python3.11/site-packages/selenium/webdriver/support/wait.py", line 95, in until
+    raise TimeoutException(message, screen, stacktrace)
+
+  <class 'selenium.common.exceptions.TimeoutException'> Message: 
+
+2025-10-26 23:49:04,757|I| Cleaning up the resources. Display: <pyvirtualdisplay.display.Display object at 0x7f0f1943bd90> | Driver: <selenium.webdriver.chrome.webdriver.WebDriver (session="caccd127d3313be4f047143688d89392")>
+2025-10-26 23:49:04,797|I| Logging in failed
+2025-10-26 23:49:33,380|I| Maintenance
+2025-10-26 23:49:33,472|I| Attempt number 2
+2025-10-26 23:49:33,682|I| Max request retries reached after 2 attempts. Consider increasing the retries by setting IBEAM_REQUEST_RETRIES environment variable
+2025-10-26 23:49:33,683|I| NO SESSION Status(running=True, session=False, connected=False, authenticated=False, competing=False, collision=False, session_id=None, server_name=None, server_version=None, expires=None)
+2025-10-26 23:49:33,683|I| Authentication strategy: "B"
+2025-10-26 23:49:33,684|I| No active sessions, logging in...
+2025-10-26 23:49:33,684|I| Loading auth webpage at https://localhost:5000/sso/Login?forwardTo=22&RL=1&ip2loc=on
+2025-10-26 23:49:40,465|I| Gateway auth webpage loaded
+2025-10-26 23:49:40,466|I| Login attempt number 1
+2025-10-26 23:49:40,685|I| Switching to paper mode
+2025-10-26 23:49:49,075|I| Submitting the form
+2025-10-26 23:50:04,531|E| Timeout reached when waiting for authentication. The website seems to not be loaded correctly. Consider increasing IBEAM_PAGE_LOAD_TIMEOUT. 
+Website URL: https://localhost:5000/sso/Login?forwardTo=22&RL=1&ip2loc=on 
+ 
+Exception:
+  File "/usr/local/lib/python3.11/threading.py", line 995, in _bootstrap
+    self._bootstrap_inner()
+  File "/usr/local/lib/python3.11/threading.py", line 1038, in _bootstrap_inner
+    self.run()
+  File "/usr/local/lib/python3.11/threading.py", line 975, in run
+    self._target(*self._args, **self._kwargs)
+  File "/usr/local/lib/python3.11/concurrent/futures/thread.py", line 83, in _worker
+    work_item.run()
+  File "/usr/local/lib/python3.11/concurrent/futures/thread.py", line 58, in run
+    result = self.fn(*self.args, **self.kwargs)
+  File "/opt/venv/lib/python3.11/site-packages/apscheduler/executors/base.py", line 125, in run_job
+    retval = job.func(*job.args, **job.kwargs)
+  File "/srv/ibeam/src/gateway_client.py", line 115, in _maintenance
+    success, shutdown, status = self.start_and_authenticate(request_retries=self.request_retries)
+  File "/srv/ibeam/src/gateway_client.py", line 62, in start_and_authenticate
+    success, shutdown, status = self.strategy_handler.try_authenticating(request_retries=request_retries)
+  File "/srv/ibeam/src/handlers/strategy_handler.py", line 85, in try_authenticating
+    return self._authentication_strategy_B(status, request_retries)
+  File "/srv/ibeam/src/handlers/strategy_handler.py", line 140, in _authentication_strategy_B
+    return self._log_in(status)
+  File "/srv/ibeam/src/handlers/strategy_handler.py", line 151, in _log_in
+    success, shutdown = self.login_handler.login()
+  File "/srv/ibeam/src/handlers/login_handler.py", line 504, in login
+    self.handle_timeout_exception(e, targets, driver, website_version, self.route_auth, self.base_url, self.outputs_dir)
+  File "/srv/ibeam/src/handlers/login_handler.py", line 485, in login
+    self.attempt(targets, wait_and_identify_trigger, driver)
+  File "/srv/ibeam/src/handlers/login_handler.py", line 406, in attempt
+    trigger, target = self.step_login(targets, wait_and_identify_trigger, driver, self.secrets_handler.account, self.secrets_handler.password, self.secrets_handler.key, self.presubmit_buffer)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/srv/ibeam/src/handlers/login_handler.py", line 196, in step_login
+    trigger, target = wait_and_identify_trigger(
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/srv/ibeam/src/handlers/login_handler.py", line 67, in _wait_and_identify_trigger
+    trigger = WebDriverWait(driver, timeout).until(any_of(*expected_conditions))
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/venv/lib/python3.11/site-packages/selenium/webdriver/support/wait.py", line 95, in until
+    raise TimeoutException(message, screen, stacktrace)
+
+  <class 'selenium.common.exceptions.TimeoutException'> Message: 
+
+2025-10-26 23:50:04,533|I| Cleaning up the resources. Display: <pyvirtualdisplay.display.Display object at 0x7f0f1945ff10> | Driver: <selenium.webdriver.chrome.webdriver.WebDriver (session="c32c836981bda38a842f008a6eb93c00")>
+2025-10-26 23:50:04,595|I| Logging in failed
+2025-10-26 23:50:33,380|I| Maintenance
+2025-10-26 23:50:33,466|I| Attempt number 2
+2025-10-26 23:50:33,555|I| Max request retries reached after 2 attempts. Consider increasing the retries by setting IBEAM_REQUEST_RETRIES environment variable
+2025-10-26 23:50:33,555|I| NO SESSION Status(running=True, session=False, connected=False, authenticated=False, competing=False, collision=False, session_id=None, server_name=None, server_version=None, expires=None)
+2025-10-26 23:50:33,555|I| Authentication strategy: "B"
+2025-10-26 23:50:33,555|I| No active sessions, logging in...
+2025-10-26 23:50:33,555|I| Loading auth webpage at https://localhost:5000/sso/Login?forwardTo=22&RL=1&ip2loc=on
+2025-10-26 23:50:40,620|I| Gateway auth webpage loaded
+2025-10-26 23:50:40,620|I| Login attempt number 1
+2025-10-26 23:50:40,876|I| Switching to paper mode
+2025-10-26 23:50:49,271|I| Submitting the form
+2025-10-26 23:51:04,684|E| Timeout reached when waiting for authentication. The website seems to not be loaded correctly. Consider increasing IBEAM_PAGE_LOAD_TIMEOUT. 
+Website URL: https://localhost:5000/sso/Login?forwardTo=22&RL=1&ip2loc=on 
+ 
+Exception:
+  File "/usr/local/lib/python3.11/threading.py", line 995, in _bootstrap
+    self._bootstrap_inner()
+  File "/usr/local/lib/python3.11/threading.py", line 1038, in _bootstrap_inner
+    self.run()
+  File "/usr/local/lib/python3.11/threading.py", line 975, in run
+    self._target(*self._args, **self._kwargs)
+  File "/usr/local/lib/python3.11/concurrent/futures/thread.py", line 83, in _worker
+    work_item.run()
+  File "/usr/local/lib/python3.11/concurrent/futures/thread.py", line 58, in run
+    result = self.fn(*self.args, **self.kwargs)
+  File "/opt/venv/lib/python3.11/site-packages/apscheduler/executors/base.py", line 125, in run_job
+    retval = job.func(*job.args, **job.kwargs)
+  File "/srv/ibeam/src/gateway_client.py", line 115, in _maintenance
+    success, shutdown, status = self.start_and_authenticate(request_retries=self.request_retries)
+  File "/srv/ibeam/src/gateway_client.py", line 62, in start_and_authenticate
+    success, shutdown, status = self.strategy_handler.try_authenticating(request_retries=request_retries)
+  File "/srv/ibeam/src/handlers/strategy_handler.py", line 85, in try_authenticating
+    return self._authentication_strategy_B(status, request_retries)
+  File "/srv/ibeam/src/handlers/strategy_handler.py", line 140, in _authentication_strategy_B
+    return self._log_in(status)
+  File "/srv/ibeam/src/handlers/strategy_handler.py", line 151, in _log_in
+    success, shutdown = self.login_handler.login()
+  File "/srv/ibeam/src/handlers/login_handler.py", line 504, in login
+    self.handle_timeout_exception(e, targets, driver, website_version, self.route_auth, self.base_url, self.outputs_dir)
+  File "/srv/ibeam/src/handlers/login_handler.py", line 485, in login
+    self.attempt(targets, wait_and_identify_trigger, driver)
+  File "/srv/ibeam/src/handlers/login_handler.py", line 406, in attempt
+    trigger, target = self.step_login(targets, wait_and_identify_trigger, driver, self.secrets_handler.account, self.secrets_handler.password, self.secrets_handler.key, self.presubmit_buffer)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/srv/ibeam/src/handlers/login_handler.py", line 196, in step_login
+    trigger, target = wait_and_identify_trigger(
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/srv/ibeam/src/handlers/login_handler.py", line 67, in _wait_and_identify_trigger
+    trigger = WebDriverWait(driver, timeout).until(any_of(*expected_conditions))
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/venv/lib/python3.11/site-packages/selenium/webdriver/support/wait.py", line 95, in until
+    raise TimeoutException(message, screen, stacktrace)
+
+  <class 'selenium.common.exceptions.TimeoutException'> Message: 
+
+2025-10-26 23:51:04,685|I| Cleaning up the resources. Display: <pyvirtualdisplay.display.Display object at 0x7f0f1945dc10> | Driver: <selenium.webdriver.chrome.webdriver.WebDriver (session="ef96c031c8725bfa26af36116a838247")>
+2025-10-26 23:51:04,731|I| Logging in failed
+root@Elcapitan14-ib-paper-1:~# 
