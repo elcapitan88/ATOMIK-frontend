@@ -727,21 +727,15 @@ const ActivateStrategyModal = ({
                       <option value="" style={{ background: '#1a1a1a' }}>Select Account</option>
                       {accounts.map(account => {
                         const broker = getBrokerInfo(account.broker_id);
-<<<<<<< HEAD
-                        return (
-                          <option key={account.account_id} value={account.account_id} style={{ background: '#1a1a1a' }}>
-                            {account.display_name} ({broker.name})
-=======
                         const accountLabel = account.nickname || account.display_name || account.account_id;
                         return (
                           <option key={account.account_id} value={account.account_id} style={{ background: '#1a1a1a' }}>
-                              {accountLabel} ({broker.name})
->>>>>>> 764e256c755a43a0ea4295b7a3acbe0b9903113a
-                            </option>
-                            );
+                            {accountLabel} ({broker.name})
+                          </option>
+                        );
                       })}
-                          </Select>
-                    { errors.account && <Text fontSize="xs" color="red.300" mt={1}>{errors.account}</Text> }
+                    </Select>
+                    {errors.account && <Text fontSize="xs" color="red.300" mt={1}>{errors.account}</Text>}
                   </Box>
 
                   <Box width="full">
@@ -867,7 +861,6 @@ const ActivateStrategyModal = ({
                         return (
                           <option key={account.account_id} value={account.account_id} style={{ background: '#1a1a1a' }}>
                               {accountLabel} ({broker.name})
->>>>>>> 764e256c755a43a0ea4295b7a3acbe0b9903113a
                             </option>
                             );
                       })}
@@ -953,16 +946,12 @@ const ActivateStrategyModal = ({
                                 )
                                 .map(account => {
                                   const broker = getBrokerInfo(account.broker_id);
-<<<<<<< HEAD
-                                  return (
-                                    <option key={account.account_id} value={account.account_id} style={{ background: '#1a1a1a' }}>
-                                      {account.display_name} ({broker.name})
-=======
                                   const accountLabel = account.nickname || account.display_name || account.account_id;
                                   return (
                                     <option key={account.account_id} value={account.account_id} style={{ background: '#1a1a1a' }}>
                                         {accountLabel} ({broker.name})
->>>>>>> 764e256c755a43a0ea4295b7a3acbe0b9903113a
+                                      </option>
+                                      );
                                       </option>
                                       );
                                 })}
