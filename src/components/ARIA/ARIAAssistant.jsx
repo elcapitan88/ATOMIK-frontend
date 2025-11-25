@@ -4,12 +4,22 @@ import { MessageSquare, Mic, MicOff, Send, X, Minimize2, Volume2 } from 'lucide-
 import { ariaApi } from '../../services/api/ariaApi';
 import './ARIAAssistant.css';
 
+// Example commands for users
+const EXAMPLE_COMMANDS = [
+  "What are my positions?",
+  "Show active strategies",
+  "How did I do today?",
+  "Turn on Purple Reign",
+  "What's my P&L?"
+];
+
 const ARIAAssistant = () => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [isHidden, setIsHidden] = useState(false);
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [showTips, setShowTips] = useState(true);
   const [chatHistory, setChatHistory] = useState([
     {
       id: 1,
@@ -80,8 +90,16 @@ const ARIAAssistant = () => {
     }
   };
 
+  const handleExampleClick = (example) => {
+    setInputText(example);
+    setShowTips(false);
+    handleSendMessage(example);
+  };
+
   const handleSendMessage = async (message = inputText) => {
     if (!message.trim()) return;
+
+    setShowTips(false); // Hide tips after first message
 
     const userMessage = {
       id: Date.now(),
@@ -241,8 +259,8 @@ const ARIAAssistant = () => {
         {/* Chat Messages */}
         <div className="aria-chat-container" ref={chatContainerRef}>
           {chatHistory.map((message) => (
-            <div 
-              key={message.id} 
+            <div
+              key={message.id}
               className={`aria-message ${message.type === 'user' ? 'user-message' : 'aria-message'} ${message.isError ? 'error-message' : ''}`}
             >
               <div className="message-content">
@@ -253,6 +271,24 @@ const ARIAAssistant = () => {
               </div>
             </div>
           ))}
+
+          {/* Quick Tips / Example Commands */}
+          {showTips && chatHistory.length <= 1 && (
+            <div className="aria-quick-tips">
+              <div className="quick-tips-label">Try asking:</div>
+              <div className="quick-tips-buttons">
+                {EXAMPLE_COMMANDS.map((cmd, idx) => (
+                  <button
+                    key={idx}
+                    className="quick-tip-button"
+                    onClick={() => handleExampleClick(cmd)}
+                  >
+                    {cmd}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Loading indicator */}
           {isLoading && (
@@ -326,103 +362,6 @@ const ARIAAssistant = () => {
       </div>
     </div>
   );
-};
-
-// Temporary simulation functions - replace with actual API calls
-const simulateARIAResponse = async (message) => {
-  await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 1000));
-  
-  const lowerMessage = message.toLowerCase();
-  
-  // Strategy control commands
-  if (lowerMessage.includes('turn on') || lowerMessage.includes('activate')) {
-    if (lowerMessage.includes('strategy')) {
-      return {
-        success: true,
-        requires_confirmation: true,
-        interaction_id: Date.now(),
-        response: {
-          text: "I'll activate your Purple Reign strategy. This will affect your automated trading. Confirm: Yes or No?",
-          type: "confirmation"
-        }
-      };
-    }
-  }
-
-  // Position queries
-  if (lowerMessage.includes('position') || lowerMessage.includes('aapl') || lowerMessage.includes('tesla')) {
-    return {
-      success: true,
-      requires_confirmation: false,
-      response: {
-        text: "📊 Your AAPL position: 100 shares, P&L: $205.00 (+1.36%). Entry price: $150.25, Current: $152.30",
-        type: "text"
-      }
-    };
-  }
-
-  // Performance queries
-  if (lowerMessage.includes('how did i do') || lowerMessage.includes('today') || lowerMessage.includes('performance')) {
-    return {
-      success: true,
-      requires_confirmation: false,
-      response: {
-        text: "📈 Today you're up $250.75 with 8 trades. Win rate: 62.5%. Your best trade: TSLA +$125.50",
-        type: "text"
-      }
-    };
-  }
-
-  // Strategy status
-  if (lowerMessage.includes('strategies') || lowerMessage.includes('active') || lowerMessage.includes('running')) {
-    return {
-      success: true,
-      requires_confirmation: false,
-      response: {
-        text: "🤖 You have 3 active strategies: Purple Reign (momentum), Bollinger Bounce (mean reversion), and Scalper Pro (scalping). All performing well today.",
-        type: "text"
-      }
-    };
-  }
-
-  // Default response
-  return {
-    success: true,
-    requires_confirmation: false,
-    response: {
-      text: "I understand you said: \"" + message + "\". I can help you with strategy control, position queries, performance analysis, and more. Try saying 'What strategies are active?' or 'What's my AAPL position?'",
-      type: "text"
-    }
-  };
-};
-
-const simulateConfirmationResponse = async (interactionId, confirmed) => {
-  await new Promise(resolve => setTimeout(resolve, 800));
-  
-  if (confirmed) {
-    return {
-      success: true,
-      confirmed: true,
-      response: {
-        text: "✅ Purple Reign strategy has been activated. I'll monitor its performance for you.",
-        type: "text"
-      },
-      action_result: {
-        action_type: "strategy_control",
-        strategy_name: "Purple Reign",
-        success: true
-      }
-    };
-  } else {
-    return {
-      success: true,
-      confirmed: false,
-      response: {
-        text: "Action cancelled. Is there anything else I can help you with?",
-        type: "text"
-      }
-    };
-  }
 };
 
 export default ARIAAssistant;

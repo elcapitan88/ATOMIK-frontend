@@ -232,6 +232,45 @@
   animation-delay: 0.4s;
 }
 
+/* Quick Tips / Example Commands */
+.aria-quick-tips {
+  background: rgba(0, 200, 224, 0.08);
+  border: 1px solid rgba(0, 200, 224, 0.2);
+  border-radius: 12px;
+  padding: 12px;
+  margin-bottom: 16px;
+}
+
+.quick-tips-label {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 12px;
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+
+.quick-tips-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.quick-tip-button {
+  padding: 6px 12px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 16px;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.quick-tip-button:hover {
+  background: rgba(0, 200, 224, 0.2);
+  border-color: rgba(0, 200, 224, 0.4);
+  color: white;
+}
+
 /* Confirmation UI */
 .aria-confirmation {
   background: rgba(255, 165, 0, 0.1);

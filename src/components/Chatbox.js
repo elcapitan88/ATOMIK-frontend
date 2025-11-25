@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Box, Flex, Input, Button, VStack, Text, IconButton, HStack } from '@chakra-ui/react';
-import { Send, X, MessageCircle } from 'lucide-react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { Box, Flex, Input, Button, VStack, Text, IconButton, HStack, Badge, Tooltip } from '@chakra-ui/react';
+import { Send, X, MessageCircle, Mic, Check, XCircle, Sparkles, HelpCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import axios from 'axios';
+import { ariaApi, ariaHelpers } from '../services/api/ariaApi';
 
 const TypeWriter = ({ parts, speed = 30 }) => {
   const [displayedParts, setDisplayedParts] = useState([]);
@@ -65,13 +65,24 @@ const Chatbox = ({ isOpen, onClose, strategyData }) => {
   const [messages, setMessages] = useState([]);
   const [inputMessage, setInputMessage] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [pendingConfirmation, setPendingConfirmation] = useState(null);
+  const [showExamples, setShowExamples] = useState(false);
   const messagesEndRef = useRef(null);
+
+  // Example commands for users
+  const exampleCommands = [
+    "What are my positions?",
+    "Show my active strategies",
+    "How did I do today?",
+    "Turn on Purple Reign strategy",
+    "What's my AAPL position?"
+  ];
 
   // Initialize with welcome message when opened
   useEffect(() => {
     if (isOpen && messages.length === 0) {
       const welcomeMessage = {
-        text: "Hello! I'm your AI strategy assistant. I can help you refine, optimize, or submit your trading strategy. What would you like to do?",
+        text: "Hello! I'm ARIA, your Atomik trading assistant. I can help you manage strategies, check positions, and answer questions about your trading. Try asking me something!",
         sender: 'ai',
         isNew: true
       };
@@ -85,23 +96,106 @@ const Chatbox = ({ isOpen, onClose, strategyData }) => {
 
   useEffect(scrollToBottom, [messages]);
 
-  const handleSendMessage = async () => {
-    if (inputMessage.trim() !== '') {
-      setMessages(prev => [...prev, { text: inputMessage, sender: 'user' }]);
-      setInputMessage('');
+  const handleSendMessage = async (messageOverride = null) => {
+    const messageToSend = messageOverride || inputMessage;
+
+    if (messageToSend.trim() !== '') {
+      setMessages(prev => [...prev, { text: messageToSend, sender: 'user' }]);
+      if (!messageOverride) setInputMessage('');
       setIsTyping(true);
-      
+      setShowExamples(false);
+
       try {
-        const response = await axios.post('http://localhost:8000/api/chat/', { message: inputMessage });
-        const cleanedResponse = response.data.response.replace(/(.)\1+/g, '$1');
-        setMessages(prev => [...prev, { text: cleanedResponse, sender: 'ai', isNew: true }]);
+        const response = await ariaApi.sendMessage(messageToSend, 'text');
+
+        if (response.success) {
+          const responseText = response.response?.text || response.response?.message || 'I processed your request.';
+
+          // Check if confirmation is required
+          if (ariaHelpers.requiresConfirmation(response)) {
+            setPendingConfirmation({
+              interactionId: response.interaction_id,
+              message: responseText
+            });
+            setMessages(prev => [...prev, {
+              text: responseText,
+              sender: 'ai',
+              isNew: true,
+              requiresConfirmation: true,
+              interactionId: response.interaction_id
+            }]);
+          } else {
+            setMessages(prev => [...prev, {
+              text: responseText,
+              sender: 'ai',
+              isNew: true,
+              actionResult: response.action_result
+            }]);
+          }
+        } else {
+          const errorMessage = response.error || "Sorry, I couldn't process your request.";
+          setMessages(prev => [...prev, { text: errorMessage, sender: 'ai', isNew: true, isError: true }]);
+        }
       } catch (error) {
-        console.error('Error sending message to Claude:', error);
-        setMessages(prev => [...prev, { text: "Sorry, I couldn't process your request.", sender: 'ai', isNew: true }]);
+        console.error('Error sending message to ARIA:', error);
+        setMessages(prev => [...prev, {
+          text: error.message || "Sorry, I couldn't connect to ARIA. Please try again.",
+          sender: 'ai',
+          isNew: true,
+          isError: true
+        }]);
       } finally {
         setIsTyping(false);
       }
     }
+  };
+
+  const handleConfirmation = async (confirmed) => {
+    if (!pendingConfirmation) return;
+
+    setIsTyping(true);
+
+    try {
+      const response = await ariaApi.sendConfirmation(pendingConfirmation.interactionId, confirmed);
+
+      // Add user's confirmation to messages
+      setMessages(prev => [...prev, {
+        text: confirmed ? "Yes, proceed" : "No, cancel",
+        sender: 'user'
+      }]);
+
+      if (response.success) {
+        const responseText = response.response?.text || (confirmed ? 'Action completed.' : 'Action cancelled.');
+        setMessages(prev => [...prev, {
+          text: responseText,
+          sender: 'ai',
+          isNew: true,
+          actionResult: response.action_result
+        }]);
+      } else {
+        setMessages(prev => [...prev, {
+          text: response.error || "There was an issue processing your confirmation.",
+          sender: 'ai',
+          isNew: true,
+          isError: true
+        }]);
+      }
+    } catch (error) {
+      console.error('Error sending confirmation:', error);
+      setMessages(prev => [...prev, {
+        text: "Sorry, I couldn't process your confirmation. Please try again.",
+        sender: 'ai',
+        isNew: true,
+        isError: true
+      }]);
+    } finally {
+      setPendingConfirmation(null);
+      setIsTyping(false);
+    }
+  };
+
+  const handleExampleClick = (example) => {
+    handleSendMessage(example);
   };
 
   const parseMessage = (text) => {
@@ -205,61 +299,163 @@ const Chatbox = ({ isOpen, onClose, strategyData }) => {
               align="center"
             >
               <HStack spacing={3}>
-                <MessageCircle size={20} color="#00C6E0" />
-                <Text fontSize="lg" fontWeight="semibold" color="white">
-                  AI Strategy Assistant
-                </Text>
+                <Box
+                  p={2}
+                  borderRadius="lg"
+                  bg="linear-gradient(135deg, rgba(0, 198, 224, 0.2), rgba(0, 153, 184, 0.2))"
+                >
+                  <Sparkles size={20} color="#00C6E0" />
+                </Box>
+                <VStack align="start" spacing={0}>
+                  <Text fontSize="lg" fontWeight="semibold" color="white">
+                    ARIA
+                  </Text>
+                  <Text fontSize="xs" color="whiteAlpha.600">
+                    Atomik Trading Assistant
+                  </Text>
+                </VStack>
               </HStack>
-              <IconButton
-                icon={<X size={20} />}
-                variant="ghost"
-                colorScheme="whiteAlpha"
-                size="sm"
-                onClick={onClose}
-                aria-label="Close chat"
-                _hover={{ bg: "rgba(255, 255, 255, 0.1)" }}
-              />
+              <HStack spacing={2}>
+                <Tooltip label="Show examples" placement="bottom">
+                  <IconButton
+                    icon={<HelpCircle size={18} />}
+                    variant="ghost"
+                    colorScheme="whiteAlpha"
+                    size="sm"
+                    onClick={() => setShowExamples(!showExamples)}
+                    aria-label="Show examples"
+                    _hover={{ bg: "rgba(255, 255, 255, 0.1)" }}
+                  />
+                </Tooltip>
+                <IconButton
+                  icon={<X size={20} />}
+                  variant="ghost"
+                  colorScheme="whiteAlpha"
+                  size="sm"
+                  onClick={onClose}
+                  aria-label="Close chat"
+                  _hover={{ bg: "rgba(255, 255, 255, 0.1)" }}
+                />
+              </HStack>
             </HStack>
 
+            {/* Example Commands Dropdown */}
+            <AnimatePresence>
+              {showExamples && (
+                <MotionBox
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  overflow="hidden"
+                  borderBottom="1px solid rgba(255, 255, 255, 0.1)"
+                >
+                  <Box p={3} bg="rgba(0, 198, 224, 0.05)">
+                    <Text fontSize="xs" color="whiteAlpha.700" mb={2}>Try these commands:</Text>
+                    <Flex flexWrap="wrap" gap={2}>
+                      {exampleCommands.map((cmd, idx) => (
+                        <Button
+                          key={idx}
+                          size="xs"
+                          variant="outline"
+                          borderColor="rgba(0, 198, 224, 0.3)"
+                          color="whiteAlpha.800"
+                          _hover={{ bg: 'rgba(0, 198, 224, 0.1)', borderColor: '#00C6E0' }}
+                          onClick={() => handleExampleClick(cmd)}
+                        >
+                          {cmd}
+                        </Button>
+                      ))}
+                    </Flex>
+                  </Box>
+                </MotionBox>
+              )}
+            </AnimatePresence>
+
             {/* Messages */}
-            <VStack 
-              flex={1} 
-              overflowY="auto" 
-              p={4} 
-              spacing={4} 
+            <VStack
+              flex={1}
+              overflowY="auto"
+              p={4}
+              spacing={4}
               alignItems="stretch"
-              h="calc(100vh - 140px)"
+              h="calc(100vh - 180px)"
             >
               {messages.map((message, index) => (
                 <Flex key={index} justifyContent={message.sender === 'user' ? 'flex-end' : 'flex-start'} w="full">
-                  <Box
-                    maxW="85%"
-                    p={3}
-                    borderRadius="lg"
-                    bg={message.sender === 'user' 
-                      ? 'linear-gradient(135deg, #00C6E0, #0099B8)' 
-                      : 'rgba(255, 255, 255, 0.1)'
-                    }
-                    color="white"
-                    boxShadow={message.sender === 'user' 
-                      ? '0 2px 10px rgba(0, 198, 224, 0.3)' 
-                      : '0 2px 10px rgba(0, 0, 0, 0.2)'
-                    }
-                  >
-                    {renderMessage(message)}
+                  <Box maxW="85%">
+                    <Box
+                      p={3}
+                      borderRadius="lg"
+                      bg={message.sender === 'user'
+                        ? 'linear-gradient(135deg, #00C6E0, #0099B8)'
+                        : message.isError
+                          ? 'rgba(255, 100, 100, 0.15)'
+                          : 'rgba(255, 255, 255, 0.1)'
+                      }
+                      color="white"
+                      boxShadow={message.sender === 'user'
+                        ? '0 2px 10px rgba(0, 198, 224, 0.3)'
+                        : '0 2px 10px rgba(0, 0, 0, 0.2)'
+                      }
+                      borderLeft={message.isError ? '3px solid #ff6464' : 'none'}
+                    >
+                      {renderMessage(message)}
+                    </Box>
+
+                    {/* Confirmation Buttons */}
+                    {message.requiresConfirmation && pendingConfirmation?.interactionId === message.interactionId && (
+                      <HStack mt={2} spacing={2}>
+                        <Button
+                          size="sm"
+                          leftIcon={<Check size={14} />}
+                          colorScheme="green"
+                          variant="solid"
+                          onClick={() => handleConfirmation(true)}
+                          isDisabled={isTyping}
+                        >
+                          Yes, proceed
+                        </Button>
+                        <Button
+                          size="sm"
+                          leftIcon={<XCircle size={14} />}
+                          colorScheme="red"
+                          variant="outline"
+                          onClick={() => handleConfirmation(false)}
+                          isDisabled={isTyping}
+                        >
+                          Cancel
+                        </Button>
+                      </HStack>
+                    )}
+
+                    {/* Action Result Badge */}
+                    {message.actionResult && message.actionResult.success && (
+                      <Badge mt={2} colorScheme="green" variant="subtle">
+                        Action completed
+                      </Badge>
+                    )}
                   </Box>
                 </Flex>
               ))}
               {isTyping && (
                 <Flex justifyContent="flex-start" w="full">
-                  <Box 
-                    maxW="85%" 
-                    p={3} 
-                    borderRadius="lg" 
-                    bg="rgba(255, 255, 255, 0.1)" 
+                  <Box
+                    maxW="85%"
+                    p={3}
+                    borderRadius="lg"
+                    bg="rgba(255, 255, 255, 0.1)"
                     color="white"
                   >
-                    <Text>AI is typing...</Text>
+                    <HStack spacing={2}>
+                      <Box
+                        as="span"
+                        display="inline-block"
+                        animation="pulse 1.5s ease-in-out infinite"
+                      >
+                        <Sparkles size={16} color="#00C6E0" />
+                      </Box>
+                      <Text color="whiteAlpha.800">ARIA is thinking...</Text>
+                    </HStack>
                   </Box>
                 </Flex>
               )}
