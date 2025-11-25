@@ -412,9 +412,20 @@ const ActivateStrategyModal = ({
   const buildStrategyData = () => {
     console.log('Building strategy data from formData:', formData);
 
+    // Extract ticker based on strategy type
+    const ticker = formData.selectedType === 'single'
+      ? formData.singleAccount.ticker
+      : formData.multipleAccount.ticker;
+
+    // Defensive validation - ensure ticker is not empty
+    if (!ticker || ticker.trim() === '') {
+      console.error('Ticker is empty or undefined:', { ticker, formData });
+      throw new Error('Ticker is required. Please select a valid ticker symbol.');
+    }
+
     const baseData = {
       strategy_type: formData.selectedType,
-      ticker: formData.selectedType === 'single' ? formData.singleAccount.ticker : formData.multipleAccount.ticker
+      ticker: ticker.trim()
     };
 
     // Determine strategy type and add appropriate fields
@@ -464,6 +475,18 @@ const ActivateStrategyModal = ({
 
   // Form submission handler - Simplified with unified API (no more delete+recreate!)
   const handleSubmit = async () => {
+    // Validate form before submission
+    if (!validateForm()) {
+      toast({
+        title: "Validation Error",
+        description: "Please fill in all required fields correctly",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+      return;
+    }
+
     try {
       if (strategy) {
         // UPDATE existing strategy
