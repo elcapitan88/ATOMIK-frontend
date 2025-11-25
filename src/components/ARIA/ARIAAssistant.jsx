@@ -99,6 +99,7 @@ const ARIAAssistant = () => {
   const handleSendMessage = async (message = inputText) => {
     if (!message.trim()) return;
 
+    console.log('[ARIA] User sending message:', message.trim());
     setShowTips(false); // Hide tips after first message
 
     const userMessage = {
@@ -114,8 +115,10 @@ const ARIAAssistant = () => {
 
     try {
       // Use real ARIA API
+      console.log('[ARIA] Calling ariaApi.sendMessage...');
       const response = await ariaApi.sendMessage(message, 'text');
-      
+      console.log('[ARIA] Response received:', response);
+
       const ariaMessage = {
         id: Date.now() + 1,
         type: 'aria',
@@ -126,9 +129,11 @@ const ARIAAssistant = () => {
         action_result: response.action_result
       };
 
+      console.log('[ARIA] Displaying response:', ariaMessage.message);
       setChatHistory(prev => [...prev, ariaMessage]);
 
       if (response.requires_confirmation) {
+        console.log('[ARIA] Confirmation required for interaction:', response.interaction_id);
         setPendingConfirmation({
           interaction_id: response.interaction_id,
           message: response.response.text
@@ -144,6 +149,7 @@ const ARIAAssistant = () => {
       }
 
     } catch (error) {
+      console.error('[ARIA] Error sending message:', error);
       const errorMessage = {
         id: Date.now() + 1,
         type: 'aria',
@@ -160,10 +166,14 @@ const ARIAAssistant = () => {
   const handleConfirmation = async (confirmed) => {
     if (!pendingConfirmation) return;
 
+    console.log('[ARIA] User confirmation:', confirmed ? 'YES' : 'NO', 'for interaction:', pendingConfirmation.interaction_id);
+
     try {
       // Use real ARIA API for confirmation
+      console.log('[ARIA] Calling ariaApi.sendConfirmation...');
       const response = await ariaApi.sendConfirmation(pendingConfirmation.interaction_id, confirmed);
-      
+      console.log('[ARIA] Confirmation response:', response);
+
       const ariaMessage = {
         id: Date.now(),
         type: 'aria',
@@ -176,6 +186,7 @@ const ARIAAssistant = () => {
       setPendingConfirmation(null);
 
     } catch (error) {
+      console.error('[ARIA] Confirmation error:', error);
       const errorMessage = {
         id: Date.now(),
         type: 'aria',

@@ -17,15 +17,20 @@ export const ariaApi = {
    * @returns {Promise} ARIA response
    */
   async sendMessage(message, inputType = 'text', context = null) {
+    console.log('[ARIA] API sendMessage called:', { message, inputType, context });
+    console.log('[ARIA] API endpoint:', `${ARIA_BASE_PATH}/chat`);
     try {
       const response = await axiosInstance.post(`${ARIA_BASE_PATH}/chat`, {
         message,
         input_type: inputType,
         context
       });
+      console.log('[ARIA] API sendMessage success:', response.data);
       return response.data;
     } catch (error) {
-      console.error('ARIA message error:', error);
+      console.error('[ARIA] API sendMessage error:', error);
+      console.error('[ARIA] API error response:', error.response?.data);
+      console.error('[ARIA] API error status:', error.response?.status);
       throw this.handleError(error);
     }
   },
@@ -36,14 +41,16 @@ export const ariaApi = {
    * @returns {Promise} ARIA response
    */
   async sendVoiceCommand(command) {
+    console.log('[ARIA] API sendVoiceCommand called:', command);
     try {
       const response = await axiosInstance.post(`${ARIA_BASE_PATH}/voice`, {
         message: command,
         input_type: 'voice'
       });
+      console.log('[ARIA] API sendVoiceCommand success:', response.data);
       return response.data;
     } catch (error) {
-      console.error('ARIA voice command error:', error);
+      console.error('[ARIA] API sendVoiceCommand error:', error);
       throw this.handleError(error);
     }
   },
@@ -55,14 +62,16 @@ export const ariaApi = {
    * @returns {Promise} ARIA response
    */
   async sendConfirmation(interactionId, confirmed) {
+    console.log('[ARIA] API sendConfirmation called:', { interactionId, confirmed });
     try {
       const response = await axiosInstance.post(`${ARIA_BASE_PATH}/confirm`, {
         interaction_id: interactionId,
         confirmed
       });
+      console.log('[ARIA] API sendConfirmation success:', response.data);
       return response.data;
     } catch (error) {
-      console.error('ARIA confirmation error:', error);
+      console.error('[ARIA] API sendConfirmation error:', error);
       throw this.handleError(error);
     }
   },
@@ -72,11 +81,13 @@ export const ariaApi = {
    * @returns {Promise} User's trading context
    */
   async getUserContext() {
+    console.log('[ARIA] API getUserContext called');
     try {
       const response = await axiosInstance.get(`${ARIA_BASE_PATH}/context`);
+      console.log('[ARIA] API getUserContext success');
       return response.data;
     } catch (error) {
-      console.error('ARIA context error:', error);
+      console.error('[ARIA] API getUserContext error:', error);
       throw this.handleError(error);
     }
   },
