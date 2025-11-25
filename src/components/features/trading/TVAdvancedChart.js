@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Box, Spinner, Text, VStack } from '@chakra-ui/react';
+import CustomDatafeed from './CustomDatafeed';
 
 const TVAdvancedChart = ({
     symbol = 'AMEX:SPY',
@@ -14,6 +15,7 @@ const TVAdvancedChart = ({
     fullscreen = false,
     autosize = true,
     studiesOverrides = {},
+    useCustomDatafeed = true, // Toggle between custom and demo datafeed
 }) => {
     const containerRef = useRef(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -23,15 +25,35 @@ const TVAdvancedChart = ({
         let widget = null;
 
         const initWidget = () => {
-            if (!window.TradingView || !window.Datafeeds) {
-                setError('TradingView library or Datafeeds not loaded');
+            if (!window.TradingView) {
+                setError('TradingView library not loaded');
                 setIsLoading(false);
                 return;
             }
 
+            // Check if we need Datafeeds for demo feed
+            if (!useCustomDatafeed && !window.Datafeeds) {
+                setError('Datafeeds library not loaded');
+                setIsLoading(false);
+                return;
+            }
+
+            // Choose datafeed based on configuration
+            let datafeed;
+            if (useCustomDatafeed) {
+                console.log('[TVAdvancedChart]: Using custom datafeed');
+                datafeed = new CustomDatafeed();
+            } else {
+                console.log('[TVAdvancedChart]: Using TradingView demo datafeed');
+                datafeed = new window.Datafeeds.UDFCompatibleDatafeed("https://demo-feed.tradingview.com", {
+                    maxResponseLength: 1000000,
+                    expectedOrder: 'latestFirst'
+                });
+            }
+
             const widgetOptions = {
                 symbol: symbol,
-                datafeed: new window.Datafeeds.UDFCompatibleDatafeed("https://demo_feed.tradingview.com"),
+                datafeed: datafeed,
                 interval: interval,
                 container: containerRef.current,
                 library_path: libraryPath,
@@ -46,6 +68,8 @@ const TVAdvancedChart = ({
                 autosize: autosize,
                 studies_overrides: studiesOverrides,
                 theme: theme,
+                // Add debug mode to see potential issues
+                debug: true,
             };
 
             try {
@@ -63,6 +87,12 @@ const TVAdvancedChart = ({
         };
 
         const loadDatafeedScript = (callback) => {
+            // Skip loading datafeed script if using custom datafeed
+            if (useCustomDatafeed) {
+                callback();
+                return;
+            }
+
             if (window.Datafeeds) {
                 callback();
                 return;
@@ -107,7 +137,7 @@ const TVAdvancedChart = ({
                 }
             }
         };
-    }, [symbol, interval, theme, libraryPath, chartsStorageUrl, chartsStorageApiVersion, clientId, userId, fullscreen, autosize, studiesOverrides]);
+    }, [symbol, interval, theme, libraryPath, chartsStorageUrl, chartsStorageApiVersion, clientId, userId, fullscreen, autosize, studiesOverrides, useCustomDatafeed]);
 
     return (
         <Box
