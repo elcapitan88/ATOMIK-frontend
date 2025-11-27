@@ -467,6 +467,130 @@
   }
 }
 
+/* Markdown Styling for ARIA Responses */
+.aria-md-p {
+  margin: 0 0 8px 0;
+}
+
+.aria-md-p:last-child {
+  margin-bottom: 0;
+}
+
+.aria-md-ul,
+.aria-md-ol {
+  margin: 8px 0;
+  padding-left: 20px;
+}
+
+.aria-md-li {
+  margin: 4px 0;
+  line-height: 1.5;
+}
+
+.aria-md-strong {
+  font-weight: 600;
+  color: #00C6E0;
+}
+
+.aria-md-em {
+  font-style: italic;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.aria-md-code-inline {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 12px;
+  color: #10B981;
+}
+
+.aria-md-pre {
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 8px;
+  padding: 12px;
+  margin: 8px 0;
+  overflow-x: auto;
+}
+
+.aria-md-code-block {
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.9);
+  line-height: 1.4;
+}
+
+.aria-md-h1 {
+  font-size: 18px;
+  font-weight: 700;
+  margin: 12px 0 8px 0;
+  color: #00C6E0;
+}
+
+.aria-md-h2 {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 10px 0 6px 0;
+  color: #00C6E0;
+}
+
+.aria-md-h3 {
+  font-size: 14px;
+  font-weight: 600;
+  margin: 8px 0 4px 0;
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.aria-md-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 8px 0;
+  font-size: 12px;
+}
+
+.aria-md-th {
+  background: rgba(0, 200, 224, 0.15);
+  padding: 8px 10px;
+  text-align: left;
+  font-weight: 600;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  color: #00C6E0;
+}
+
+.aria-md-td {
+  padding: 6px 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.aria-md-link {
+  color: #00C6E0;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.aria-md-link:hover {
+  color: #10B981;
+  text-decoration: underline;
+}
+
+/* Blockquote styling (for potential future use) */
+.message-content blockquote {
+  border-left: 3px solid #00C6E0;
+  margin: 8px 0;
+  padding: 4px 12px;
+  background: rgba(0, 200, 224, 0.08);
+  border-radius: 0 4px 4px 0;
+}
+
+/* Horizontal rule */
+.message-content hr {
+  border: none;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.2);
+  margin: 12px 0;
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
   .aria-container {

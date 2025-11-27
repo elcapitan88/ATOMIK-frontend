@@ -1,6 +1,8 @@
 // components/ARIA/ARIAAssistant.jsx
 import React, { useState, useRef, useEffect } from 'react';
 import { MessageSquare, Mic, MicOff, Send, X, Minimize2, Volume2 } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { ariaApi } from '../../services/api/ariaApi';
 import './ARIAAssistant.css';
 
@@ -275,7 +277,36 @@ const ARIAAssistant = () => {
               className={`aria-message ${message.type === 'user' ? 'user-message' : 'aria-message'} ${message.isError ? 'error-message' : ''}`}
             >
               <div className="message-content">
-                {message.message}
+                {message.type === 'aria' ? (
+                  <ReactMarkdown
+                    remarkPlugins={[remarkGfm]}
+                    components={{
+                      // Custom styling for markdown elements
+                      p: ({children}) => <p className="aria-md-p">{children}</p>,
+                      ul: ({children}) => <ul className="aria-md-ul">{children}</ul>,
+                      ol: ({children}) => <ol className="aria-md-ol">{children}</ol>,
+                      li: ({children}) => <li className="aria-md-li">{children}</li>,
+                      strong: ({children}) => <strong className="aria-md-strong">{children}</strong>,
+                      em: ({children}) => <em className="aria-md-em">{children}</em>,
+                      code: ({inline, children}) =>
+                        inline
+                          ? <code className="aria-md-code-inline">{children}</code>
+                          : <code className="aria-md-code-block">{children}</code>,
+                      pre: ({children}) => <pre className="aria-md-pre">{children}</pre>,
+                      h1: ({children}) => <h1 className="aria-md-h1">{children}</h1>,
+                      h2: ({children}) => <h2 className="aria-md-h2">{children}</h2>,
+                      h3: ({children}) => <h3 className="aria-md-h3">{children}</h3>,
+                      table: ({children}) => <table className="aria-md-table">{children}</table>,
+                      th: ({children}) => <th className="aria-md-th">{children}</th>,
+                      td: ({children}) => <td className="aria-md-td">{children}</td>,
+                      a: ({href, children}) => <a href={href} target="_blank" rel="noopener noreferrer" className="aria-md-link">{children}</a>,
+                    }}
+                  >
+                    {message.message}
+                  </ReactMarkdown>
+                ) : (
+                  message.message
+                )}
               </div>
               <div className="message-time">
                 {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
