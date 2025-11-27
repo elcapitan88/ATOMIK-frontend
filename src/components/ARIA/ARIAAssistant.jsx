@@ -140,13 +140,13 @@ const ARIAAssistant = () => {
         });
       }
 
-      // Text-to-speech for ARIA responses
-      if (response.response.text && 'speechSynthesis' in window) {
-        const utterance = new SpeechSynthesisUtterance(response.response.text);
-        utterance.rate = 0.9;
-        utterance.pitch = 1.1;
-        window.speechSynthesis.speak(utterance);
-      }
+      // Text-to-speech for ARIA responses (disabled for now)
+      // if (response.response.text && 'speechSynthesis' in window) {
+      //   const utterance = new SpeechSynthesisUtterance(response.response.text);
+      //   utterance.rate = 0.9;
+      //   utterance.pitch = 1.1;
+      //   window.speechSynthesis.speak(utterance);
+      // }
 
     } catch (error) {
       console.error('[ARIA] Error sending message:', error);
