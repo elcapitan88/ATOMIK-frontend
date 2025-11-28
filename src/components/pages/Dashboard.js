@@ -311,6 +311,7 @@ const DashboardContent = () => {
                             <PaymentStatusWarning />
 
                             <Flex
+                                className="dashboard-columns"
                                 position="relative"
                                 h="full"
                                 p={4}
@@ -320,9 +321,11 @@ const DashboardContent = () => {
                             >
                                 {/* Left Column */}
                                 <Flex
+                                    className="dashboard-left-column"
                                     flexDirection="column"
                                     flex={{ base: "1", lg: 7 }}
                                     width="100%"
+                                    minW="0"
                                 >
                                     {/* Chart container */}
                                     <Box
@@ -386,10 +389,13 @@ const DashboardContent = () => {
 
                                 {/* Right Column */}
                                 <Flex
+                                    className="dashboard-right-column"
                                     flex={{ base: "1", lg: 3 }}
                                     flexDirection="column"
                                     gap={4}
                                     mt={{ base: 4, lg: 0 }}
+                                    flexShrink={0.3}
+                                    minW={{ base: "auto", lg: "280px" }}
                                 >
                                     {/* Management Section */}
                                     <Box flex="0 0 auto">

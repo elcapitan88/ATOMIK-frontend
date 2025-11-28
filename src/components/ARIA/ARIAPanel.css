@@ -12,11 +12,39 @@
 body.aria-panel-open #dashboard-main-content,
 body.aria-panel-open .dashboard-main-content {
   margin-right: var(--aria-panel-width) !important;
+  overflow: hidden; /* Prevent scrollbar when panel is open */
 }
 
 body.aria-panel-with-sidebar #dashboard-main-content,
 body.aria-panel-with-sidebar .dashboard-main-content {
   margin-right: var(--aria-panel-width-with-sidebar) !important;
+}
+
+/* Dashboard columns - smooth transitions */
+.dashboard-columns {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Left column absorbs more of the width reduction */
+.dashboard-left-column {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  flex-shrink: 1 !important;
+}
+
+/* Right column shrinks less - maintains minimum usable width */
+.dashboard-right-column {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  flex-shrink: 0.3 !important;
+  min-width: 280px;
+}
+
+/* When ARIA panel is open, ensure proper flex behavior */
+body.aria-panel-open .dashboard-left-column {
+  flex-shrink: 1.5 !important;
+}
+
+body.aria-panel-open .dashboard-right-column {
+  flex-shrink: 0.2 !important;
 }
 
 /* Panel Container */
