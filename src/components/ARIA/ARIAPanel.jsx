@@ -70,21 +70,6 @@ const ARIAPanel = ({
     }
   };
 
-  // Backdrop with blur animation
-  const backdropVariants = {
-    hidden: { opacity: 0, backdropFilter: 'blur(0px)' },
-    visible: {
-      opacity: 1,
-      backdropFilter: 'blur(4px)',
-      transition: { duration: 0.3, ease: 'easeOut' }
-    },
-    exit: {
-      opacity: 0,
-      backdropFilter: 'blur(0px)',
-      transition: { duration: 0.2 }
-    }
-  };
-
   // Header elements animation
   const headerVariants = {
     hidden: { y: -20, opacity: 0 },
@@ -161,17 +146,7 @@ const ARIAPanel = ({
     <AnimatePresence mode="wait">
       {isOpen && (
         <>
-          {/* Backdrop with blur */}
-          <motion.div
-            className="aria-panel-backdrop"
-            variants={backdropVariants}
-            initial="hidden"
-            animate="visible"
-            exit="exit"
-            onClick={onClose}
-          />
-
-          {/* Panel */}
+          {/* Panel - No backdrop for push layout */}
           <motion.div
             className={`aria-panel ${showConversationList ? 'with-sidebar' : ''}`}
             variants={panelVariants}

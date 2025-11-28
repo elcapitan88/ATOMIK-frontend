@@ -333,11 +333,11 @@ export const useARIA = () => {
       setChatHistory(prev => [...prev, errorMessage]);
     } finally {
       setIsLoading(false);
-      // Clear flying message after animation completes (450ms animation + 50ms buffer)
+      // Clear flying message after animation completes (750ms animation + 100ms buffer)
       setTimeout(() => {
         setFlyingMessage(null);
         setFlyingMessagePosition(null);
-      }, 500);
+      }, 850);
     }
   };
 
@@ -417,6 +417,28 @@ export const useARIA = () => {
       chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
     }
   }, [chatHistory]);
+
+  // Toggle body class for push layout when panel opens/closes
+  useEffect(() => {
+    if (isPanelOpen) {
+      document.body.classList.add('aria-panel-open');
+      // Add class with sidebar width if conversation list is shown
+      if (showConversationList) {
+        document.body.classList.add('aria-panel-with-sidebar');
+      } else {
+        document.body.classList.remove('aria-panel-with-sidebar');
+      }
+    } else {
+      document.body.classList.remove('aria-panel-open');
+      document.body.classList.remove('aria-panel-with-sidebar');
+    }
+
+    // Cleanup on unmount
+    return () => {
+      document.body.classList.remove('aria-panel-open');
+      document.body.classList.remove('aria-panel-with-sidebar');
+    };
+  }, [isPanelOpen, showConversationList]);
 
   // Keyboard shortcuts
   useEffect(() => {

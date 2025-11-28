@@ -22,9 +22,10 @@ const ARIAFlyingMessage = ({
       y: 180
     };
     // Control point for bezier curve (creates the arc)
+    // More pronounced arc - goes higher for better visibility
     const control = {
-      x: start.x + (end.x - start.x) * 0.6,
-      y: Math.min(start.y, end.y) - 80 // Arc upward
+      x: start.x + (end.x - start.x) * 0.5, // Peak at midpoint
+      y: Math.min(start.y, end.y) - 150 // Higher arc (was 80)
     };
     return { start, end, control };
   }, [startPosition]);
@@ -41,6 +42,7 @@ const ARIAFlyingMessage = ({
   }, [isVisible]);
 
   // Main bubble animation with natural arc
+  // Slowed down to 750ms for better visibility
   const bubbleVariants = {
     initial: {
       x: positions.start.x,
@@ -51,11 +53,11 @@ const ARIAFlyingMessage = ({
     animate: {
       x: [positions.start.x, positions.control.x, positions.end.x],
       y: [positions.start.y, positions.control.y, positions.end.y],
-      scale: [1, 1.05, 0.75],
+      scale: [1, 1.1, 0.8],
       opacity: [1, 1, 0],
       transition: {
-        duration: 0.45,
-        ease: [0.32, 0, 0.67, 0], // Custom easing for natural throw
+        duration: 0.75, // Slower for better visibility (was 0.45)
+        ease: [0.25, 0.1, 0.25, 1], // Smoother easing curve
         times: [0, 0.5, 1],
       }
     },
@@ -70,9 +72,9 @@ const ARIAFlyingMessage = ({
   const rotationVariants = {
     initial: { rotate: 0 },
     animate: {
-      rotate: [0, -8, 5, 0],
+      rotate: [0, -12, 8, 0], // More pronounced rotation
       transition: {
-        duration: 0.45,
+        duration: 0.75,
         ease: "easeOut",
         times: [0, 0.3, 0.7, 1]
       }
@@ -85,10 +87,10 @@ const ARIAFlyingMessage = ({
     animate: (custom) => ({
       scale: [0, custom.scale, 0],
       opacity: [0, 1, 0],
-      x: [0, custom.offsetX],
-      y: [0, custom.offsetY],
+      x: [0, custom.offsetX * 1.5], // Wider spread
+      y: [0, custom.offsetY * 1.5],
       transition: {
-        duration: 0.4,
+        duration: 0.6, // Longer sparkle duration
         delay: custom.delay,
         ease: "easeOut"
       }
@@ -103,10 +105,10 @@ const ARIAFlyingMessage = ({
       originX: 1
     },
     animate: {
-      scaleX: [0, 1.5, 0],
-      opacity: [0, 0.6, 0],
+      scaleX: [0, 2, 0], // Longer trail
+      opacity: [0, 0.7, 0],
       transition: {
-        duration: 0.35,
+        duration: 0.5,
         ease: "easeOut"
       }
     }
@@ -114,12 +116,12 @@ const ARIAFlyingMessage = ({
 
   // Glow pulse effect
   const glowVariants = {
-    initial: { scale: 1, opacity: 0.5 },
+    initial: { scale: 1, opacity: 0.6 },
     animate: {
-      scale: [1, 1.3, 1],
-      opacity: [0.5, 0.8, 0],
+      scale: [1, 1.5, 1.2],
+      opacity: [0.6, 0.9, 0],
       transition: {
-        duration: 0.45,
+        duration: 0.75,
         ease: "easeOut"
       }
     }

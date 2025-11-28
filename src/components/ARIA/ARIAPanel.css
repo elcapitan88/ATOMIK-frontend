@@ -1,22 +1,40 @@
 /* ARIAPanel.css - Right-side sliding panel styles */
+/* Push Layout - Panel pushes dashboard content instead of overlaying */
 
 :root {
   --aria-panel-width: 380px;
   --aria-panel-width-with-sidebar: 600px;
   --aria-z-panel: 999;
-  --aria-z-backdrop: 998;
 }
 
-/* Backdrop */
-.aria-panel-backdrop {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.3);
-  z-index: var(--aria-z-backdrop);
-  backdrop-filter: blur(2px);
+/* ===== PUSH LAYOUT - Dashboard Content Adjustment ===== */
+/* When ARIA panel is open, shrink the main content area */
+body.aria-panel-open > div,
+body.aria-panel-open #root > div {
+  /* Apply margin to push content left when panel opens */
+  transition: margin-right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Target the main dashboard flex container */
+body.aria-panel-open .chakra-flex[style*="min-height: 100vh"],
+body.aria-panel-open [class*="css-"] > .chakra-box {
+  margin-right: var(--aria-panel-width) !important;
+  transition: margin-right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+body.aria-panel-with-sidebar .chakra-flex[style*="min-height: 100vh"],
+body.aria-panel-with-sidebar [class*="css-"] > .chakra-box {
+  margin-right: var(--aria-panel-width-with-sidebar) !important;
+}
+
+/* More specific targeting for Chakra dashboard structure */
+body.aria-panel-open > div > div > div.chakra-flex {
+  margin-right: var(--aria-panel-width);
+  transition: margin-right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+body.aria-panel-with-sidebar > div > div > div.chakra-flex {
+  margin-right: var(--aria-panel-width-with-sidebar);
 }
 
 /* Panel Container */
