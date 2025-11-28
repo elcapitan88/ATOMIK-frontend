@@ -470,6 +470,7 @@ const DashboardContent = () => {
                     transition="margin-right 0.3s cubic-bezier(0.4, 0, 0.2, 1)"
                 >
                     <Box
+                        className="dashboard-content-scroll"
                         h={{ base: "auto", md: "100vh" }}
                         w="full"
                         p={{ base: 3, md: 6 }}

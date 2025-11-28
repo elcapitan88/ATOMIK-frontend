@@ -12,12 +12,20 @@
 body.aria-panel-open #dashboard-main-content,
 body.aria-panel-open .dashboard-main-content {
   margin-right: var(--aria-panel-width) !important;
-  overflow: hidden; /* Prevent scrollbar when panel is open */
 }
 
 body.aria-panel-with-sidebar #dashboard-main-content,
 body.aria-panel-with-sidebar .dashboard-main-content {
   margin-right: var(--aria-panel-width-with-sidebar) !important;
+}
+
+/* Control the inner scroll container - prevent vertical scrollbar when panel is open */
+body.aria-panel-open .dashboard-content-scroll {
+  overflow: hidden !important;
+}
+
+body.aria-panel-with-sidebar .dashboard-content-scroll {
+  overflow: hidden !important;
 }
 
 /* Dashboard columns - smooth transitions */
