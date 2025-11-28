@@ -1,4 +1,4 @@
-/* ARIAPill.css - Top-center input pill styles */
+/* ARIAPill.css - Top-center input pill styles with enhanced animations */
 
 /* CSS Variables for ARIA */
 :root {
@@ -41,6 +41,7 @@
   border-radius: 50px;
 
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  overflow: hidden;
   transition: background var(--aria-transition-fast) var(--aria-easing),
               border-color var(--aria-transition-fast) var(--aria-easing);
 }
@@ -60,6 +61,28 @@
   border-color: rgba(0, 198, 224, 0.5);
 }
 
+.aria-pill-v2.sending {
+  background: rgba(0, 198, 224, 0.15);
+  border-color: rgba(0, 198, 224, 0.4);
+}
+
+/* Shimmer Effect */
+.aria-pill-shimmer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.1) 50%,
+    transparent 100%
+  );
+  pointer-events: none;
+  z-index: 1;
+}
+
 /* Icon */
 .aria-pill-icon {
   display: flex;
@@ -67,6 +90,8 @@
   justify-content: center;
   color: var(--aria-primary);
   flex-shrink: 0;
+  position: relative;
+  z-index: 2;
 }
 
 /* Input */
@@ -79,11 +104,18 @@
   font-size: 14px;
   font-weight: 500;
   min-width: 0;
+  position: relative;
+  z-index: 2;
 }
 
 .aria-pill-input::placeholder {
   color: var(--aria-text-dim);
   font-weight: 400;
+  transition: color var(--aria-transition-fast) var(--aria-easing);
+}
+
+.aria-pill-v2.focused .aria-pill-input::placeholder {
+  color: rgba(255, 255, 255, 0.4);
 }
 
 .aria-pill-input:disabled {
@@ -96,6 +128,8 @@
   align-items: center;
   gap: 6px;
   flex-shrink: 0;
+  position: relative;
+  z-index: 2;
 }
 
 /* Send Button */
@@ -110,17 +144,16 @@
   border-radius: 50%;
   color: white;
   cursor: pointer;
-  transition: transform var(--aria-transition-fast) var(--aria-easing),
-              box-shadow var(--aria-transition-fast) var(--aria-easing);
 }
 
-.aria-pill-send:hover {
-  transform: scale(1.1);
-  box-shadow: 0 4px 12px rgba(0, 198, 224, 0.4);
-}
-
-.aria-pill-send:active {
-  transform: scale(0.95);
+/* Loader */
+.aria-pill-loader {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  color: var(--aria-primary);
 }
 
 /* Voice Button */
@@ -135,21 +168,18 @@
   border-radius: 50%;
   color: var(--aria-text-dim);
   cursor: pointer;
-  transition: all var(--aria-transition-fast) var(--aria-easing);
+  transition: color var(--aria-transition-fast) var(--aria-easing);
 }
 
 .aria-pill-voice:hover {
-  background: rgba(255, 255, 255, 0.2);
   color: white;
 }
 
 .aria-pill-voice.listening {
-  background: rgba(239, 68, 68, 0.3);
   color: #FCA5A5;
-  animation: pulse-voice-btn 1.5s infinite;
 }
 
-/* Pulse Animation Ring */
+/* Pulse Animation Rings */
 .aria-pill-pulse {
   position: absolute;
   top: 0;
@@ -161,20 +191,37 @@
   pointer-events: none;
 }
 
-/* Animations */
-@keyframes pulse-voice-btn {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.6;
-  }
+/* Keyboard Shortcut Hint */
+.aria-pill-hint {
+  position: absolute;
+  right: 60px;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  opacity: 0.4;
+  pointer-events: none;
+  z-index: 2;
 }
 
-/* Panel Open State - Adjust position or style */
+.aria-pill-hint kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 4px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  font-size: 11px;
+  font-family: inherit;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+/* Panel Open State */
 .aria-pill-v2.panel-open {
-  /* Optionally shift left when panel is open */
-  /* transform: translateX(calc(-50% - 190px)); */
+  /* Slight shift when panel is open */
+  transform: translateX(calc(-50% - 100px));
 }
 
 /* Responsive Design */
@@ -186,6 +233,14 @@
     transform: none;
     max-width: none;
     min-width: auto;
+  }
+
+  .aria-pill-v2.panel-open {
+    transform: none;
+  }
+
+  .aria-pill-hint {
+    display: none;
   }
 }
 
@@ -200,7 +255,8 @@
   }
 
   .aria-pill-send,
-  .aria-pill-voice {
+  .aria-pill-voice,
+  .aria-pill-loader {
     width: 28px;
     height: 28px;
   }
@@ -215,5 +271,16 @@
   .aria-pill-v2:hover,
   .aria-pill-v2.focused {
     background: rgba(0, 0, 0, 0.5);
+  }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .aria-pill-v2,
+  .aria-pill-shimmer,
+  .aria-pill-icon,
+  .aria-pill-pulse {
+    animation: none !important;
+    transition: none !important;
   }
 }

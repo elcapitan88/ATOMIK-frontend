@@ -4,102 +4,153 @@
   --aria-z-flying: 1001;
 }
 
-.aria-flying-message {
+/* Container for flying animation */
+.aria-flying-container {
   position: fixed;
   z-index: var(--aria-z-flying);
   pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Main message bubble */
+.aria-flying-message {
+  position: relative;
   transform-origin: center center;
 }
 
 .aria-flying-message-content {
-  padding: 10px 16px;
-  background: linear-gradient(135deg, #00C6E0, #10B981);
+  padding: 12px 18px;
+  background: linear-gradient(135deg, #00C6E0 0%, #10B981 100%);
   color: white;
-  border-radius: 20px;
-  font-size: 13px;
+  border-radius: 24px;
+  font-size: 14px;
   font-weight: 500;
-  max-width: 200px;
+  max-width: 220px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   box-shadow:
-    0 4px 20px rgba(0, 198, 224, 0.4),
-    0 2px 8px rgba(0, 0, 0, 0.2);
+    0 8px 32px rgba(0, 198, 224, 0.5),
+    0 4px 12px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  letter-spacing: -0.01em;
 }
 
-/* Trail effect */
+/* Glow effect */
+.aria-flying-glow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 120%;
+  height: 120%;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(0, 198, 224, 0.4) 0%,
+    rgba(16, 185, 129, 0.2) 40%,
+    transparent 70%
+  );
+  border-radius: 50%;
+  filter: blur(8px);
+  z-index: -1;
+}
+
+/* Comet trail effect */
 .aria-flying-trail {
   position: absolute;
   top: 50%;
   right: 100%;
-  width: 60px;
-  height: 2px;
-  background: linear-gradient(90deg, transparent, rgba(0, 198, 224, 0.6));
-  transform-origin: right center;
-  border-radius: 1px;
-}
-
-/* Glow effect */
-.aria-flying-message::before {
-  content: '';
-  position: absolute;
-  top: -5px;
-  left: -5px;
-  right: -5px;
-  bottom: -5px;
-  background: radial-gradient(
-    ellipse at center,
-    rgba(0, 198, 224, 0.3) 0%,
-    transparent 70%
+  transform: translateY(-50%);
+  width: 80px;
+  height: 4px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(0, 198, 224, 0.3) 30%,
+    rgba(0, 198, 224, 0.7) 100%
   );
-  border-radius: 25px;
-  z-index: -1;
-  animation: glow-pulse 0.4s ease-out;
+  border-radius: 2px;
+  filter: blur(2px);
 }
 
-@keyframes glow-pulse {
-  0% {
-    transform: scale(0.8);
-    opacity: 0;
-  }
-  50% {
-    transform: scale(1.2);
-    opacity: 1;
-  }
-  100% {
-    transform: scale(1);
-    opacity: 0.5;
-  }
+/* Sparkle container */
+.aria-flying-sparkles {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
 }
 
-/* Particle effects (optional enhancement) */
-.aria-flying-message::after {
+/* Individual sparkle */
+.aria-flying-sparkle {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 6px;
+  height: 6px;
+  background: white;
+  border-radius: 50%;
+  box-shadow:
+    0 0 6px 2px rgba(255, 255, 255, 0.8),
+    0 0 12px 4px rgba(0, 198, 224, 0.6);
+}
+
+/* Sparkle star shape variant */
+.aria-flying-sparkle::before,
+.aria-flying-sparkle::after {
   content: '';
   position: absolute;
   top: 50%;
-  left: 0;
-  width: 4px;
-  height: 4px;
-  background: rgba(0, 198, 224, 0.8);
-  border-radius: 50%;
-  animation: particle-trail 0.4s ease-out;
-  box-shadow:
-    -10px 0 0 rgba(0, 198, 224, 0.6),
-    -20px 0 0 rgba(0, 198, 224, 0.4),
-    -30px 0 0 rgba(0, 198, 224, 0.2);
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: white;
+  border-radius: 1px;
 }
 
-@keyframes particle-trail {
-  0% {
-    opacity: 0;
-    transform: translateX(0);
+.aria-flying-sparkle::before {
+  width: 2px;
+  height: 10px;
+}
+
+.aria-flying-sparkle::after {
+  width: 10px;
+  height: 2px;
+}
+
+/* Motion blur effect for fast movement */
+@supports (filter: blur(1px)) {
+  .aria-flying-message-content {
+    will-change: transform, opacity;
   }
-  50% {
-    opacity: 1;
+}
+
+/* Reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+  .aria-flying-container,
+  .aria-flying-message,
+  .aria-flying-glow,
+  .aria-flying-trail,
+  .aria-flying-sparkle {
+    animation: none !important;
+    transition: none !important;
   }
-  100% {
-    opacity: 0;
-    transform: translateX(-20px);
+
+  .aria-flying-trail,
+  .aria-flying-sparkles,
+  .aria-flying-glow {
+    display: none;
+  }
+}
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+  .aria-flying-message-content {
+    border: 2px solid white;
   }
 }
