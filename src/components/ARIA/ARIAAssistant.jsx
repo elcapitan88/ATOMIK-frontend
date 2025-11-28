@@ -1,6 +1,6 @@
 // components/ARIA/ARIAAssistant.jsx
-import React, { useState, useRef, useEffect } from 'react';
-import { MessageSquare, Mic, MicOff, Send, X, Minimize2, Volume2 } from 'lucide-react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { MessageSquare, Mic, MicOff, Send, X, Minimize2, Volume2, Plus, ChevronLeft, MoreVertical } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { ariaApi } from '../../services/api/ariaApi';
@@ -15,6 +15,13 @@ const EXAMPLE_COMMANDS = [
   "What's my P&L?"
 ];
 
+const WELCOME_MESSAGE = {
+  id: 'welcome',
+  type: 'aria',
+  message: "Hi! I'm ARIA, your trading assistant. Ask me about your positions, strategies, or say commands like 'Turn on Purple Reign strategy'.",
+  timestamp: new Date()
+};
+
 const ARIAAssistant = () => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isListening, setIsListening] = useState(false);
@@ -22,19 +29,20 @@ const ARIAAssistant = () => {
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [showTips, setShowTips] = useState(true);
-  const [chatHistory, setChatHistory] = useState([
-    {
-      id: 1,
-      type: 'aria',
-      message: "Hi! I'm ARIA, your trading assistant. Ask me about your positions, strategies, or say commands like 'Turn on Purple Reign strategy'.",
-      timestamp: new Date()
-    }
-  ]);
+  const [chatHistory, setChatHistory] = useState([WELCOME_MESSAGE]);
   const [pendingConfirmation, setPendingConfirmation] = useState(null);
+
+  // Conversation state
+  const [conversations, setConversations] = useState([]);
+  const [activeConversationId, setActiveConversationId] = useState(null);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+  const [hasMoreMessages, setHasMoreMessages] = useState(false);
+  const [showConversationList, setShowConversationList] = useState(false);
 
   const inputRef = useRef(null);
   const chatContainerRef = useRef(null);
   const recognitionRef = useRef(null);
+  const scrollPositionRef = useRef(0);
 
   // Initialize speech recognition
   useEffect(() => {
@@ -62,6 +70,163 @@ const ARIAAssistant = () => {
       };
     }
   }, []);
+
+  // Load conversations on mount
+  useEffect(() => {
+    const loadConversations = async () => {
+      try {
+        console.log('[ARIA] Loading conversations...');
+        const response = await ariaApi.getConversations();
+        if (response.success && response.conversations) {
+          setConversations(response.conversations);
+          console.log('[ARIA] Loaded', response.conversations.length, 'conversations');
+
+          // Load most recent conversation if exists
+          if (response.conversations.length > 0) {
+            const mostRecent = response.conversations[0];
+            await loadConversation(mostRecent.id);
+          }
+        }
+      } catch (error) {
+        console.error('[ARIA] Failed to load conversations:', error);
+        // Continue with empty state - user can start a new conversation
+      }
+    };
+
+    loadConversations();
+  }, []);
+
+  // Load messages for a specific conversation
+  const loadConversation = async (conversationId) => {
+    if (!conversationId) return;
+
+    try {
+      setIsLoadingHistory(true);
+      console.log('[ARIA] Loading conversation:', conversationId);
+
+      const response = await ariaApi.getMessages(conversationId);
+      if (response.success) {
+        // Convert messages to chat history format
+        const messages = response.messages.map(msg => ({
+          id: msg.id,
+          type: msg.type === 'user' ? 'user' : 'aria',
+          message: msg.content,
+          timestamp: new Date(msg.timestamp)
+        }));
+
+        // Add welcome message at the beginning if no messages
+        if (messages.length === 0) {
+          setChatHistory([WELCOME_MESSAGE]);
+        } else {
+          setChatHistory(messages);
+        }
+
+        setActiveConversationId(conversationId);
+        setHasMoreMessages(response.has_more);
+        setShowTips(messages.length === 0);
+        console.log('[ARIA] Loaded', messages.length, 'messages');
+      }
+    } catch (error) {
+      console.error('[ARIA] Failed to load conversation:', error);
+    } finally {
+      setIsLoadingHistory(false);
+    }
+  };
+
+  // Load more messages when scrolling up
+  const loadMoreMessages = async () => {
+    if (!activeConversationId || isLoadingHistory || !hasMoreMessages) return;
+
+    try {
+      setIsLoadingHistory(true);
+      const oldestId = chatHistory[0]?.id;
+
+      // Skip if oldest is welcome message
+      if (oldestId === 'welcome') return;
+
+      console.log('[ARIA] Loading more messages before:', oldestId);
+      const response = await ariaApi.getMessages(activeConversationId, { before_id: oldestId });
+
+      if (response.success && response.messages.length > 0) {
+        const newMessages = response.messages.map(msg => ({
+          id: msg.id,
+          type: msg.type === 'user' ? 'user' : 'aria',
+          message: msg.content,
+          timestamp: new Date(msg.timestamp)
+        }));
+
+        setChatHistory(prev => [...newMessages, ...prev]);
+        setHasMoreMessages(response.has_more);
+        console.log('[ARIA] Loaded', newMessages.length, 'more messages');
+      }
+    } catch (error) {
+      console.error('[ARIA] Failed to load more messages:', error);
+    } finally {
+      setIsLoadingHistory(false);
+    }
+  };
+
+  // Handle scroll for pagination
+  const handleScroll = useCallback((e) => {
+    const { scrollTop } = e.target;
+    if (scrollTop === 0 && hasMoreMessages && !isLoadingHistory) {
+      // Save current scroll position before loading
+      scrollPositionRef.current = chatContainerRef.current?.scrollHeight || 0;
+      loadMoreMessages();
+    }
+  }, [hasMoreMessages, isLoadingHistory, activeConversationId, chatHistory]);
+
+  // Start a new conversation
+  const startNewConversation = async () => {
+    try {
+      console.log('[ARIA] Starting new conversation');
+      setChatHistory([WELCOME_MESSAGE]);
+      setActiveConversationId(null);
+      setHasMoreMessages(false);
+      setShowTips(true);
+      setPendingConfirmation(null);
+      setShowConversationList(false);
+
+      // Refresh conversations list
+      const response = await ariaApi.getConversations();
+      if (response.success) {
+        setConversations(response.conversations);
+      }
+    } catch (error) {
+      console.error('[ARIA] Failed to start new conversation:', error);
+    }
+  };
+
+  // Switch to a different conversation
+  const switchConversation = async (conversationId) => {
+    if (conversationId === activeConversationId) {
+      setShowConversationList(false);
+      return;
+    }
+
+    await loadConversation(conversationId);
+    setShowConversationList(false);
+    setPendingConfirmation(null);
+  };
+
+  // Delete a conversation
+  const deleteConversation = async (conversationId, e) => {
+    e.stopPropagation();
+    try {
+      console.log('[ARIA] Deleting conversation:', conversationId);
+      await ariaApi.deleteConversation(conversationId);
+
+      // Remove from local state
+      setConversations(prev => prev.filter(c => c.id !== conversationId));
+
+      // If deleted current conversation, start new one
+      if (conversationId === activeConversationId) {
+        await startNewConversation();
+      }
+    } catch (error) {
+      console.error('[ARIA] Failed to delete conversation:', error);
+    }
+  };
 
   // Auto-scroll chat
   useEffect(() => {
@@ -116,10 +281,22 @@ const ARIAAssistant = () => {
     setIsLoading(true);
 
     try {
-      // Use real ARIA API
-      console.log('[ARIA] Calling ariaApi.sendMessage...');
-      const response = await ariaApi.sendMessage(message, 'text');
+      // Use real ARIA API with conversation_id
+      console.log('[ARIA] Calling ariaApi.sendMessage with conversation:', activeConversationId);
+      const response = await ariaApi.sendMessage(message, 'text', null, activeConversationId);
       console.log('[ARIA] Response received:', response);
+
+      // Update conversation ID if a new one was created
+      if (response.conversation_id && response.conversation_id !== activeConversationId) {
+        console.log('[ARIA] New conversation created:', response.conversation_id);
+        setActiveConversationId(response.conversation_id);
+
+        // Refresh conversations list
+        const convResponse = await ariaApi.getConversations();
+        if (convResponse.success) {
+          setConversations(convResponse.conversations);
+        }
+      }
 
       const ariaMessage = {
         id: Date.now() + 1,
@@ -141,14 +318,6 @@ const ARIAAssistant = () => {
           message: response.response.text
         });
       }
-
-      // Text-to-speech for ARIA responses (disabled for now)
-      // if (response.response.text && 'speechSynthesis' in window) {
-      //   const utterance = new SpeechSynthesisUtterance(response.response.text);
-      //   utterance.rate = 0.9;
-      //   utterance.pitch = 1.1;
-      //   window.speechSynthesis.speak(utterance);
-      // }
 
     } catch (error) {
       console.error('[ARIA] Error sending message:', error);
@@ -244,33 +413,112 @@ const ARIAAssistant = () => {
   // Expanded state (full chat interface)
   return (
     <div className="aria-container">
-      <div className="aria-chat">
-        {/* Header */}
-        <div className="aria-header">
-          <div className="aria-header-left">
-            <MessageSquare size={20} />
-            <span>ARIA Assistant</span>
+      <div className={`aria-chat ${showConversationList ? 'with-sidebar' : ''}`}>
+        {/* Conversation Sidebar */}
+        {showConversationList && (
+          <div className="aria-conversation-sidebar">
+            <div className="aria-sidebar-header">
+              <span>Conversations</span>
+              <button
+                className="aria-new-chat-btn"
+                onClick={startNewConversation}
+                title="New Chat"
+              >
+                <Plus size={16} />
+              </button>
+            </div>
+            <div className="aria-conversation-list">
+              {conversations.length === 0 ? (
+                <div className="aria-no-conversations">
+                  No recent conversations
+                </div>
+              ) : (
+                conversations.map(conv => (
+                  <div
+                    key={conv.id}
+                    className={`aria-conversation-item ${conv.id === activeConversationId ? 'active' : ''}`}
+                    onClick={() => switchConversation(conv.id)}
+                  >
+                    <div className="conversation-title">
+                      {conv.title || 'New Conversation'}
+                    </div>
+                    <div className="conversation-preview">
+                      {conv.preview || 'No messages yet'}
+                    </div>
+                    <div className="conversation-meta">
+                      <span className="conversation-date">
+                        {new Date(conv.updated_at).toLocaleDateString()}
+                      </span>
+                      <button
+                        className="conversation-delete-btn"
+                        onClick={(e) => deleteConversation(conv.id, e)}
+                        title="Delete conversation"
+                      >
+                        <X size={12} />
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
           </div>
-          <div className="aria-header-actions">
-            <button 
-              className="aria-header-button"
-              onClick={() => setIsExpanded(false)}
-              title="Minimize"
-            >
-              <Minimize2 size={16} />
-            </button>
-            <button 
-              className="aria-header-button"
-              onClick={() => setIsHidden(true)}
-              title="Hide"
-            >
-              <X size={16} />
-            </button>
-          </div>
-        </div>
+        )}
 
-        {/* Chat Messages */}
-        <div className="aria-chat-container" ref={chatContainerRef}>
+        {/* Main Chat Area */}
+        <div className="aria-chat-main">
+          {/* Header */}
+          <div className="aria-header">
+            <div className="aria-header-left">
+              <button
+                className="aria-header-button"
+                onClick={() => setShowConversationList(!showConversationList)}
+                title={showConversationList ? 'Hide conversations' : 'Show conversations'}
+              >
+                {showConversationList ? <ChevronLeft size={16} /> : <MessageSquare size={16} />}
+              </button>
+              <span>ARIA Assistant</span>
+              {conversations.length > 0 && (
+                <span className="aria-conversation-count">({conversations.length})</span>
+              )}
+            </div>
+            <div className="aria-header-actions">
+              <button
+                className="aria-header-button"
+                onClick={startNewConversation}
+                title="New Chat"
+              >
+                <Plus size={16} />
+              </button>
+              <button
+                className="aria-header-button"
+                onClick={() => setIsExpanded(false)}
+                title="Minimize"
+              >
+                <Minimize2 size={16} />
+              </button>
+              <button
+                className="aria-header-button"
+                onClick={() => setIsHidden(true)}
+                title="Hide"
+              >
+                <X size={16} />
+              </button>
+            </div>
+          </div>
+
+          {/* Chat Messages */}
+          <div className="aria-chat-container" ref={chatContainerRef} onScroll={handleScroll}>
+            {/* Loading more indicator */}
+            {isLoadingHistory && (
+              <div className="aria-loading-more">
+                <div className="aria-typing">
+                  <span></span>
+                  <span></span>
+                  <span></span>
+                </div>
+                Loading history...
+              </div>
+            )}
           {chatHistory.map((message) => (
             <div
               key={message.id}
@@ -369,39 +617,42 @@ const ARIAAssistant = () => {
           )}
         </div>
 
-        {/* Input Area */}
-        <div className="aria-input-area">
-          <div className="aria-input-container">
-            <button
-              className={`aria-voice-btn ${isListening ? 'listening' : ''}`}
-              onClick={toggleVoiceRecognition}
-              title={isListening ? 'Stop listening' : 'Start voice input'}
-            >
-              {isListening ? <MicOff size={18} /> : <Mic size={18} />}
-            </button>
-            
-            <input
-              ref={inputRef}
-              type="text"
-              value={inputText}
-              onChange={(e) => setInputText(e.target.value)}
-              onKeyPress={handleKeyPress}
-              placeholder={isListening ? "Listening..." : "Type a message or use voice..."}
-              className="aria-text-input"
-              disabled={isLoading || isListening}
-            />
-            
-            <button
-              className="aria-send-btn"
-              onClick={() => handleSendMessage()}
-              disabled={!inputText.trim() || isLoading}
-              title="Send message"
-            >
-              <Send size={18} />
-            </button>
+          {/* Input Area */}
+          <div className="aria-input-area">
+            <div className="aria-input-container">
+              <button
+                className={`aria-voice-btn ${isListening ? 'listening' : ''}`}
+                onClick={toggleVoiceRecognition}
+                title={isListening ? 'Stop listening' : 'Start voice input'}
+              >
+                {isListening ? <MicOff size={18} /> : <Mic size={18} />}
+              </button>
+
+              <input
+                ref={inputRef}
+                type="text"
+                value={inputText}
+                onChange={(e) => setInputText(e.target.value)}
+                onKeyPress={handleKeyPress}
+                placeholder={isListening ? "Listening..." : "Type a message or use voice..."}
+                className="aria-text-input"
+                disabled={isLoading || isListening}
+              />
+
+              <button
+                className="aria-send-btn"
+                onClick={() => handleSendMessage()}
+                disabled={!inputText.trim() || isLoading}
+                title="Send message"
+              >
+                <Send size={18} />
+              </button>
+            </div>
           </div>
         </div>
+        {/* End aria-chat-main */}
       </div>
+      {/* End aria-chat */}
     </div>
   );
 };
