@@ -2,10 +2,13 @@
 // Top-center input pill for ARIA - Entry point for queries and voice
 // Enhanced with delightful animations
 
-import React, { useRef, useEffect, useState, forwardRef } from 'react';
+import React, { useRef, useEffect, useState, forwardRef, useMemo } from 'react';
 import { motion, AnimatePresence, useAnimation } from 'framer-motion';
 import { Sparkles, Mic, MicOff, Send, Loader2 } from 'lucide-react';
 import './ARIAPill.css';
+
+// Detect if user is on Mac
+const isMac = typeof navigator !== 'undefined' && /Mac|iPod|iPhone|iPad/.test(navigator.platform);
 
 const ARIAPill = forwardRef(({
   value,
@@ -293,7 +296,7 @@ const ARIAPill = forwardRef(({
             exit={{ opacity: 0, y: -5 }}
             transition={{ delay: 0.5 }}
           >
-            <kbd>⌘</kbd><kbd>K</kbd>
+            <kbd>{isMac ? '⌘' : 'Ctrl'}</kbd><kbd>K</kbd>
           </motion.div>
         )}
       </AnimatePresence>

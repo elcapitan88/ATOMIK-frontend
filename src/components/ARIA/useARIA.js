@@ -333,11 +333,11 @@ export const useARIA = () => {
       setChatHistory(prev => [...prev, errorMessage]);
     } finally {
       setIsLoading(false);
-      // Clear flying message after animation completes
+      // Clear flying message after animation completes (450ms animation + 50ms buffer)
       setTimeout(() => {
         setFlyingMessage(null);
         setFlyingMessagePosition(null);
-      }, 400);
+      }, 500);
     }
   };
 
