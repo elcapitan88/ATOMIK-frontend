@@ -1,0 +1,219 @@
+/* ARIAPill.css - Top-center input pill styles */
+
+/* CSS Variables for ARIA */
+:root {
+  --aria-primary: #00C6E0;
+  --aria-primary-dim: rgba(0, 198, 224, 0.2);
+  --aria-bg: rgba(20, 20, 20, 0.95);
+  --aria-bg-light: rgba(255, 255, 255, 0.1);
+  --aria-border: rgba(255, 255, 255, 0.15);
+  --aria-text: rgba(255, 255, 255, 0.95);
+  --aria-text-dim: rgba(255, 255, 255, 0.6);
+  --aria-pill-height: 48px;
+  --aria-pill-min-width: 280px;
+  --aria-pill-max-width: 400px;
+  --aria-transition-fast: 150ms;
+  --aria-transition-normal: 300ms;
+  --aria-easing: cubic-bezier(0.4, 0, 0.2, 1);
+  --aria-z-pill: 1000;
+}
+
+/* Pill Container */
+.aria-pill-v2 {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: var(--aria-z-pill);
+
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  min-width: var(--aria-pill-min-width);
+  max-width: var(--aria-pill-max-width);
+  height: var(--aria-pill-height);
+
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--aria-border);
+  border-radius: 50px;
+
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  transition: background var(--aria-transition-fast) var(--aria-easing),
+              border-color var(--aria-transition-fast) var(--aria-easing);
+}
+
+.aria-pill-v2:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+.aria-pill-v2.focused {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(0, 198, 224, 0.4);
+}
+
+.aria-pill-v2.voice-active {
+  background: var(--aria-primary-dim);
+  border-color: rgba(0, 198, 224, 0.5);
+}
+
+/* Icon */
+.aria-pill-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--aria-primary);
+  flex-shrink: 0;
+}
+
+/* Input */
+.aria-pill-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--aria-text);
+  font-size: 14px;
+  font-weight: 500;
+  min-width: 0;
+}
+
+.aria-pill-input::placeholder {
+  color: var(--aria-text-dim);
+  font-weight: 400;
+}
+
+.aria-pill-input:disabled {
+  opacity: 0.7;
+}
+
+/* Actions Container */
+.aria-pill-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+/* Send Button */
+.aria-pill-send {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: linear-gradient(135deg, #00C6E0, #10B981);
+  border-radius: 50%;
+  color: white;
+  cursor: pointer;
+  transition: transform var(--aria-transition-fast) var(--aria-easing),
+              box-shadow var(--aria-transition-fast) var(--aria-easing);
+}
+
+.aria-pill-send:hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(0, 198, 224, 0.4);
+}
+
+.aria-pill-send:active {
+  transform: scale(0.95);
+}
+
+/* Voice Button */
+.aria-pill-voice {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  color: var(--aria-text-dim);
+  cursor: pointer;
+  transition: all var(--aria-transition-fast) var(--aria-easing);
+}
+
+.aria-pill-voice:hover {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+}
+
+.aria-pill-voice.listening {
+  background: rgba(239, 68, 68, 0.3);
+  color: #FCA5A5;
+  animation: pulse-voice-btn 1.5s infinite;
+}
+
+/* Pulse Animation Ring */
+.aria-pill-pulse {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: 50px;
+  border: 2px solid var(--aria-primary);
+  pointer-events: none;
+}
+
+/* Animations */
+@keyframes pulse-voice-btn {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+/* Panel Open State - Adjust position or style */
+.aria-pill-v2.panel-open {
+  /* Optionally shift left when panel is open */
+  /* transform: translateX(calc(-50% - 190px)); */
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .aria-pill-v2 {
+    top: 10px;
+    left: 10px;
+    right: 10px;
+    transform: none;
+    max-width: none;
+    min-width: auto;
+  }
+}
+
+@media (max-width: 480px) {
+  .aria-pill-v2 {
+    padding: 8px 12px;
+    gap: 8px;
+  }
+
+  .aria-pill-input {
+    font-size: 13px;
+  }
+
+  .aria-pill-send,
+  .aria-pill-voice {
+    width: 28px;
+    height: 28px;
+  }
+}
+
+/* Dark mode optimizations */
+@media (prefers-color-scheme: dark) {
+  .aria-pill-v2 {
+    background: rgba(0, 0, 0, 0.4);
+  }
+
+  .aria-pill-v2:hover,
+  .aria-pill-v2.focused {
+    background: rgba(0, 0, 0, 0.5);
+  }
+}

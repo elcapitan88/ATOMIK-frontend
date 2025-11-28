@@ -1,851 +1,178 @@
-/* ARIA Assistant Glassmorphism Styles */
+/* ARIAAssistant.css - Main orchestrator styles (v2 - Pill + Panel) */
 
-.aria-container {
-  position: fixed;
-  top: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 1000;
+/* Container for the entire ARIA system */
+.aria-assistant-v2 {
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
 }
 
-/* Collapsed State - Floating Pill */
-.aria-pill {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px 20px;
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 50px;
-  box-shadow: 
-    0 8px 32px rgba(0, 0, 0, 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 0.2);
-  cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  user-select: none;
-  color: white;
-  font-weight: 500;
-  min-width: 200px;
-}
-
-.aria-pill:hover {
-  transform: scale(1.05);
-  box-shadow: 
-    0 12px 40px rgba(0, 200, 224, 0.3),
-    inset 0 1px 0 rgba(255, 255, 255, 0.3);
-  background: rgba(255, 255, 255, 0.15);
-}
-
-.aria-pill.voice-active {
-  animation: pulse-voice 1.5s infinite;
-  background: rgba(0, 200, 224, 0.2);
-  border-color: rgba(0, 200, 224, 0.4);
-}
-
-.aria-icon {
-  display: flex;
-  align-items: center;
-  color: #00C6E0;
-}
-
-.aria-prompt {
-  flex: 1;
-  font-size: 14px;
-  color: rgba(255, 255, 255, 0.9);
-}
-
-.aria-voice-button {
-  display: flex;
-  align-items: center;
-  padding: 6px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.1);
-  transition: all 0.2s ease;
-  color: rgba(255, 255, 255, 0.8);
-}
-
-.aria-voice-button:hover {
-  background: rgba(255, 255, 255, 0.2);
-  color: white;
-}
-
-/* Expanded State - Full Chat Interface */
-.aria-chat {
-  width: 420px;
-  max-height: 600px;
-  background: rgba(255, 255, 255, 0.08);
-  backdrop-filter: blur(24px);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 24px;
-  box-shadow: 
-    0 20px 40px rgba(0, 0, 0, 0.15),
-    inset 0 1px 0 rgba(255, 255, 255, 0.2);
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  color: white;
-}
-
-/* Header */
-.aria-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 16px 20px;
-  background: rgba(255, 255, 255, 0.05);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.aria-header-left {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  color: #00C6E0;
-  font-weight: 600;
-  font-size: 16px;
-}
-
-.aria-header-actions {
-  display: flex;
-  gap: 8px;
-}
-
-.aria-header-button {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  border: none;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
-  color: rgba(255, 255, 255, 0.7);
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.aria-header-button:hover {
-  background: rgba(255, 255, 255, 0.2);
-  color: white;
-}
-
-/* Chat Container */
-.aria-chat-container {
-  flex: 1;
-  overflow-y: auto;
-  padding: 16px;
-  max-height: 400px;
-  scroll-behavior: smooth;
-}
-
-.aria-chat-container::-webkit-scrollbar {
-  width: 6px;
-}
-
-.aria-chat-container::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 3px;
-}
-
-.aria-chat-container::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.3);
-  border-radius: 3px;
-}
-
-.aria-chat-container::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.5);
-}
-
-/* Messages */
-.aria-message {
-  margin-bottom: 16px;
-  display: flex;
-  flex-direction: column;
-}
-
-.user-message {
-  align-items: flex-end;
-}
-
-.user-message .message-content {
-  background: linear-gradient(135deg, #00C6E0, #10B981);
-  color: white;
-  margin-left: 40px;
-}
-
-.aria-message .message-content {
-  background: rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.95);
-  margin-right: 40px;
-}
-
-.message-content {
-  padding: 12px 16px;
-  border-radius: 16px;
-  font-size: 14px;
-  line-height: 1.5;
-  max-width: 80%;
-  word-wrap: break-word;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.message-time {
-  font-size: 11px;
-  color: rgba(255, 255, 255, 0.5);
-  margin-top: 4px;
-  margin-left: 16px;
-  margin-right: 16px;
-}
-
-.user-message .message-time {
-  text-align: right;
-}
-
-.error-message .message-content {
-  background: rgba(239, 68, 68, 0.2);
-  border: 1px solid rgba(239, 68, 68, 0.3);
-  color: #FCA5A5;
-}
-
-/* Typing Indicator */
-.aria-typing {
-  display: flex;
-  gap: 4px;
-  align-items: center;
-}
-
-.aria-typing span {
-  width: 6px;
-  height: 6px;
-  background: rgba(255, 255, 255, 0.6);
-  border-radius: 50%;
-  animation: typing-dot 1.4s infinite ease-in-out;
-}
-
-.aria-typing span:nth-child(2) {
-  animation-delay: 0.2s;
-}
-
-.aria-typing span:nth-child(3) {
-  animation-delay: 0.4s;
-}
-
-/* Quick Tips / Example Commands */
-.aria-quick-tips {
-  background: rgba(0, 200, 224, 0.08);
-  border: 1px solid rgba(0, 200, 224, 0.2);
-  border-radius: 12px;
-  padding: 12px;
-  margin-bottom: 16px;
-}
-
-.quick-tips-label {
-  color: rgba(255, 255, 255, 0.7);
-  font-size: 12px;
-  margin-bottom: 8px;
-  font-weight: 500;
-}
-
-.quick-tips-buttons {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.quick-tip-button {
-  padding: 6px 12px;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 16px;
-  color: rgba(255, 255, 255, 0.85);
-  font-size: 12px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.quick-tip-button:hover {
-  background: rgba(0, 200, 224, 0.2);
-  border-color: rgba(0, 200, 224, 0.4);
-  color: white;
-}
-
-/* Confirmation UI */
-.aria-confirmation {
-  background: rgba(255, 165, 0, 0.1);
-  border: 1px solid rgba(255, 165, 0, 0.3);
-  border-radius: 12px;
-  padding: 16px;
-  margin-bottom: 16px;
-}
-
-.confirmation-text {
-  color: #FED7AA;
-  font-size: 14px;
-  margin-bottom: 12px;
-  font-weight: 500;
-}
-
-.confirmation-buttons {
-  display: flex;
-  gap: 8px;
-}
-
-.confirm-button {
-  flex: 1;
-  padding: 8px 16px;
-  border: none;
-  border-radius: 8px;
-  font-size: 13px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.confirm-yes {
-  background: rgba(34, 197, 94, 0.2);
-  color: #86EFAC;
-  border: 1px solid rgba(34, 197, 94, 0.3);
-}
-
-.confirm-yes:hover {
-  background: rgba(34, 197, 94, 0.3);
-}
-
-.confirm-no {
-  background: rgba(239, 68, 68, 0.2);
-  color: #FCA5A5;
-  border: 1px solid rgba(239, 68, 68, 0.3);
-}
-
-.confirm-no:hover {
-  background: rgba(239, 68, 68, 0.3);
-}
-
-/* Input Area */
-.aria-input-area {
-  padding: 16px;
-  background: rgba(255, 255, 255, 0.05);
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.aria-input-container {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
-  padding: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-}
-
-.aria-voice-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 36px;
-  height: 36px;
-  border: none;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
-  color: rgba(255, 255, 255, 0.7);
-  cursor: pointer;
-  transition: all 0.2s ease;
-  flex-shrink: 0;
-}
-
-.aria-voice-btn:hover {
-  background: rgba(255, 255, 255, 0.2);
-  color: white;
-}
-
-.aria-voice-btn.listening {
-  background: rgba(239, 68, 68, 0.3);
-  color: #FCA5A5;
-  animation: pulse-recording 1s infinite;
-}
-
-.aria-text-input {
-  flex: 1;
-  background: transparent;
-  border: none;
-  color: white;
-  font-size: 14px;
-  padding: 8px 12px;
-  outline: none;
-  placeholder-color: rgba(255, 255, 255, 0.5);
-}
-
-.aria-text-input::placeholder {
-  color: rgba(255, 255, 255, 0.5);
-}
-
-.aria-send-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 36px;
-  height: 36px;
-  border: none;
-  background: linear-gradient(135deg, #00C6E0, #10B981);
-  border-radius: 8px;
-  color: white;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  flex-shrink: 0;
-}
-
-.aria-send-btn:hover:not(:disabled) {
-  transform: scale(1.05);
-  box-shadow: 0 4px 12px rgba(0, 200, 224, 0.3);
-}
-
-.aria-send-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  transform: none;
-}
-
-/* Restore Button (when hidden) */
+/* Restore Button (when ARIA is hidden) */
 .aria-restore-button {
   position: fixed;
-  bottom: 20px;
-  right: 20px;
-  width: 48px;
-  height: 48px;
+  bottom: 24px;
+  right: 24px;
+  width: 52px;
+  height: 52px;
   display: flex;
   align-items: center;
   justify-content: center;
   background: rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 50%;
   color: #00C6E0;
   cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow:
+    0 4px 20px rgba(0, 0, 0, 0.15),
+    0 0 0 0 rgba(0, 198, 224, 0);
   z-index: 1000;
 }
 
 .aria-restore-button:hover {
-  transform: scale(1.1);
   background: rgba(255, 255, 255, 0.15);
-  box-shadow: 0 6px 24px rgba(0, 200, 224, 0.3);
+  box-shadow:
+    0 6px 28px rgba(0, 198, 224, 0.3),
+    0 0 0 4px rgba(0, 198, 224, 0.1);
+  border-color: rgba(0, 198, 224, 0.4);
 }
 
-/* Animations */
-@keyframes pulse-voice {
-  0% { 
-    box-shadow: 0 0 0 0 rgba(0, 200, 224, 0.7);
-  }
-  70% { 
-    box-shadow: 0 0 0 15px rgba(0, 200, 224, 0);
-  }
-  100% { 
-    box-shadow: 0 0 0 0 rgba(0, 200, 224, 0);
-  }
+/* ==================== Legacy Support Classes ==================== */
+/* These are kept for backwards compatibility during transition */
+
+/* If you need to use the old modal-style, import ARIAAssistant.legacy.jsx */
+
+/* ==================== CSS Custom Properties (Design Tokens) ==================== */
+:root {
+  /* Colors */
+  --aria-primary: #00C6E0;
+  --aria-primary-rgb: 0, 198, 224;
+  --aria-primary-dim: rgba(0, 198, 224, 0.2);
+  --aria-secondary: #10B981;
+  --aria-bg: rgba(20, 20, 20, 0.95);
+  --aria-bg-light: rgba(255, 255, 255, 0.1);
+  --aria-border: rgba(255, 255, 255, 0.15);
+  --aria-text: rgba(255, 255, 255, 0.95);
+  --aria-text-dim: rgba(255, 255, 255, 0.6);
+  --aria-error: #EF4444;
+  --aria-success: #22C55E;
+  --aria-warning: #F59E0B;
+
+  /* Sizing */
+  --aria-pill-height: 48px;
+  --aria-pill-min-width: 280px;
+  --aria-pill-max-width: 400px;
+  --aria-panel-width: 380px;
+  --aria-panel-width-with-sidebar: 600px;
+  --aria-border-radius: 24px;
+  --aria-pill-radius: 50px;
+
+  /* Animation */
+  --aria-transition-fast: 150ms;
+  --aria-transition-normal: 300ms;
+  --aria-transition-slow: 500ms;
+  --aria-easing: cubic-bezier(0.4, 0, 0.2, 1);
+  --aria-easing-spring: cubic-bezier(0.22, 1, 0.36, 1);
+
+  /* Z-Index Layers */
+  --aria-z-pill: 1000;
+  --aria-z-panel: 999;
+  --aria-z-flying: 1001;
+  --aria-z-backdrop: 998;
+  --aria-z-restore: 1000;
+
+  /* Shadows */
+  --aria-shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.1);
+  --aria-shadow-md: 0 8px 32px rgba(0, 0, 0, 0.15);
+  --aria-shadow-lg: 0 20px 40px rgba(0, 0, 0, 0.2);
+  --aria-shadow-glow: 0 0 20px rgba(0, 198, 224, 0.3);
 }
 
-@keyframes pulse-recording {
-  0%, 100% { 
-    opacity: 1;
-  }
-  50% { 
-    opacity: 0.5;
-  }
+/* ==================== Utility Classes ==================== */
+
+.aria-glass {
+  background: var(--aria-bg-light);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--aria-border);
 }
 
-@keyframes typing-dot {
-  0%, 60%, 100% {
-    transform: translateY(0);
-    opacity: 0.4;
-  }
-  30% {
-    transform: translateY(-8px);
-    opacity: 1;
-  }
+.aria-gradient-text {
+  background: linear-gradient(135deg, var(--aria-primary), var(--aria-secondary));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
-/* Markdown Styling for ARIA Responses */
-.aria-md-p {
-  margin: 0 0 8px 0;
+.aria-gradient-bg {
+  background: linear-gradient(135deg, var(--aria-primary), var(--aria-secondary));
 }
 
-.aria-md-p:last-child {
-  margin-bottom: 0;
-}
+/* ==================== Responsive Breakpoints ==================== */
 
-.aria-md-ul,
-.aria-md-ol {
-  margin: 8px 0;
-  padding-left: 20px;
-}
-
-.aria-md-li {
-  margin: 4px 0;
-  line-height: 1.5;
-}
-
-.aria-md-strong {
-  font-weight: 600;
-  color: #00C6E0;
-}
-
-.aria-md-em {
-  font-style: italic;
-  color: rgba(255, 255, 255, 0.85);
-}
-
-.aria-md-code-inline {
-  background: rgba(255, 255, 255, 0.1);
-  padding: 2px 6px;
-  border-radius: 4px;
-  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-  font-size: 12px;
-  color: #10B981;
-}
-
-.aria-md-pre {
-  background: rgba(0, 0, 0, 0.3);
-  border-radius: 8px;
-  padding: 12px;
-  margin: 8px 0;
-  overflow-x: auto;
-}
-
-.aria-md-code-block {
-  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-  font-size: 12px;
-  color: rgba(255, 255, 255, 0.9);
-  line-height: 1.4;
-}
-
-.aria-md-h1 {
-  font-size: 18px;
-  font-weight: 700;
-  margin: 12px 0 8px 0;
-  color: #00C6E0;
-}
-
-.aria-md-h2 {
-  font-size: 16px;
-  font-weight: 600;
-  margin: 10px 0 6px 0;
-  color: #00C6E0;
-}
-
-.aria-md-h3 {
-  font-size: 14px;
-  font-weight: 600;
-  margin: 8px 0 4px 0;
-  color: rgba(255, 255, 255, 0.95);
-}
-
-.aria-md-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin: 8px 0;
-  font-size: 12px;
-}
-
-.aria-md-th {
-  background: rgba(0, 200, 224, 0.15);
-  padding: 8px 10px;
-  text-align: left;
-  font-weight: 600;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-  color: #00C6E0;
-}
-
-.aria-md-td {
-  padding: 6px 10px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.aria-md-link {
-  color: #00C6E0;
-  text-decoration: none;
-  transition: color 0.2s ease;
-}
-
-.aria-md-link:hover {
-  color: #10B981;
-  text-decoration: underline;
-}
-
-/* Blockquote styling (for potential future use) */
-.message-content blockquote {
-  border-left: 3px solid #00C6E0;
-  margin: 8px 0;
-  padding: 4px 12px;
-  background: rgba(0, 200, 224, 0.08);
-  border-radius: 0 4px 4px 0;
-}
-
-/* Horizontal rule */
-.message-content hr {
-  border: none;
-  height: 1px;
-  background: rgba(255, 255, 255, 0.2);
-  margin: 12px 0;
-}
-
-/* Responsive Design */
+/* Tablet */
 @media (max-width: 768px) {
-  .aria-container {
-    top: 10px;
-    left: 10px;
-    right: 10px;
-    transform: none;
+  :root {
+    --aria-panel-width: 100%;
+    --aria-panel-width-with-sidebar: 100%;
+    --aria-pill-max-width: calc(100vw - 40px);
   }
-  
-  .aria-chat {
-    width: 100%;
-    max-width: calc(100vw - 20px);
-    max-height: 70vh;
-  }
-  
-  .aria-pill {
-    min-width: auto;
-    width: 100%;
-    max-width: 300px;
+
+  .aria-restore-button {
+    bottom: 16px;
+    right: 16px;
+    width: 48px;
+    height: 48px;
   }
 }
 
-@media (max-height: 600px) {
-  .aria-chat {
-    max-height: 80vh;
-  }
-  
-  .aria-chat-container {
-    max-height: 200px;
-  }
-}
-
-/* Dark theme adjustments */
-@media (prefers-color-scheme: dark) {
-  .aria-pill,
-  .aria-chat {
-    background: rgba(0, 0, 0, 0.3);
-    border-color: rgba(255, 255, 255, 0.2);
-  }
-
-  .aria-header {
-    background: rgba(0, 0, 0, 0.2);
-  }
-
-  .aria-input-container {
-    background: rgba(0, 0, 0, 0.2);
-  }
-}
-
-/* ==================== Conversation Sidebar Styles ==================== */
-
-/* Expanded width when sidebar is shown */
-.aria-chat.with-sidebar {
-  width: 640px;
-  display: flex;
-  flex-direction: row;
-}
-
-/* Conversation Sidebar */
-.aria-conversation-sidebar {
-  width: 220px;
-  min-width: 220px;
-  background: rgba(0, 0, 0, 0.2);
-  border-right: 1px solid rgba(255, 255, 255, 0.1);
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-.aria-sidebar-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 12px 16px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  font-size: 13px;
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.8);
-}
-
-.aria-new-chat-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  border: none;
-  background: rgba(0, 200, 224, 0.2);
-  border-radius: 6px;
-  color: #00C6E0;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.aria-new-chat-btn:hover {
-  background: rgba(0, 200, 224, 0.3);
-  transform: scale(1.05);
-}
-
-.aria-conversation-list {
-  flex: 1;
-  overflow-y: auto;
-  padding: 8px;
-}
-
-.aria-conversation-list::-webkit-scrollbar {
-  width: 4px;
-}
-
-.aria-conversation-list::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.aria-conversation-list::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.2);
-  border-radius: 2px;
-}
-
-.aria-no-conversations {
-  padding: 16px;
-  text-align: center;
-  color: rgba(255, 255, 255, 0.5);
-  font-size: 12px;
-}
-
-.aria-conversation-item {
-  padding: 10px 12px;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  margin-bottom: 4px;
-  position: relative;
-}
-
-.aria-conversation-item:hover {
-  background: rgba(255, 255, 255, 0.08);
-}
-
-.aria-conversation-item.active {
-  background: rgba(0, 200, 224, 0.15);
-  border: 1px solid rgba(0, 200, 224, 0.3);
-}
-
-.conversation-title {
-  font-size: 13px;
-  font-weight: 500;
-  color: rgba(255, 255, 255, 0.9);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  margin-bottom: 4px;
-}
-
-.conversation-preview {
-  font-size: 11px;
-  color: rgba(255, 255, 255, 0.5);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  margin-bottom: 4px;
-}
-
-.conversation-meta {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.conversation-date {
-  font-size: 10px;
-  color: rgba(255, 255, 255, 0.4);
-}
-
-.conversation-delete-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 20px;
-  height: 20px;
-  border: none;
-  background: transparent;
-  color: rgba(255, 255, 255, 0.4);
-  cursor: pointer;
-  border-radius: 4px;
-  opacity: 0;
-  transition: all 0.2s ease;
-}
-
-.aria-conversation-item:hover .conversation-delete-btn {
-  opacity: 1;
-}
-
-.conversation-delete-btn:hover {
-  background: rgba(239, 68, 68, 0.2);
-  color: #FCA5A5;
-}
-
-/* Main Chat Area */
-.aria-chat-main {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-  overflow: hidden;
-}
-
-.aria-conversation-count {
-  font-size: 12px;
-  color: rgba(255, 255, 255, 0.5);
-  font-weight: 400;
-  margin-left: 4px;
-}
-
-/* Loading more indicator */
-.aria-loading-more {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 12px;
-  color: rgba(255, 255, 255, 0.6);
-  font-size: 12px;
-}
-
-/* Responsive adjustments for sidebar */
-@media (max-width: 768px) {
-  .aria-chat.with-sidebar {
-    width: 100%;
-    max-width: calc(100vw - 20px);
-  }
-
-  .aria-conversation-sidebar {
-    width: 180px;
-    min-width: 180px;
-  }
-
-  .conversation-title {
-    font-size: 12px;
-  }
-
-  .conversation-preview {
-    font-size: 10px;
-  }
-}
-
+/* Mobile */
 @media (max-width: 480px) {
-  .aria-chat.with-sidebar {
-    flex-direction: column;
+  :root {
+    --aria-pill-min-width: 200px;
   }
 
-  .aria-conversation-sidebar {
-    width: 100%;
-    min-width: 100%;
-    max-height: 200px;
-    border-right: none;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  .aria-restore-button {
+    bottom: 12px;
+    right: 12px;
+    width: 44px;
+    height: 44px;
+  }
+}
+
+/* ==================== Dark Mode Optimizations ==================== */
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --aria-bg: rgba(10, 10, 10, 0.98);
+    --aria-bg-light: rgba(255, 255, 255, 0.08);
+    --aria-border: rgba(255, 255, 255, 0.12);
+  }
+}
+
+/* ==================== Reduced Motion ==================== */
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --aria-transition-fast: 0ms;
+    --aria-transition-normal: 0ms;
+    --aria-transition-slow: 0ms;
+  }
+
+  .aria-restore-button,
+  .aria-pill-v2,
+  .aria-panel,
+  .aria-flying-message {
+    transition: none !important;
+    animation: none !important;
+  }
+}
+
+/* ==================== Print Styles ==================== */
+
+@media print {
+  .aria-assistant-v2,
+  .aria-restore-button {
+    display: none !important;
   }
 }

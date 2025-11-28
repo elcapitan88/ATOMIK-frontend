@@ -1,0 +1,105 @@
+/* ARIAFlyingMessage.css - Flying message animation styles */
+
+:root {
+  --aria-z-flying: 1001;
+}
+
+.aria-flying-message {
+  position: fixed;
+  z-index: var(--aria-z-flying);
+  pointer-events: none;
+  transform-origin: center center;
+}
+
+.aria-flying-message-content {
+  padding: 10px 16px;
+  background: linear-gradient(135deg, #00C6E0, #10B981);
+  color: white;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 500;
+  max-width: 200px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  box-shadow:
+    0 4px 20px rgba(0, 198, 224, 0.4),
+    0 2px 8px rgba(0, 0, 0, 0.2);
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+/* Trail effect */
+.aria-flying-trail {
+  position: absolute;
+  top: 50%;
+  right: 100%;
+  width: 60px;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(0, 198, 224, 0.6));
+  transform-origin: right center;
+  border-radius: 1px;
+}
+
+/* Glow effect */
+.aria-flying-message::before {
+  content: '';
+  position: absolute;
+  top: -5px;
+  left: -5px;
+  right: -5px;
+  bottom: -5px;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(0, 198, 224, 0.3) 0%,
+    transparent 70%
+  );
+  border-radius: 25px;
+  z-index: -1;
+  animation: glow-pulse 0.4s ease-out;
+}
+
+@keyframes glow-pulse {
+  0% {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 0.5;
+  }
+}
+
+/* Particle effects (optional enhancement) */
+.aria-flying-message::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 4px;
+  height: 4px;
+  background: rgba(0, 198, 224, 0.8);
+  border-radius: 50%;
+  animation: particle-trail 0.4s ease-out;
+  box-shadow:
+    -10px 0 0 rgba(0, 198, 224, 0.6),
+    -20px 0 0 rgba(0, 198, 224, 0.4),
+    -30px 0 0 rgba(0, 198, 224, 0.2);
+}
+
+@keyframes particle-trail {
+  0% {
+    opacity: 0;
+    transform: translateX(0);
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+}
