@@ -58,9 +58,9 @@ body.aria-panel-open .dashboard-right-column {
 /* Panel Container */
 .aria-panel {
   position: fixed;
-  top: 0;
+  top: 24px; /* Match dashboard padding */
   right: 0;
-  bottom: 0;
+  bottom: 24px; /* Match dashboard padding */
   width: var(--aria-panel-width);
   max-width: 90vw;
   z-index: var(--aria-z-panel);
@@ -68,7 +68,9 @@ body.aria-panel-open .dashboard-right-column {
   background: rgba(20, 20, 20, 0.95);
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
-  border-left: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-right: none; /* Flush with right edge */
+  border-radius: 16px 0 0 16px; /* Rounded left corners */
   box-shadow: -10px 0 40px rgba(0, 0, 0, 0.3);
 
   display: flex;
