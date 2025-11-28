@@ -28,10 +28,6 @@ export const useARIA = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isHidden, setIsHidden] = useState(false);
 
-  // Animation State
-  const [flyingMessage, setFlyingMessage] = useState(null);
-  const [flyingMessagePosition, setFlyingMessagePosition] = useState(null);
-
   // Chat State
   const [conversations, setConversations] = useState([]);
   const [activeConversationId, setActiveConversationId] = useState(null);
@@ -252,16 +248,6 @@ export const useARIA = () => {
     console.log('[ARIA] User sending message:', trimmedMessage, 'from:', source);
     setShowTips(false);
 
-    // Get pill position for flying animation (only if from pill and panel not open)
-    if (source === 'pill' && !isPanelOpen && pillRef.current) {
-      const rect = pillRef.current.getBoundingClientRect();
-      setFlyingMessage(trimmedMessage);
-      setFlyingMessagePosition({
-        x: rect.left + rect.width / 2,
-        y: rect.top + rect.height / 2
-      });
-    }
-
     // Clear inputs
     if (source === 'pill') {
       setPillInput('');
@@ -333,11 +319,6 @@ export const useARIA = () => {
       setChatHistory(prev => [...prev, errorMessage]);
     } finally {
       setIsLoading(false);
-      // Clear flying message after animation completes (750ms animation + 100ms buffer)
-      setTimeout(() => {
-        setFlyingMessage(null);
-        setFlyingMessagePosition(null);
-      }, 850);
     }
   };
 
@@ -481,10 +462,6 @@ export const useARIA = () => {
     isListening,
     isLoading,
     isHidden,
-
-    // Animation State
-    flyingMessage,
-    flyingMessagePosition,
 
     // Chat State
     conversations,

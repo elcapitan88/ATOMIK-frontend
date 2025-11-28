@@ -8,33 +8,15 @@
 }
 
 /* ===== PUSH LAYOUT - Dashboard Content Adjustment ===== */
-/* When ARIA panel is open, shrink the main content area */
-body.aria-panel-open > div,
-body.aria-panel-open #root > div {
-  /* Apply margin to push content left when panel opens */
-  transition: margin-right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* Target the main dashboard flex container */
-body.aria-panel-open .chakra-flex[style*="min-height: 100vh"],
-body.aria-panel-open [class*="css-"] > .chakra-box {
+/* Target the dashboard main content area directly by class/id */
+body.aria-panel-open #dashboard-main-content,
+body.aria-panel-open .dashboard-main-content {
   margin-right: var(--aria-panel-width) !important;
-  transition: margin-right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-body.aria-panel-with-sidebar .chakra-flex[style*="min-height: 100vh"],
-body.aria-panel-with-sidebar [class*="css-"] > .chakra-box {
+body.aria-panel-with-sidebar #dashboard-main-content,
+body.aria-panel-with-sidebar .dashboard-main-content {
   margin-right: var(--aria-panel-width-with-sidebar) !important;
-}
-
-/* More specific targeting for Chakra dashboard structure */
-body.aria-panel-open > div > div > div.chakra-flex {
-  margin-right: var(--aria-panel-width);
-  transition: margin-right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-body.aria-panel-with-sidebar > div > div > div.chakra-flex {
-  margin-right: var(--aria-panel-width-with-sidebar);
 }
 
 /* Panel Container */

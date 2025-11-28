@@ -3,13 +3,12 @@
 // Redesigned for non-intrusive, delightful UX
 
 import React from 'react';
-import { MessageSquare } from 'lucide-react';
+import { MessageSquare, Sparkles, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 // Components
 import ARIAPill from './ARIAPill';
 import ARIAPanel from './ARIAPanel';
-import ARIAFlyingMessage from './ARIAFlyingMessage';
 
 // Hook
 import useARIA, { EXAMPLE_COMMANDS } from './useARIA';
@@ -25,10 +24,6 @@ const ARIAAssistant = () => {
     isListening,
     isLoading,
     isHidden,
-
-    // Animation State
-    flyingMessage,
-    flyingMessagePosition,
 
     // Chat State
     conversations,
@@ -56,7 +51,9 @@ const ARIAAssistant = () => {
     // Actions
     focusPill,
     blurPill,
+    openPanel,
     closePanel,
+    togglePanel,
     toggleVoiceRecognition,
     handleSendMessage,
     handleConfirmation,
@@ -101,13 +98,23 @@ const ARIAAssistant = () => {
         disabled={isLoading}
       />
 
-      {/* Flying Message Animation */}
-      <ARIAFlyingMessage
-        message={flyingMessage}
-        startPosition={flyingMessagePosition}
-        isVisible={!!flyingMessage}
-        onAnimationComplete={() => {}}
-      />
+      {/* Floating Toggle Button - Right side */}
+      <AnimatePresence>
+        {!isPanelOpen && (
+          <motion.button
+            className="aria-toggle-button"
+            onClick={openPanel}
+            initial={{ scale: 0, opacity: 0, x: 20 }}
+            animate={{ scale: 1, opacity: 1, x: 0 }}
+            exit={{ scale: 0, opacity: 0, x: 20 }}
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.95 }}
+            title="Open ARIA Chat"
+          >
+            <Sparkles size={22} />
+          </motion.button>
+        )}
+      </AnimatePresence>
 
       {/* Panel - Slides from right */}
       <ARIAPanel

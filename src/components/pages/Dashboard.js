@@ -455,10 +455,13 @@ const DashboardContent = () => {
                 </ErrorBoundary>
 
                 <Box
+                    id="dashboard-main-content"
+                    className="dashboard-main-content"
                     flexGrow={1}
                     ml={{ base: 0, md: 16 }}
                     mt={{ base: 0, md: 0 }}
                     mb={{ base: "70px", md: 0 }} // Add bottom margin for mobile to account for bottom nav
+                    transition="margin-right 0.3s cubic-bezier(0.4, 0, 0.2, 1)"
                 >
                     <Box
                         h={{ base: "auto", md: "100vh" }}

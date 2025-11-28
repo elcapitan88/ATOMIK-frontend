@@ -37,6 +37,43 @@
   border-color: rgba(0, 198, 224, 0.4);
 }
 
+/* Toggle Button (opens ARIA panel) */
+.aria-toggle-button {
+  position: fixed;
+  top: 50%;
+  right: 20px;
+  transform: translateY(-50%);
+  width: 52px;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, rgba(0, 198, 224, 0.2), rgba(16, 185, 129, 0.2));
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(0, 198, 224, 0.3);
+  border-radius: 50%;
+  color: #00C6E0;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow:
+    0 4px 20px rgba(0, 198, 224, 0.2),
+    0 0 0 0 rgba(0, 198, 224, 0);
+  z-index: 998;
+}
+
+.aria-toggle-button:hover {
+  background: linear-gradient(135deg, rgba(0, 198, 224, 0.3), rgba(16, 185, 129, 0.3));
+  box-shadow:
+    0 6px 28px rgba(0, 198, 224, 0.4),
+    0 0 0 4px rgba(0, 198, 224, 0.15);
+  border-color: rgba(0, 198, 224, 0.5);
+}
+
+.aria-toggle-button:active {
+  transform: translateY(-50%) scale(0.95);
+}
+
 /* ==================== Legacy Support Classes ==================== */
 /* These are kept for backwards compatibility during transition */
 
