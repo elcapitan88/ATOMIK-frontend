@@ -66,8 +66,8 @@ import {
   DollarSign,
   Calendar
 } from 'lucide-react';
-import { motion } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import axiosInstance from '@/services/axiosConfig';
 import { ProfilePicture } from '@/components/common/ProfilePicture';
@@ -99,17 +99,34 @@ const XIcon = ({ size = 20, ...props }) => (
 
 // Custom TikTok icon component
 const TikTokIcon = ({ size = 20, ...props }) => (
-  <Box 
-    as="svg" 
-    viewBox="0 0 24 24" 
-    width={size} 
-    height={size} 
+  <Box
+    as="svg"
+    viewBox="0 0 24 24"
+    width={size}
+    height={size}
     color="currentColor"
     fill="currentColor"
     {...props}
   >
     <path
       d="M16.6 5.82s.51.5 0 0A4.278 4.278 0 0 1 15.54 3h-3.09v12.4a2.592 2.592 0 0 1-2.59 2.5c-1.42 0-2.6-1.16-2.6-2.6c0-1.72 1.66-3.01 3.37-2.48V9.66c-3.45-.46-6.47 2.22-6.47 5.64c0 3.33 2.76 5.7 5.69 5.7c3.14 0 5.69-2.55 5.69-5.7V9.01a7.35 7.35 0 0 0 4.3 1.38V7.3s-1.88.09-3.24-1.48z"
+    />
+  </Box>
+);
+
+// Custom Discord icon component
+const DiscordIcon = ({ size = 20, ...props }) => (
+  <Box
+    as="svg"
+    viewBox="0 0 24 24"
+    width={size}
+    height={size}
+    color="currentColor"
+    fill="currentColor"
+    {...props}
+  >
+    <path
+      d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"
     />
   </Box>
 );
@@ -1212,6 +1229,91 @@ const SettingsPage = () => {
   const { isOpen: isAffiliateModalOpen, onOpen: onAffiliateModalOpen, onClose: onAffiliateModalClose } = useDisclosure();
   const { isAffiliate, becomeAffiliate, isBecomingAffiliate } = useAffiliate();
 
+  // Discord integration state
+  const location = useLocation();
+  const [discordLink, setDiscordLink] = useState(null);
+  const [isLoadingDiscord, setIsLoadingDiscord] = useState(true);
+  const [isConnectingDiscord, setIsConnectingDiscord] = useState(false);
+  const [isDisconnectingDiscord, setIsDisconnectingDiscord] = useState(false);
+  const [showDiscordSuccess, setShowDiscordSuccess] = useState(false);
+
+  // Check Discord link status and handle success param
+  useEffect(() => {
+    const checkDiscordStatus = async () => {
+      try {
+        const response = await axiosInstance.get('/api/v1/discord/status');
+        setDiscordLink(response.data);
+      } catch (error) {
+        console.error('Error checking Discord status:', error);
+        setDiscordLink({ is_linked: false });
+      } finally {
+        setIsLoadingDiscord(false);
+      }
+    };
+
+    checkDiscordStatus();
+
+    // Check for discord=success in URL params
+    const params = new URLSearchParams(location.search);
+    if (params.get('discord') === 'success') {
+      setShowDiscordSuccess(true);
+      // Remove the param from URL without reload
+      window.history.replaceState({}, '', location.pathname);
+      // Re-check status after successful link
+      checkDiscordStatus();
+      // Hide success animation after 3 seconds
+      setTimeout(() => setShowDiscordSuccess(false), 3000);
+    }
+  }, [location]);
+
+  // Handle Discord connect
+  const handleConnectDiscord = async () => {
+    setIsConnectingDiscord(true);
+    try {
+      // Get OAuth URL from authenticated endpoint
+      const response = await axiosInstance.get('/api/v1/discord/connect-url');
+      // Redirect to Discord OAuth
+      window.location.href = response.data.auth_url;
+    } catch (error) {
+      console.error('Error connecting Discord:', error);
+      toast({
+        title: "Failed to connect Discord",
+        description: error.response?.data?.detail || "Please try again",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+      setIsConnectingDiscord(false);
+    }
+  };
+
+  // Handle Discord disconnect
+  const handleDisconnectDiscord = async () => {
+    setIsDisconnectingDiscord(true);
+    try {
+      await axiosInstance.delete('/api/v1/discord/unlink');
+      setDiscordLink({ is_linked: false });
+      toast({
+        title: "Discord disconnected",
+        description: "Your Discord account has been unlinked",
+        status: "success",
+        duration: 3000,
+        isClosable: true,
+      });
+    } catch (error) {
+      console.error('Error disconnecting Discord:', error);
+      toast({
+        title: "Failed to disconnect Discord",
+        description: error.response?.data?.detail || "Please try again",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+    } finally {
+      setIsDisconnectingDiscord(false);
+    }
+  };
+
   // Handle joining affiliate program
   const handleJoinAffiliate = async () => {
     try {
@@ -1803,48 +1905,134 @@ const SettingsPage = () => {
                         />
                       </HStack>
 
-                      {/* Discord */}
-                      <HStack spacing={3} bg="#1a1a1a" p={2} borderRadius="lg" border="1px solid #333" _hover={{ borderColor: "#444" }}>
-                        <Box color="#5865F2" minW="32px" display="flex" alignItems="center" justifyContent="center">
-                          <MessageCircle size={18} />
-                        </Box>
-                        <Input
-                          value={formData.socialMedia?.discord || ''}
-                          onChange={(e) => setFormData(prev => ({
-                            ...prev,
-                            socialMedia: { ...prev.socialMedia, discord: e.target.value }
-                          }))}
-                          onBlur={async () => {
-                            try {
-                              await saveFieldValue('socialMedia', { discord: formData.socialMedia?.discord });
-                              toast({
-                                title: "Discord updated",
-                                status: "success",
-                                duration: 2000,
-                                isClosable: true,
-                                position: "top-right"
-                              });
-                            } catch (error) {
-                              toast({
-                                title: "Failed to update Discord",
-                                status: "error",
-                                duration: 3000,
-                                isClosable: true,
-                              });
-                            }
-                          }}
-                          placeholder="username"
-                          size="sm"
-                          variant="unstyled"
-                          color="white"
-                          fontSize="sm"
-                          _placeholder={{ color: "whiteAlpha.400" }}
-                        />
-                      </HStack>
+                      {/* Discord Integration Button */}
+                      <AnimatePresence mode="wait">
+                        {isLoadingDiscord ? (
+                          <HStack spacing={3} bg="#1a1a1a" p={2} borderRadius="lg" border="1px solid #333">
+                            <Box color="#00C6E0" minW="32px" display="flex" alignItems="center" justifyContent="center">
+                              <DiscordIcon size={18} />
+                            </Box>
+                            <Spinner size="sm" color="#00C6E0" />
+                          </HStack>
+                        ) : discordLink?.is_linked ? (
+                          <MotionBox
+                            key="connected"
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{
+                              opacity: 1,
+                              scale: 1,
+                              borderColor: showDiscordSuccess ? "#00C6E0" : "#333"
+                            }}
+                            exit={{ opacity: 0, scale: 0.95 }}
+                            transition={{ duration: 0.2 }}
+                          >
+                            <HStack
+                              spacing={3}
+                              bg={showDiscordSuccess ? "rgba(0, 198, 224, 0.1)" : "#1a1a1a"}
+                              p={2}
+                              borderRadius="lg"
+                              border="1px solid"
+                              borderColor={showDiscordSuccess ? "#00C6E0" : "#333"}
+                              transition="all 0.3s ease"
+                            >
+                              <Box color="#00C6E0" minW="32px" display="flex" alignItems="center" justifyContent="center">
+                                {showDiscordSuccess ? (
+                                  <MotionBox
+                                    initial={{ scale: 0 }}
+                                    animate={{ scale: 1 }}
+                                    transition={{ type: "spring", stiffness: 500, damping: 25 }}
+                                  >
+                                    <CheckCircle size={18} />
+                                  </MotionBox>
+                                ) : (
+                                  <DiscordIcon size={18} />
+                                )}
+                              </Box>
+                              <HStack flex={1} justify="space-between">
+                                <HStack spacing={2}>
+                                  <Text color="#00C6E0" fontSize="sm" fontWeight="medium">
+                                    Connected
+                                  </Text>
+                                  <Text color="whiteAlpha.700" fontSize="sm">
+                                    @{discordLink.discord_username}
+                                  </Text>
+                                </HStack>
+                                <Button
+                                  size="xs"
+                                  variant="ghost"
+                                  color="whiteAlpha.600"
+                                  _hover={{ color: "red.400", bg: "rgba(255, 0, 0, 0.1)" }}
+                                  onClick={handleDisconnectDiscord}
+                                  isLoading={isDisconnectingDiscord}
+                                  loadingText="..."
+                                >
+                                  Disconnect
+                                </Button>
+                              </HStack>
+                            </HStack>
+                          </MotionBox>
+                        ) : (
+                          <MotionBox
+                            key="disconnected"
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.95 }}
+                            transition={{ duration: 0.2 }}
+                          >
+                            <Button
+                              w="full"
+                              h="auto"
+                              p={2}
+                              bg="#1a1a1a"
+                              border="1px solid #333"
+                              borderRadius="lg"
+                              _hover={{ borderColor: "#00C6E0", bg: "rgba(0, 198, 224, 0.05)" }}
+                              onClick={handleConnectDiscord}
+                              isLoading={isConnectingDiscord}
+                              loadingText="Connecting..."
+                              justifyContent="flex-start"
+                            >
+                              <HStack spacing={3}>
+                                <Box color="#00C6E0" minW="32px" display="flex" alignItems="center" justifyContent="center">
+                                  <DiscordIcon size={18} />
+                                </Box>
+                                <Text color="white" fontSize="sm" fontWeight="normal">
+                                  Connect to Discord
+                                </Text>
+                              </HStack>
+                            </Button>
+                          </MotionBox>
+                        )}
+                      </AnimatePresence>
+
+                      {/* Join Atomik Discord */}
+                      <Link
+                        href="https://discord.gg/atomiktrading"
+                        isExternal
+                        _hover={{ textDecoration: "none" }}
+                      >
+                        <HStack
+                          spacing={3}
+                          bg="#1a1a1a"
+                          p={2}
+                          borderRadius="lg"
+                          border="1px solid #333"
+                          _hover={{ borderColor: "#00C6E0", bg: "rgba(0, 198, 224, 0.05)" }}
+                          cursor="pointer"
+                          transition="all 0.2s ease"
+                        >
+                          <Box color="#00C6E0" minW="32px" display="flex" alignItems="center" justifyContent="center">
+                            <ExternalLink size={18} />
+                          </Box>
+                          <Text color="white" fontSize="sm">
+                            Join Atomik Discord
+                          </Text>
+                        </HStack>
+                      </Link>
                     </SimpleGrid>
 
                     <Text color="whiteAlpha.500" fontSize="xs" mt={1}>
-                      Connect your social profiles to build your creator presence
+                      Connect your social profiles and Discord to enable ARIA assistant in Discord
                     </Text>
                   </VStack>
                 </VStack>

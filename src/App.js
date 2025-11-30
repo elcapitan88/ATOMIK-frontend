@@ -24,6 +24,7 @@ const LandingPage = lazy(() => import('./components/pages/landing/LandingPage'))
 const ComingSoon = lazy(() => import('./components/common/ComingSoon'));
 const CreatorHubPage = lazy(() => import('./components/pages/CreatorHub/CreatorHubPage'));
 const CreatorProfilePage = lazy(() => import('./components/pages/CreatorProfile/CreatorProfilePage'));
+const ConnectDiscordPage = lazy(() => import('./components/pages/ConnectDiscordPage'));
 
 const AdminDashboard = lazy(() => import('./components/pages/Admin/AdminDashboard').then(module => ({ default: module.default })));
 const OverviewPage = lazy(() => import('./components/pages/Admin/Overview/OverviewPage').then(module => ({ default: module.default })));
@@ -269,13 +270,19 @@ function App() {
         />
   
         {/* Payment Success Route */}
-        <Route 
-          path="/payment/success" 
+        <Route
+          path="/payment/success"
           element={
             <PaymentSuccessRoute>
               <PaymentSuccess />
             </PaymentSuccessRoute>
-          } 
+          }
+        />
+
+        {/* Discord Magic Link Route - Public (handles its own auth) */}
+        <Route
+          path="/connect-discord"
+          element={<ConnectDiscordPage />}
         />
         
         {/* Docs Routes - Updated to use DocsHandler */}
