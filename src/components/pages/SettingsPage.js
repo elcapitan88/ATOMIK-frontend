@@ -1222,6 +1222,7 @@ const SettingsPage = () => {
   });
   
   const fileInputRef = useRef(null);
+  const discordSectionRef = useRef(null);
   const toast = useToast();
   const { isOpen, onOpen, onClose } = useDisclosure();
   
@@ -1262,6 +1263,10 @@ const SettingsPage = () => {
       // Re-check status after successful link, then show success
       checkDiscordStatus().then(() => {
         setShowDiscordSuccess(true);
+        // Scroll to Discord section so user can see the animation
+        setTimeout(() => {
+          discordSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 100);
         // Hide success animation after 5 seconds
         setTimeout(() => setShowDiscordSuccess(false), 5000);
       });
@@ -1735,7 +1740,7 @@ const SettingsPage = () => {
                   <Divider borderColor="#333" />
 
                   {/* Social Media Links - Moved below user info */}
-                  <VStack align="stretch" spacing={3} w="full">
+                  <VStack ref={discordSectionRef} align="stretch" spacing={3} w="full">
                     <Text color="whiteAlpha.600" fontSize="xs" fontWeight="semibold" textTransform="uppercase" letterSpacing="wider">
                       Social Profiles
                     </Text>
