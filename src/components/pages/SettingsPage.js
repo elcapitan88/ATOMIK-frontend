@@ -1256,13 +1256,15 @@ const SettingsPage = () => {
     // Check for discord=success in URL params
     const params = new URLSearchParams(location.search);
     if (params.get('discord') === 'success') {
-      setShowDiscordSuccess(true);
+      console.log('Discord success param detected!');
       // Remove the param from URL without reload
       window.history.replaceState({}, '', location.pathname);
-      // Re-check status after successful link
-      checkDiscordStatus();
-      // Hide success animation after 3 seconds
-      setTimeout(() => setShowDiscordSuccess(false), 3000);
+      // Re-check status after successful link, then show success
+      checkDiscordStatus().then(() => {
+        setShowDiscordSuccess(true);
+        // Hide success animation after 5 seconds
+        setTimeout(() => setShowDiscordSuccess(false), 5000);
+      });
     }
   }, [location]);
 
