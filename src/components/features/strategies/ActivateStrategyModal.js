@@ -45,6 +45,20 @@ const getBrokerInfo = (brokerId) => {
   return { name: 'Tradovate', color: 'green' };
 };
 
+// Ticker display name mapping for UI
+const TICKER_DISPLAY_NAMES = {
+  ES: 'E-mini S&P 500',
+  NQ: 'E-mini Nasdaq 100',
+  CL: 'Crude Oil',
+  GC: 'Gold',
+  MES: 'Micro E-mini S&P 500',
+  MNQ: 'Micro E-mini Nasdaq 100',
+  MGC: 'Micro Gold',
+  RTY: 'E-mini Russell 2000',
+  YM: 'E-mini Dow',
+  MBT: 'Micro Bitcoin'
+};
+
 // Helper function to determine if a webhook is an engine strategy
 const isEngineStrategy = (webhookId) => {
   // Engine strategies have integer IDs, while webhooks have UUIDs
@@ -726,9 +740,9 @@ const ActivateStrategyModal = ({
                       _focus={{ borderColor: 'rgba(0, 198, 224, 0.6)', boxShadow: '0 0 0 1px rgba(0, 198, 224, 0.6)' }}
                       isDisabled={!!strategy}
                     >
-                      {Object.entries(displayTickers).map(([symbol, name]) => (
-                        <option key={symbol} value={symbol} style={{ background: '#1a1a1a' }}>
-                          {symbol} - {name}
+                      {displayTickers.map((ticker) => (
+                        <option key={ticker} value={ticker} style={{ background: '#1a1a1a' }}>
+                          {ticker} - {TICKER_DISPLAY_NAMES[ticker] || ticker}
                         </option>
                       ))}
                     </Select>
@@ -851,9 +865,9 @@ const ActivateStrategyModal = ({
                       _focus={{ borderColor: 'rgba(0, 198, 224, 0.6)', boxShadow: '0 0 0 1px rgba(0, 198, 224, 0.6)' }}
                       isDisabled={!!strategy}
                     >
-                      {Object.entries(displayTickers).map(([symbol, name]) => (
-                        <option key={symbol} value={symbol} style={{ background: '#1a1a1a' }}>
-                          {symbol} - {name}
+                      {displayTickers.map((ticker) => (
+                        <option key={ticker} value={ticker} style={{ background: '#1a1a1a' }}>
+                          {ticker} - {TICKER_DISPLAY_NAMES[ticker] || ticker}
                         </option>
                       ))}
                     </Select>
