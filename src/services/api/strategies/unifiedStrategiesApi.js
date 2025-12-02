@@ -138,19 +138,23 @@ class UnifiedStrategiesApi {
       if (filters.account_id) params.append('account_id', filters.account_id);
 
       // Fixed: Use /user-activated endpoint to avoid 307 redirect loop
-      // Root path /strategies causes redirect, /user-activated returns enriched array directly
+      // Root path /strategies causes redirect, /user-activated returns enriched data
       const response = await this.withRetry(() =>
         axiosInstance.get(`${this.baseUrl}/user-activated`, {
           params: Object.fromEntries(params)
         })
       );
 
-      // Cache the unfiltered results
+      // Backend returns wrapped object: { strategies: [...], total, user_id, active_count }
+      // Extract the strategies array for frontend consumption
+      const strategies = response.data?.strategies || response.data || [];
+
+      // Cache the unfiltered results (store just the array)
       if (!Object.keys(filters).length) {
-        this.setCachedStrategies(response.data);
+        this.setCachedStrategies(strategies);
       }
 
-      return response.data;
+      return strategies;
     } catch (error) {
       handleApiError(error);
       throw error;
