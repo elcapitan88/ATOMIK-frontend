@@ -431,22 +431,36 @@
 /* Responsive Design */
 @media (max-width: 768px) {
   .aria-container {
-    top: 10px;
-    left: 10px;
-    right: 10px;
+    position: relative;
+    top: auto;
+    left: auto;
+    right: auto;
     transform: none;
+    display: flex;
+    justify-content: center;
+    width: 100%;
   }
-  
+
+  .aria-container.aria-container-fixed {
+    position: fixed;
+    top: auto;
+    bottom: 80px;
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%);
+    width: auto;
+  }
+
   .aria-chat {
     width: 100%;
-    max-width: calc(100vw - 20px);
-    max-height: 70vh;
+    max-width: calc(100vw - 32px);
+    max-height: 60vh;
   }
-  
+
   .aria-pill {
     min-width: auto;
-    width: 100%;
-    max-width: 300px;
+    width: auto;
+    max-width: 280px;
   }
 }
 

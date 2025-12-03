@@ -314,6 +314,13 @@ const DashboardContent = () => {
                             {/* Mobile Layout - Reordered for mobile UX */}
                             {isMobile ? (
                                 <VStack spacing={4} p={4} align="stretch">
+                                    {/* ARIA Assistant - Centered at top on mobile */}
+                                    {hasAriaAssistant && (
+                                        <Box display="flex" justifyContent="center">
+                                            <ARIAAssistant />
+                                        </Box>
+                                    )}
+
                                     {/* 1. Management Section (Top) */}
                                     <Box>
                                         <ErrorBoundary>
@@ -578,8 +585,8 @@ const DashboardContent = () => {
                 </>
             )}
             
-            {/* ARIA Assistant - Floating Chat (Only for Admin and Beta Testers) */}
-            {hasAriaAssistant && <ARIAAssistant />}
+            {/* ARIA Assistant - Floating Chat (Desktop only - mobile renders in content flow) */}
+            {hasAriaAssistant && !isMobile && <ARIAAssistant />}
         </Flex>
         </>
     );
