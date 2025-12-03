@@ -28,10 +28,11 @@ import logger from '@/utils/logger';
 
 // Lazy loaded components
 const Management = lazy(() => import('../features/trading/Management'));
-const OrderControl = lazy(() => import('../features/trading/OrderControl')); 
+const OrderControl = lazy(() => import('../features/trading/OrderControl'));
 const StrategyGroups = lazy(() => import('../features/strategies/ActivateStrategies'));
 const TradesTable = lazy(() => import('../features/trading/TradesTable'));
 const MarketplacePage = lazy(() => import('./MarketplacePage'));
+const EmergencyFlatten = lazy(() => import('../features/trading/EmergencyFlatten'));
 
 // Loading Spinner Component
 const LoadingSpinner = () => (
@@ -309,78 +310,92 @@ const DashboardContent = () => {
                         <VStack spacing={4} align="stretch" h="full">
                             {/* Payment Status Warning - Global Dashboard Warning */}
                             <PaymentStatusWarning />
-                            
-                            <Flex 
-                                position="relative" 
-                                h="full" 
-                                p={4} 
-                                zIndex={2} 
+
+                            {/* Emergency Flatten Button - Mobile Only */}
+                            {isMobile && (
+                                <Box px={4}>
+                                    <ErrorBoundary>
+                                        <Suspense fallback={null}>
+                                            <EmergencyFlatten accounts={dashboardData.accounts} />
+                                        </Suspense>
+                                    </ErrorBoundary>
+                                </Box>
+                            )}
+
+                            <Flex
+                                position="relative"
+                                h="full"
+                                p={4}
+                                zIndex={2}
                                 gap={4}
                                 direction={{ base: "column", lg: "row" }}
                             >
                             {/* Left Column */}
-                            <Flex 
-                                flexDirection="column" 
+                            <Flex
+                                flexDirection="column"
                                 flex={{ base: "1", lg: 7 }}
                                 width="100%"
                             >
-                                {/* Chart container */}
-                                <Box 
-                                    h={{ base: "300px", md: "50%" }} 
-                                    maxH={{ base: "none", md: "50%" }} 
-                                    flex={{ base: "0 0 auto", md: "0 0 50%" }} 
-                                    bg="whiteAlpha.100" 
-                                    borderRadius="xl" 
-                                    overflow="hidden"
-                                    mb={{ base: 4, md: 0 }}
-                                >
-                                    <ErrorBoundary>
-                                        <Suspense fallback={<LoadingSpinner />}>
-                                            <TradingViewWidget />
-                                        </Suspense>
-                                    </ErrorBoundary>
-                                </Box>
-                                
+                                {/* Chart container - Hidden on mobile */}
+                                {!isMobile && (
+                                    <Box
+                                        h="50%"
+                                        maxH="50%"
+                                        flex="0 0 50%"
+                                        bg="whiteAlpha.100"
+                                        borderRadius="xl"
+                                        overflow="hidden"
+                                    >
+                                        <ErrorBoundary>
+                                            <Suspense fallback={<LoadingSpinner />}>
+                                                <TradingViewWidget />
+                                            </Suspense>
+                                        </ErrorBoundary>
+                                    </Box>
+                                )}
+
                                 {/* Bottom section */}
-                                <Flex 
-                                    mt={4} 
-                                    gap={4} 
-                                    flex="1" 
+                                <Flex
+                                    mt={isMobile ? 0 : 4}
+                                    gap={4}
+                                    flex="1"
                                     minH="0"
                                     direction={{ base: "column", xl: "row" }}
                                 >
                                     {/* TradesTable container */}
-                                    <Box 
-                                        flex="1" 
-                                        borderRadius="xl" 
+                                    <Box
+                                        flex="1"
+                                        borderRadius="xl"
                                         overflow="hidden"
                                         mb={{ base: 4, xl: 0 }}
                                     >
                                         <ErrorBoundary>
                                             <Suspense fallback={<LoadingSpinner />}>
-                                                <TradesTable 
+                                                <TradesTable
                                                     accounts={dashboardData.accounts}
                                                     activeAccountId={dashboardData.activeAccountId}
                                                 />
                                             </Suspense>
                                         </ErrorBoundary>
                                     </Box>
-                                    
-                                    {/* OrderControl container */}
-                                    <Box 
-                                        flex={{ base: "1", xl: "0 0 400px" }} 
-                                        bg="whiteAlpha.100" 
-                                        borderRadius="xl"
-                                    >
-                                        <ErrorBoundary>
-                                            <Suspense fallback={<LoadingSpinner />}>
-                                                <OrderControl 
-                                                    accounts={dashboardData.accounts}
-                                                    activeAccountId={dashboardData.activeAccountId}
-                                                />
-                                            </Suspense>
-                                        </ErrorBoundary>
-                                    </Box>
+
+                                    {/* OrderControl container - Hidden on mobile */}
+                                    {!isMobile && (
+                                        <Box
+                                            flex={{ base: "1", xl: "0 0 400px" }}
+                                            bg="whiteAlpha.100"
+                                            borderRadius="xl"
+                                        >
+                                            <ErrorBoundary>
+                                                <Suspense fallback={<LoadingSpinner />}>
+                                                    <OrderControl
+                                                        accounts={dashboardData.accounts}
+                                                        activeAccountId={dashboardData.activeAccountId}
+                                                    />
+                                                </Suspense>
+                                            </ErrorBoundary>
+                                        </Box>
+                                    )}
                                 </Flex>
                             </Flex>
                             
