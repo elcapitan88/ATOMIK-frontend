@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import {
-  Box, 
+  Box,
   Flex,
   useDisclosure,
   Button,
@@ -15,6 +15,7 @@ import {
   InputRightElement,
   IconButton,
   Tooltip,
+  useBreakpointValue,
 } from '@chakra-ui/react';
 import { Activity, Zap, Clock, Plus, Search, RefreshCw } from 'lucide-react';
 import WebhooksView from '@/components/features/trading/WebhooksView';  // or whatever the correct path is
@@ -35,6 +36,7 @@ const TradesTable = () => {
   const [newlyCreatedWebhook, setNewlyCreatedWebhook] = useState(null); // Store newly created webhook
   const toast = useToast();
   const terminology = useStrategyTerminology();
+  const isMobile = useBreakpointValue({ base: true, md: false });
   
   // Modal control - only for webhook creation
   const {
@@ -132,8 +134,14 @@ const TradesTable = () => {
       flexDirection="column"
     >
       {/* Header */}
-      <Flex p={4} borderBottomWidth="1px" borderColor="whiteAlpha.200" justify="space-between" align="center">
-        <HStack spacing={4}>
+      <Flex
+        p={{ base: 3, md: 4 }}
+        borderBottomWidth="1px"
+        borderColor="whiteAlpha.200"
+        justify="space-between"
+        align="center"
+      >
+        <HStack spacing={{ base: 2, md: 4 }}>
           {/* Main Toggle */}
           <ButtonGroup size="sm" isAttached variant="solid">
             <Button
@@ -151,8 +159,9 @@ const TradesTable = () => {
               leftIcon={<Icon as={Activity} boxSize={4} />}
               transition="all 0.2s"
               fontWeight={activeView === 'positions' ? 'medium' : 'normal'}
+              px={{ base: 2, md: 4 }}
             >
-              Positions
+              {isMobile ? '' : 'Positions'}
             </Button>
             <Button
               onClick={() => setActiveView('webhooks')}
@@ -169,12 +178,13 @@ const TradesTable = () => {
               leftIcon={<Icon as={Zap} boxSize={4} />}
               transition="all 0.2s"
               fontWeight={activeView === 'webhooks' ? 'medium' : 'normal'}
+              px={{ base: 2, md: 4 }}
             >
-              Webhooks
+              {isMobile ? '' : 'Webhooks'}
             </Button>
           </ButtonGroup>
         </HStack>
-        
+
         {/* Generate Webhook Button - Only visible in webhooks view */}
         {activeView === 'webhooks' && (
           <Button
@@ -186,22 +196,30 @@ const TradesTable = () => {
             borderColor="rgba(0, 198, 224, 1)"
             onClick={onWebhookModalOpen}
             size="sm"
-            _hover={{ 
+            _hover={{
               bg: 'rgba(0, 198, 224, 0.1)',
               transform: 'translateY(-1px)',
               boxShadow: '0 4px 12px rgba(0, 198, 224, 0.3)'
             }}
             _active={{ bg: 'rgba(0, 198, 224, 0.2)' }}
             transition="all 0.2s"
+            px={{ base: 2, md: 4 }}
           >
-            {terminology.createAction}
+            {isMobile ? '' : terminology.createAction}
           </Button>
         )}
       </Flex>
 
       {/* Sub-navigation for Positions */}
       {activeView === 'positions' && (
-        <Flex px={4} pb={3} justify="space-between" align="center">
+        <Flex
+          px={{ base: 3, md: 4 }}
+          pb={3}
+          justify="space-between"
+          align="center"
+          flexWrap={{ base: 'wrap', md: 'nowrap' }}
+          gap={2}
+        >
           <ButtonGroup size="sm" variant="ghost" spacing={0}>
             <Button
               onClick={() => setPositionView('open')}
@@ -214,10 +232,11 @@ const TradesTable = () => {
                 bg: 'transparent'
               }}
               leftIcon={<Icon as={Activity} />}
-              px={4}
+              px={{ base: 2, md: 4 }}
               transition="all 0.2s"
+              fontSize={{ base: 'xs', md: 'sm' }}
             >
-              Live Trades
+              {isMobile ? 'Live' : 'Live Trades'}
             </Button>
             <Button
               onClick={() => setPositionView('historical')}
@@ -230,15 +249,16 @@ const TradesTable = () => {
                 bg: 'transparent'
               }}
               leftIcon={<Icon as={Clock} />}
-              px={4}
+              px={{ base: 2, md: 4 }}
               transition="all 0.2s"
+              fontSize={{ base: 'xs', md: 'sm' }}
             >
-              Historical Trades
+              {isMobile ? 'History' : 'Historical Trades'}
             </Button>
           </ButtonGroup>
-          
-          {/* Filters for Live Trades */}
-          {positionView === 'open' && (
+
+          {/* Filters - Hidden on mobile */}
+          {!isMobile && positionView === 'open' && (
             <HStack spacing={2}>
               <Select
                 size="sm"
@@ -261,7 +281,7 @@ const TradesTable = () => {
               >
                 <option value="">All Accounts</option>
               </Select>
-              
+
               <Select
                 size="sm"
                 value={liveFilters.side}
@@ -281,9 +301,9 @@ const TradesTable = () => {
               </Select>
             </HStack>
           )}
-          
-          {/* Filters for Historical Trades */}
-          {positionView === 'historical' && (
+
+          {/* Filters for Historical Trades - Hidden on mobile */}
+          {!isMobile && positionView === 'historical' && (
             <HStack spacing={2} flexWrap="wrap">
               <Select
                 size="sm"
@@ -302,7 +322,7 @@ const TradesTable = () => {
                 <option value="90">Last 90 Days</option>
                 <option value="365">All Time</option>
               </Select>
-              
+
               <Select
                 size="sm"
                 bg="rgba(0, 0, 0, 0.3)"
@@ -316,7 +336,7 @@ const TradesTable = () => {
               >
                 <option value="all">All Symbols</option>
               </Select>
-              
+
               <Select
                 size="sm"
                 bg="rgba(0, 0, 0, 0.3)"
@@ -330,7 +350,7 @@ const TradesTable = () => {
               >
                 <option value="all">All Strategies</option>
               </Select>
-              
+
               <Select
                 size="sm"
                 bg="rgba(0, 0, 0, 0.3)"
@@ -346,7 +366,7 @@ const TradesTable = () => {
                 <option value="true">Profitable Only</option>
                 <option value="false">Losing Only</option>
               </Select>
-              
+
               <InputGroup size="sm" width="180px" h="32px">
                 <Input
                   placeholder="Search trades..."
@@ -361,7 +381,7 @@ const TradesTable = () => {
                   <Search size={14} color="rgba(255, 255, 255, 0.4)" />
                 </InputRightElement>
               </InputGroup>
-              
+
               <Tooltip label="Refresh">
                 <IconButton
                   icon={<RefreshCw size={16} />}
@@ -404,16 +424,16 @@ const TradesTable = () => {
         )}
       </Box>
 
-      {/* Footer - Only show for webhooks */}
-      {activeView === 'webhooks' && (
-        <Flex 
-          justify="center" 
-          borderTop="1px solid" 
+      {/* Footer - Only show for webhooks, hidden on mobile */}
+      {activeView === 'webhooks' && !isMobile && (
+        <Flex
+          justify="center"
+          borderTop="1px solid"
           borderColor="whiteAlpha.200"
           p={4}
         >
-          <HStack 
-            spacing={6} 
+          <HStack
+            spacing={6}
             color="whiteAlpha.600"
             fontSize="sm"
           >
