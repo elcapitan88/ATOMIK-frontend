@@ -421,6 +421,7 @@ const HistoricalTradesView = () => {
         flex="1"
         overflowY="auto"
         px={{ base: 3, md: 4 }}
+        maxH={{ base: '300px', md: 'none' }}
         sx={customScrollbarStyle}
       >
         {isLoading && historicalTrades.length === 0 ? (

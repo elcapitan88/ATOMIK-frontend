@@ -155,10 +155,11 @@ const TradesTable = () => {
               _active={{
                 bg: 'whiteAlpha.300'
               }}
-              leftIcon={<Icon as={Activity} boxSize={4} />}
+              leftIcon={<Icon as={Activity} boxSize={{ base: 5, md: 4 }} />}
               transition="all 0.2s"
               fontWeight={activeView === 'positions' ? 'medium' : 'normal'}
-              px={{ base: 2, md: 4 }}
+              px={{ base: 3, md: 4 }}
+              minH={{ base: '44px', md: 'auto' }}
             >
               {isMobile ? '' : 'Positions'}
             </Button>
@@ -174,10 +175,11 @@ const TradesTable = () => {
               _active={{
                 bg: 'whiteAlpha.300'
               }}
-              leftIcon={<Icon as={Zap} boxSize={4} />}
+              leftIcon={<Icon as={Zap} boxSize={{ base: 5, md: 4 }} />}
               transition="all 0.2s"
               fontWeight={activeView === 'webhooks' ? 'medium' : 'normal'}
-              px={{ base: 2, md: 4 }}
+              px={{ base: 3, md: 4 }}
+              minH={{ base: '44px', md: 'auto' }}
             >
               {isMobile ? '' : 'Webhooks'}
             </Button>
@@ -187,7 +189,7 @@ const TradesTable = () => {
         {/* Generate Webhook Button - Only visible in webhooks view */}
         {activeView === 'webhooks' && (
           <Button
-            leftIcon={<Icon as={Plus} />}
+            leftIcon={<Icon as={Plus} boxSize={{ base: 5, md: 4 }} />}
             bg="transparent"
             color="white"
             fontWeight="medium"
@@ -202,7 +204,8 @@ const TradesTable = () => {
             }}
             _active={{ bg: 'rgba(0, 198, 224, 0.2)' }}
             transition="all 0.2s"
-            px={{ base: 2, md: 4 }}
+            px={{ base: 3, md: 4 }}
+            minH={{ base: '44px', md: 'auto' }}
           >
             {isMobile ? '' : terminology.createAction}
           </Button>
@@ -230,10 +233,11 @@ const TradesTable = () => {
                 color: 'rgba(0, 198, 224, 0.8)',
                 bg: 'transparent'
               }}
-              leftIcon={<Icon as={Activity} />}
-              px={{ base: 2, md: 4 }}
+              leftIcon={<Icon as={Activity} boxSize={{ base: 5, md: 4 }} />}
+              px={{ base: 3, md: 4 }}
+              minH={{ base: '44px', md: 'auto' }}
               transition="all 0.2s"
-              fontSize={{ base: 'xs', md: 'sm' }}
+              fontSize={{ base: 'sm', md: 'sm' }}
             >
               {isMobile ? 'Live' : 'Live Trades'}
             </Button>
@@ -247,10 +251,11 @@ const TradesTable = () => {
                 color: 'rgba(0, 198, 224, 0.8)',
                 bg: 'transparent'
               }}
-              leftIcon={<Icon as={Clock} />}
-              px={{ base: 2, md: 4 }}
+              leftIcon={<Icon as={Clock} boxSize={{ base: 5, md: 4 }} />}
+              px={{ base: 3, md: 4 }}
+              minH={{ base: '44px', md: 'auto' }}
               transition="all 0.2s"
-              fontSize={{ base: 'xs', md: 'sm' }}
+              fontSize={{ base: 'sm', md: 'sm' }}
             >
               {isMobile ? 'History' : 'Historical Trades'}
             </Button>

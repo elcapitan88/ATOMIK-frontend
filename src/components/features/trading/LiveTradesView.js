@@ -88,9 +88,10 @@ const MobilePositionCard = ({ position, onClose, calculateDuration }) => {
           colorScheme="red"
           variant="outline"
           onClick={() => onClose(position)}
-          h="32px"
-          px={3}
-          fontSize="xs"
+          minH="44px"
+          minW="44px"
+          px={4}
+          fontSize="sm"
         >
           Close
         </Button>
@@ -410,6 +411,7 @@ const LiveTradesView = ({ selectedAccount, onAccountChange, selectedBroker, filt
         flex="1"
         overflowY="auto"
         px={{ base: 3, md: 4 }}
+        maxH={{ base: '300px', md: 'none' }}
         sx={{
           '&::-webkit-scrollbar': {
             width: '8px',

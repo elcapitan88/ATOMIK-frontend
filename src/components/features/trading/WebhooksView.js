@@ -77,9 +77,11 @@ const MobileWebhookCard = ({ webhook, onAction }) => {
         <Menu>
           <MenuButton
             as={IconButton}
-            icon={<MoreVertical size={16} />}
+            icon={<MoreVertical size={20} />}
             variant="ghost"
-            size="sm"
+            size="md"
+            minH="44px"
+            minW="44px"
             color="whiteAlpha.600"
             _hover={{ bg: 'whiteAlpha.100' }}
           />
