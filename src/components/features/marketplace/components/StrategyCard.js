@@ -283,8 +283,10 @@ const StrategyCard = ({ strategy, onSubscriptionChange, isMobile = false }) => {
         boxShadow: isMobile ? "none" : "0 4px 12px rgba(0, 198, 224, 0.15)"
       }}
       w={isMobile ? "100%" : "280px"}
+      maxW={isMobile ? "340px" : "280px"}
+      mx={isMobile ? "auto" : 0}
       h={isMobile ? "auto" : "260px"}
-      minH={isMobile ? "180px" : "260px"}
+      minH={isMobile ? "160px" : "260px"}
     >
       <VStack p={isMobile ? 3 : 4} spacing={isMobile ? 2 : 3} align="stretch" h="full">
         {/* Header Section */}
