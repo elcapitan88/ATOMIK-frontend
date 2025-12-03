@@ -2259,6 +2259,7 @@ const SettingsPage = () => {
               overflowX="auto"
               pb={2}
               px={1}
+              justify="center"
               css={{
                 '&::-webkit-scrollbar': { display: 'none' },
                 scrollbarWidth: 'none',
