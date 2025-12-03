@@ -568,7 +568,7 @@ const MarketplacePage = () => {
             overflowX="hidden"
             p={{ base: 3, md: 4 }}
           >
-            <Container maxW="container.xl" py={{ base: 2, md: 4 }}>
+            <Container maxW={{ base: "100%", md: "container.xl" }} px={{ base: 0, md: 4 }} py={{ base: 2, md: 4 }}>
               {/* Header */}
               <VStack spacing={{ base: 3, md: 4 }} align="stretch" mb={{ base: 4, md: 6 }}>
                 {/* Title Row */}
@@ -645,12 +645,12 @@ const MarketplacePage = () => {
 
                 {/* Mobile Controls */}
                 {isMobile && (
-                  <VStack spacing={3} align="stretch">
+                  <VStack spacing={3} align="stretch" w="100%" maxW="100%">
                     {/* Search Bar - Full Width */}
                     <SearchBar />
 
                     {/* Toggle and Filter Row */}
-                    <HStack justify="space-between" align="center">
+                    <HStack justify="space-between" align="center" w="100%">
                       <ButtonGroup size="sm" isAttached variant="outline">
                         <Button
                           onClick={() => setViewMode('all')}
@@ -685,6 +685,8 @@ const MarketplacePage = () => {
                         spacing={2}
                         overflowX="auto"
                         pb={2}
+                        w="100%"
+                        maxW="100%"
                         css={{
                           '&::-webkit-scrollbar': { display: 'none' },
                           scrollbarWidth: 'none',
