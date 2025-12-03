@@ -298,7 +298,8 @@ const MarketplacePage = () => {
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.3 }}
-      justify={{ base: "stretch", md: "center" }}
+      justify={{ base: "center", md: "center" }}
+      align={{ base: "center", md: "stretch" }}
       direction={{ base: "column", md: "row" }}
       width="100%"
       minHeight={{ base: "auto", md: "260px" }}
