@@ -33,7 +33,8 @@ import {
   EditableInput,
   EditablePreview,
   Tooltip,
-  useEditableControls
+  useEditableControls,
+  useBreakpointValue,
 } from '@chakra-ui/react';
 import { 
   User, 
@@ -114,28 +115,34 @@ const TikTokIcon = ({ size = 20, ...props }) => (
   </Box>
 );
 
-const MenuItem = ({ icon: Icon, label, isSelected, onClick }) => (
+const MenuItem = ({ icon: Icon, label, isSelected, onClick, isMobile }) => (
   <Button
     variant="ghost"
-    justifyContent="flex-start"
-    width="full"
+    justifyContent={isMobile ? "center" : "flex-start"}
+    width={isMobile ? "auto" : "full"}
     height="auto"
     py={3}
-    px={4}
-    bg={isSelected ? "#1a1a1a" : "transparent"}
-    color="white"
-    _hover={{ bg: "#1a1a1a" }}
-    _active={{ bg: "#252525" }}
-    leftIcon={<Icon size={16} color={isSelected ? "#00C6E0" : "white"} />}
-    rightIcon={<ChevronRight size={14} opacity={0.5} />}
+    px={isMobile ? 4 : 4}
+    minH="44px"
+    minW={isMobile ? "44px" : "auto"}
+    bg={isSelected ? (isMobile ? "rgba(0, 198, 224, 0.15)" : "#1a1a1a") : "transparent"}
+    color={isSelected ? "#00C6E0" : "white"}
+    _hover={{ bg: isMobile ? "rgba(0, 198, 224, 0.1)" : "#1a1a1a" }}
+    _active={{ bg: isMobile ? "rgba(0, 198, 224, 0.2)" : "#252525" }}
+    leftIcon={!isMobile ? <Icon size={16} color={isSelected ? "#00C6E0" : "white"} /> : undefined}
+    rightIcon={!isMobile ? <ChevronRight size={14} opacity={0.5} /> : undefined}
     onClick={onClick}
     position="relative"
     overflow="hidden"
-    borderLeft="2px solid"
+    borderLeft={isMobile ? "none" : "2px solid"}
+    borderBottom={isMobile ? (isSelected ? "2px solid" : "2px solid transparent") : "none"}
     borderColor={isSelected ? "#00C6E0" : "transparent"}
-    borderRadius="0"
+    borderRadius={isMobile ? "md" : "0"}
+    flexDirection={isMobile ? "column" : "row"}
+    gap={isMobile ? 1 : 0}
   >
-    <Text fontSize="sm">{label}</Text>
+    {isMobile && <Icon size={20} color={isSelected ? "#00C6E0" : "white"} />}
+    <Text fontSize={isMobile ? "xs" : "sm"}>{label}</Text>
   </Button>
 );
 
@@ -375,8 +382,8 @@ const SocialInput = ({ icon: Icon, label, initialValue = "", fieldName, onSave, 
 };
 
 const SectionContainer = ({ icon: Icon, title, children }) => (
-  <DarkCard p={6} mb={8}>
-    <Text fontSize="lg" fontWeight="semibold" color="white" mb={6}>
+  <DarkCard p={{ base: 4, md: 6 }} mb={{ base: 4, md: 8 }}>
+    <Text fontSize={{ base: "md", md: "lg" }} fontWeight="semibold" color="white" mb={{ base: 4, md: 6 }}>
       <Flex align="center" gap={2}>
         <Icon size={20} color="#00C6E0" />
         <span>{title}</span>
@@ -1185,6 +1192,7 @@ const SettingsPage = () => {
   const [isEditingName, setIsEditingName] = useState(false);
   const [isUpdatingName, setIsUpdatingName] = useState(false);
   const [originalName, setOriginalName] = useState(''); // Store original name for cancel action
+  const isMobile = useBreakpointValue({ base: true, md: false });
   
   // Form data state
   const [formData, setFormData] = useState({
@@ -1471,22 +1479,22 @@ const SettingsPage = () => {
         return (
           <VStack spacing={8} align="stretch">
             <SectionContainer icon={User} title="Personal Information">
-              <VStack spacing={8} align="stretch">
+              <VStack spacing={{ base: 4, md: 8 }} align="stretch">
                 {/* Avatar and Social Media Section */}
                 <Box>
                   <Flex
                     direction={{ base: "column", md: "row" }}
                     align={{ base: "center", md: "flex-start" }}
-                    gap={8}
+                    gap={{ base: 4, md: 8 }}
                   >
                     <ProfilePicture
                       user={user}
-                      size="xl"
+                      size={isMobile ? "lg" : "xl"}
                       editable={true}
                       showStatus={false}
                     />
 
-                    <VStack align={{ base: "center", md: "flex-start" }} spacing={4} flex={1}>
+                    <VStack align={{ base: "center", md: "flex-start" }} spacing={{ base: 2, md: 4 }} flex={1}>
                       <Box position="relative">
                         {isEditingName ? (
                           // Show input field when editing
@@ -1494,7 +1502,7 @@ const SettingsPage = () => {
                             <Input
                               value={personalName}
                               onChange={(e) => setPersonalName(e.target.value)}
-                              fontSize="lg"
+                              fontSize={{ base: "md", md: "lg" }}
                               fontWeight="semibold"
                               color="white"
                               bg="#1a1a1a"
@@ -1514,7 +1522,9 @@ const SettingsPage = () => {
                               <IconButton
                                 aria-label="Cancel"
                                 icon={<X size={14} />}
-                                size="xs"
+                                size="sm"
+                                minH="44px"
+                                minW="44px"
                                 variant="ghost"
                                 color="red.400"
                                 _hover={{ color: "red.300", bg: "transparent" }}
@@ -1523,7 +1533,9 @@ const SettingsPage = () => {
                               <IconButton
                                 aria-label="Confirm"
                                 icon={<Check size={14} />}
-                                size="xs"
+                                size="sm"
+                                minH="44px"
+                                minW="44px"
                                 variant="ghost"
                                 color="green.400"
                                 _hover={{ color: "green.300", bg: "transparent" }}
@@ -1534,9 +1546,9 @@ const SettingsPage = () => {
                           </Box>
                         ) : (
                           // Show name with edit button when not editing
-                          <Box position="relative">
+                          <HStack spacing={1}>
                             <Text
-                              fontSize="lg"
+                              fontSize={{ base: "md", md: "lg" }}
                               fontWeight="semibold"
                               color="white"
                               px={2}
@@ -1552,28 +1564,28 @@ const SettingsPage = () => {
                               <IconButton
                                 aria-label="Edit name"
                                 icon={<Edit2 size={14} />}
-                                size="xs"
+                                size="sm"
+                                minH="44px"
+                                minW="44px"
                                 variant="ghost"
                                 color="#00C6E0"
-                                position="absolute"
-                                top="50%"
-                                right={-6}
-                                transform="translateY(-50%)"
                                 _hover={{ color: "#00A3B8", bg: "transparent" }}
                                 onClick={() => setIsEditingName(true)}
                               />
                             </Tooltip>
-                          </Box>
+                          </HStack>
                         )}
                       </Box>
-                      <Text color="whiteAlpha.700" fontSize="sm">
+                      <Text color="whiteAlpha.700" fontSize={{ base: "xs", md: "sm" }}>
                         Pro Trader
                       </Text>
-                      <Text color="whiteAlpha.600" fontSize="xs" mt={2}>
-                        Your profile picture helps others recognize you across the platform.
-                        <br />
-                        Click on your avatar to upload or change your picture.
-                      </Text>
+                      {!isMobile && (
+                        <Text color="whiteAlpha.600" fontSize="xs" mt={2}>
+                          Your profile picture helps others recognize you across the platform.
+                          <br />
+                          Click on your avatar to upload or change your picture.
+                        </Text>
+                      )}
                     </VStack>
                   </Flex>
                 </Box>
@@ -1620,6 +1632,9 @@ const SettingsPage = () => {
                       borderColor="#00C6E0"
                       leftIcon={<Lock size={16} />}
                       onClick={onOpen}
+                      minH="44px"
+                      px={{ base: 4, md: 4 }}
+                      fontSize={{ base: "sm", md: "md" }}
                       _hover={{
                         bg: "rgba(0, 198, 224, 0.1)",
                       }}
@@ -1892,37 +1907,43 @@ const SettingsPage = () => {
                 <Text color="whiteAlpha.700" fontSize="sm" fontWeight="medium">
                   Legal
                 </Text>
-                <HStack spacing={4} pt={1}>
-                  <Link 
-                    href="https://atomiktrading.io/docs/legal/terms-of-service" 
-                    isExternal 
+                <HStack spacing={{ base: 3, md: 4 }} pt={1} flexWrap="wrap" gap={2}>
+                  <Link
+                    href="https://atomiktrading.io/docs/legal/terms-of-service"
+                    isExternal
                     color="whiteAlpha.600"
                     fontSize="xs"
                     _hover={{ color: "#00C6E0" }}
                     display="flex"
                     alignItems="center"
+                    minH="44px"
+                    py={2}
                   >
                     Terms of Service <ExternalLink size={12} style={{ marginLeft: '4px' }} />
                   </Link>
-                  <Link 
-                    href="https://atomiktrading.io/docs/legal/privacy-policy" 
+                  <Link
+                    href="https://atomiktrading.io/docs/legal/privacy-policy"
                     isExternal
                     color="whiteAlpha.600"
                     fontSize="xs"
                     _hover={{ color: "#00C6E0" }}
                     display="flex"
                     alignItems="center"
+                    minH="44px"
+                    py={2}
                   >
                     Privacy Policy <ExternalLink size={12} style={{ marginLeft: '4px' }} />
                   </Link>
-                  <Link 
-                    href="https://atomiktrading.io/docs/legal/cookie-policy" 
+                  <Link
+                    href="https://atomiktrading.io/docs/legal/cookie-policy"
                     isExternal
                     color="whiteAlpha.600"
                     fontSize="xs"
                     _hover={{ color: "#00C6E0" }}
                     display="flex"
                     alignItems="center"
+                    minH="44px"
+                    py={2}
                   >
                     Cookie Policy <ExternalLink size={12} style={{ marginLeft: '4px' }} />
                   </Link>
@@ -1990,11 +2011,12 @@ const SettingsPage = () => {
                         size="lg"
                         bg="#00C6E0"
                         color="white"
-                        px={8}
+                        px={{ base: 6, md: 8 }}
                         py={6}
-                        fontSize="md"
+                        fontSize={{ base: "sm", md: "md" }}
                         fontWeight="semibold"
-                        _hover={{ 
+                        minH="44px"
+                        _hover={{
                           bg: "#00A3B8",
                           transform: "translateY(-2px)",
                           boxShadow: "0 8px 20px -8px rgba(0, 198, 224, 0.5)"
@@ -2194,86 +2216,150 @@ const SettingsPage = () => {
 
   return (
     <Flex minH="100vh" bg="#000000" color="text.primary" fontFamily="body" position="relative">
-      <Box flexGrow={1} p={{ base: 4, md: 6 }} position="relative">
+      <Box flexGrow={1} p={{ base: 3, md: 6 }} position="relative">
         <MotionFlex
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
           h="full"
-          gap={6}
-          direction={{ base: "column", md: "row" }}
+          gap={{ base: 3, md: 6 }}
+          direction="column"
         >
-          {/* Left Menu */}
-          <MotionBox
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.3, delay: 0.1 }}
-          >
-            <VStack spacing={4} align="stretch">
-              {/* Back Button */}
-              <Tooltip label="Go back" placement="right">
-                <IconButton
-                  aria-label="Go back"
-                  icon={<ArrowLeft size={20} />}
-                  variant="ghost"
-                  color="whiteAlpha.700"
-                  size="md"
-                  w="fit-content"
-                  _hover={{ 
-                    color: "#00C6E0",
-                    bg: "rgba(0, 198, 224, 0.1)"
-                  }}
-                  _active={{
-                    bg: "rgba(0, 198, 224, 0.2)"
-                  }}
-                  onClick={handleGoBack}
-                />
-              </Tooltip>
-              
-              {/* Settings Menu */}
-              <DarkCard w={{ base: "full", md: "64" }}>
-                <VStack spacing={0} align="stretch">
-                  {menuItems.map(item => (
-                    <MenuItem
-                      key={item.id}
-                      icon={item.icon}
-                      label={item.label}
-                      isSelected={selectedSection === item.id}
-                      onClick={() => setSelectedSection(item.id)}
-                    />
-                  ))}
-                </VStack>
-              </DarkCard>
-            </VStack>
-          </MotionBox>
+          {/* Mobile Header with Back Button */}
+          {isMobile && (
+            <HStack justify="space-between" align="center">
+              <IconButton
+                aria-label="Go back"
+                icon={<ArrowLeft size={20} />}
+                variant="ghost"
+                color="whiteAlpha.700"
+                size="md"
+                minH="44px"
+                minW="44px"
+                _hover={{
+                  color: "#00C6E0",
+                  bg: "rgba(0, 198, 224, 0.1)"
+                }}
+                _active={{
+                  bg: "rgba(0, 198, 224, 0.2)"
+                }}
+                onClick={handleGoBack}
+              />
+              <Text fontSize="lg" fontWeight="bold" color="white">
+                Settings
+              </Text>
+              <Box w="44px" /> {/* Spacer for centering */}
+            </HStack>
+          )}
 
-          {/* Main Content */}
-          <MotionBox
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, delay: 0.2 }}
+          {/* Mobile Horizontal Tab Navigation */}
+          {isMobile && (
+            <HStack
+              spacing={2}
+              overflowX="auto"
+              pb={2}
+              px={1}
+              css={{
+                '&::-webkit-scrollbar': { display: 'none' },
+                scrollbarWidth: 'none',
+              }}
+            >
+              {menuItems.map(item => (
+                <MenuItem
+                  key={item.id}
+                  icon={item.icon}
+                  label={item.label}
+                  isSelected={selectedSection === item.id}
+                  onClick={() => setSelectedSection(item.id)}
+                  isMobile={true}
+                />
+              ))}
+            </HStack>
+          )}
+
+          <Flex
+            gap={{ base: 3, md: 6 }}
+            direction={{ base: "column", md: "row" }}
             flex={1}
           >
-            <DarkCard h="full" overflow="auto">
-              <Box p={6}>
-                <Flex 
-                  justify="space-between" 
-                  align="center" 
-                  mb={8}
-                  direction={{ base: "column", sm: "row" }}
-                  gap={{ base: 4, sm: 0 }}
-                >
-                  <Text fontSize="xl" fontWeight="bold" color="white">
-                    {menuItems.find(item => item.id === selectedSection)?.label} Settings
-                  </Text>
-                </Flex>
+            {/* Left Menu - Desktop Only */}
+            {!isMobile && (
+              <MotionBox
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.3, delay: 0.1 }}
+              >
+                <VStack spacing={4} align="stretch">
+                  {/* Back Button */}
+                  <Tooltip label="Go back" placement="right">
+                    <IconButton
+                      aria-label="Go back"
+                      icon={<ArrowLeft size={20} />}
+                      variant="ghost"
+                      color="whiteAlpha.700"
+                      size="md"
+                      w="fit-content"
+                      minH="44px"
+                      minW="44px"
+                      _hover={{
+                        color: "#00C6E0",
+                        bg: "rgba(0, 198, 224, 0.1)"
+                      }}
+                      _active={{
+                        bg: "rgba(0, 198, 224, 0.2)"
+                      }}
+                      onClick={handleGoBack}
+                    />
+                  </Tooltip>
 
-                <Box>
-                  {renderContent()}
+                  {/* Settings Menu */}
+                  <DarkCard w="64">
+                    <VStack spacing={0} align="stretch">
+                      {menuItems.map(item => (
+                        <MenuItem
+                          key={item.id}
+                          icon={item.icon}
+                          label={item.label}
+                          isSelected={selectedSection === item.id}
+                          onClick={() => setSelectedSection(item.id)}
+                          isMobile={false}
+                        />
+                      ))}
+                    </VStack>
+                  </DarkCard>
+                </VStack>
+              </MotionBox>
+            )}
+
+            {/* Main Content */}
+            <MotionBox
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, delay: 0.2 }}
+              flex={1}
+            >
+              <DarkCard h="full" overflow="auto">
+                <Box p={{ base: 4, md: 6 }}>
+                  {/* Desktop Header */}
+                  {!isMobile && (
+                    <Flex
+                      justify="space-between"
+                      align="center"
+                      mb={8}
+                    >
+                      <Text fontSize="xl" fontWeight="bold" color="white">
+                        {menuItems.find(item => item.id === selectedSection)?.label} Settings
+                      </Text>
+                    </Flex>
+                  )}
+
+                  <Box>
+                    {renderContent()}
+                  </Box>
                 </Box>
-              </Box>
-            </DarkCard>
-          </MotionBox>
+              </DarkCard>
+            </MotionBox>
+          </Flex>
         </MotionFlex>
       </Box>
 
