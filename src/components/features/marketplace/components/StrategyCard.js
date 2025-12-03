@@ -16,7 +16,7 @@ import { engineStrategiesApi } from '@/services/api/strategies/engineStrategiesA
 import StarRating from '../StarRating';
 import StrategyPurchaseModal from './StrategyPurchaseModal';
 
-const StrategyCard = ({ strategy, onSubscriptionChange }) => {
+const StrategyCard = ({ strategy, onSubscriptionChange, isMobile = false }) => {
   const {
     token,
     source_id, // This is the ID for engine strategies or token for webhooks
@@ -278,14 +278,15 @@ const StrategyCard = ({ strategy, onSubscriptionChange }) => {
       overflow="hidden"
       transition="all 0.2s"
       _hover={{
-        transform: 'translateY(-2px)',
+        transform: isMobile ? 'none' : 'translateY(-2px)',
         borderColor: "rgba(0, 198, 224, 0.6)",
-        boxShadow: "0 4px 12px rgba(0, 198, 224, 0.15)"
+        boxShadow: isMobile ? "none" : "0 4px 12px rgba(0, 198, 224, 0.15)"
       }}
-      w="280px"
-      h="260px"
+      w={isMobile ? "100%" : "280px"}
+      h={isMobile ? "auto" : "260px"}
+      minH={isMobile ? "180px" : "260px"}
     >
-      <VStack p={4} spacing={3} align="stretch" h="full">
+      <VStack p={isMobile ? 3 : 4} spacing={isMobile ? 2 : 3} align="stretch" h="full">
         {/* Header Section */}
         <HStack justify="space-between" align="start">
           <VStack align="start" spacing={0} flex={1}>
@@ -346,11 +347,11 @@ const StrategyCard = ({ strategy, onSubscriptionChange }) => {
         </HStack>
 
         {/* Description */}
-        <Text 
-          fontSize="sm" 
-          color="whiteAlpha.800" 
-          noOfLines={2}
-          flex={1}
+        <Text
+          fontSize={isMobile ? "xs" : "sm"}
+          color="whiteAlpha.800"
+          noOfLines={isMobile ? 2 : 2}
+          flex={isMobile ? "none" : 1}
         >
           {description}
         </Text>
@@ -376,8 +377,9 @@ const StrategyCard = ({ strategy, onSubscriptionChange }) => {
           onClick={handleSubscription}
           isLoading={isLoading}
           variant="outline"
-          size="sm"
+          size={isMobile ? "md" : "sm"}
           w="full"
+          minH="44px"
           colorScheme={subscribed ? "blue" : "gray"}
           borderColor={subscribed ? "rgba(0, 198, 224, 0.6)" : "whiteAlpha.200"}
           color={subscribed ? "rgba(0, 198, 224, 0.9)" : "white"}
@@ -385,7 +387,8 @@ const StrategyCard = ({ strategy, onSubscriptionChange }) => {
             bg: subscribed ? "rgba(0, 198, 224, 0.1)" : "whiteAlpha.100",
             borderColor: "rgba(0, 198, 224, 0.6)"
           }}
-          leftIcon={subscribed ? <CheckCircle2 size={16} /> : null}
+          leftIcon={subscribed ? <CheckCircle2 size={isMobile ? 18 : 16} /> : null}
+          fontSize={isMobile ? "sm" : "xs"}
         >
           {subscribed
             ? "Subscribed"

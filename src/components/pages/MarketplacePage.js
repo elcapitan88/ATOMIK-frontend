@@ -18,6 +18,7 @@ import {
   Button,
   Icon,
   IconButton,
+  useBreakpointValue,
 } from '@chakra-ui/react';
 import {
   Search,
@@ -87,6 +88,7 @@ const MarketplacePage = () => {
   const [subscribedStrategies, setSubscribedStrategies] = useState(new Set());
   const [searchFocused, setSearchFocused] = useState(false);
   const toast = useToast();
+  const isMobile = useBreakpointValue({ base: true, md: false });
 
   // Calculate totals
   const totalStrategies = useMemo(() => {
@@ -290,15 +292,16 @@ const MarketplacePage = () => {
   // Strategy grid component
   const StrategyGrid = ({ strategies }) => (
     <MotionFlex
-      gap={6}
+      gap={{ base: 4, md: 6 }}
       flexWrap="wrap"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.3 }}
-      justify="center" 
+      justify={{ base: "stretch", md: "center" }}
+      direction={{ base: "column", md: "row" }}
       width="100%"
-      minHeight="260px" // Maintain consistent height
+      minHeight={{ base: "auto", md: "260px" }}
     >
       <AnimatePresence mode="wait">
         {strategies.length > 0 ? (
@@ -309,15 +312,17 @@ const MarketplacePage = () => {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
               transition={{ duration: 0.3 }}
+              w={{ base: "100%", md: "auto" }}
             >
               <StrategyCard
                 strategy={strategy}
                 onSubscriptionChange={handleSubscriptionChange}
+                isMobile={isMobile}
               />
             </MotionBox>
           ))
         ) : (
-          <Flex align="center" justify="center" height="260px">
+          <Flex align="center" justify="center" height={{ base: "150px", md: "260px" }} w="100%">
             <Text color="whiteAlpha.600" fontSize="md">
               No strategies available for this category
             </Text>
@@ -330,12 +335,13 @@ const MarketplacePage = () => {
   // Search bar component
   const SearchBar = () => (
     <InputGroup
-      maxW={{ base: "100%", sm: "350px", md: "450px" }}
+      maxW={{ base: "100%", md: "350px", lg: "450px" }}
+      w={{ base: "100%", md: "auto" }}
       transition="all 0.3s"
       transform={searchFocused ? 'translateY(-2px)' : 'none'}
       boxShadow={searchFocused ? '0 4px 12px rgba(0, 198, 224, 0.15)' : 'none'}
     >
-      <InputLeftElement pointerEvents="none">
+      <InputLeftElement pointerEvents="none" h={{ base: "44px", md: "40px" }}>
         <Search size={18} color="white" opacity={0.5} />
       </InputLeftElement>
       <Input
@@ -348,14 +354,16 @@ const MarketplacePage = () => {
         border="1px solid"
         borderColor="whiteAlpha.200"
         _hover={{ borderColor: "whiteAlpha.300" }}
-        _focus={{ 
+        _focus={{
           borderColor: "rgba(0, 198, 224, 0.6)",
           boxShadow: "0 0 0 1px rgba(0, 198, 224, 0.6)"
         }}
         color="white"
+        h={{ base: "44px", md: "40px" }}
+        fontSize={{ base: "md", md: "sm" }}
       />
       {searchQuery && (
-        <InputRightElement>
+        <InputRightElement h={{ base: "44px", md: "40px" }}>
           <IconButton
             icon={<X size={14} />}
             size="sm"
@@ -363,6 +371,8 @@ const MarketplacePage = () => {
             colorScheme="whiteAlpha"
             onClick={() => setSearchQuery('')}
             aria-label="Clear search"
+            minH="44px"
+            minW="44px"
           />
         </InputRightElement>
       )}
@@ -406,10 +416,10 @@ const MarketplacePage = () => {
       <VStack spacing={8} align="stretch">
         {/* Subscribed Strategies Section */}
         {subscribedStrategiesArray.length > 0 && (
-          <Box mb={8}>
-            <HStack mb={4} align="center" justify="center" width="100%">
-              <BookMarked size={20} color="white" />
-              <Text fontSize="xl" fontWeight="bold" color="white">
+          <Box mb={{ base: 4, md: 8 }}>
+            <HStack mb={{ base: 2, md: 4 }} align="center" justify="center" width="100%">
+              <BookMarked size={isMobile ? 16 : 20} color="white" />
+              <Text fontSize={{ base: "md", md: "xl" }} fontWeight="bold" color="white">
                 Your Subscribed Strategies
               </Text>
               <Badge
@@ -417,6 +427,7 @@ const MarketplacePage = () => {
                 colorScheme="blue"
                 bg="rgba(0, 198, 224, 0.2)"
                 color="white"
+                fontSize={{ base: "xs", md: "sm" }}
               >
                 {subscribedStrategiesArray.length}
               </Badge>
@@ -444,9 +455,9 @@ const MarketplacePage = () => {
 
           return (
             <Box key={category.id}>
-              <HStack mb={4} align="center" justify="center" width="100%">
-                <category.icon size={20} color="white" />
-                <Text fontSize="xl" fontWeight="bold" color="white">
+              <HStack mb={{ base: 2, md: 4 }} align="center" justify="center" width="100%">
+                <category.icon size={isMobile ? 16 : 20} color="white" />
+                <Text fontSize={{ base: "md", md: "xl" }} fontWeight="bold" color="white">
                   {category.title}
                 </Text>
                 <Badge
@@ -454,14 +465,17 @@ const MarketplacePage = () => {
                   colorScheme="blue"
                   bg="rgba(0, 198, 224, 0.2)"
                   color="white"
+                  fontSize={{ base: "xs", md: "sm" }}
                 >
                   {filteredStrategies.length}
                 </Badge>
               </HStack>
 
-              <Text color="whiteAlpha.700" fontSize="sm" mb={4} textAlign="center" width="100%">
-                {category.description}
-              </Text>
+              {!isMobile && (
+                <Text color="whiteAlpha.700" fontSize="sm" mb={4} textAlign="center" width="100%">
+                  {category.description}
+                </Text>
+              )}
 
               <StrategyGrid strategies={filteredStrategies} />
             </Box>
@@ -471,9 +485,9 @@ const MarketplacePage = () => {
         {/* Uncategorized Strategies Section */}
         {strategies.uncategorized && strategies.uncategorized.length > 0 && (
           <Box>
-            <HStack mb={4} align="center" justify="center" width="100%">
-              <Layout size={20} color="white" />
-              <Text fontSize="xl" fontWeight="bold" color="white">
+            <HStack mb={{ base: 2, md: 4 }} align="center" justify="center" width="100%">
+              <Layout size={isMobile ? 16 : 20} color="white" />
+              <Text fontSize={{ base: "md", md: "xl" }} fontWeight="bold" color="white">
                 Other Strategies
               </Text>
               <Badge
@@ -481,14 +495,17 @@ const MarketplacePage = () => {
                 colorScheme="blue"
                 bg="rgba(0, 198, 224, 0.2)"
                 color="white"
+                fontSize={{ base: "xs", md: "sm" }}
               >
                 {strategies.uncategorized.length}
               </Badge>
             </HStack>
 
-            <Text color="whiteAlpha.700" fontSize="sm" mb={4} textAlign="center" width="100%">
-              Strategies that haven't been categorized yet
-            </Text>
+            {!isMobile && (
+              <Text color="whiteAlpha.700" fontSize="sm" mb={4} textAlign="center" width="100%">
+                Strategies that haven't been categorized yet
+              </Text>
+            )}
 
             <StrategyGrid strategies={strategies.uncategorized} />
           </Box>
@@ -549,77 +566,163 @@ const MarketplacePage = () => {
             overflowY="auto"
             p={4}
           >
-            <Container maxW="container.xl" py={4}>
+            <Container maxW="container.xl" py={{ base: 2, md: 4 }}>
               {/* Header */}
-              <Flex 
-                direction={{ base: 'column', md: 'row' }} 
-                justify="space-between" 
-                align={{ base: 'stretch', md: 'center' }}
-                gap={4}
-                mb={6}
-              >
-                <VStack align="flex-start" spacing={1}>
-                  <Text 
-                    fontSize="2xl" 
-                    fontWeight="bold" 
-                    color="white"
-                    textShadow="0 0 10px rgba(0, 198, 224, 0.3)"
-                  >
-                    Strategy Marketplace
-                  </Text>
-                  <Text color="whiteAlpha.700" fontSize="sm">
-                    {totalStrategies} Strategies Available • {totalSubscribed} Subscribed
-                  </Text>
-                </VStack>
-
-                {/* Controls */}
-                <HStack spacing={4} flex={{ base: '1', md: '0' }}>
-                  <ButtonGroup size="sm" isAttached variant="outline">
-                    <Button
-                      onClick={() => setViewMode('all')}
-                      colorScheme={viewMode === 'all' ? 'blue' : 'gray'}
-                      borderColor="whiteAlpha.200"
-                      leftIcon={<Layout size={16} />}
-                    >
-                      All
-                    </Button>
-                    <Button
-                      onClick={() => setViewMode('subscribed')}
-                      colorScheme={viewMode === 'subscribed' ? 'blue' : 'gray'}
-                      borderColor="whiteAlpha.200"
-                      leftIcon={<BookMarked size={16} />}
-                    >
-                      Subscribed
-                    </Button>
-                  </ButtonGroup>
-
-                  <SearchBar />
-
-                  {viewMode === 'all' && (
-                    <Select
-                      value={selectedCategory}
-                      onChange={(e) => setSelectedCategory(e.target.value)}
-                      bg="whiteAlpha.100"
-                      border="1px solid"
-                      borderColor="whiteAlpha.200"
-                      _hover={{ borderColor: "whiteAlpha.300" }}
-                      _focus={{ 
-                        borderColor: "rgba(0, 198, 224, 0.6)",
-                        boxShadow: "0 0 0 1px rgba(0, 198, 224, 0.6)"
-                      }}
-                      maxW="200px"
+              <VStack spacing={{ base: 3, md: 4 }} align="stretch" mb={{ base: 4, md: 6 }}>
+                {/* Title Row */}
+                <Flex
+                  direction={{ base: 'column', md: 'row' }}
+                  justify="space-between"
+                  align={{ base: 'flex-start', md: 'center' }}
+                  gap={{ base: 2, md: 4 }}
+                >
+                  <VStack align={{ base: "center", md: "flex-start" }} spacing={0} w={{ base: "100%", md: "auto" }}>
+                    <Text
+                      fontSize={{ base: "xl", md: "2xl" }}
+                      fontWeight="bold"
                       color="white"
+                      textShadow="0 0 10px rgba(0, 198, 224, 0.3)"
                     >
-                      <option value="all">All Types</option>
-                      {STRATEGY_TYPE_OPTIONS.map(option => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </Select>
+                      Strategy Marketplace
+                    </Text>
+                    <Text color="whiteAlpha.700" fontSize={{ base: "xs", md: "sm" }}>
+                      {totalStrategies} Available • {totalSubscribed} Subscribed
+                    </Text>
+                  </VStack>
+
+                  {/* Desktop Controls */}
+                  {!isMobile && (
+                    <HStack spacing={4}>
+                      <ButtonGroup size="sm" isAttached variant="outline">
+                        <Button
+                          onClick={() => setViewMode('all')}
+                          colorScheme={viewMode === 'all' ? 'blue' : 'gray'}
+                          borderColor="whiteAlpha.200"
+                          leftIcon={<Layout size={16} />}
+                        >
+                          All
+                        </Button>
+                        <Button
+                          onClick={() => setViewMode('subscribed')}
+                          colorScheme={viewMode === 'subscribed' ? 'blue' : 'gray'}
+                          borderColor="whiteAlpha.200"
+                          leftIcon={<BookMarked size={16} />}
+                        >
+                          Subscribed
+                        </Button>
+                      </ButtonGroup>
+
+                      <SearchBar />
+
+                      {viewMode === 'all' && (
+                        <Select
+                          value={selectedCategory}
+                          onChange={(e) => setSelectedCategory(e.target.value)}
+                          bg="whiteAlpha.100"
+                          border="1px solid"
+                          borderColor="whiteAlpha.200"
+                          _hover={{ borderColor: "whiteAlpha.300" }}
+                          _focus={{
+                            borderColor: "rgba(0, 198, 224, 0.6)",
+                            boxShadow: "0 0 0 1px rgba(0, 198, 224, 0.6)"
+                          }}
+                          maxW="200px"
+                          color="white"
+                        >
+                          <option value="all">All Types</option>
+                          {STRATEGY_TYPE_OPTIONS.map(option => (
+                            <option key={option.value} value={option.value}>
+                              {option.label}
+                            </option>
+                          ))}
+                        </Select>
+                      )}
+                    </HStack>
                   )}
-                </HStack>
-              </Flex>
+                </Flex>
+
+                {/* Mobile Controls */}
+                {isMobile && (
+                  <VStack spacing={3} align="stretch">
+                    {/* Search Bar - Full Width */}
+                    <SearchBar />
+
+                    {/* Toggle and Filter Row */}
+                    <HStack justify="space-between" align="center">
+                      <ButtonGroup size="sm" isAttached variant="outline">
+                        <Button
+                          onClick={() => setViewMode('all')}
+                          colorScheme={viewMode === 'all' ? 'blue' : 'gray'}
+                          borderColor="whiteAlpha.200"
+                          minH="44px"
+                          minW="44px"
+                          px={3}
+                        >
+                          <Layout size={18} />
+                        </Button>
+                        <Button
+                          onClick={() => setViewMode('subscribed')}
+                          colorScheme={viewMode === 'subscribed' ? 'blue' : 'gray'}
+                          borderColor="whiteAlpha.200"
+                          minH="44px"
+                          minW="44px"
+                          px={3}
+                        >
+                          <BookMarked size={18} />
+                        </Button>
+                      </ButtonGroup>
+
+                      <Text fontSize="xs" color="whiteAlpha.600">
+                        {viewMode === 'all' ? 'All Strategies' : 'Subscribed'}
+                      </Text>
+                    </HStack>
+
+                    {/* Category Pills - Horizontal Scroll */}
+                    {viewMode === 'all' && (
+                      <HStack
+                        spacing={2}
+                        overflowX="auto"
+                        pb={2}
+                        css={{
+                          '&::-webkit-scrollbar': { display: 'none' },
+                          scrollbarWidth: 'none',
+                        }}
+                      >
+                        <Button
+                          size="sm"
+                          variant={selectedCategory === 'all' ? 'solid' : 'outline'}
+                          bg={selectedCategory === 'all' ? 'rgba(0, 198, 224, 0.2)' : 'transparent'}
+                          color={selectedCategory === 'all' ? '#00C6E0' : 'whiteAlpha.700'}
+                          borderColor="whiteAlpha.200"
+                          onClick={() => setSelectedCategory('all')}
+                          minH="36px"
+                          flexShrink={0}
+                          fontSize="xs"
+                        >
+                          All
+                        </Button>
+                        {categories.map((cat) => (
+                          <Button
+                            key={cat.id}
+                            size="sm"
+                            variant={selectedCategory === cat.id ? 'solid' : 'outline'}
+                            bg={selectedCategory === cat.id ? 'rgba(0, 198, 224, 0.2)' : 'transparent'}
+                            color={selectedCategory === cat.id ? '#00C6E0' : 'whiteAlpha.700'}
+                            borderColor="whiteAlpha.200"
+                            onClick={() => setSelectedCategory(cat.id)}
+                            minH="36px"
+                            flexShrink={0}
+                            fontSize="xs"
+                            leftIcon={<cat.icon size={14} />}
+                          >
+                            {cat.title.split(' ')[0]}
+                          </Button>
+                        ))}
+                      </HStack>
+                    )}
+                  </VStack>
+                )}
+              </VStack>
 
               {/* Main Content with Animation */}
               <AnimatePresence mode="wait">
