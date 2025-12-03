@@ -311,64 +311,35 @@ const DashboardContent = () => {
                             {/* Payment Status Warning - Global Dashboard Warning */}
                             <PaymentStatusWarning />
 
-                            {/* Emergency Flatten Button - Mobile Only */}
-                            {isMobile && (
-                                <Box px={4}>
-                                    <ErrorBoundary>
-                                        <Suspense fallback={null}>
-                                            <EmergencyFlatten accounts={dashboardData.accounts} />
-                                        </Suspense>
-                                    </ErrorBoundary>
-                                </Box>
-                            )}
-
-                            <Flex
-                                position="relative"
-                                h="full"
-                                p={4}
-                                zIndex={2}
-                                gap={4}
-                                direction={{ base: "column", lg: "row" }}
-                            >
-                            {/* Left Column */}
-                            <Flex
-                                flexDirection="column"
-                                flex={{ base: "1", lg: 7 }}
-                                width="100%"
-                            >
-                                {/* Chart container - Hidden on mobile */}
-                                {!isMobile && (
-                                    <Box
-                                        h="50%"
-                                        maxH="50%"
-                                        flex="0 0 50%"
-                                        bg="whiteAlpha.100"
-                                        borderRadius="xl"
-                                        overflow="hidden"
-                                    >
+                            {/* Mobile Layout - Reordered for mobile UX */}
+                            {isMobile ? (
+                                <VStack spacing={4} p={4} align="stretch">
+                                    {/* 1. Management Section (Top) */}
+                                    <Box>
                                         <ErrorBoundary>
                                             <Suspense fallback={<LoadingSpinner />}>
-                                                <TradingViewWidget />
+                                                <Management
+                                                    accounts={dashboardData.accounts}
+                                                    onAccountSelect={handleAccountSelect}
+                                                />
                                             </Suspense>
                                         </ErrorBoundary>
                                     </Box>
-                                )}
 
-                                {/* Bottom section */}
-                                <Flex
-                                    mt={isMobile ? 0 : 4}
-                                    gap={4}
-                                    flex="1"
-                                    minH="0"
-                                    direction={{ base: "column", xl: "row" }}
-                                >
-                                    {/* TradesTable container */}
-                                    <Box
-                                        flex="1"
-                                        borderRadius="xl"
-                                        overflow="hidden"
-                                        mb={{ base: 4, xl: 0 }}
-                                    >
+                                    {/* 2. Strategy Groups Section */}
+                                    <Box>
+                                        <ErrorBoundary>
+                                            <Suspense fallback={<LoadingSpinner />}>
+                                                <StrategyGroups
+                                                    strategies={dashboardData.strategies}
+                                                    accounts={dashboardData.accounts}
+                                                />
+                                            </Suspense>
+                                        </ErrorBoundary>
+                                    </Box>
+
+                                    {/* 3. TradesTable */}
+                                    <Box borderRadius="xl" overflow="hidden">
                                         <ErrorBoundary>
                                             <Suspense fallback={<LoadingSpinner />}>
                                                 <TradesTable
@@ -379,58 +350,121 @@ const DashboardContent = () => {
                                         </ErrorBoundary>
                                     </Box>
 
-                                    {/* OrderControl container - Hidden on mobile */}
-                                    {!isMobile && (
+                                    {/* 4. Emergency Flatten Button (Bottom) */}
+                                    <Box pt={2}>
+                                        <ErrorBoundary>
+                                            <Suspense fallback={null}>
+                                                <EmergencyFlatten accounts={dashboardData.accounts} />
+                                            </Suspense>
+                                        </ErrorBoundary>
+                                    </Box>
+                                </VStack>
+                            ) : (
+                                /* Desktop Layout */
+                                <Flex
+                                    position="relative"
+                                    h="full"
+                                    p={4}
+                                    zIndex={2}
+                                    gap={4}
+                                    direction="row"
+                                >
+                                    {/* Left Column */}
+                                    <Flex
+                                        flexDirection="column"
+                                        flex={7}
+                                        width="100%"
+                                    >
+                                        {/* Chart container */}
                                         <Box
-                                            flex={{ base: "1", xl: "0 0 400px" }}
+                                            h="50%"
+                                            maxH="50%"
+                                            flex="0 0 50%"
                                             bg="whiteAlpha.100"
                                             borderRadius="xl"
+                                            overflow="hidden"
                                         >
                                             <ErrorBoundary>
                                                 <Suspense fallback={<LoadingSpinner />}>
-                                                    <OrderControl
+                                                    <TradingViewWidget />
+                                                </Suspense>
+                                            </ErrorBoundary>
+                                        </Box>
+
+                                        {/* Bottom section */}
+                                        <Flex
+                                            mt={4}
+                                            gap={4}
+                                            flex="1"
+                                            minH="0"
+                                            direction={{ base: "column", xl: "row" }}
+                                        >
+                                            {/* TradesTable container */}
+                                            <Box
+                                                flex="1"
+                                                borderRadius="xl"
+                                                overflow="hidden"
+                                            >
+                                                <ErrorBoundary>
+                                                    <Suspense fallback={<LoadingSpinner />}>
+                                                        <TradesTable
+                                                            accounts={dashboardData.accounts}
+                                                            activeAccountId={dashboardData.activeAccountId}
+                                                        />
+                                                    </Suspense>
+                                                </ErrorBoundary>
+                                            </Box>
+
+                                            {/* OrderControl container */}
+                                            <Box
+                                                flex="0 0 400px"
+                                                bg="whiteAlpha.100"
+                                                borderRadius="xl"
+                                            >
+                                                <ErrorBoundary>
+                                                    <Suspense fallback={<LoadingSpinner />}>
+                                                        <OrderControl
+                                                            accounts={dashboardData.accounts}
+                                                            activeAccountId={dashboardData.activeAccountId}
+                                                        />
+                                                    </Suspense>
+                                                </ErrorBoundary>
+                                            </Box>
+                                        </Flex>
+                                    </Flex>
+
+                                    {/* Right Column */}
+                                    <Flex
+                                        flex={3}
+                                        flexDirection="column"
+                                        gap={4}
+                                    >
+                                        {/* Management Section */}
+                                        <Box flex="0 0 auto">
+                                            <ErrorBoundary>
+                                                <Suspense fallback={<LoadingSpinner />}>
+                                                    <Management
                                                         accounts={dashboardData.accounts}
-                                                        activeAccountId={dashboardData.activeAccountId}
+                                                        onAccountSelect={handleAccountSelect}
                                                     />
                                                 </Suspense>
                                             </ErrorBoundary>
                                         </Box>
-                                    )}
+
+                                        {/* Strategy Groups Section */}
+                                        <Box flex="1">
+                                            <ErrorBoundary>
+                                                <Suspense fallback={<LoadingSpinner />}>
+                                                    <StrategyGroups
+                                                        strategies={dashboardData.strategies}
+                                                        accounts={dashboardData.accounts}
+                                                    />
+                                                </Suspense>
+                                            </ErrorBoundary>
+                                        </Box>
+                                    </Flex>
                                 </Flex>
-                            </Flex>
-                            
-                            {/* Right Column */}
-                            <Flex 
-                                flex={{ base: "1", lg: 3 }} 
-                                flexDirection="column" 
-                                gap={4}
-                                mt={{ base: 4, lg: 0 }}
-                            >
-                                {/* Management Section */}
-                                <Box flex="0 0 auto">
-                                    <ErrorBoundary>
-                                        <Suspense fallback={<LoadingSpinner />}>
-                                            <Management 
-                                                accounts={dashboardData.accounts}
-                                                onAccountSelect={handleAccountSelect}
-                                            />
-                                        </Suspense>
-                                    </ErrorBoundary>
-                                </Box>
-                                
-                                {/* Strategy Groups Section */}
-                                <Box flex="1">
-                                    <ErrorBoundary>
-                                        <Suspense fallback={<LoadingSpinner />}>
-                                            <StrategyGroups 
-                                                strategies={dashboardData.strategies}
-                                                accounts={dashboardData.accounts}
-                                            />
-                                        </Suspense>
-                                    </ErrorBoundary>
-                                </Box>
-                            </Flex>
-                        </Flex>
+                            )}
                         </VStack>
                     </ErrorBoundary>
                 );
