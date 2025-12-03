@@ -6,7 +6,6 @@ import {
   Button,
   ButtonGroup,
   HStack,
-  Text,
   useToast,
   Icon,
   Select,
@@ -423,35 +422,6 @@ const TradesTable = () => {
           <HistoricalTradesView />
         )}
       </Box>
-
-      {/* Footer - Only show for webhooks, hidden on mobile */}
-      {activeView === 'webhooks' && !isMobile && (
-        <Flex
-          justify="center"
-          borderTop="1px solid"
-          borderColor="whiteAlpha.200"
-          p={4}
-        >
-          <HStack
-            spacing={6}
-            color="whiteAlpha.600"
-            fontSize="sm"
-          >
-            <HStack spacing={2}>
-              <Box w="3px" h="16px" bg="purple.400" borderRadius="full" />
-              <Text>Subscribed Strategies</Text>
-            </HStack>
-            <HStack spacing={2}>
-              <Box w="3px" h="16px" bg="rgba(0, 198, 224, 1)" borderRadius="full" />
-              <Text>Shared Strategies</Text>
-            </HStack>
-            <HStack spacing={2}>
-              <Box w="3px" h="16px" bg="transparent" border="1px solid" borderColor="whiteAlpha.400" borderRadius="full" />
-              <Text>Regular Webhooks</Text>
-            </HStack>
-          </HStack>
-        </Flex>
-      )}
 
       {/* Enhanced Strategy Modal with intent discovery */}
       <EnhancedStrategyModal

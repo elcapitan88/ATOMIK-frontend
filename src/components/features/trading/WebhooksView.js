@@ -414,14 +414,14 @@ const WebhooksView = ({ onWebhooksChange }) => {
   };
 
   return (
-    <Box position="relative" h="full" overflow="hidden">
+    <Flex direction="column" position="relative" h="full" overflow="hidden">
       {/* Loading State */}
       {isLoading && (
         <Flex justify="center" align="center" h="200px">
           <Spinner size="xl" color="blue.400" />
         </Flex>
       )}
-  
+
       {/* Error State */}
       {error && (
         <Flex justify="center" align="center" h="200px" color="red.400">
@@ -431,13 +431,13 @@ const WebhooksView = ({ onWebhooksChange }) => {
           </VStack>
         </Flex>
       )}
-  
+
       {/* Empty State */}
       {!isLoading && !error && webhooks.length === 0 ? (
         <Flex
           justify="center"
           align="center"
-          h="full"
+          flex="1"
           color="whiteAlpha.600"
           flexDirection="column"
           gap={4}
@@ -447,9 +447,10 @@ const WebhooksView = ({ onWebhooksChange }) => {
         </Flex>
       ) : (
         <Box
-          h="full"
+          flex="1"
           overflowY="auto"
           px={{ base: 3, md: 4 }}
+          maxH={{ base: '300px', md: 'none' }}
           onScroll={handleScroll}
           className="scrolled-container"
           data-at-top={isAtTop}
@@ -654,7 +655,34 @@ const WebhooksView = ({ onWebhooksChange }) => {
           <ScrollFade position="bottom" />
         </Box>
       )}
-  
+
+      {/* Legend Footer */}
+      {!isLoading && !error && webhooks.length > 0 && (
+        <Flex
+          justify="center"
+          borderTop="1px solid"
+          borderColor="whiteAlpha.100"
+          py={2}
+          px={3}
+          mt="auto"
+        >
+          <HStack
+            spacing={{ base: 4, md: 6 }}
+            color="whiteAlpha.600"
+            fontSize={{ base: 'xs', md: 'sm' }}
+          >
+            <HStack spacing={2}>
+              <Box w="3px" h={{ base: '12px', md: '16px' }} bg="purple.400" borderRadius="full" />
+              <Text>{isMobile ? 'Subscribed' : 'Subscribed Strategies'}</Text>
+            </HStack>
+            <HStack spacing={2}>
+              <Box w="3px" h={{ base: '12px', md: '16px' }} bg="cyan.400" borderRadius="full" />
+              <Text>{isMobile ? 'Shared' : 'Shared Strategies'}</Text>
+            </HStack>
+          </HStack>
+        </Flex>
+      )}
+
       {/* Modals */}
       {selectedWebhook && (
         <>
@@ -666,7 +694,7 @@ const WebhooksView = ({ onWebhooksChange }) => {
             }}
             webhook={selectedWebhook}
           />
-  
+
           <ShareStrategyModal
             isOpen={isShareOpen}
             onClose={() => {
@@ -676,7 +704,7 @@ const WebhooksView = ({ onWebhooksChange }) => {
             webhook={selectedWebhook}
             onWebhookUpdate={handleShareUpdate}
           />
-  
+
           <DeleteWebhook
             isOpen={isDeleteOpen}
             onClose={() => {
@@ -686,10 +714,10 @@ const WebhooksView = ({ onWebhooksChange }) => {
             webhookToken={selectedWebhook.token}
             onWebhookDeleted={handleDeleteWebhook}
           />
-          
+
         </>
       )}
-    </Box>
+    </Flex>
   );
 };
 
