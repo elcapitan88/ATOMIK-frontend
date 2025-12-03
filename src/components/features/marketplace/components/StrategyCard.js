@@ -282,9 +282,8 @@ const StrategyCard = ({ strategy, onSubscriptionChange, isMobile = false }) => {
         borderColor: "rgba(0, 198, 224, 0.6)",
         boxShadow: isMobile ? "none" : "0 4px 12px rgba(0, 198, 224, 0.15)"
       }}
-      w={isMobile ? "100%" : "280px"}
-      maxW={isMobile ? "340px" : "280px"}
-      mx={isMobile ? "auto" : 0}
+      w={isMobile ? "320px" : "280px"}
+      maxW={isMobile ? "calc(100% - 16px)" : "280px"}
       h={isMobile ? "auto" : "260px"}
       minH={isMobile ? "160px" : "260px"}
     >

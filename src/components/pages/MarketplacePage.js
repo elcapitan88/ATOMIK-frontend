@@ -313,7 +313,7 @@ const MarketplacePage = () => {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
               transition={{ duration: 0.3 }}
-              w={{ base: "100%", md: "auto" }}
+              w={{ base: "auto", md: "auto" }}
             >
               <StrategyCard
                 strategy={strategy}
@@ -560,12 +560,13 @@ const MarketplacePage = () => {
           />
           
           {/* Content */}
-          <Box 
-            position="relative" 
-            h="full" 
-            zIndex={1} 
+          <Box
+            position="relative"
+            h="full"
+            zIndex={1}
             overflowY="auto"
-            p={4}
+            overflowX="hidden"
+            p={{ base: 3, md: 4 }}
           >
             <Container maxW="container.xl" py={{ base: 2, md: 4 }}>
               {/* Header */}
