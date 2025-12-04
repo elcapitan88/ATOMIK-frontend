@@ -13,28 +13,23 @@ import {
   Flex,
   InputGroup,
   InputRightElement,
-  Link,
   Divider,
   Container,
   HStack,
-  Badge,
   Image
 } from '@chakra-ui/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useLocation, useNavigate, Link as RouterLink } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { Eye, EyeOff, LogIn, ArrowRight, ChevronRight, Shield, Lock } from 'lucide-react';
+import { Eye, EyeOff, ArrowRight, ChevronRight, Shield, Lock } from 'lucide-react';
 import logger from '@/utils/logger';
 import axiosInstance from '@/services/axiosConfig';
-import AdminService from '@/services/api/admin';
 import MaintenanceBanner from '@/components/common/MaintenanceBanner';
 
 
 
 // Motion components
 const MotionBox = motion(Box);
-const MotionFlex = motion(Flex);
-const MotionText = motion(Text);
 
 // Animation variants
 const containerVariants = {
@@ -233,33 +228,74 @@ const AuthPage = () => {
       overflow="hidden"
       position="relative"
     >
-      {/* Background decorative elements - match PricingPage */}
+      {/* Background decorative elements - enhanced depth like Homepage */}
       <Box
         position="absolute"
         top="10%"
-        left="5%"
-        width="30%"
-        height="30%"
-        bgGradient="radial(circle, rgba(0,198,224,0.15) 0%, rgba(0,0,0,0) 70%)"
-        filter="blur(50px)"
+        left="0%"
+        width="50%"
+        height="50%"
+        bgGradient="conic(from 45deg, rgba(0,198,224,0.08) 0%, rgba(0,198,224,0.03) 25%, transparent 50%)"
+        filter="blur(80px)"
         zIndex={0}
+        pointerEvents="none"
+        opacity={0.6}
       />
-      
+
       <Box
         position="absolute"
-        bottom="20%"
-        right="10%"
-        width="40%"
-        height="40%"
-        bgGradient="radial(circle, rgba(153,50,204,0.1) 0%, rgba(0,0,0,0) 70%)"
-        filter="blur(60px)"
+        bottom="0%"
+        right="0%"
+        width="60%"
+        height="60%"
+        bgGradient="conic(from 225deg, rgba(0,198,224,0.06) 0%, rgba(0,198,224,0.02) 25%, transparent 50%)"
+        filter="blur(100px)"
         zIndex={0}
+        pointerEvents="none"
+        opacity={0.4}
+      />
+
+      {/* Additional center depth layer */}
+      <Box
+        position="absolute"
+        top="50%"
+        left="50%"
+        transform="translate(-50%, -50%)"
+        width="80%"
+        height="80%"
+        bgGradient="radial(ellipse at center, rgba(0,198,224,0.02) 0%, transparent 70%)"
+        filter="blur(120px)"
+        zIndex={0}
+        pointerEvents="none"
       />
       
       <Container maxW="container.xl" position="relative" zIndex={1}>
-        <Flex 
-          justifyContent="center" 
-          alignItems="center" 
+        {/* Logo with back link */}
+        <Box
+          position="absolute"
+          top={4}
+          left={4}
+          zIndex={10}
+        >
+          <RouterLink to="/">
+            <Image
+              src="/logos/atomik-logo.svg"
+              alt="Atomik Trading"
+              height="32px"
+              width="160px"
+              maxWidth="160px"
+              objectFit="contain"
+              transition="transform 0.2s, opacity 0.2s"
+              opacity={0.9}
+              _hover={{ transform: "scale(1.05)", opacity: 1 }}
+              fallback={<Text fontSize="lg" fontWeight="bold" color="white">AtomikTrading</Text>}
+            />
+          </RouterLink>
+        </Box>
+
+        <Flex
+          justifyContent="center"
+          alignItems="center"
           minH="calc(100vh - 8rem)"
           flexDirection="column"
         >
@@ -364,19 +400,38 @@ const AuthPage = () => {
                     type="submit"
                     width="full"
                     mt={2}
-                    bg={forgotPassword ? "#9932CC" : "#00C6E0"}
-                    color="black"
+                    bgGradient="linear(135deg, #00C6E0 0%, #0099B8 100%)"
+                    color="white"
+                    position="relative"
+                    overflow="hidden"
                     _hover={{
-                      bg: forgotPassword ? "purple.400" : "cyan.400",
                       transform: 'translateY(-2px)',
-                      boxShadow: 'lg'
+                      boxShadow: '0 10px 30px rgba(0, 198, 224, 0.4), 0 0 0 1px rgba(0, 198, 224, 0.3)',
+                    }}
+                    _before={{
+                      content: '""',
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      bgGradient: 'linear(135deg, #0099B8 0%, #00C6E0 100%)',
+                      opacity: 0,
+                      transition: 'opacity 0.3s ease'
+                    }}
+                    sx={{
+                      '&:hover::before': {
+                        opacity: 1
+                      }
                     }}
                     size="lg"
                     isLoading={isLoading}
                     loadingText={forgotPassword ? "Sending..." : "Signing In..."}
                     rightIcon={<ChevronRight size={16} />}
                   >
-                    {forgotPassword ? 'Send Reset Link' : 'Sign In'}
+                    <Text position="relative" zIndex={1}>
+                      {forgotPassword ? 'Send Reset Link' : 'Sign In'}
+                    </Text>
                   </Button>
                 </VStack>
               </Box>
