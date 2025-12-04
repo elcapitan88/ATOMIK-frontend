@@ -103,16 +103,16 @@ const HowToUse = () => {
       description: 'Link your trading account in minutes. Works with any broker, including prop firms. No coding or technical setup required.',
     },
     {
-      title: 'Set Up TradingView Alerts',
-      description: 'Connect your favorite TradingView strategies. Our simple webhook setup turns any alert into automated trades.',
+      title: 'Choose Your Strategy Path',
+      description: 'Use your own TradingView alerts with our webhook setup, OR browse our marketplace to subscribe to proven strategies from successful traders.',
     },
     {
-      title: 'Automate Your Trading Strategy',
-      description: 'Configure position sizing, risk management, and automation rules with our beginner-friendly interface.',
+      title: 'Automate Your Trading',
+      description: 'Configure position sizing and risk management. Whether using your own strategy or a marketplace subscription, automation is just one click away.',
     },
     {
       title: 'Monitor Performance & Scale',
-      description: 'Watch your automated trading in real-time. Track performance, copy successful strategies, and scale your profits.',
+      description: 'Watch your automated trading in real-time. Track performance, discover new strategies, and scale your profits.',
     },
   ];
 
@@ -185,20 +185,20 @@ const HowToUse = () => {
                 {
                   "@type": "HowToStep",
                   "position": 2,
-                  "name": "Set Up TradingView Alerts",
-                  "text": "Connect your favorite TradingView strategies. Our simple webhook setup turns any alert into automated trades.",
+                  "name": "Choose Your Strategy Path",
+                  "text": "Use your own TradingView alerts with our webhook setup, OR browse our marketplace to subscribe to proven strategies from successful traders.",
                   "url": "https://atomiktrading.io#how-to-use",
                   "image": {
                     "@type": "ImageObject",
                     "url": "https://atomiktrading.io/images/dashboard.png",
-                    "caption": "TradingView alert configuration"
+                    "caption": "Strategy selection - TradingView or Marketplace"
                   }
                 },
                 {
                   "@type": "HowToStep",
                   "position": 3,
-                  "name": "Automate Your Trading Strategy",
-                  "text": "Configure position sizing, risk management, and automation rules with our beginner-friendly interface.",
+                  "name": "Automate Your Trading",
+                  "text": "Configure position sizing and risk management. Whether using your own strategy or a marketplace subscription, automation is just one click away.",
                   "url": "https://atomiktrading.io#how-to-use",
                   "image": {
                     "@type": "ImageObject",
@@ -210,7 +210,7 @@ const HowToUse = () => {
                   "@type": "HowToStep",
                   "position": 4,
                   "name": "Monitor Performance & Scale",
-                  "text": "Watch your automated trading in real-time. Track performance, copy successful strategies, and scale your profits.",
+                  "text": "Watch your automated trading in real-time. Track performance, discover new strategies, and scale your profits.",
                   "url": "https://atomiktrading.io#how-to-use",
                   "image": {
                     "@type": "ImageObject",

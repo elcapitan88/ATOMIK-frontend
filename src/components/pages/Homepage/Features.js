@@ -1,6 +1,6 @@
 import React from 'react';
 import { Box, Container, SimpleGrid, Heading, Text, VStack, Icon } from '@chakra-ui/react';
-import { Shield, Zap, Webhook, LineChart, Users, Layers } from 'lucide-react';
+import { Shield, Zap, Webhook, LineChart, Users, Layers, Store } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const MotionBox = motion(Box);
@@ -70,6 +70,11 @@ const Features = () => {
       icon: Layers,
       title: 'No Per-Trade Fees',
       description: 'Simple, transparent pricing with no per-execution fees. Automate unlimited trades for one flat monthly price.',
+    },
+    {
+      icon: Store,
+      title: 'Strategy Marketplace',
+      description: "Don't have a strategy? Browse proven strategies from successful traders. Subscribe with one click and start trading instantly.",
     },
   ];
 

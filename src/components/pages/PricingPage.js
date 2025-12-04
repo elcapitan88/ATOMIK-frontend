@@ -898,6 +898,30 @@ const FAQ = () => {
   );
 };
 
+// Context-based messaging for different entry points
+const getContextualContent = (source) => {
+  switch (source) {
+    case 'marketplace':
+      return {
+        headline: 'Get Access to Proven Trading Strategies',
+        subtitle: 'Browse our marketplace of successful strategies from top traders. Subscribe with one click and start automated trading instantly.',
+        badge: 'MARKETPLACE ACCESS'
+      };
+    case 'creator':
+      return {
+        headline: 'Monetize Your Trading Strategies',
+        subtitle: 'Publish your strategies to our marketplace and earn passive income. Set your own pricing and get paid via Stripe.',
+        badge: 'CREATOR PROGRAM'
+      };
+    default:
+      return {
+        headline: 'Pricing Plans for Every Trader',
+        subtitle: 'Choose the perfect plan to automate your trading strategy with precision and reliability. All plans include our core features with flexible billing options.',
+        badge: null
+      };
+  }
+};
+
 // Main PricingPage component
 const PricingPage = () => {
   // State
@@ -906,13 +930,14 @@ const PricingPage = () => {
   const [showRegistration, setShowRegistration] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
-  
+  const [entrySource, setEntrySource] = useState(null);
+
   // Hooks
   const toast = useToast();
   const navigate = useNavigate();
   const { isAuthenticated, register, login } = useAuth();
   const componentMounted = useRef(true);
-  
+
   // Responsive adjustments
   const pricingColumns = useBreakpointValue({ base: 1, md: 2, lg: 2 });
 
@@ -922,18 +947,24 @@ const PricingPage = () => {
     lg: { py: 8, px: 4 }     // On desktop, use more vertical padding
   });
   
-  // Check for authentication on mount
+  // Check for authentication on mount and capture source param
   useEffect(() => {
     const queryParams = new URLSearchParams(window.location.search);
     const fromAuth = queryParams.get('source') === 'auth';
+    const source = queryParams.get('source');
     const isRegister = queryParams.get('register') === 'true';
-    
+
+    // Set entry source for contextual messaging
+    if (source === 'marketplace' || source === 'creator') {
+      setEntrySource(source);
+    }
+
     // If user is authenticated and NOT coming from auth page, redirect to dashboard
     if (isAuthenticated && !fromAuth) {
       logger.info('User is already authenticated, redirecting to dashboard');
       navigate('/dashboard');
     }
-    
+
     // Cleanup
     return () => {
       componentMounted.current = false;
@@ -1041,25 +1072,46 @@ const PricingPage = () => {
       
       <Container maxW="container.xl" position="relative" zIndex={1}>
         <VStack spacing={4} mb={8}>
+          {/* Contextual badge for marketplace/creator entry */}
+          {getContextualContent(entrySource).badge && (
+            <MotionBox variants={itemVariants}>
+              <Badge
+                colorScheme="cyan"
+                variant="subtle"
+                px={4}
+                py={1}
+                borderRadius="full"
+                fontSize="xs"
+                fontWeight="bold"
+                letterSpacing="wider"
+              >
+                {getContextualContent(entrySource).badge}
+              </Badge>
+            </MotionBox>
+          )}
+
           <MotionBox variants={itemVariants}>
-            <Heading 
+            <Heading
               fontSize={{ base: "2xl", md: "3xl", lg: "4xl" }}
               fontWeight="bold"
               color="white"
               textAlign="center"
               mb={2}
             >
-              Pricing Plans for Every <Text as="span" color="#00C6E0">Trader</Text>
+              {entrySource ? (
+                getContextualContent(entrySource).headline
+              ) : (
+                <>Pricing Plans for Every <Text as="span" color="#00C6E0">Trader</Text></>
+              )}
             </Heading>
           </MotionBox>
-          
+
           <MotionBox variants={itemVariants} maxW="container.md" textAlign="center">
             <Text
               fontSize={{ base: "sm", md: "md" }}
               color="whiteAlpha.800"
             >
-              Choose the perfect plan to automate your trading strategy with precision and reliability.
-              All plans include our core features with flexible billing options.
+              {getContextualContent(entrySource).subtitle}
             </Text>
           </MotionBox>
 

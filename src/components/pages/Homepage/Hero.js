@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, Container, Heading, Text, Button, Stack, VStack, Image } from '@chakra-ui/react';
+import { Box, Container, Heading, Text, Button, Stack, VStack, HStack, Image } from '@chakra-ui/react';
 import { motion } from 'framer-motion';
 import { Link as RouterLink } from 'react-router-dom';
 import ParticleBackground from './ParticleBackground';
@@ -225,6 +225,48 @@ const Hero = () => {
                   Learn More
                 </Button>
               </Stack>
+            </MotionBox>
+
+            {/* Secondary CTAs for alternative paths */}
+            <MotionBox
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 1, delay: 0.7, ease: "easeOut" }}
+              w="full"
+            >
+              <HStack
+                spacing={2}
+                justify={{ base: 'center', lg: 'flex-start' }}
+                flexWrap="wrap"
+                color="whiteAlpha.700"
+                fontSize="sm"
+              >
+                <Text>Don't have a strategy?</Text>
+                <RouterLink to="/pricing?source=marketplace">
+                  <Text
+                    as="span"
+                    color="#00C6E0"
+                    fontWeight="medium"
+                    cursor="pointer"
+                    _hover={{ textDecoration: 'underline' }}
+                  >
+                    Browse the Marketplace
+                  </Text>
+                </RouterLink>
+                <Text mx={1}>•</Text>
+                <Text>Want to sell strategies?</Text>
+                <RouterLink to="/pricing?source=creator">
+                  <Text
+                    as="span"
+                    color="#00C6E0"
+                    fontWeight="medium"
+                    cursor="pointer"
+                    _hover={{ textDecoration: 'underline' }}
+                  >
+                    Become a Creator
+                  </Text>
+                </RouterLink>
+              </HStack>
             </MotionBox>
           </VStack>
 
