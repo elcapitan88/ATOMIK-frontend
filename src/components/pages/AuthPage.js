@@ -270,37 +270,32 @@ const AuthPage = () => {
       />
       
       <Container maxW="container.xl" position="relative" zIndex={1}>
-        {/* Logo with back link */}
-        <Box
-          position="absolute"
-          top={4}
-          left={4}
-          zIndex={10}
-        >
-          <RouterLink to="/">
-            <Image
-              src="/logos/atomik-logo.svg"
-              alt="Atomik Trading"
-              height="32px"
-              width="160px"
-              maxWidth="160px"
-              objectFit="contain"
-              transition="transform 0.2s, opacity 0.2s"
-              opacity={0.9}
-              _hover={{ transform: "scale(1.05)", opacity: 1 }}
-              fallback={<Text fontSize="lg" fontWeight="bold" color="white">AtomikTrading</Text>}
-            />
-          </RouterLink>
-        </Box>
-
         <Flex
           justifyContent="center"
           alignItems="center"
           minH="calc(100vh - 8rem)"
           flexDirection="column"
         >
+          {/* Logo with back link - centered above welcome text */}
+          <MotionBox variants={itemVariants} mb={6}>
+            <RouterLink to="/">
+              <Image
+                src="/logos/atomik-logo.svg"
+                alt="Atomik Trading"
+                height="40px"
+                width="200px"
+                maxWidth="200px"
+                objectFit="contain"
+                transition="transform 0.2s, opacity 0.2s"
+                opacity={0.9}
+                _hover={{ transform: "scale(1.05)", opacity: 1 }}
+                fallback={<Text fontSize="xl" fontWeight="bold" color="white">AtomikTrading</Text>}
+              />
+            </RouterLink>
+          </MotionBox>
+
           <MotionBox variants={itemVariants}>
-            <Heading 
+            <Heading
               fontSize={{ base: "2xl", md: "3xl" }}
               fontWeight="bold"
               color="white"
