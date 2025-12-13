@@ -36,8 +36,8 @@ import {
   useEditableControls,
   useBreakpointValue,
 } from '@chakra-ui/react';
-import { 
-  User, 
+import {
+  User,
   CreditCard,
   Save,
   Edit,
@@ -65,7 +65,8 @@ import {
   RefreshCw,
   ArrowLeft,
   DollarSign,
-  Calendar
+  Calendar,
+  Building2
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
@@ -77,17 +78,18 @@ import { useAffiliate } from '@/hooks/useAffiliate';
 import StripeConnectEmbed from '@/components/features/creators/StripeConnectEmbed';
 import StripeAccountManagement from '@/components/features/creators/StripeAccountManagement';
 import { BillingDashboard } from '@/components/features/billing/BillingDashboard';
+import ConnectedAccountsSection from '@/components/features/settings/ConnectedAccountsSection';
 
 const MotionBox = motion(Box);
 const MotionFlex = motion(Flex);
 
 // Custom X (formerly Twitter) icon component
 const XIcon = ({ size = 20, ...props }) => (
-  <Box 
-    as="svg" 
-    viewBox="0 0 24 24" 
-    width={size} 
-    height={size} 
+  <Box
+    as="svg"
+    viewBox="0 0 24 24"
+    width={size}
+    height={size}
     color="currentColor"
     fill="currentColor"
     {...props}
@@ -100,11 +102,11 @@ const XIcon = ({ size = 20, ...props }) => (
 
 // Custom TikTok icon component
 const TikTokIcon = ({ size = 20, ...props }) => (
-  <Box 
-    as="svg" 
-    viewBox="0 0 24 24" 
-    width={size} 
-    height={size} 
+  <Box
+    as="svg"
+    viewBox="0 0 24 24"
+    width={size}
+    height={size}
     color="currentColor"
     fill="currentColor"
     {...props}
@@ -175,14 +177,14 @@ const FormInput = ({ label, helperText, icon: Icon, initialValue = "", fieldName
 
   const handleBlur = async () => {
     if (!hasChanged) return;
-    
+
     setIsSaving(true);
     try {
       if (onSave) {
         await onSave(fieldName, value);
       }
       setHasChanged(false);
-      
+
       toast({
         title: `${label} updated`,
         status: "success",
@@ -227,7 +229,7 @@ const FormInput = ({ label, helperText, icon: Icon, initialValue = "", fieldName
           onChange={handleChange}
           onBlur={handleBlur}
           _hover={{ borderColor: hasChanged ? "#00C6E0" : "#444" }}
-          _focus={{ 
+          _focus={{
             borderColor: "#00C6E0",
             boxShadow: "none"
           }}
@@ -271,7 +273,7 @@ const PasswordInput = ({ label, ...props }) => {
           pl={10}
           type={show ? 'text' : 'password'}
           _hover={{ borderColor: "#444" }}
-          _focus={{ 
+          _focus={{
             borderColor: "#00C6E0",
             boxShadow: "none"
           }}
@@ -311,14 +313,14 @@ const SocialInput = ({ icon: Icon, label, initialValue = "", fieldName, onSave, 
 
   const handleBlur = async () => {
     if (!hasChanged) return;
-    
+
     setIsSaving(true);
     try {
       if (onSave) {
         await onSave('socialMedia', { [fieldName]: value });
       }
       setHasChanged(false);
-      
+
       toast({
         title: `${label} updated`,
         status: "success",
@@ -361,7 +363,7 @@ const SocialInput = ({ icon: Icon, label, initialValue = "", fieldName, onSave, 
           onChange={handleChange}
           onBlur={handleBlur}
           _hover={{ borderColor: hasChanged ? "#00C6E0" : "#444" }}
-          _focus={{ 
+          _focus={{
             borderColor: "#00C6E0",
             boxShadow: "none"
           }}
@@ -400,18 +402,18 @@ const PasswordChangeModal = ({ isOpen, onClose }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
-    
+
     try {
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1000));
-      
+
       toast({
         title: "Password updated successfully",
         status: "success",
         duration: 3000,
         isClosable: true,
       });
-      
+
       onClose();
     } catch (error) {
       toast({
@@ -425,7 +427,7 @@ const PasswordChangeModal = ({ isOpen, onClose }) => {
       setIsSubmitting(false);
     }
   };
-  
+
   return (
     <Modal isOpen={isOpen} onClose={onClose} isCentered>
       <ModalOverlay bg="blackAlpha.700" />
@@ -483,7 +485,7 @@ const CreatorSettingsFlow = ({ user }) => {
   const [isLoadingAnalytics, setIsLoadingAnalytics] = useState(false);
   const toast = useToast();
   const { updateUserProfile } = useAuth();
-  
+
   // Determine if user is already a creator
   const isCreator = user?.creator_profile_id != null;
 
@@ -493,7 +495,7 @@ const CreatorSettingsFlow = ({ user }) => {
       try {
         const response = await axiosInstance.get('/api/v1/creators/onboarding-status');
         const { onboarding_step, onboarding_data, is_creator } = response.data;
-        
+
         if (is_creator) {
           // If already a creator, show management view or skip to Stripe if incomplete
           if (onboarding_step === 3) {
@@ -536,7 +538,7 @@ const CreatorSettingsFlow = ({ user }) => {
       return response.data;
     } catch (error) {
       console.error(`Failed to save onboarding step ${step}:`, error);
-      
+
       // Show user-friendly error
       toast({
         title: "Failed to save progress",
@@ -545,7 +547,7 @@ const CreatorSettingsFlow = ({ user }) => {
         duration: 5000,
         isClosable: true,
       });
-      
+
       throw error;
     }
   };
@@ -592,7 +594,7 @@ const CreatorSettingsFlow = ({ user }) => {
       } catch (error) {
         console.error('Failed to save step 3:', error);
       }
-      
+
       toast({
         title: "Profile created!",
         description: "Now let's set up your payment details",
@@ -614,7 +616,7 @@ const CreatorSettingsFlow = ({ user }) => {
       setIsCreatingProfile(false);
     }
   };
-  
+
   // Reset step when user navigates away and comes back
   React.useEffect(() => {
     if (isCreator && currentStep < 3) {
@@ -713,7 +715,7 @@ const CreatorSettingsFlow = ({ user }) => {
                     <VStack align="start" spacing={2}>
                       <Text color="whiteAlpha.600" fontSize="sm">Total Earnings</Text>
                       <Text color="white" fontSize="xl" fontWeight="bold">
-                        ${(analytics?.revenue?.total_revenue || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                        ${(analytics?.revenue?.total_revenue || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </Text>
                     </VStack>
                   </Box>
@@ -721,7 +723,7 @@ const CreatorSettingsFlow = ({ user }) => {
                     <VStack align="start" spacing={2}>
                       <Text color="whiteAlpha.600" fontSize="sm">This Month</Text>
                       <Text color="white" fontSize="xl" fontWeight="bold">
-                        ${(analytics?.revenue?.total_revenue || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                        ${(analytics?.revenue?.total_revenue || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </Text>
                     </VStack>
                   </Box>
@@ -788,12 +790,12 @@ const CreatorSettingsFlow = ({ user }) => {
                   borderRadius="full"
                   filter="blur(40px)"
                 />
-                
+
                 <VStack spacing={6} align="center" position="relative" textAlign="center">
                   <Box color="#00C6E0">
                     <Zap size={48} />
                   </Box>
-                  
+
                   <VStack spacing={3}>
                     <Text color="white" fontSize="2xl" fontWeight="bold">
                       Monetize Your Trading Expertise
@@ -802,7 +804,7 @@ const CreatorSettingsFlow = ({ user }) => {
                       Share strategies, build a following, earn recurring revenue
                     </Text>
                     <Text color="whiteAlpha.600" fontSize="sm" maxW="md">
-                      Join thousands of traders who are earning passive income by sharing their 
+                      Join thousands of traders who are earning passive income by sharing their
                       proven trading strategies with our community.
                     </Text>
                   </VStack>
@@ -895,7 +897,7 @@ const CreatorSettingsFlow = ({ user }) => {
                   Tell us about yourself
                 </Text>
                 <Text color="whiteAlpha.600" fontSize="sm" mb={6}>
-                  This information will be displayed on your creator profile to help potential 
+                  This information will be displayed on your creator profile to help potential
                   subscribers understand your trading background and expertise.
                 </Text>
               </Box>
@@ -908,7 +910,7 @@ const CreatorSettingsFlow = ({ user }) => {
                   placeholder="Tell your audience about your trading experience..."
                   helperText="Share your trading background, years of experience, and what makes your strategies unique"
                 />
-                
+
                 <Box>
                   <FormLabel color="white" fontSize="sm" fontWeight="medium" mb={2}>
                     Trading Experience Level
@@ -977,7 +979,7 @@ const CreatorSettingsFlow = ({ user }) => {
                   Complete your payment setup
                 </Text>
                 <Text color="whiteAlpha.600" fontSize="sm" mb={6}>
-                  Fill out the secure form below to start receiving payments. This information is 
+                  Fill out the secure form below to start receiving payments. This information is
                   handled entirely by Stripe - we never see your banking details.
                 </Text>
               </Box>
@@ -986,14 +988,14 @@ const CreatorSettingsFlow = ({ user }) => {
               <StripeConnectEmbed
                 onComplete={async (status) => {
                   console.log('Stripe onboarding complete:', status);
-                  
+
                   // Mark onboarding as complete
                   await completeOnboarding();
                   setOnboardingCompleted(true); // Mark locally as completed
-                  
+
                   // Show success state and redirect to creator area after longer delay
                   setCurrentStep('success');
-                  
+
                   // Redirect to creator area after showing success for longer
                   setTimeout(async () => {
                     // Refresh user data to ensure creator_profile_id is updated
@@ -1009,7 +1011,7 @@ const CreatorSettingsFlow = ({ user }) => {
                     } catch (error) {
                       console.error('Failed to refresh user data:', error);
                     }
-                    
+
                     setCurrentStep(null); // This will show the creator management interface
                     console.log('🎯 Transitioning to creator management interface. isCreator:', isCreator, 'onboardingCompleted:', onboardingCompleted);
                   }, 4000); // Show success screen for 4 seconds
@@ -1078,7 +1080,7 @@ const CreatorSettingsFlow = ({ user }) => {
                   🎉 Setup Complete!
                 </Text>
                 <Text color="whiteAlpha.700" fontSize="lg" maxW="md">
-                  Your payment account is ready and you're now part of the creator program. 
+                  Your payment account is ready and you're now part of the creator program.
                   You can start monetizing your trading strategies immediately.
                 </Text>
               </VStack>
@@ -1094,7 +1096,7 @@ const CreatorSettingsFlow = ({ user }) => {
                     Monetize your strategies with subscription pricing
                   </Text>
                 </Box>
-                
+
                 <Box bg="#1a1a1a" p={4} borderRadius="lg" border="1px solid #333" textAlign="center">
                   <Shield size={32} color="#00C6E0" style={{ margin: '0 auto 12px' }} />
                   <Text color="white" fontSize="md" fontWeight="semibold" mb={2}>
@@ -1104,7 +1106,7 @@ const CreatorSettingsFlow = ({ user }) => {
                     Powered by Stripe with automatic payouts
                   </Text>
                 </Box>
-                
+
                 <Box bg="#1a1a1a" p={4} borderRadius="lg" border="1px solid #333" textAlign="center">
                   <Zap size={32} color="#00C6E0" style={{ margin: '0 auto 12px' }} />
                   <Text color="white" fontSize="md" fontWeight="semibold" mb={2}>
@@ -1193,7 +1195,7 @@ const SettingsPage = () => {
   const [isUpdatingName, setIsUpdatingName] = useState(false);
   const [originalName, setOriginalName] = useState(''); // Store original name for cancel action
   const isMobile = useBreakpointValue({ base: true, md: false });
-  
+
   // Form data state
   const [formData, setFormData] = useState({
     username: '',
@@ -1211,11 +1213,11 @@ const SettingsPage = () => {
       marketingUpdates: false
     }
   });
-  
+
   const fileInputRef = useRef(null);
   const toast = useToast();
   const { isOpen, onOpen, onClose } = useDisclosure();
-  
+
   // Affiliate functionality
   const { isOpen: isAffiliateModalOpen, onOpen: onAffiliateModalOpen, onClose: onAffiliateModalClose } = useDisclosure();
   const { isAffiliate, becomeAffiliate, isBecomingAffiliate } = useAffiliate();
@@ -1232,6 +1234,7 @@ const SettingsPage = () => {
 
   const menuItems = [
     { id: 'profile', label: 'Profile', icon: User },
+    { id: 'accounts', label: 'Accounts', icon: Building2 },
     { id: 'billing', label: 'Billing', icon: CreditCard },
     { id: 'creator', label: 'Creator', icon: Zap },
     { id: 'affiliate', label: 'Affiliate', icon: DollarSign }
@@ -1249,10 +1252,10 @@ const SettingsPage = () => {
       // Use axiosInstance to handle auth headers automatically
       const response = await axiosInstance.post('/api/v1/subscriptions/create-portal-session');
       const portalUrl = response.data.url;
-      
+
       // Open in new tab
       window.open(portalUrl, '_blank', 'noopener,noreferrer');
-      
+
       toast({
         title: "Billing portal opened",
         description: "Manage your subscription in the new tab",
@@ -1278,7 +1281,7 @@ const SettingsPage = () => {
   const saveFieldValue = async (fieldName, value) => {
     // Create payload based on field type
     let payload = {};
-    
+
     if (typeof value === 'object') {
       // For nested objects like socialMedia
       payload[fieldName] = value;
@@ -1286,13 +1289,13 @@ const SettingsPage = () => {
       // For simple fields
       payload[fieldName] = value;
     }
-    
+
     console.log(`Saving ${fieldName}:`, payload);
-    
+
     // Call API to update the specific field
     const response = await axiosInstance.patch('/api/v1/auth/profile', payload);
     console.log(`Field ${fieldName} update response:`, response.data);
-    
+
     // Update local state
     setFormData(prev => {
       if (typeof value === 'object') {
@@ -1303,7 +1306,7 @@ const SettingsPage = () => {
       }
       return { ...prev, [fieldName]: value };
     });
-    
+
     return response.data;
   };
 
@@ -1312,7 +1315,7 @@ const SettingsPage = () => {
     try {
       // Update API
       await saveFieldValue('preferences', { [prefName]: isEnabled });
-      
+
       // Toast notification
       toast({
         title: `${isEnabled ? 'Enabled' : 'Disabled'} ${prefName}`,
@@ -1349,7 +1352,7 @@ const SettingsPage = () => {
       setPersonalName('John Doe');
       setOriginalName('John Doe');
     }
-    
+
     // Set other form fields from user data
     if (user) {
       setFormData({
@@ -1370,7 +1373,7 @@ const SettingsPage = () => {
       });
     }
   }, [user]);
-  
+
   const handleNameChange = async (newName) => {
     // Don't process if name is empty or unchanged
     if (!newName.trim() || newName === originalName) {
@@ -1378,20 +1381,20 @@ const SettingsPage = () => {
       setIsEditingName(false);
       return;
     }
-    
+
     setIsUpdatingName(true);
     try {
       console.log('Updating name to:', newName.trim());
-      
+
       // Make API call to update personal name using axiosInstance
       // Use "full_name" field name to match backend model
       await saveFieldValue('full_name', newName.trim());
-      
+
       // Update state with new name
       setPersonalName(newName);
       setOriginalName(newName);
       setIsEditingName(false);
-      
+
       // Update user context with new name
       if (user) {
         console.log("Updating user profile with:", {
@@ -1405,21 +1408,21 @@ const SettingsPage = () => {
         });
         console.log("User after update:", user);
       }
-      
+
       toast({
         title: "Name updated successfully",
         status: "success",
         duration: 3000,
         isClosable: true,
       });
-      
+
     } catch (error) {
       console.error('Name update error:', error);
       console.error('Error response:', error.response?.data);
-      
+
       // More detailed error handling
       let errorMessage = "Please try again";
-      
+
       if (error.response?.data?.detail) {
         errorMessage = error.response.data.detail;
       } else if (error.response?.status === 404) {
@@ -1431,7 +1434,7 @@ const SettingsPage = () => {
       } else if (error.message) {
         errorMessage = error.message;
       }
-      
+
       toast({
         title: "Failed to update name",
         description: errorMessage,
@@ -1439,7 +1442,7 @@ const SettingsPage = () => {
         duration: 5000,
         isClosable: true,
       });
-      
+
       // Revert to previous name if update fails
       setPersonalName(originalName);
       setIsEditingName(false);
@@ -1953,6 +1956,9 @@ const SettingsPage = () => {
           </VStack>
         );
 
+      case 'accounts':
+        return <ConnectedAccountsSection />;
+
       case 'billing':
         return <BillingDashboard user={user} />;
 
@@ -1988,12 +1994,12 @@ const SettingsPage = () => {
                       borderRadius="full"
                       filter="blur(40px)"
                     />
-                    
+
                     <VStack spacing={6} align="center" position="relative" textAlign="center">
                       <Box color="#00C6E0">
                         <DollarSign size={48} />
                       </Box>
-                      
+
                       <VStack spacing={3}>
                         <Text color="white" fontSize="2xl" fontWeight="bold">
                           Join Our Affiliate Program
@@ -2002,11 +2008,11 @@ const SettingsPage = () => {
                           Earn 20% lifetime recurring commissions
                         </Text>
                         <Text color="whiteAlpha.600" fontSize="sm" maxW="md">
-                          Share AtomikTrading with your audience and earn generous commissions 
+                          Share AtomikTrading with your audience and earn generous commissions
                           for every successful referral. No caps, no limits.
                         </Text>
                       </VStack>
-                      
+
                       <Button
                         size="lg"
                         bg="#00C6E0"
@@ -2101,7 +2107,7 @@ const SettingsPage = () => {
                     <Text color="white" fontSize="lg" fontWeight="semibold" mb={6}>
                       How It Works
                     </Text>
-                    
+
                     <SimpleGrid columns={{ base: 1, md: 3 }} spacing={6}>
                       <VStack align="center" spacing={4} textAlign="center">
                         <Box
@@ -2366,10 +2372,10 @@ const SettingsPage = () => {
 
       {/* Password Change Modal */}
       <PasswordChangeModal isOpen={isOpen} onClose={onClose} />
-      
+
       {/* Become Affiliate Modal */}
-      <BecomeAffiliateModal 
-        isOpen={isAffiliateModalOpen} 
+      <BecomeAffiliateModal
+        isOpen={isAffiliateModalOpen}
         onClose={onAffiliateModalClose}
         onJoin={handleJoinAffiliate}
         isJoining={isBecomingAffiliate}
