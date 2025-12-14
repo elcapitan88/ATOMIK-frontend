@@ -37,7 +37,7 @@ import { marketplaceApi } from '@/services/api/marketplace/marketplaceApi';
 import { STRATEGY_TYPE_OPTIONS } from '@utils/constants/strategyTypes';
 import StrategyCard from '../features/marketplace/components/StrategyCard';
 import Wrapper from '../layout/Sidebar/Menu'; // Renaming Menu to Wrapper/Sidebar to avoid conflict if needed, or just import Navbar
-import Navbar from '../Homepage/Navbar';
+import Navbar from '@pages/Homepage/Navbar';
 import { useAuth } from '@/contexts/AuthContext';
 import { Link as RouterLink } from 'react-router-dom';
 
