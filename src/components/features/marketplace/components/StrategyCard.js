@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Box,
   VStack,
@@ -16,7 +17,7 @@ import { engineStrategiesApi } from '@/services/api/strategies/engineStrategiesA
 import StarRating from '../StarRating';
 import StrategyPurchaseModal from './StrategyPurchaseModal';
 
-const StrategyCard = ({ strategy, onSubscriptionChange, isMobile = false }) => {
+const StrategyCard = ({ strategy, onSubscriptionChange, isMobile = false, isGuest = false }) => {
   const {
     token,
     source_id, // This is the ID for engine strategies or token for webhooks
@@ -44,7 +45,8 @@ const StrategyCard = ({ strategy, onSubscriptionChange, isMobile = false }) => {
   const [isPurchaseModalOpen, setIsPurchaseModalOpen] = useState(false);
   const [pricing, setPricing] = useState(null);
   const toast = useToast();
-  
+  const navigate = useNavigate();
+
   // Debug logging for the specific purchased strategy
   React.useEffect(() => {
     if (token === 'OGgxOp0wOd60YGb4kc4CEh8oSz2ZCscKVVZtfwbCbHg') {
@@ -60,6 +62,18 @@ const StrategyCard = ({ strategy, onSubscriptionChange, isMobile = false }) => {
   }, [token, name, isSubscribed, subscribed, isMonetized, usageIntent]);
 
   const handleSubscription = async () => {
+    if (isGuest) {
+      toast({
+        title: "Please Sign In",
+        description: "You must be logged in to subscribe to strategies.",
+        status: "info",
+        duration: 3000,
+        isClosable: true,
+      });
+      navigate("/auth", { state: { from: "/marketplace" } });
+      return;
+    }
+
     try {
       setIsLoading(true);
       if (subscribed) {
@@ -176,13 +190,13 @@ const StrategyCard = ({ strategy, onSubscriptionChange, isMobile = false }) => {
     try {
       // Import and use marketplace API
       const { marketplaceApi } = await import('@/services/api/marketplace/marketplaceApi');
-      
+
       // Fetch pricing information using the API service
       const pricingData = await marketplaceApi.getStrategyPricing(token);
-      
+
       // Transform backend response to expected frontend format
       const transformedPricing = transformPricingData(pricingData);
-      
+
       setPricing(transformedPricing);
       setIsPurchaseModalOpen(true);
     } catch (error) {
@@ -208,7 +222,7 @@ const StrategyCard = ({ strategy, onSubscriptionChange, isMobile = false }) => {
     }
 
     const prices = [];
-    
+
     // Add monthly option if available
     if (pricingData.base_amount && pricingData.billing_intervals?.includes('monthly')) {
       prices.push({
@@ -218,7 +232,7 @@ const StrategyCard = ({ strategy, onSubscriptionChange, isMobile = false }) => {
         display_name: 'Monthly Subscription'
       });
     }
-    
+
     // Add yearly option if available
     if (pricingData.yearly_amount && pricingData.billing_intervals?.includes('yearly')) {
       prices.push({
@@ -228,7 +242,7 @@ const StrategyCard = ({ strategy, onSubscriptionChange, isMobile = false }) => {
         display_name: 'Annual Subscription'
       });
     }
-    
+
     // Add setup fee if available
     if (pricingData.setup_fee) {
       prices.push({
@@ -399,7 +413,7 @@ const StrategyCard = ({ strategy, onSubscriptionChange, isMobile = false }) => {
           }
         </Button>
       </VStack>
-      
+
       {/* Purchase Modal */}
       {isPurchaseModalOpen && pricing && (
         <StrategyPurchaseModal
