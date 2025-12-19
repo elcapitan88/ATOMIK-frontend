@@ -10,8 +10,9 @@ import {
   Tooltip,
   Button,
   useToast,
+  useClipboard,
 } from '@chakra-ui/react';
-import { Users, Lock, Unlock, CheckCircle2 } from 'lucide-react';
+import { Users, Lock, Unlock, CheckCircle2, Shield, TrendingUp, Copy } from 'lucide-react';
 import { webhookApi } from '@/services/api/Webhooks/webhookApi';
 import { engineStrategiesApi } from '@/services/api/strategies/engineStrategiesApi';
 import StarRating from '../StarRating';
@@ -32,7 +33,14 @@ const StrategyCard = ({ strategy, onSubscriptionChange, isMobile = false, isGues
     isMonetized = false,
     usageIntent = 'personal',
     marketplacePurchaseUrl,
-    pricingEndpoint
+    pricingEndpoint,
+    // Phase 2: Trust metrics for verified live performance
+    live_total_trades = 0,
+    live_winning_trades = 0,
+    live_total_pnl = 0,
+    live_win_rate = 0,
+    combined_hash = null,
+    is_locked = false
   } = strategy;
 
   // Special handling for Break N Enter - always treat as monetized
@@ -46,6 +54,27 @@ const StrategyCard = ({ strategy, onSubscriptionChange, isMobile = false, isGues
   const [pricing, setPricing] = useState(null);
   const toast = useToast();
   const navigate = useNavigate();
+  const { onCopy: onCopyHash, hasCopied: hasCopiedHash } = useClipboard(combined_hash || '');
+
+  // Helper to format and copy verification hash
+  const handleCopyHash = () => {
+    if (combined_hash) {
+      onCopyHash();
+      toast({
+        title: "Hash Copied",
+        description: "Verification hash copied to clipboard",
+        status: "success",
+        duration: 2000,
+        isClosable: true,
+      });
+    }
+  };
+
+  // Helper to truncate hash for display
+  const truncateHash = (hash) => {
+    if (!hash) return null;
+    return `${hash.slice(0, 6)}...${hash.slice(-4)}`;
+  };
 
   // Debug logging for the specific purchased strategy
   React.useEffect(() => {
@@ -386,6 +415,58 @@ const StrategyCard = ({ strategy, onSubscriptionChange, isMobile = false, isGues
             </Text>
           </HStack>
         </HStack>
+
+        {/* Trust Metrics - Phase 2: Verified Live Performance */}
+        {is_locked && live_total_trades > 0 && (
+          <Box
+            bg="rgba(16, 185, 129, 0.08)"
+            border="1px solid rgba(16, 185, 129, 0.3)"
+            borderRadius="md"
+            p={2}
+          >
+            <HStack justify="space-between" align="center" mb={1}>
+              <HStack spacing={1}>
+                <Icon as={Shield} boxSize={3} color="green.400" />
+                <Text fontSize="xs" fontWeight="semibold" color="green.400">
+                  Verified Performance
+                </Text>
+              </HStack>
+              <Tooltip label={hasCopiedHash ? "Copied!" : "Copy verification hash"}>
+                <HStack
+                  spacing={1}
+                  cursor="pointer"
+                  onClick={handleCopyHash}
+                  _hover={{ opacity: 0.8 }}
+                >
+                  <Text fontSize="xs" color="whiteAlpha.600" fontFamily="mono">
+                    {truncateHash(combined_hash)}
+                  </Text>
+                  <Icon as={Copy} boxSize={3} color="whiteAlpha.600" />
+                </HStack>
+              </Tooltip>
+            </HStack>
+            <HStack justify="space-between" spacing={2}>
+              <VStack spacing={0} align="start">
+                <Text fontSize="xs" color="whiteAlpha.600">Trades</Text>
+                <Text fontSize="sm" fontWeight="bold" color="white">
+                  {live_total_trades}
+                </Text>
+              </VStack>
+              <VStack spacing={0} align="center">
+                <Text fontSize="xs" color="whiteAlpha.600">Win Rate</Text>
+                <Text fontSize="sm" fontWeight="bold" color={live_win_rate >= 50 ? "green.400" : "red.400"}>
+                  {live_win_rate.toFixed(1)}%
+                </Text>
+              </VStack>
+              <VStack spacing={0} align="end">
+                <Text fontSize="xs" color="whiteAlpha.600">PnL</Text>
+                <Text fontSize="sm" fontWeight="bold" color={live_total_pnl >= 0 ? "green.400" : "red.400"}>
+                  {live_total_pnl >= 0 ? '+' : ''}{live_total_pnl.toFixed(2)}%
+                </Text>
+              </VStack>
+            </HStack>
+          </Box>
+        )}
 
         {/* Subscribe Button */}
         <Button
