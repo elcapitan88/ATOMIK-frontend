@@ -24,6 +24,8 @@ const LandingPage = lazy(() => import('./components/pages/landing/LandingPage'))
 const ComingSoon = lazy(() => import('./components/common/ComingSoon'));
 const CreatorHubPage = lazy(() => import('./components/pages/CreatorHub/CreatorHubPage'));
 const CreatorProfilePage = lazy(() => import('./components/pages/CreatorProfile/CreatorProfilePage'));
+const BlueprintPage = lazy(() => import('./components/pages/BlueprintPage/BlueprintPage'));
+const BlueprintSuccess = lazy(() => import('./components/pages/BlueprintPage/BlueprintSuccess'));
 
 const AdminDashboard = lazy(() => import('./components/pages/Admin/AdminDashboard').then(module => ({ default: module.default })));
 const OverviewPage = lazy(() => import('./components/pages/Admin/Overview/OverviewPage').then(module => ({ default: module.default })));
@@ -243,6 +245,10 @@ function App() {
         <Route path="/" element={<Homepage />} />
 
         <Route path="/start" element={<LandingPage />} />
+
+        {/* Blueprint Lead Magnet Routes - Public */}
+        <Route path="/blueprint" element={<BlueprintPage />} />
+        <Route path="/blueprint/success" element={<BlueprintSuccess />} />
 
         {/* Pricing Route - Now publicly accessible */}
         <Route
