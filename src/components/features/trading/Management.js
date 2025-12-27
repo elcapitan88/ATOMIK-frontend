@@ -37,6 +37,7 @@ import BrokerSelectionModal from '@/components/common/Modal/BrokerSelectionModal
 import BrokerEnvironmentModal from '@/components/common/Modal/BrokerEnvironmentModal';
 import DeleteAccount from '@/components/common/Modal/DeleteAccount';
 import IBLoginModal from '@/components/common/Modal/IBLoginModal';
+import BinanceApiKeyModal from '@/components/common/Modal/BinanceApiKeyModal';
 import AccountNicknameModal from '@/components/common/Modal/AccountNicknameModal';
 import logger from '@/utils/logger';
 import axiosInstance from '@/services/axiosConfig';
@@ -97,14 +98,14 @@ const SortButton = ({ onSort }) => {
 const AccountOptions = ({ account, onEditName, onDelete, onPowerToggle, onRestart }) => {
     // Check if this is an Interactive Brokers account
     const isIBAccount = account.broker_id === 'interactivebrokers';
-    
+
     // Determine power button text based on digital_ocean_status
     const getPowerButtonText = () => {
         if (!isIBAccount) return null;
         const status = account.digital_ocean_status || account.status;
         return status === 'running' ? 'Power Off' : 'Power On';
     };
-    
+
     const getPowerButtonIcon = () => {
         const status = account.digital_ocean_status || account.status;
         return status === 'running' ? <Power size={14} /> : <Power size={14} />;
@@ -136,7 +137,7 @@ const AccountOptions = ({ account, onEditName, onDelete, onPowerToggle, onRestar
                 >
                     Edit Nickname
                 </MenuItem>
-                
+
                 {/* Interactive Brokers specific options */}
                 {isIBAccount && (
                     <>
@@ -149,7 +150,7 @@ const AccountOptions = ({ account, onEditName, onDelete, onPowerToggle, onRestar
                         >
                             {getPowerButtonText()}
                         </MenuItem>
-                        
+
                         <MenuItem
                             onClick={() => onRestart(account)}
                             _hover={{ bg: "whiteAlpha.200" }}
@@ -161,7 +162,7 @@ const AccountOptions = ({ account, onEditName, onDelete, onPowerToggle, onRestar
                         </MenuItem>
                     </>
                 )}
-                
+
                 <MenuItem
                     onClick={() => onDelete(account)}
                     _hover={{ bg: "whiteAlpha.200" }}
@@ -194,7 +195,7 @@ const Management = () => {
     // IB Status Polling - callback to update account status
     const handleIBStatusUpdate = useCallback((accountId, statusData) => {
         console.log('IB Status Update:', { accountId, statusData });
-        
+
         // Update account with new status information
         setAccounts(prev => {
             const updatedAccounts = prev.map(account => {
@@ -202,14 +203,14 @@ const Management = () => {
                     // Only update if status actually changed
                     if (account.digital_ocean_status !== statusData.status ||
                         account.ibeam_authenticated !== statusData.ibeamAuthenticated) {
-                        
+
                         // Also update the account in AccountManager for persistence
                         accountManager.updateAccount(accountId, {
                             digital_ocean_status: statusData.status,
                             ibeam_authenticated: statusData.ibeamAuthenticated,
                             last_status_check: statusData.lastChecked
                         });
-                        
+
                         return {
                             ...account,
                             digital_ocean_status: statusData.status,
@@ -249,7 +250,7 @@ const Management = () => {
 
     // Hooks
     const toast = useToast();
-    
+
     // Modal controls
     const {
         isOpen: isBrokerSelectOpen,
@@ -281,6 +282,12 @@ const Management = () => {
         onClose: onIBLoginClose
     } = useDisclosure();
 
+    const {
+        isOpen: isBinanceModalOpen,
+        onOpen: onBinanceModalOpen,
+        onClose: onBinanceModalClose
+    } = useDisclosure();
+
     // Handlers
     const handleSort = (sortKey) => {
         setSortBy(sortKey);
@@ -310,80 +317,80 @@ const Management = () => {
 
     const handleUpdateNickname = async (accountId, nickname) => {
         console.log("Starting nickname update:", { accountId, nickname });
-        
+
         // Track the loading toast ID to close it later
         let loadingToastId = null;
-        
+
         try {
-          // Show loading toast
-          loadingToastId = toast({
-            title: "Updating nickname",
-            description: "Saving your changes...",
-            status: "loading",
-            duration: null,
-            isClosable: false,
-          });
-          
-          // Make the API call to update the nickname
-          const response = await axiosInstance.patch(`/api/v1/brokers/accounts/${accountId}`, {
-            nickname: nickname
-          });
-          
-          // Log the successful response
-          console.log("Nickname update response:", response.data);
-          
-          // Update accounts in component's local state
-          setAccounts(prev => {
-            const updatedAccounts = prev.map(acc => 
-              acc.account_id === accountId ? { ...acc, nickname: nickname } : acc
-            );
-            console.log("Updated accounts state:", updatedAccounts);
-            return updatedAccounts;
-          });
-          
-          // Also update selected account if it matches
-          if (selectedAccount && selectedAccount.account_id === accountId) {
-            setSelectedAccount(prev => ({ ...prev, nickname: nickname }));
-          }
-          
-          // Important: Update the central AccountManager service
-          // This ensures the nickname change persists across the app and survives page refreshes
-          await accountManager.updateAccount(accountId, { nickname: nickname });
-          
-          // Close loading toast
-          if (loadingToastId) {
-            toast.close(loadingToastId);
-          }
-          
-          // Show success toast
-          toast({
-            title: "Nickname Updated",
-            description: "Account nickname has been successfully updated",
-            status: "success",
-            duration: 3000,
-            isClosable: true,
-          });
-          
+            // Show loading toast
+            loadingToastId = toast({
+                title: "Updating nickname",
+                description: "Saving your changes...",
+                status: "loading",
+                duration: null,
+                isClosable: false,
+            });
+
+            // Make the API call to update the nickname
+            const response = await axiosInstance.patch(`/api/v1/brokers/accounts/${accountId}`, {
+                nickname: nickname
+            });
+
+            // Log the successful response
+            console.log("Nickname update response:", response.data);
+
+            // Update accounts in component's local state
+            setAccounts(prev => {
+                const updatedAccounts = prev.map(acc =>
+                    acc.account_id === accountId ? { ...acc, nickname: nickname } : acc
+                );
+                console.log("Updated accounts state:", updatedAccounts);
+                return updatedAccounts;
+            });
+
+            // Also update selected account if it matches
+            if (selectedAccount && selectedAccount.account_id === accountId) {
+                setSelectedAccount(prev => ({ ...prev, nickname: nickname }));
+            }
+
+            // Important: Update the central AccountManager service
+            // This ensures the nickname change persists across the app and survives page refreshes
+            await accountManager.updateAccount(accountId, { nickname: nickname });
+
+            // Close loading toast
+            if (loadingToastId) {
+                toast.close(loadingToastId);
+            }
+
+            // Show success toast
+            toast({
+                title: "Nickname Updated",
+                description: "Account nickname has been successfully updated",
+                status: "success",
+                duration: 3000,
+                isClosable: true,
+            });
+
         } catch (error) {
-          // Close loading toast
-          if (loadingToastId) {
-            toast.close(loadingToastId);
-          }
-          
-          console.error("Nickname update error:", error);
-          
-          toast({
-            title: "Update Failed",
-            description: error.response?.data?.detail || error.message || "Failed to update account nickname",
-            status: "error",
-            duration: 5000,
-            isClosable: true,
-          });
-          
-          // Reload accounts to ensure state is in sync
-          fetchAccounts(false);
+            // Close loading toast
+            if (loadingToastId) {
+                toast.close(loadingToastId);
+            }
+
+            console.error("Nickname update error:", error);
+
+            toast({
+                title: "Update Failed",
+                description: error.response?.data?.detail || error.message || "Failed to update account nickname",
+                status: "error",
+                duration: 5000,
+                isClosable: true,
+            });
+
+            // Reload accounts to ensure state is in sync
+            fetchAccounts(false);
         }
-      }
+    }
 
     // Handle account deletion
     const handleAccountDeletion = useCallback(async () => {
@@ -392,7 +399,7 @@ const Management = () => {
         try {
             disconnect(selectedAccount.broker_id, selectedAccount.account_id);
             await accountManager.removeAccount(selectedAccount.account_id);
-            
+
             toast({
                 title: "Account Removed",
                 description: "Trading account was successfully removed",
@@ -400,7 +407,7 @@ const Management = () => {
                 duration: 3000,
                 isClosable: true,
             });
-            
+
             onDeleteClose();
         } catch (error) {
             logger.error('Error removing account:', error);
@@ -419,12 +426,12 @@ const Management = () => {
         const status = account.digital_ocean_status || account.status;
         const action = status === 'running' ? 'stop' : 'start';
         const actionText = status === 'running' ? 'stopping' : 'starting';
-        
+
         try {
             const response = await axiosInstance.post(
                 `/api/v1/brokers/interactivebrokers/accounts/${account.account_id}/${action}`
             );
-            
+
             if (response.data.success) {
                 toast({
                     title: "Server Action",
@@ -433,10 +440,10 @@ const Management = () => {
                     duration: 3000,
                     isClosable: true,
                 });
-                
+
                 // Refresh accounts to get updated status
                 setTimeout(() => fetchAccounts(false), 2000);
-                
+
                 // IB status will be updated automatically by IBStatusService
             }
         } catch (error) {
@@ -457,7 +464,7 @@ const Management = () => {
             const response = await axiosInstance.post(
                 `/api/v1/brokers/interactivebrokers/accounts/${account.account_id}/restart`
             );
-            
+
             if (response.data.success) {
                 toast({
                     title: "Server Restarting",
@@ -466,10 +473,10 @@ const Management = () => {
                     duration: 5000,
                     isClosable: true,
                 });
-                
+
                 // Refresh accounts to get updated status
                 setTimeout(() => fetchAccounts(false), 3000);
-                
+
                 // IB status will be updated automatically by IBStatusService
             }
         } catch (error) {
@@ -487,14 +494,19 @@ const Management = () => {
     // Handle broker selection
     const handleBrokerSelect = useCallback((broker) => {
         if (!broker) return;
-        
+
         setSelectedBroker(broker);
         onBrokerSelectClose();
-        
+
         if (broker.id === 'interactivebrokers') {
             // For Interactive Brokers, open the login modal
             setTimeout(() => {
                 onIBLoginOpen();
+            }, 0);
+        } else if (broker.id === 'binance' || broker.id === 'binanceus') {
+            // For Binance brokers, open the API key modal
+            setTimeout(() => {
+                onBinanceModalOpen();
             }, 0);
         } else {
             // For other brokers like Tradovate, continue with the existing flow
@@ -502,7 +514,25 @@ const Management = () => {
                 onEnvironmentOpen();
             }, 0);
         }
-    }, [onBrokerSelectClose, onEnvironmentOpen, onIBLoginOpen]);
+    }, [onBrokerSelectClose, onEnvironmentOpen, onIBLoginOpen, onBinanceModalOpen]);
+
+    // Handle Binance connection success
+    const handleBinanceConnect = useCallback(async (connectionResult) => {
+        try {
+            toast({
+                title: "Success",
+                description: "Binance account connected successfully",
+                status: "success",
+                duration: 3000,
+                isClosable: true,
+            });
+
+            // Refresh accounts list to show new account
+            await fetchAccounts();
+        } catch (error) {
+            logger.error('Error after Binance connection:', error);
+        }
+    }, [toast, fetchAccounts]);
 
     // Toggle account expansion
     const toggleAccountExpansion = useCallback((accountId) => {
@@ -520,13 +550,13 @@ const Management = () => {
     const handleIBConnect = async (connectionData) => {
         try {
             setIsLoading(true);
-            
+
             // Make API call to connect IB account
             const response = await axiosInstance.post('/api/v1/brokers/interactivebrokers/connect', {
                 environment: connectionData.environment,
                 credentials: connectionData.credentials
             });
-            
+
             if (response.data) {
                 toast({
                     title: "Success",
@@ -535,10 +565,10 @@ const Management = () => {
                     duration: 3000,
                     isClosable: true,
                 });
-                
+
                 // Close the modal
                 onIBLoginClose();
-                
+
                 // Refresh accounts list
                 await fetchAccounts();
             }
@@ -583,18 +613,18 @@ const Management = () => {
         const initializeSubscriptions = async () => {
             try {
                 setIsLoading(true);
-                
+
                 // Initialize account subscription
                 accountSubscription = accountManager.getAccountUpdates().subscribe({
                     next: (update) => {
                         if (update.type === 'bulk') {
                             setAccounts(update.accounts);
                         } else if (update.type === 'update') {
-                            setAccounts(prev => prev.map(account => 
+                            setAccounts(prev => prev.map(account =>
                                 account.account_id === update.accountId ? update.account : account
                             ));
                         } else if (update.type === 'remove') {
-                            setAccounts(prev => prev.filter(account => 
+                            setAccounts(prev => prev.filter(account =>
                                 account.account_id !== update.accountId
                             ));
                         }
@@ -627,135 +657,135 @@ const Management = () => {
     // Track if we've already attempted auto-connect to prevent duplicates
     const hasAutoConnectedRef = useRef(false);
     const lastConnectionAttemptRef = useRef({});
-    
+
     useEffect(() => {
-    // Add a ref to track connection attempts
-    const connectionAttempts = new Set();
-    
-    const autoConnectAccounts = async () => {
-        // Check if auto-connect is disabled
-        const autoConnectDisabled = localStorage.getItem('disable_auto_connect') === 'true';
-        if (autoConnectDisabled) {
-            logger.info('Auto-connect is disabled by user preference');
-            return;
-        }
-        
-        // Check if user is authenticated
-        const token = localStorage.getItem('access_token');
-        if (!token) {
-            logger.info('No auth token found, skipping auto-connect');
-            return;
-        }
-        
-        // Only proceed if we have accounts and not currently connecting
-        if (accounts.length === 0) return;
-        
-        // Check if any connections are already active or pending
-        let hasActiveConnections = false;
-        for (const account of accounts) {
-            const state = getConnectionState(account.broker_id, account.account_id);
-            if (state && state !== 'disconnected' && state !== 'error') {
-                hasActiveConnections = true;
-                break;
+        // Add a ref to track connection attempts
+        const connectionAttempts = new Set();
+
+        const autoConnectAccounts = async () => {
+            // Check if auto-connect is disabled
+            const autoConnectDisabled = localStorage.getItem('disable_auto_connect') === 'true';
+            if (autoConnectDisabled) {
+                logger.info('Auto-connect is disabled by user preference');
+                return;
             }
-        }
-        
-        if (hasActiveConnections) {
-            logger.info('Active connections found, skipping auto-connect');
-            return;
-        }
-        
-        for (const account of accounts) {
-            // Create a unique key for this connection attempt
-            const connectionKey = `${account.broker_id}:${account.account_id}`;
-            
-            // Skip if we're already attempting to connect to this account
-            if (connectionAttempts.has(connectionKey)) {
-                logger.info(`Skipping duplicate connection attempt for ${connectionKey}`);
-                continue;
+
+            // Check if user is authenticated
+            const token = localStorage.getItem('access_token');
+            if (!token) {
+                logger.info('No auth token found, skipping auto-connect');
+                return;
             }
-            
-            // Only connect to active accounts with valid tokens
-            if (account.status === 'active' && account.broker_id && account.account_id) {
-                // Double-check token validity
-                const token = localStorage.getItem('access_token');
-                if (!token) {
-                    logger.warn(`No access token found for ${connectionKey}`);
+
+            // Only proceed if we have accounts and not currently connecting
+            if (accounts.length === 0) return;
+
+            // Check if any connections are already active or pending
+            let hasActiveConnections = false;
+            for (const account of accounts) {
+                const state = getConnectionState(account.broker_id, account.account_id);
+                if (state && state !== 'disconnected' && state !== 'error') {
+                    hasActiveConnections = true;
+                    break;
+                }
+            }
+
+            if (hasActiveConnections) {
+                logger.info('Active connections found, skipping auto-connect');
+                return;
+            }
+
+            for (const account of accounts) {
+                // Create a unique key for this connection attempt
+                const connectionKey = `${account.broker_id}:${account.account_id}`;
+
+                // Skip if we're already attempting to connect to this account
+                if (connectionAttempts.has(connectionKey)) {
+                    logger.info(`Skipping duplicate connection attempt for ${connectionKey}`);
                     continue;
                 }
-                try {
-                    // Check if already connected
-                    const currentState = getConnectionState(account.broker_id, account.account_id);
-                    
-                    // Skip if already connected, connecting, or in any validation state
-                    if (currentState === 'connected' || 
-                        currentState === 'ready' || 
-                        currentState === 'connecting' ||
-                        currentState === 'validating_user' ||
-                        currentState === 'checking_subscription' ||
-                        currentState === 'checking_broker_access' ||
-                        currentState === 'connecting_to_broker') {
-                        logger.info(`Skipping ${connectionKey} - already in state: ${currentState}`);
+
+                // Only connect to active accounts with valid tokens
+                if (account.status === 'active' && account.broker_id && account.account_id) {
+                    // Double-check token validity
+                    const token = localStorage.getItem('access_token');
+                    if (!token) {
+                        logger.warn(`No access token found for ${connectionKey}`);
                         continue;
                     }
-                    
-                    // Check cooldown period (60 seconds between attempts for the same account)
-                    const now = Date.now();
-                    const lastAttempt = lastConnectionAttemptRef.current[connectionKey] || 0;
-                    if (now - lastAttempt < 60000) {
-                        logger.info(`Skipping ${connectionKey} - cooldown period active (${Math.round((60000 - (now - lastAttempt)) / 1000)}s remaining)`);
-                        continue;
+                    try {
+                        // Check if already connected
+                        const currentState = getConnectionState(account.broker_id, account.account_id);
+
+                        // Skip if already connected, connecting, or in any validation state
+                        if (currentState === 'connected' ||
+                            currentState === 'ready' ||
+                            currentState === 'connecting' ||
+                            currentState === 'validating_user' ||
+                            currentState === 'checking_subscription' ||
+                            currentState === 'checking_broker_access' ||
+                            currentState === 'connecting_to_broker') {
+                            logger.info(`Skipping ${connectionKey} - already in state: ${currentState}`);
+                            continue;
+                        }
+
+                        // Check cooldown period (60 seconds between attempts for the same account)
+                        const now = Date.now();
+                        const lastAttempt = lastConnectionAttemptRef.current[connectionKey] || 0;
+                        if (now - lastAttempt < 60000) {
+                            logger.info(`Skipping ${connectionKey} - cooldown period active (${Math.round((60000 - (now - lastAttempt)) / 1000)}s remaining)`);
+                            continue;
+                        }
+
+                        // Mark this connection as being attempted
+                        connectionAttempts.add(connectionKey);
+                        lastConnectionAttemptRef.current[connectionKey] = now;
+
+                        logger.info(`Auto-connecting to ${account.broker_id}:${account.account_id}`);
+
+                        // Add a small delay between connection attempts to avoid overwhelming the server
+                        if (connectionAttempts.size > 1) {
+                            await new Promise(resolve => setTimeout(resolve, 3000));
+                        }
+
+                        await wsConnect(account.broker_id, account.account_id);
+                    } catch (error) {
+                        logger.error(`Failed to auto-connect to ${account.broker_id}:${account.account_id}:`, error);
+                    } finally {
+                        // Remove from attempts set after completion
+                        connectionAttempts.delete(connectionKey);
                     }
-                    
-                    // Mark this connection as being attempted
-                    connectionAttempts.add(connectionKey);
-                    lastConnectionAttemptRef.current[connectionKey] = now;
-                    
-                    logger.info(`Auto-connecting to ${account.broker_id}:${account.account_id}`);
-                    
-                    // Add a small delay between connection attempts to avoid overwhelming the server
-                    if (connectionAttempts.size > 1) {
-                        await new Promise(resolve => setTimeout(resolve, 3000));
-                    }
-                    
-                    await wsConnect(account.broker_id, account.account_id);
-                } catch (error) {
-                    logger.error(`Failed to auto-connect to ${account.broker_id}:${account.account_id}:`, error);
-                } finally {
-                    // Remove from attempts set after completion
-                    connectionAttempts.delete(connectionKey);
                 }
             }
-        }
-    };
-    
+        };
+
         // Add a delay before auto-connecting to ensure component is fully mounted
         // Increased delay to prevent rapid connection attempts on page load
         const timeoutId = setTimeout(() => {
             autoConnectAccounts();
         }, 1000);
-        
+
         // Cleanup
         return () => {
             clearTimeout(timeoutId);
             connectionAttempts.clear();
         };
     }, [accounts, wsConnect, getConnectionState]);
-    
+
 
     // AccountItem Component
-    const AccountItem = ({ 
-        account, 
-        isExpanded, 
-        connectionStatus, 
-        onToggleExpand, 
+    const AccountItem = ({
+        account,
+        isExpanded,
+        connectionStatus,
+        onToggleExpand,
         onDelete,
         onEditName,
         getAccountData,
     }) => {
         // Get real-time account data from WebSocket context
         const realtimeData = getAccountData(account.broker_id, account.account_id);
-        
+
         // Use real-time values if available, otherwise fall back to account values
         const displayValues = {
             balance: realtimeData?.balance ?? account.balance ?? 0,
@@ -767,148 +797,148 @@ const Management = () => {
         };
 
         // Check if this is an IB account that's provisioning
-        const isIBProvisioning = account.broker_id === 'interactivebrokers' && 
+        const isIBProvisioning = account.broker_id === 'interactivebrokers' &&
             ['provisioning', 'initializing', 'starting'].includes(account.digital_ocean_status);
-        
+
         // Show status for error states too
-        const isIBError = account.broker_id === 'interactivebrokers' && 
+        const isIBError = account.broker_id === 'interactivebrokers' &&
             account.digital_ocean_status === 'error';
 
         return (
             <>
                 {/* IB Provisioning Status - Shows above the account card */}
                 {account.broker_id === 'interactivebrokers' && (
-                    <IBProvisioningStatus 
-                        account={account} 
+                    <IBProvisioningStatus
+                        account={account}
                         isOpen={isIBProvisioning || isIBError}
                     />
                 )}
-                
-                <Box 
-                    bg="whiteAlpha.100" 
+
+                <Box
+                    bg="whiteAlpha.100"
                     borderRadius="lg"
                     overflow="hidden"
                     transition="all 0.3s"
                     _hover={{ bg: "whiteAlpha.200" }}
                 >
-                {/* Main Account Row - More Compact */}
-                <Flex 
-                    py={2}
-                    px={3}
-                    align="center"
-                    justify="space-between"
-                >
-                    {/* Account Info Group - More Compact */}
-                    <Flex align="center" gap={2} flex="2">  
-                        <AccountStatusIndicator 
-                            tokenValid={!account.is_token_expired}
-                            wsStatus={connectionStatus}
-                            account={account}
-                        />
-                        <VStack spacing={0} align="flex-start"> 
-                            <Text fontWeight="bold" fontSize="sm" lineHeight="1.2">
-                            {account.nickname ? account.nickname : account.name}
-                            </Text>
-                            <Text fontSize="xs" color="whiteAlpha.700" lineHeight="1.2">
-                                {account.broker_id} • {account.environment}
-                            </Text>
-                        </VStack>
-                    </Flex>
-        
-                    {/* Balance Group - More Compact */}
-                    {showPnL&&(
-                    <Flex align="center" gap={4} flex="3" px={3}> 
-                        <VStack spacing={0} align="flex-start">  
-                            <Text fontSize="xs" color="whiteAlpha.700" lineHeight="1.2">Balance</Text>
-                            <Text fontSize="sm" fontWeight="bold" lineHeight="1.2">
-                                ${displayValues.balance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                            </Text>
-                        </VStack>
+                    {/* Main Account Row - More Compact */}
+                    <Flex
+                        py={2}
+                        px={3}
+                        align="center"
+                        justify="space-between"
+                    >
+                        {/* Account Info Group - More Compact */}
+                        <Flex align="center" gap={2} flex="2">
+                            <AccountStatusIndicator
+                                tokenValid={!account.is_token_expired}
+                                wsStatus={connectionStatus}
+                                account={account}
+                            />
+                            <VStack spacing={0} align="flex-start">
+                                <Text fontWeight="bold" fontSize="sm" lineHeight="1.2">
+                                    {account.nickname ? account.nickname : account.name}
+                                </Text>
+                                <Text fontSize="xs" color="whiteAlpha.700" lineHeight="1.2">
+                                    {account.broker_id} • {account.environment}
+                                </Text>
+                            </VStack>
+                        </Flex>
 
-                        <VStack spacing={0} align="flex-start">
-                            <Text fontSize="xs" color="whiteAlpha.700" lineHeight="1.2">Total P&L</Text>
-                            <Text 
-                                fontSize="sm" 
-                                fontWeight="bold"
-                                lineHeight="1.2"
-                                color={displayValues.totalPnL >= 0 ? 'green.400' : 'red.400'}
-                            >
-                                ${displayValues.totalPnL.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                            </Text>
-                        </VStack>
+                        {/* Balance Group - More Compact */}
+                        {showPnL && (
+                            <Flex align="center" gap={4} flex="3" px={3}>
+                                <VStack spacing={0} align="flex-start">
+                                    <Text fontSize="xs" color="whiteAlpha.700" lineHeight="1.2">Balance</Text>
+                                    <Text fontSize="sm" fontWeight="bold" lineHeight="1.2">
+                                        ${displayValues.balance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                    </Text>
+                                </VStack>
 
-                        <VStack spacing={0} align="flex-start">
-                            <Text fontSize="xs" color="whiteAlpha.700" lineHeight="1.2">Open P&L</Text>
-                            <Text 
-                                fontSize="sm" 
-                                fontWeight="bold"
-                                lineHeight="1.2"
-                                color={displayValues.openPnL >= 0 ? 'green.400' : 'red.400'}
-                            >
-                                ${displayValues.openPnL.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                            </Text>
-                        </VStack>
-                    </Flex>
-                    )}
-        
-                    {/* Actions Group */}
-                    <Flex align="center" gap={1} flex="0 0 auto"> 
-                        <AccountOptions 
-                            account={account}
-                            onEditName={onEditName}
-                            onDelete={onDelete}
-                            onPowerToggle={handlePowerToggle}
-                            onRestart={handleRestart}
-                        />
-                        {enableExpansion && (
-                        <Box 
-                            as="button"
-                            onClick={() => onToggleExpand(account.account_id)}
-                            opacity={0.6}
-                            _hover={{ opacity: 1 }}
-                            transition="opacity 0.2s"
-                        >
-                            {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />} 
-                        </Box>
+                                <VStack spacing={0} align="flex-start">
+                                    <Text fontSize="xs" color="whiteAlpha.700" lineHeight="1.2">Total P&L</Text>
+                                    <Text
+                                        fontSize="sm"
+                                        fontWeight="bold"
+                                        lineHeight="1.2"
+                                        color={displayValues.totalPnL >= 0 ? 'green.400' : 'red.400'}
+                                    >
+                                        ${displayValues.totalPnL.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                    </Text>
+                                </VStack>
+
+                                <VStack spacing={0} align="flex-start">
+                                    <Text fontSize="xs" color="whiteAlpha.700" lineHeight="1.2">Open P&L</Text>
+                                    <Text
+                                        fontSize="sm"
+                                        fontWeight="bold"
+                                        lineHeight="1.2"
+                                        color={displayValues.openPnL >= 0 ? 'green.400' : 'red.400'}
+                                    >
+                                        ${displayValues.openPnL.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                    </Text>
+                                </VStack>
+                            </Flex>
                         )}
+
+                        {/* Actions Group */}
+                        <Flex align="center" gap={1} flex="0 0 auto">
+                            <AccountOptions
+                                account={account}
+                                onEditName={onEditName}
+                                onDelete={onDelete}
+                                onPowerToggle={handlePowerToggle}
+                                onRestart={handleRestart}
+                            />
+                            {enableExpansion && (
+                                <Box
+                                    as="button"
+                                    onClick={() => onToggleExpand(account.account_id)}
+                                    opacity={0.6}
+                                    _hover={{ opacity: 1 }}
+                                    transition="opacity 0.2s"
+                                >
+                                    {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                                </Box>
+                            )}
+                        </Flex>
                     </Flex>
-                </Flex>
-        
-                {/* Expanded Section */}
-                {enableExpansion && isExpanded && showPnL && (
-                    <Box 
-                    p={3} 
-                    borderTop="1px solid" 
-                    borderColor="whiteAlpha.200"
-                    bg="whiteAlpha.50"
-                >
-                    <HStack spacing={6}>
-                        <Box>
-                            <Text fontSize="xs" color="whiteAlpha.700">Today's P&L</Text>
-                            <Text fontSize="sm" fontWeight="semibold" color={displayValues.todaysPnL >= 0 ? 'green.400' : 'red.400'}>
-                                ${displayValues.todaysPnL.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                            </Text>
+
+                    {/* Expanded Section */}
+                    {enableExpansion && isExpanded && showPnL && (
+                        <Box
+                            p={3}
+                            borderTop="1px solid"
+                            borderColor="whiteAlpha.200"
+                            bg="whiteAlpha.50"
+                        >
+                            <HStack spacing={6}>
+                                <Box>
+                                    <Text fontSize="xs" color="whiteAlpha.700">Today's P&L</Text>
+                                    <Text fontSize="sm" fontWeight="semibold" color={displayValues.todaysPnL >= 0 ? 'green.400' : 'red.400'}>
+                                        ${displayValues.todaysPnL.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                    </Text>
+                                </Box>
+                                <Box>
+                                    <Text fontSize="xs" color="whiteAlpha.700">Realized P&L</Text>
+                                    <Text fontSize="sm" fontWeight="semibold" color={displayValues.realizedPnL >= 0 ? 'green.400' : 'red.400'}>
+                                        ${displayValues.realizedPnL.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                    </Text>
+                                </Box>
+                                <Box>
+                                    <Text fontSize="xs" color="whiteAlpha.700">Weekly P&L</Text>
+                                    <Text fontSize="sm" fontWeight="semibold" color={displayValues.weeklyPnL >= 0 ? 'green.400' : 'red.400'}>
+                                        ${displayValues.weeklyPnL.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                    </Text>
+                                </Box>
+                            </HStack>
                         </Box>
-                        <Box>
-                            <Text fontSize="xs" color="whiteAlpha.700">Realized P&L</Text>
-                            <Text fontSize="sm" fontWeight="semibold" color={displayValues.realizedPnL >= 0 ? 'green.400' : 'red.400'}>
-                                ${displayValues.realizedPnL.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                            </Text>
-                        </Box>
-                        <Box>
-                            <Text fontSize="xs" color="whiteAlpha.700">Weekly P&L</Text>
-                            <Text fontSize="sm" fontWeight="semibold" color={displayValues.weeklyPnL >= 0 ? 'green.400' : 'red.400'}>
-                                ${displayValues.weeklyPnL.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                            </Text>
-                        </Box>
-                    </HStack>
+                    )}
                 </Box>
-                )}
-            </Box>
             </>
         );
     };
-    
+
     // Render accounts list with loading and error states
     const renderAccounts = () => {
         if (isLoading) {
@@ -918,7 +948,7 @@ const Management = () => {
                 </Flex>
             );
         }
-    
+
         if (fetchError) {
             return (
                 <Flex direction="column" align="center" py={4}>
@@ -927,7 +957,7 @@ const Management = () => {
                 </Flex>
             );
         }
-    
+
         if (sortedAccounts.length === 0) {
             return (
                 <Flex justify="center" align="center" height="100%">
@@ -935,7 +965,7 @@ const Management = () => {
                 </Flex>
             );
         }
-    
+
         return sortedAccounts.map((account) => (
             <AccountItem
                 key={account.account_id}
@@ -957,20 +987,20 @@ const Management = () => {
     };
 
     return (
-        <Box 
-            h="full" 
-            bg="whiteAlpha.100" 
-            borderRadius="xl" 
-            borderWidth="1px" 
-            borderColor="whiteAlpha.200" 
-            boxShadow="lg" 
+        <Box
+            h="full"
+            bg="whiteAlpha.100"
+            borderRadius="xl"
+            borderWidth="1px"
+            borderColor="whiteAlpha.200"
+            boxShadow="lg"
             overflow="hidden"
         >
             {/* Update this outer VStack */}
             <VStack p={3} color="white" spacing={4} align="stretch">
                 {/* Payment Status Warning */}
                 <PaymentStatusWarning showCompact={true} />
-                
+
                 {/* Header */}
                 <HStack justify="space-between" flex="0 0 auto">
                     <Box
@@ -991,9 +1021,9 @@ const Management = () => {
                 </HStack>
 
                 {/* Update the Account List VStack */}
-                <VStack 
-                    spacing={1} 
-                    overflowY="auto" 
+                <VStack
+                    spacing={1}
+                    overflowY="auto"
                     align="stretch"
                     maxH="336px"
                     minH="0"
@@ -1025,6 +1055,12 @@ const Management = () => {
                 isOpen={isIBLoginOpen}
                 onClose={onIBLoginClose}
                 onConnect={handleIBConnect}
+            />
+            <BinanceApiKeyModal
+                isOpen={isBinanceModalOpen}
+                onClose={onBinanceModalClose}
+                onSuccess={handleBinanceConnect}
+                brokerId={selectedBroker?.id || 'binance'}
             />
 
             {selectedBroker && (

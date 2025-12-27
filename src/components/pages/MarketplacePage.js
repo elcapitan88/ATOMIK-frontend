@@ -36,8 +36,10 @@ import { webhookApi } from '@/services/api/Webhooks/webhookApi';
 import { marketplaceApi } from '@/services/api/marketplace/marketplaceApi';
 import { STRATEGY_TYPE_OPTIONS } from '@utils/constants/strategyTypes';
 import StrategyCard from '../features/marketplace/components/StrategyCard';
-import Menu from '../layout/Sidebar/Menu';
+import Wrapper from '../layout/Sidebar/Menu'; // Renaming Menu to Wrapper/Sidebar to avoid conflict if needed, or just import Navbar
+import Navbar from './Homepage/Navbar';
 import { useAuth } from '@/contexts/AuthContext';
+import { Link as RouterLink } from 'react-router-dom';
 
 const MotionFlex = motion(Flex);
 const MotionBox = motion(Box);
@@ -78,7 +80,7 @@ const categories = [
 const MarketplacePage = () => {
   // Auth hook
   const { user, isLoading: authLoading } = useAuth();
-  
+
   // State management
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
@@ -113,7 +115,7 @@ const MarketplacePage = () => {
           console.error('[MarketplacePage] getUserPurchases failed:', error);
           console.error('[MarketplacePage] Error response:', error.response?.data);
           console.error('[MarketplacePage] Error status:', error.response?.status);
-          
+
           // Show user-friendly error notification for non-404 errors
           if (error.response?.status !== 404) {
             toast({
@@ -124,39 +126,39 @@ const MarketplacePage = () => {
               isClosable: true,
             });
           }
-          
+
           return { purchases: [] }; // Fallback if endpoint fails
         })
       ]);
-      
+
       // Create sets for quick lookup
       const subscribedSet = new Set(subscribedResponse.map(s => s.token));
       const purchasedSet = new Set(purchasedResponse?.purchases?.map(p => p.webhook_token) || []);
-      
+
       // Debug logging
       console.log('[MarketplacePage] Marketplace strategies response:', sharedResponse);
       console.log('[MarketplacePage] Marketplace strategies count:', sharedResponse.strategies?.length || 0);
       console.log('[MarketplacePage] Subscribed strategies:', subscribedResponse.length);
       console.log('[MarketplacePage] Purchased strategies:', purchasedResponse?.purchases?.length || 0);
       console.log('[MarketplacePage] Purchased tokens:', Array.from(purchasedSet));
-      
+
       // Merge subscribed and purchased sets
       const allAccessSet = new Set([...subscribedSet, ...purchasedSet]);
       setSubscribedStrategies(allAccessSet);
-      
+
       console.log('[MarketplacePage] Total accessible strategies:', allAccessSet.size);
       console.log('[MarketplacePage] Accessible tokens:', Array.from(allAccessSet));
-      
+
       const groupedStrategies = sharedResponse.strategies.reduce((acc, strategy) => {
         // Convert category to match frontend category IDs (like production)
         const type = strategy.category ? strategy.category.toLowerCase() : 'uncategorized';
         if (!acc[type]) {
           acc[type] = [];
         }
-        
+
         // Check if user has access - use API's user_has_access field or check by source_id
         const hasAccess = strategy.user_has_access || allAccessSet.has(strategy.source_id);
-        
+
         // Debug logging for each strategy
         console.log(`[MarketplacePage] Processing ${strategy.name}:`, {
           source_id: strategy.source_id,
@@ -165,7 +167,7 @@ const MarketplacePage = () => {
           pricing_type: strategy.pricing_type,
           user_has_access: strategy.user_has_access
         });
-        
+
         acc[type].push({
           ...strategy,
           token: strategy.source_id, // Use source_id as token for compatibility
@@ -191,7 +193,7 @@ const MarketplacePage = () => {
       Object.keys(groupedStrategies).forEach(category => {
         console.log(`[MarketplacePage] ${category}: ${groupedStrategies[category].length} strategies`);
       });
-      
+
       setStrategies(groupedStrategies);
     } catch (error) {
       toast({
@@ -208,7 +210,7 @@ const MarketplacePage = () => {
 
   useEffect(() => {
     fetchStrategies();
-  }, []);
+  }, [user]); // Re-fetch when user auth state changes (e.g. login)
 
   // Handle subscription changes
   const handleSubscriptionChange = (token, isSubscribed) => {
@@ -221,7 +223,7 @@ const MarketplacePage = () => {
       }
       return newSet;
     });
-    
+
     setStrategies(prev => {
       const updated = { ...prev };
       Object.keys(updated).forEach(category => {
@@ -230,8 +232,8 @@ const MarketplacePage = () => {
             return {
               ...strategy,
               isSubscribed,
-              subscriberCount: isSubscribed 
-                ? strategy.subscriberCount + 1 
+              subscriberCount: isSubscribed
+                ? strategy.subscriberCount + 1
                 : Math.max(0, strategy.subscriberCount - 1)
             };
           }
@@ -245,15 +247,15 @@ const MarketplacePage = () => {
   // Filter strategies based on search and category
   const getFilteredStrategies = (categoryStrategies, categoryId) => {
     if (!categoryStrategies) return [];
-    
+
     return categoryStrategies.filter(strategy => {
-      const matchesSearch = searchQuery === '' || 
+      const matchesSearch = searchQuery === '' ||
         strategy.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         strategy.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
         strategy.username.toLowerCase().includes(searchQuery.toLowerCase());
-      
+
       const matchesCategory = selectedCategory === 'all' || categoryId === selectedCategory;
-      
+
       return matchesSearch && matchesCategory;
     });
   };
@@ -319,6 +321,7 @@ const MarketplacePage = () => {
                 strategy={strategy}
                 onSubscriptionChange={handleSubscriptionChange}
                 isMobile={isMobile}
+                isGuest={isGuest}
               />
             </MotionBox>
           ))
@@ -393,7 +396,7 @@ const MarketplacePage = () => {
     // Subscribed view mode
     if (viewMode === 'subscribed') {
       const subscribedStrategiesArray = getSubscribedStrategiesArray();
-      
+
       if (subscribedStrategiesArray.length === 0) {
         return (
           <EmptyState
@@ -412,7 +415,7 @@ const MarketplacePage = () => {
 
     // All strategies view mode
     const subscribedStrategiesArray = getSubscribedStrategiesArray();
-    
+
     return (
       <VStack spacing={8} align="stretch">
         {/* Subscribed Strategies Section */}
@@ -523,8 +526,8 @@ const MarketplacePage = () => {
     );
   };
 
-  // Wait for auth to load
-  if (authLoading || !user) {
+  // Wait for auth to load only if token exists but user not loaded
+  if (authLoading) {
     return (
       <Flex justify="center" align="center" height="100vh" bg="background">
         <VStack spacing={4}>
@@ -535,30 +538,39 @@ const MarketplacePage = () => {
     );
   }
 
+  const isGuest = !user;
+
   return (
-    <Flex minH="100vh" bg="background" color="text.primary" fontFamily="body">
-      <Menu onSelectItem={() => {}} />
-      
-      <Box 
-        flexGrow={1} 
-        ml={{ base: 0, md: 16 }}
+    <Flex minH="100vh" bg="background" color="text.primary" fontFamily="body" direction="column">
+      {isGuest ? (
+        <Box position="fixed" top={0} left={0} right={0} zIndex={1000}>
+          <Navbar />
+        </Box>
+      ) : (
+        <Wrapper onSelectItem={() => { }} />
+      )}
+
+      <Box
+        flexGrow={1}
+        ml={isGuest ? 0 : { base: 0, md: 16 }}
+        mt={isGuest ? "80px" : 0}
         mb={{ base: "70px", md: 0 }}
       >
         <Box h="100vh" w="full" overflow="hidden" position="relative">
           {/* Background Effects */}
-          <Box 
-            position="absolute" 
-            inset={0} 
-            bgGradient="linear(to-br, blackAlpha.400, blackAlpha.200, blackAlpha.400)" 
-            pointerEvents="none" 
+          <Box
+            position="absolute"
+            inset={0}
+            bgGradient="linear(to-br, blackAlpha.400, blackAlpha.200, blackAlpha.400)"
+            pointerEvents="none"
           />
-          <Box 
-            position="absolute" 
-            inset={0} 
-            backdropFilter="blur(16px)" 
-            bg="blackAlpha.300" 
+          <Box
+            position="absolute"
+            inset={0}
+            backdropFilter="blur(16px)"
+            bg="blackAlpha.300"
           />
-          
+
           {/* Content */}
           <Box
             position="relative"

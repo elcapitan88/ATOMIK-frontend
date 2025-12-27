@@ -20,9 +20,10 @@ const Navbar = () => {
   }, []);
 
   const navItems = [
-    { label: 'Features', href: '#features' },
-    { label: 'How It Works', href: '#how-to-use' },
-    { label: 'Security', href: '#security' },
+    { label: 'Marketplace', href: '/marketplace' },
+    { label: 'Features', href: '/#features' },
+    { label: 'How It Works', href: '/#how-to-use' },
+    { label: 'Security', href: '/#security' },
     { label: 'Pricing', href: '/pricing' },
   ];
 
@@ -48,7 +49,7 @@ const Navbar = () => {
         {/* Logo */}
         <RouterLink to="/">
           <Image
-            src="/logos/atomik-logo.svg" 
+            src="/logos/atomik-logo.svg"
             alt="Atomik Trading - Automated Trading Platform for Beginners"
             height="36px"
             width="180px"

@@ -59,7 +59,7 @@ export const BROKER_FEATURES = {
 };
 
 export const BROKERS = {
-  
+
   tradovate: {
     id: 'tradovate',
     name: 'Tradovate',
@@ -134,6 +134,69 @@ export const BROKERS = {
       authUrl: 'https://www.interactivebrokers.com/oauth/authorize',
       tokenUrl: 'https://www.interactivebrokers.com/oauth/token',
       scope: 'trading'
+    }
+  },
+
+  binance: {
+    id: 'binance',
+    name: 'Binance',
+    description: 'Binance Global - Crypto',
+    logo: '/logos/binancelogo.svg',
+    connectionMethod: CONNECTION_METHODS.API_KEY,
+    environments: [ENVIRONMENTS.LIVE],
+    features: {
+      supportsWebSocket: true,
+      supportedOrderTypes: [
+        BROKER_FEATURES.ORDER_TYPES.MARKET,
+        BROKER_FEATURES.ORDER_TYPES.LIMIT,
+        BROKER_FEATURES.ORDER_TYPES.STOP,
+        BROKER_FEATURES.ORDER_TYPES.STOP_LIMIT
+      ],
+      realTimeData: true,
+      multipleAccounts: false,
+      supportedAssets: ['BTC', 'ETH', 'USDT', 'SPOT', 'FUTURES']
+    },
+    endpoints: {
+      live: {
+        base: 'https://api.binance.com',
+        websocket: 'wss://stream.binance.com:9443'
+      }
+    },
+    apiKeyConfig: {
+      keyPlaceholder: 'Enter your Binance API Key',
+      secretPlaceholder: 'Enter your Secret Key',
+      helpUrl: 'https://www.binance.com/en/support/faq/how-to-create-api-keys-on-binance-360002502072'
+    }
+  },
+
+  binanceus: {
+    id: 'binanceus',
+    name: 'Binance.US',
+    description: 'Binance US - Crypto',
+    logo: '/logos/binancelogo.svg',
+    connectionMethod: CONNECTION_METHODS.API_KEY,
+    environments: [ENVIRONMENTS.LIVE],
+    features: {
+      supportsWebSocket: true,
+      supportedOrderTypes: [
+        BROKER_FEATURES.ORDER_TYPES.MARKET,
+        BROKER_FEATURES.ORDER_TYPES.LIMIT,
+        BROKER_FEATURES.ORDER_TYPES.STOP
+      ],
+      realTimeData: true,
+      multipleAccounts: false,
+      supportedAssets: ['BTC', 'ETH', 'USDT', 'SPOT']
+    },
+    endpoints: {
+      live: {
+        base: 'https://api.binance.us',
+        websocket: 'wss://stream.binance.us:9443'
+      }
+    },
+    apiKeyConfig: {
+      keyPlaceholder: 'Enter your Binance.US API Key',
+      secretPlaceholder: 'Enter your Secret Key',
+      helpUrl: 'https://support.binance.us/hc/en-us/articles/360046787034-How-to-Create-an-API-Key'
     }
   },
 };
