@@ -24,6 +24,8 @@ const LandingPage = lazy(() => import('./components/pages/landing/LandingPage'))
 const ComingSoon = lazy(() => import('./components/common/ComingSoon'));
 const CreatorHubPage = lazy(() => import('./components/pages/CreatorHub/CreatorHubPage'));
 const CreatorProfilePage = lazy(() => import('./components/pages/CreatorProfile/CreatorProfilePage'));
+const BlueprintPage = lazy(() => import('./components/pages/BlueprintPage/BlueprintPage'));
+const BlueprintSuccess = lazy(() => import('./components/pages/BlueprintPage/BlueprintSuccess'));
 
 const AdminDashboard = lazy(() => import('./components/pages/Admin/AdminDashboard').then(module => ({ default: module.default })));
 const OverviewPage = lazy(() => import('./components/pages/Admin/Overview/OverviewPage').then(module => ({ default: module.default })));
@@ -35,7 +37,7 @@ const AdminSettingsPage = lazy(() => import('./components/pages/Admin/Settings/A
 
 const RouteTracker = () => {
   const location = useLocation();
-  
+
   useEffect(() => {
     // Push to dataLayer whenever route changes
     if (window.dataLayer) {
@@ -48,7 +50,7 @@ const RouteTracker = () => {
       });
     }
   }, [location]);
-  
+
   return null; // This component doesn't render anything
 };
 
@@ -71,7 +73,7 @@ const LoadingSpinner = () => (
 const WithAuth = React.memo(({ children }) => {
   const { isAuthenticated, isLoading } = useAuth();
   const location = useLocation();
-  
+
   // REPLACE the auth check with this:
   // Add this line to check for an in-progress redirect
   const isAuthRedirectInProgress = sessionStorage.getItem('auth_redirect_in_progress');
@@ -92,11 +94,11 @@ const WithAuth = React.memo(({ children }) => {
 // Route guard for non-authenticated routes
 const WithoutAuth = React.memo(({ children }) => {
   const { isAuthenticated } = useAuth();
-  
+
   if (isAuthenticated) {
     return <Navigate to="/dashboard" replace />;
   }
-  
+
   return children;
 });
 
@@ -125,46 +127,51 @@ const PricingRoute = React.memo(({ children }) => {
   return children;
 });
 
+// Marketplace Route - Make marketplace publicly accessible
+const MarketplaceRoute = React.memo(({ children }) => {
+  return children;
+});
+
 // Route guard for admin routes
 const AdminRoute = React.memo(({ children }) => {
   const { isAuthenticated, isLoading, user } = useAuth();
   const location = useLocation();
-  
+
   // Loading state - show spinner while checking auth
   if (isLoading) {
     return <LoadingSpinner />;
   }
-  
+
   // Not authenticated - redirect to auth page
   if (!isAuthenticated) {
     return <Navigate to="/auth" state={{ from: location }} replace />;
   }
-  
+
   // In development, bypass admin check
   if (process.env.NODE_ENV === 'development') {
     return children;
   }
-  
+
   // Check admin privileges - use same field as Menu.js
   const isAdmin = user && (
-    user.app_role === 'admin' || 
-    user.role === 'admin' || 
-    user.role === 'superadmin' || 
+    user.app_role === 'admin' ||
+    user.role === 'admin' ||
+    user.role === 'superadmin' ||
     user.username === 'admin'
   );
-  
+
   // Not admin - redirect to dashboard
   if (!isAdmin) {
     return <Navigate to="/dashboard" replace />;
   }
-  
+
   // User is authenticated and has admin privileges
   return children;
 });
 
 function App() {
   const { isAuthenticated, setAuthenticatedState } = useAuth();
-  
+
   // Initialize futures contracts on app load
   useEffect(() => {
     initializeContracts().then(() => {
@@ -173,14 +180,14 @@ function App() {
       console.error('[App] Failed to initialize contracts:', error);
     });
   }, []);
-  
+
   // Import debug utilities in development
   useEffect(() => {
     if (process.env.NODE_ENV === 'development') {
       import('./utils/debugFeatureFlags').catch(console.error);
     }
   }, []);
-  
+
   // Initialize IB Status Service
   useEffect(() => {
     // Service will be started when Management component loads with IB accounts
@@ -195,25 +202,25 @@ function App() {
     // Check for stored credentials on app load
     const token = localStorage.getItem('access_token');
     const storedUserData = localStorage.getItem('user_data');
-    
+
     if (token && storedUserData && !isAuthenticated) {
       try {
         // Parse user data
         const userData = JSON.parse(storedUserData);
-        
+
         // Set auth state directly via context
         setAuthenticatedState(userData, token);
-        
+
         // Clean up stored user data
         localStorage.removeItem('user_data');
-        
+
         console.log('Restored authentication state from localStorage');
       } catch (error) {
         console.error('Failed to restore auth state:', error);
       }
     }
   }, [isAuthenticated, setAuthenticatedState]);
-  
+
   // Initialize referral tracking on app load
   useEffect(() => {
     const initReferralTracking = async () => {
@@ -226,19 +233,23 @@ function App() {
         console.error('Failed to initialize referral tracking:', error);
       }
     };
-    
+
     initReferralTracking();
   }, []);
-  
+
   return (
     <Suspense fallback={<LoadingSpinner />}>
       <RouteTracker />
       <Routes>
         {/* Public Routes */}
         <Route path="/" element={<Homepage />} />
-  
+
         <Route path="/start" element={<LandingPage />} />
-        
+
+        {/* Blueprint Lead Magnet Routes - Public */}
+        <Route path="/blueprint" element={<BlueprintPage />} />
+        <Route path="/blueprint/success" element={<BlueprintSuccess />} />
+
         {/* Pricing Route - Now publicly accessible */}
         <Route
           path="/pricing"
@@ -248,7 +259,17 @@ function App() {
             </PricingRoute>
           }
         />
-        
+
+        {/* Marketplace Route - Publicly Accessible */}
+        <Route
+          path="/marketplace"
+          element={
+            <MarketplaceRoute>
+              <MarketplacePage />
+            </MarketplaceRoute>
+          }
+        />
+
         {/* Auth Routes */}
         <Route
           path="/auth"
@@ -258,7 +279,7 @@ function App() {
             </WithoutAuth>
           }
         />
-        
+
         <Route
           path="/auth/reset-password"
           element={
@@ -267,21 +288,21 @@ function App() {
             </WithoutAuth>
           }
         />
-  
+
         {/* Payment Success Route */}
-        <Route 
-          path="/payment/success" 
+        <Route
+          path="/payment/success"
           element={
             <PaymentSuccessRoute>
               <PaymentSuccess />
             </PaymentSuccessRoute>
-          } 
+          }
         />
-        
+
         {/* Docs Routes - Updated to use DocsHandler */}
         <Route path="/docs/*" element={null} />
         <Route path="/blog/*" element={null} />
-  
+
         {/* Protected Routes */}
         <Route
           path="/dashboard"
@@ -293,24 +314,14 @@ function App() {
             </WithAuth>
           }
         />
-  
-        <Route
-          path="/marketplace"
-          element={
-            <WithAuth>
-              <DashboardLayout>
-                <MarketplacePage />
-              </DashboardLayout>
-            </WithAuth>
-          }
-        />
+
 
         {/* Creator Profile Route - Public */}
         <Route
           path="/creator/:username"
           element={<CreatorProfilePage />}
         />
-        
+
         {/* Strategy Purchase Success Route */}
         <Route
           path="/marketplace/purchase-success"
@@ -322,7 +333,7 @@ function App() {
             </WithAuth>
           }
         />
-  
+
         <Route
           path="/settings"
           element={
@@ -333,7 +344,7 @@ function App() {
             </WithAuth>
           }
         />
-  
+
         <Route
           path="/strategy-builder"
           element={
@@ -366,7 +377,7 @@ function App() {
             </WithAuth>
           }
         />
-  
+
         {/* Admin Routes */}
         <Route
           path="/admin"
@@ -385,7 +396,7 @@ function App() {
           <Route path="analytics" element={<AnalyticsPage />} />
           <Route path="settings" element={<AdminSettingsPage />} />
         </Route>
-  
+
         {/* Catch all route */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

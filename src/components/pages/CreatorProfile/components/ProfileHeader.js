@@ -13,7 +13,7 @@ import {
   IconButton,
   Link
 } from '@chakra-ui/react';
-import { CheckCircle, User, Users, Target, Calendar, TrendingUp, Bell, Youtube, Instagram, MessageCircle, ExternalLink, Share2 } from 'lucide-react';
+import { CheckCircle, User, Users, Target, Calendar, TrendingUp, Bell, Youtube, Instagram, MessageCircle, ExternalLink, Share2, Shield, BarChart3, DollarSign, Percent } from 'lucide-react';
 import { ProfilePicture } from '@/components/common/ProfilePicture';
 
 // Custom X (formerly Twitter) icon component
@@ -60,7 +60,9 @@ const ProfileHeader = ({
   followerCount = 0,
   strategyCount = 0,
   totalSubscribers = 0,
-  memberSince
+  memberSince,
+  // Phase 2: Trust metrics - aggregate performance data
+  performance = null
 }) => {
 
   const formatNumber = (num) => {
@@ -448,6 +450,79 @@ const ProfileHeader = ({
           ))}
         </SimpleGrid>
       </Box>
+
+      {/* Phase 2: Verified Performance Section */}
+      {performance && performance.has_performance_data && (
+        <Box
+          bg="rgba(16, 185, 129, 0.08)"
+          border="1px solid rgba(16, 185, 129, 0.3)"
+          borderRadius="lg"
+          p={5}
+          mt={4}
+        >
+          <HStack spacing={2} mb={4}>
+            <Shield size={20} color="#10B981" />
+            <Text fontSize="md" fontWeight="bold" color="#10B981">
+              Verified Trading Performance
+            </Text>
+            <Tooltip label="These metrics are calculated from verified live trades across all published strategies" placement="top">
+              <Box cursor="help" color="whiteAlpha.600">
+                <Text fontSize="xs">ⓘ</Text>
+              </Box>
+            </Tooltip>
+          </HStack>
+
+          <SimpleGrid columns={{ base: 2, md: 4 }} spacing={6}>
+            <VStack spacing={1} align="center">
+              <HStack spacing={1}>
+                <BarChart3 size={14} color="#10B981" />
+                <Text fontSize="xs" color="whiteAlpha.600">Published Strategies</Text>
+              </HStack>
+              <Text fontSize="xl" fontWeight="bold" color="white">
+                {performance.published_strategies_count}
+              </Text>
+            </VStack>
+
+            <VStack spacing={1} align="center">
+              <HStack spacing={1}>
+                <Target size={14} color="#10B981" />
+                <Text fontSize="xs" color="whiteAlpha.600">Total Trades</Text>
+              </HStack>
+              <Text fontSize="xl" fontWeight="bold" color="white">
+                {formatNumber(performance.total_live_trades)}
+              </Text>
+            </VStack>
+
+            <VStack spacing={1} align="center">
+              <HStack spacing={1}>
+                <Percent size={14} color="#10B981" />
+                <Text fontSize="xs" color="whiteAlpha.600">Win Rate</Text>
+              </HStack>
+              <Text
+                fontSize="xl"
+                fontWeight="bold"
+                color={performance.aggregate_win_rate >= 50 ? "#10B981" : "#EF4444"}
+              >
+                {performance.aggregate_win_rate.toFixed(1)}%
+              </Text>
+            </VStack>
+
+            <VStack spacing={1} align="center">
+              <HStack spacing={1}>
+                <DollarSign size={14} color="#10B981" />
+                <Text fontSize="xs" color="whiteAlpha.600">Total PnL</Text>
+              </HStack>
+              <Text
+                fontSize="xl"
+                fontWeight="bold"
+                color={performance.total_live_pnl >= 0 ? "#10B981" : "#EF4444"}
+              >
+                {performance.total_live_pnl >= 0 ? '+' : ''}{performance.total_live_pnl.toFixed(2)}%
+              </Text>
+            </VStack>
+          </SimpleGrid>
+        </Box>
+      )}
     </VStack>
   );
 };

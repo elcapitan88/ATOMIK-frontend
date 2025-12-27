@@ -242,6 +242,7 @@ const CreatorProfilePage = () => {
                 strategyCount={profile?.strategy_count || 0}
                 totalSubscribers={profile?.total_subscribers || 0}
                 memberSince={profile?.created_at}
+                performance={profile?.performance}
               />
             </DarkCard>
           </MotionBox>
