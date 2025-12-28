@@ -139,8 +139,8 @@ const PaymentSuccess = () => {
   // Handle authentication redirect
   useEffect(() => {
     if (isAuthenticated) {
-      logger.info('User already authenticated, redirecting to Trading Lab');
-      navigate('/trading-lab/payment-success-loading', { replace: true });
+      logger.info('User already authenticated, redirecting to dashboard');
+      navigate('/dashboard', { replace: true });
     }
   }, [isAuthenticated, navigate]);
 
@@ -242,7 +242,7 @@ const PaymentSuccess = () => {
               if (mounted.current) {
                 // Clear auth redirect flag right before navigation
                 sessionStorage.removeItem('auth_redirect_in_progress');
-                navigate('/trading-lab/payment-success-loading', { replace: true });
+                navigate('/dashboard', { replace: true });
               }
             }, AUTO_REDIRECT_DELAY);
           
@@ -314,35 +314,42 @@ useEffect(() => {
         const token = sessionToken || sessionStorage.getItem('registration_session_token');
         
         if (token) {
-          // Try to get credentials and login
-          const credResponse = await axiosInstance.post('/api/v1/auth/get-credentials-by-token', {
+          // Exchange session token for auth tokens
+          const tokenResponse = await axiosInstance.post('/api/v1/auth/get-credentials-by-token', {
             session_token: token
           });
-          
-          if (credResponse.data) {
-            const loginResponse = await login({
-              email: credResponse.data.email,
-              password: credResponse.data.temp_password
-            });
-            
-            if (loginResponse.success) {
-              setStatus('success');
-              sessionStorage.removeItem('registration_session_token');
-              
-              toast({
-                title: 'Welcome to Atomik Trading!',
-                description: 'Your account is ready. Redirecting to dashboard...',
-                status: 'success',
-                duration: 5000,
-              });
-              
-              redirectTimeout.current = setTimeout(() => {
-                if (mounted.current) {
-                  navigate('/trading-lab/payment-success-loading', { replace: true });
-                }
-              }, AUTO_REDIRECT_DELAY);
-              return;
+
+          if (tokenResponse.data && tokenResponse.data.access_token) {
+            // Set auth redirect flag to prevent auth page flash
+            sessionStorage.setItem('auth_redirect_in_progress', 'true');
+
+            // Store token and set authentication state
+            localStorage.setItem('access_token', tokenResponse.data.access_token);
+            axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${tokenResponse.data.access_token}`;
+
+            // Set authenticated state directly with user data from token response
+            if (tokenResponse.data.user) {
+              setAuthenticatedState(tokenResponse.data.user, tokenResponse.data.access_token);
             }
+
+            setStatus('success');
+            sessionStorage.removeItem('registration_session_token');
+
+            toast({
+              title: 'Welcome to Atomik Trading!',
+              description: 'Your account is ready. Redirecting to dashboard...',
+              status: 'success',
+              duration: 5000,
+            });
+
+            redirectTimeout.current = setTimeout(() => {
+              if (mounted.current) {
+                // Clear auth redirect flag right before navigation
+                sessionStorage.removeItem('auth_redirect_in_progress');
+                navigate('/dashboard', { replace: true });
+              }
+            }, AUTO_REDIRECT_DELAY);
+            return;
           }
         }
         
