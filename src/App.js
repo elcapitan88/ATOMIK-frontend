@@ -111,9 +111,16 @@ const PaymentSuccessRoute = React.memo(({ children }) => {
     return <LoadingSpinner />;
   }
 
-  // Updated: Check for EITHER pending registration OR auth redirect in progress
+  // Check for valid payment success conditions:
+  // 1. Has pending registration in localStorage (legacy flow)
+  // 2. Auth redirect in progress
+  // 3. Has session_id in URL (Stripe redirect with session token flow)
   const hasPendingRegistration = localStorage.getItem('pendingRegistration');
-  if (!hasPendingRegistration && !isAuthRedirectInProgress) {
+  const urlParams = new URLSearchParams(window.location.search);
+  const hasSessionId = urlParams.get('session_id');
+  const hasSessionToken = urlParams.get('session_token');
+
+  if (!hasPendingRegistration && !isAuthRedirectInProgress && !hasSessionId && !hasSessionToken) {
     return <Navigate to="/auth" replace />;
   }
 
