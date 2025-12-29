@@ -1,20 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   Box,
   Flex,
   VStack,
-  HStack,
   Text,
-  Spinner,
   useToast,
   Alert,
   AlertIcon,
-  IconButton,
-  Tooltip
+  Button,
+  HStack
 } from '@chakra-ui/react';
-import { ArrowLeft, ExternalLink } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 import { useAuth } from '@/contexts/AuthContext';
@@ -22,6 +19,8 @@ import { useCreatorProfile } from './hooks/useCreatorProfile';
 import ProfileHeader from './components/ProfileHeader';
 import StrategyGrid from './components/StrategyGrid';
 import ProfileSkeleton from './components/ProfileSkeleton';
+import Navbar from '../Homepage/Navbar';
+import Wrapper from '../../layout/Sidebar/Menu';
 
 const MotionBox = motion(Box);
 const MotionFlex = motion(Flex);
@@ -59,9 +58,8 @@ const CreatorProfilePage = () => {
   const [strategiesPage, setStrategiesPage] = useState(1);
   const strategiesLimit = 12;
 
-  const handleGoBack = () => {
-    navigate(-1);
-  };
+  // Check if user is a guest (not logged in)
+  const isGuest = !user;
 
   const handleShareProfile = async () => {
     const profileUrl = `${window.location.origin}/creator/${username}`;
@@ -124,8 +122,20 @@ const CreatorProfilePage = () => {
   // Loading state
   if (isLoading) {
     return (
-      <Flex minH="100vh" bg="#000000" color="white">
-        <Box flexGrow={1} p={{ base: 4, md: 6 }}>
+      <Flex minH="100vh" bg="#000000" color="white" direction="column">
+        {isGuest ? (
+          <Box position="fixed" top={0} left={0} right={0} zIndex={1000}>
+            <Navbar />
+          </Box>
+        ) : (
+          <Wrapper onSelectItem={() => {}} />
+        )}
+        <Box
+          flexGrow={1}
+          ml={isGuest ? 0 : { base: 0, md: 16 }}
+          mt={isGuest ? "80px" : 0}
+          p={{ base: 4, md: 6 }}
+        >
           <ProfileSkeleton />
         </Box>
       </Flex>
@@ -135,44 +145,46 @@ const CreatorProfilePage = () => {
   // Error state
   if (error) {
     return (
-      <Flex minH="100vh" bg="#000000" color="white" align="center" justify="center">
-        <VStack spacing={6} maxW="md" textAlign="center">
-          <Alert status="error" variant="subtle" bg="#1a1a1a" border="1px solid #e53e3e">
-            <AlertIcon color="#e53e3e" />
-            <Box>
-              <Text fontWeight="bold" mb={1}>Creator Not Found</Text>
-              <Text fontSize="sm" color="whiteAlpha.700">
-                {error === 'Creator not found'
-                  ? `@${username} doesn't exist or isn't a creator yet`
-                  : 'Something went wrong loading this profile'
-                }
-              </Text>
-            </Box>
-          </Alert>
+      <Flex minH="100vh" bg="#000000" color="white" direction="column">
+        {isGuest ? (
+          <Box position="fixed" top={0} left={0} right={0} zIndex={1000}>
+            <Navbar />
+          </Box>
+        ) : (
+          <Wrapper onSelectItem={() => {}} />
+        )}
+        <Flex
+          flexGrow={1}
+          ml={isGuest ? 0 : { base: 0, md: 16 }}
+          mt={isGuest ? "80px" : 0}
+          align="center"
+          justify="center"
+        >
+          <VStack spacing={6} maxW="md" textAlign="center">
+            <Alert status="error" variant="subtle" bg="#1a1a1a" border="1px solid #e53e3e">
+              <AlertIcon color="#e53e3e" />
+              <Box>
+                <Text fontWeight="bold" mb={1}>Creator Not Found</Text>
+                <Text fontSize="sm" color="whiteAlpha.700">
+                  {error === 'Creator not found'
+                    ? `@${username} doesn't exist or isn't a creator yet`
+                    : 'Something went wrong loading this profile'
+                  }
+                </Text>
+              </Box>
+            </Alert>
 
-          <HStack spacing={4}>
-            <IconButton
-              aria-label="Go back"
-              icon={<ArrowLeft size={20} />}
+            <Button
               variant="outline"
-              color="white"
-              borderColor="#333"
-              _hover={{ borderColor: "#00C6E0", color: "#00C6E0" }}
-              onClick={handleGoBack}
-            />
-            <Text color="whiteAlpha.600" fontSize="sm">or</Text>
-            <Box
-              as="button"
               color="#00C6E0"
-              fontSize="sm"
-              textDecoration="underline"
-              _hover={{ color: "#00A3B8" }}
+              borderColor="#00C6E0"
+              _hover={{ bg: "rgba(0, 198, 224, 0.1)" }}
               onClick={() => navigate('/marketplace')}
             >
               Browse the marketplace
-            </Box>
-          </HStack>
-        </VStack>
+            </Button>
+          </VStack>
+        </Flex>
       </Flex>
     );
   }
@@ -199,105 +211,84 @@ const CreatorProfilePage = () => {
         <meta property="og:type" content="profile" />
         <link rel="canonical" href={`https://www.atomiktrading.io/creator/${username}`} />
       </Helmet>
-      <Flex minH="100vh" bg="#000000" color="white">
-        <Box flexGrow={1} p={{ base: 4, md: 6 }}>
-        <MotionFlex
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3 }}
-          direction="column"
-          gap={6}
-          maxW="1200px"
-          mx="auto"
+      <Flex minH="100vh" bg="#000000" color="white" direction="column">
+        {isGuest ? (
+          <Box position="fixed" top={0} left={0} right={0} zIndex={1000}>
+            <Navbar />
+          </Box>
+        ) : (
+          <Wrapper onSelectItem={() => {}} />
+        )}
+        <Box
+          flexGrow={1}
+          ml={isGuest ? 0 : { base: 0, md: 16 }}
+          mt={isGuest ? "80px" : 0}
+          mb={{ base: "70px", md: 0 }}
+          p={{ base: 4, md: 6 }}
         >
-          {/* Header with back button */}
-          <HStack justify="space-between" align="center">
-            <Tooltip label="Go back" placement="right">
-              <IconButton
-                aria-label="Go back"
-                icon={<ArrowLeft size={20} />}
-                variant="ghost"
-                color="whiteAlpha.700"
-                size="md"
-                _hover={{
-                  color: "#00C6E0",
-                  bg: "rgba(0, 198, 224, 0.1)"
-                }}
-                onClick={handleGoBack}
-              />
-            </Tooltip>
-
-            <Tooltip label="Share profile" placement="left">
-              <IconButton
-                aria-label="Share profile"
-                icon={<ExternalLink size={20} />}
-                variant="ghost"
-                color="whiteAlpha.700"
-                size="md"
-                _hover={{
-                  color: "#00C6E0",
-                  bg: "rgba(0, 198, 224, 0.1)"
-                }}
-                onClick={handleShareProfile}
-              />
-            </Tooltip>
-          </HStack>
-
-          {/* Profile Header */}
-          <MotionBox
-            initial={{ opacity: 0, y: 20 }}
+          <MotionFlex
+            initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, delay: 0.1 }}
+            transition={{ duration: 0.3 }}
+            direction="column"
+            gap={6}
+            maxW="1200px"
+            mx="auto"
           >
-            <DarkCard p={8}>
-              <ProfileHeader
-                profile={profile}
-                isOwnProfile={isOwnProfile}
-                isFollowing={isFollowing}
-                onFollow={handleFollow}
-                isFollowLoading={isFollowLoading}
-                isLoggedIn={isLoggedIn}
-                followerCount={followerCount}
-                strategyCount={profile?.strategy_count || 0}
-                totalSubscribers={profile?.total_subscribers || 0}
-                memberSince={profile?.created_at}
-                performance={profile?.performance}
-              />
-            </DarkCard>
-          </MotionBox>
-
-
-
-          {/* Strategies Section */}
-          <MotionBox
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, delay: 0.3 }}
-          >
-            <DarkCard p={6}>
-              <VStack spacing={6} align="stretch">
-                <HStack justify="space-between" align="center">
-                  <Text fontSize="xl" fontWeight="bold" color="white">
-                    Trading Strategies
-                  </Text>
-                  <Text fontSize="sm" color="whiteAlpha.600">
-                    {profile?.strategy_count || 0} strategies available
-                  </Text>
-                </HStack>
-
-                <StrategyGrid
-                  strategies={strategies}
-                  isLoading={isLoading}
-                  page={strategiesPage}
-                  limit={strategiesLimit}
-                  onPageChange={setStrategiesPage}
+            {/* Profile Header */}
+            <MotionBox
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, delay: 0.1 }}
+            >
+              <DarkCard p={8}>
+                <ProfileHeader
+                  profile={profile}
+                  isOwnProfile={isOwnProfile}
+                  isFollowing={isFollowing}
+                  onFollow={handleFollow}
+                  isFollowLoading={isFollowLoading}
+                  isLoggedIn={isLoggedIn}
+                  followerCount={followerCount}
+                  strategyCount={profile?.strategy_count || 0}
+                  totalSubscribers={profile?.total_subscribers || 0}
+                  memberSince={profile?.created_at}
+                  performance={profile?.performance}
+                  onShareProfile={handleShareProfile}
                 />
-              </VStack>
-            </DarkCard>
-          </MotionBox>
-        </MotionFlex>
-      </Box>
-    </Flex>
+              </DarkCard>
+            </MotionBox>
+
+            {/* Strategies Section */}
+            <MotionBox
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, delay: 0.3 }}
+            >
+              <DarkCard p={6}>
+                <VStack spacing={6} align="stretch">
+                  <HStack justify="space-between" align="center">
+                    <Text fontSize="xl" fontWeight="bold" color="white">
+                      Trading Strategies
+                    </Text>
+                    <Text fontSize="sm" color="whiteAlpha.600">
+                      {profile?.strategy_count || 0} strategies available
+                    </Text>
+                  </HStack>
+
+                  <StrategyGrid
+                    strategies={strategies}
+                    isLoading={isLoading}
+                    page={strategiesPage}
+                    limit={strategiesLimit}
+                    onPageChange={setStrategiesPage}
+                  />
+                </VStack>
+              </DarkCard>
+            </MotionBox>
+          </MotionFlex>
+        </Box>
+      </Flex>
     </>
   );
 };

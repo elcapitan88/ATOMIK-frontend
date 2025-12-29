@@ -13,7 +13,7 @@ import {
   IconButton,
   Link
 } from '@chakra-ui/react';
-import { CheckCircle, User, Users, Target, Calendar, TrendingUp, Bell, Youtube, Instagram, MessageCircle, ExternalLink, Share2, Shield, BarChart3, DollarSign, Percent } from 'lucide-react';
+import { CheckCircle, User, Users, Target, Calendar, TrendingUp, Bell, Youtube, Instagram, MessageCircle, Share2, Shield, BarChart3, DollarSign, Percent } from 'lucide-react';
 import { ProfilePicture } from '@/components/common/ProfilePicture';
 
 // Custom X (formerly Twitter) icon component
@@ -62,7 +62,8 @@ const ProfileHeader = ({
   totalSubscribers = 0,
   memberSince,
   // Phase 2: Trust metrics - aggregate performance data
-  performance = null
+  performance = null,
+  onShareProfile
 }) => {
 
   const formatNumber = (num) => {
@@ -163,12 +164,7 @@ const ProfileHeader = ({
                 color: "#00C6E0",
                 bg: "rgba(0, 198, 224, 0.1)"
               }}
-              onClick={() => {
-                const profileUrl = `${window.location.origin}/creator/${profile?.username}`;
-                navigator.clipboard.writeText(profileUrl);
-                // You could add a toast notification here
-                console.log('Profile link copied:', profileUrl);
-              }}
+              onClick={onShareProfile}
             />
           </Tooltip>
 
