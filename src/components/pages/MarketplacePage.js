@@ -108,28 +108,43 @@ const MarketplacePage = () => {
   const fetchStrategies = async () => {
     try {
       setIsLoading(true);
-      const [sharedResponse, subscribedResponse, purchasedResponse] = await Promise.all([
-        marketplaceApi.getMarketplaceStrategies(),
-        webhookApi.getSubscribedStrategies(),
-        marketplaceApi.getUserPurchases().catch((error) => {
-          console.error('[MarketplacePage] getUserPurchases failed:', error);
-          console.error('[MarketplacePage] Error response:', error.response?.data);
-          console.error('[MarketplacePage] Error status:', error.response?.status);
 
-          // Show user-friendly error notification for non-404 errors
-          if (error.response?.status !== 404) {
-            toast({
-              title: "Error loading purchases",
-              description: "Some purchased strategies may not display correctly. Please refresh the page.",
-              status: "warning",
-              duration: 5000,
-              isClosable: true,
-            });
-          }
+      // Always fetch public marketplace strategies
+      const sharedResponse = await marketplaceApi.getMarketplaceStrategies();
 
-          return { purchases: [] }; // Fallback if endpoint fails
-        })
-      ]);
+      // Only fetch user-specific data if logged in
+      let subscribedResponse = [];
+      let purchasedResponse = { purchases: [] };
+
+      if (user) {
+        // User is authenticated - fetch their subscriptions and purchases
+        const [subRes, purchRes] = await Promise.all([
+          webhookApi.getSubscribedStrategies().catch((error) => {
+            console.error('[MarketplacePage] getSubscribedStrategies failed:', error);
+            return [];
+          }),
+          marketplaceApi.getUserPurchases().catch((error) => {
+            console.error('[MarketplacePage] getUserPurchases failed:', error);
+            console.error('[MarketplacePage] Error response:', error.response?.data);
+            console.error('[MarketplacePage] Error status:', error.response?.status);
+
+            // Show user-friendly error notification for non-404 errors
+            if (error.response?.status !== 404) {
+              toast({
+                title: "Error loading purchases",
+                description: "Some purchased strategies may not display correctly. Please refresh the page.",
+                status: "warning",
+                duration: 5000,
+                isClosable: true,
+              });
+            }
+
+            return { purchases: [] }; // Fallback if endpoint fails
+          })
+        ]);
+        subscribedResponse = subRes;
+        purchasedResponse = purchRes;
+      }
 
       // Create sets for quick lookup
       const subscribedSet = new Set(subscribedResponse.map(s => s.token));
