@@ -22,6 +22,7 @@ const Navbar = () => {
   // Navigation items - only include links that work across all public pages
   const navItems = [
     { label: 'Marketplace', href: '/marketplace' },
+    { label: 'Support', href: '/docs' },
     { label: 'Pricing', href: '/pricing' },
   ];
 
