@@ -53,6 +53,17 @@ When guests click subscribe on a strategy, guide them through signup with the st
 - `frontend/src/components/pages/PricingPage.js`
 - `frontend/src/components/pages/PaymentSuccess.js`
 
+### TODO: Paid Strategy Flow (Bundled Checkout)
+**Status: INCOMPLETE - Needs Implementation**
+
+For monetized/paid strategies, the current flow clears sessionStorage and doesn't auto-purchase.
+Future implementation options:
+1. **Sequential Flow (Recommended)**: After platform payment → redirect to strategy purchase modal
+2. **Application Fee Model**: Platform collects fees, pays creators via transfers
+3. **Platform-Managed Payouts**: Single payment, manual creator payouts
+
+See conversation notes for detailed analysis of Stripe Connect limitations with multi-subscription checkout.
+
 ---
 
 ## Phase 3: Hide Subscribed Tab for Guests
@@ -283,10 +294,24 @@ Create individual pages for each strategy for:
 
 - [x] Phase 1: Navbar Updates (Completed 2024-12-29)
 - [x] Phase 2: Guest Strategy Auto-Subscribe Flow (Completed 2024-12-29)
-- [ ] Phase 3: Hide Subscribed Tab
-- [ ] Phase 4: Dev-Only Logs
-- [ ] Phase 5: Sorting Options
-- [ ] Phase 6: Creator Links
-- [ ] Phase 7: Horizontal Scroll
-- [ ] Phase 8: Rating Audit
-- [ ] Phase 9: SEO Pages
+- [x] Phase 3: Hide Subscribed Tab (Completed 2024-12-29)
+- [x] Phase 4: Dev-Only Logs (Completed 2024-12-29)
+- [x] Phase 5: Sorting Options (Completed 2024-12-28)
+- [x] Phase 6: Creator Links (Completed 2024-12-28)
+- [ ] Phase 7: Horizontal Scroll (Skipped - current layout works well)
+- [x] Phase 8: Rating Audit (Completed 2024-12-28 - All checks passed)
+- [ ] Phase 9: SEO Pages (Skipped - low SEO impact; added Helmet to key pages instead)
+
+---
+
+## SEO Improvements (Completed 2024-12-28)
+
+Instead of full strategy detail pages, implemented lightweight SEO improvements:
+
+### Helmet Meta Tags Added To:
+- **MarketplacePage.js** - Title, description, og:tags, canonical URL
+- **PricingPage.js** - Title, description, og:tags, canonical URL
+- **CreatorProfilePage.js** - Dynamic title/description based on profile data
+
+### Sitemap Updated:
+Added `/marketplace` and `/blueprint` to sitemap.xml
