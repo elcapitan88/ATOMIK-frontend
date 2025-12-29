@@ -879,8 +879,17 @@ const FAQ = () => {
 };
 
 // Context-based messaging for different entry points
-const getContextualContent = (source) => {
+const getContextualContent = (source, pendingStrategy = null) => {
   switch (source) {
+    case 'strategy_subscribe':
+      return {
+        headline: 'Join Atomik to Subscribe',
+        subtitle: pendingStrategy
+          ? `Sign up to subscribe to "${pendingStrategy.name}" and start automated trading.`
+          : 'Sign up to access marketplace strategies and start automated trading.',
+        badge: 'STRATEGY SUBSCRIPTION',
+        pendingStrategy
+      };
     case 'marketplace':
       return {
         headline: 'Get Access to Proven Trading Strategies',
@@ -911,6 +920,7 @@ const PricingPage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [entrySource, setEntrySource] = useState(null);
+  const [pendingStrategy, setPendingStrategy] = useState(null);
 
   // Hooks
   const toast = useToast();
@@ -932,11 +942,24 @@ const PricingPage = () => {
     const queryParams = new URLSearchParams(window.location.search);
     const fromAuth = queryParams.get('source') === 'auth';
     const source = queryParams.get('source');
-    const isRegister = queryParams.get('register') === 'true';
 
     // Set entry source for contextual messaging
-    if (source === 'marketplace' || source === 'creator') {
+    if (source === 'marketplace' || source === 'creator' || source === 'strategy_subscribe') {
       setEntrySource(source);
+    }
+
+    // Check for pending strategy subscription in sessionStorage
+    if (source === 'strategy_subscribe') {
+      try {
+        const pendingStrategyData = sessionStorage.getItem('pendingStrategySubscription');
+        if (pendingStrategyData) {
+          const strategy = JSON.parse(pendingStrategyData);
+          setPendingStrategy(strategy);
+          logger.info('Found pending strategy subscription:', strategy.name);
+        }
+      } catch (e) {
+        logger.error('Error parsing pending strategy:', e);
+      }
     }
 
     // If user is authenticated and NOT coming from auth page, redirect to dashboard
@@ -1052,11 +1075,11 @@ const PricingPage = () => {
       
       <Container maxW="container.xl" position="relative" zIndex={1}>
         <VStack spacing={4} mb={8}>
-          {/* Contextual badge for marketplace/creator entry */}
-          {getContextualContent(entrySource).badge && (
+          {/* Contextual badge for marketplace/creator/strategy entry */}
+          {getContextualContent(entrySource, pendingStrategy).badge && (
             <MotionBox variants={itemVariants}>
               <Badge
-                colorScheme="cyan"
+                colorScheme={entrySource === 'strategy_subscribe' ? 'green' : 'cyan'}
                 variant="subtle"
                 px={4}
                 py={1}
@@ -1065,7 +1088,7 @@ const PricingPage = () => {
                 fontWeight="bold"
                 letterSpacing="wider"
               >
-                {getContextualContent(entrySource).badge}
+                {getContextualContent(entrySource, pendingStrategy).badge}
               </Badge>
             </MotionBox>
           )}
@@ -1079,7 +1102,7 @@ const PricingPage = () => {
               mb={2}
             >
               {entrySource ? (
-                getContextualContent(entrySource).headline
+                getContextualContent(entrySource, pendingStrategy).headline
               ) : (
                 <>Pricing Plans for Every <Text as="span" color="#00C6E0">Trader</Text></>
               )}
@@ -1091,9 +1114,29 @@ const PricingPage = () => {
               fontSize={{ base: "sm", md: "md" }}
               color="whiteAlpha.800"
             >
-              {getContextualContent(entrySource).subtitle}
+              {getContextualContent(entrySource, pendingStrategy).subtitle}
             </Text>
           </MotionBox>
+
+          {/* Strategy subscription info banner */}
+          {pendingStrategy && (
+            <MotionBox
+              variants={itemVariants}
+              w="full"
+              maxW="container.sm"
+              bg="rgba(16, 185, 129, 0.1)"
+              border="1px solid rgba(16, 185, 129, 0.3)"
+              borderRadius="lg"
+              p={4}
+            >
+              <HStack spacing={3} justify="center">
+                <Check size={20} color="#10B981" />
+                <Text color="whiteAlpha.900" fontSize="sm" textAlign="center">
+                  After signup, you'll be automatically subscribed to <Text as="span" fontWeight="bold" color="#10B981">"{pendingStrategy.name}"</Text>
+                </Text>
+              </HStack>
+            </MotionBox>
+          )}
 
           {/* Pricing Toggle */}
           <MotionBox variants={itemVariants}>
