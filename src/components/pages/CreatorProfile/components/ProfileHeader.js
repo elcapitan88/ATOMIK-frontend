@@ -81,18 +81,8 @@ const ProfileHeader = ({
 
     try {
       const date = new Date(dateString);
-      const now = new Date();
-      const diffTime = Math.abs(now - date);
-      const diffYears = Math.floor(diffTime / (1000 * 60 * 60 * 24 * 365));
-      const diffMonths = Math.floor(diffTime / (1000 * 60 * 60 * 24 * 30));
-
-      if (diffYears >= 1) {
-        return `${diffYears} year${diffYears > 1 ? 's' : ''} ago`;
-      } else if (diffMonths >= 1) {
-        return `${diffMonths} month${diffMonths > 1 ? 's' : ''} ago`;
-      } else {
-        return 'Less than a month ago';
-      }
+      const options = { month: 'short', year: 'numeric' };
+      return date.toLocaleDateString('en-US', options);
     } catch (error) {
       console.error('Error formatting date:', error);
       return 'Unknown';
