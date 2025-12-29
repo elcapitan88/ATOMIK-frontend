@@ -2,6 +2,7 @@ import React, { Suspense, useEffect, lazy } from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Box, Spinner } from '@chakra-ui/react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSubscription } from '@/contexts/SubscriptionContext';
 import { initializeContracts } from './utils/formatting/tickerUtils';
 import affiliateService from './services/affiliateService';
 import ibStatusService from './services/brokers/interactivebrokers/IBStatusService';
@@ -136,6 +137,35 @@ const PricingRoute = React.memo(({ children }) => {
 
 // Marketplace Route - Make marketplace publicly accessible
 const MarketplaceRoute = React.memo(({ children }) => {
+  return children;
+});
+
+// Route guard for authenticated routes WITH active subscription
+// Used for Dashboard, Settings - requires both login AND active subscription
+const WithAuthAndSubscription = React.memo(({ children }) => {
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
+  const { status, isLoading: subLoading, isLifetime } = useSubscription();
+  const location = useLocation();
+
+  const isAuthRedirectInProgress = sessionStorage.getItem('auth_redirect_in_progress');
+  const hasToken = localStorage.getItem('access_token');
+
+  // Show loading while checking auth or subscription
+  if (authLoading || subLoading) {
+    return <LoadingSpinner />;
+  }
+
+  // Not authenticated - redirect to auth page
+  if (!isAuthenticated && !isAuthRedirectInProgress && !hasToken) {
+    return <Navigate to="/auth" state={{ from: location }} replace />;
+  }
+
+  // Authenticated but no active subscription - redirect to pricing
+  const hasActiveSubscription = status === 'active' || isLifetime;
+  if (isAuthenticated && !hasActiveSubscription) {
+    return <Navigate to="/pricing" state={{ from: location, needsSubscription: true }} replace />;
+  }
+
   return children;
 });
 
@@ -310,15 +340,15 @@ function App() {
         <Route path="/docs/*" element={null} />
         <Route path="/blog/*" element={null} />
 
-        {/* Protected Routes */}
+        {/* Protected Routes - Requires Auth + Active Subscription */}
         <Route
           path="/dashboard"
           element={
-            <WithAuth>
+            <WithAuthAndSubscription>
               <DashboardLayout>
                 <Dashboard />
               </DashboardLayout>
-            </WithAuth>
+            </WithAuthAndSubscription>
           }
         />
 
@@ -344,11 +374,11 @@ function App() {
         <Route
           path="/settings"
           element={
-            <WithAuth>
+            <WithAuthAndSubscription>
               <DashboardLayout>
                 <SettingsPage />
               </DashboardLayout>
-            </WithAuth>
+            </WithAuthAndSubscription>
           }
         />
 
