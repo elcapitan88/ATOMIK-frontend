@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { Helmet } from 'react-helmet-async';
 import {
   Box,
   VStack,
@@ -30,6 +31,7 @@ import {
   BookMarked,
   Layout,
   X,
+  ArrowUpDown,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { webhookApi } from '@/services/api/Webhooks/webhookApi';
@@ -40,6 +42,7 @@ import Wrapper from '../layout/Sidebar/Menu'; // Renaming Menu to Wrapper/Sideba
 import Navbar from './Homepage/Navbar';
 import { useAuth } from '@/contexts/AuthContext';
 import { Link as RouterLink } from 'react-router-dom';
+import { devLog } from '@/utils/devLog';
 
 const MotionFlex = motion(Flex);
 const MotionBox = motion(Box);
@@ -77,6 +80,14 @@ const categories = [
   },
 ];
 
+// Sorting options for the marketplace
+const sortOptions = [
+  { value: 'newest', label: 'Newest', sortFn: (a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0) },
+  { value: 'popular', label: 'Most Popular', sortFn: (a, b) => (b.subscriberCount || 0) - (a.subscriberCount || 0) },
+  { value: 'rating', label: 'Highest Rated', sortFn: (a, b) => (b.rating || 0) - (a.rating || 0) },
+  { value: 'name', label: 'Name (A-Z)', sortFn: (a, b) => (a.name || '').localeCompare(b.name || '') },
+];
+
 const MarketplacePage = () => {
   // Auth hook
   const { user, isLoading: authLoading } = useAuth();
@@ -84,6 +95,7 @@ const MarketplacePage = () => {
   // State management
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
+  const [sortBy, setSortBy] = useState('newest');
   const [strategies, setStrategies] = useState({});
   const [isLoading, setIsLoading] = useState(true);
   const [viewMode, setViewMode] = useState('all');
@@ -150,19 +162,19 @@ const MarketplacePage = () => {
       const subscribedSet = new Set(subscribedResponse.map(s => s.token));
       const purchasedSet = new Set(purchasedResponse?.purchases?.map(p => p.webhook_token) || []);
 
-      // Debug logging
-      console.log('[MarketplacePage] Marketplace strategies response:', sharedResponse);
-      console.log('[MarketplacePage] Marketplace strategies count:', sharedResponse.strategies?.length || 0);
-      console.log('[MarketplacePage] Subscribed strategies:', subscribedResponse.length);
-      console.log('[MarketplacePage] Purchased strategies:', purchasedResponse?.purchases?.length || 0);
-      console.log('[MarketplacePage] Purchased tokens:', Array.from(purchasedSet));
+      // Debug logging (dev-only)
+      devLog('[MarketplacePage] Marketplace strategies response:', sharedResponse);
+      devLog('[MarketplacePage] Marketplace strategies count:', sharedResponse.strategies?.length || 0);
+      devLog('[MarketplacePage] Subscribed strategies:', subscribedResponse.length);
+      devLog('[MarketplacePage] Purchased strategies:', purchasedResponse?.purchases?.length || 0);
+      devLog('[MarketplacePage] Purchased tokens:', Array.from(purchasedSet));
 
       // Merge subscribed and purchased sets
       const allAccessSet = new Set([...subscribedSet, ...purchasedSet]);
       setSubscribedStrategies(allAccessSet);
 
-      console.log('[MarketplacePage] Total accessible strategies:', allAccessSet.size);
-      console.log('[MarketplacePage] Accessible tokens:', Array.from(allAccessSet));
+      devLog('[MarketplacePage] Total accessible strategies:', allAccessSet.size);
+      devLog('[MarketplacePage] Accessible tokens:', Array.from(allAccessSet));
 
       const groupedStrategies = sharedResponse.strategies.reduce((acc, strategy) => {
         // Convert category to match frontend category IDs (like production)
@@ -174,8 +186,8 @@ const MarketplacePage = () => {
         // Check if user has access - use API's user_has_access field or check by source_id
         const hasAccess = strategy.user_has_access || allAccessSet.has(strategy.source_id);
 
-        // Debug logging for each strategy
-        console.log(`[MarketplacePage] Processing ${strategy.name}:`, {
+        // Debug logging for each strategy (dev-only)
+        devLog(`[MarketplacePage] Processing ${strategy.name}:`, {
           source_id: strategy.source_id,
           original_category: strategy.category,
           mapped_to: type,
@@ -203,10 +215,10 @@ const MarketplacePage = () => {
         return acc;
       }, {});
 
-      // Debug logging for grouped strategies
-      console.log('[MarketplacePage] Grouped strategies by category:', Object.keys(groupedStrategies));
+      // Debug logging for grouped strategies (dev-only)
+      devLog('[MarketplacePage] Grouped strategies by category:', Object.keys(groupedStrategies));
       Object.keys(groupedStrategies).forEach(category => {
-        console.log(`[MarketplacePage] ${category}: ${groupedStrategies[category].length} strategies`);
+        devLog(`[MarketplacePage] ${category}: ${groupedStrategies[category].length} strategies`);
       });
 
       setStrategies(groupedStrategies);
@@ -259,11 +271,11 @@ const MarketplacePage = () => {
     });
   };
 
-  // Filter strategies based on search and category
+  // Filter and sort strategies based on search, category, and sort option
   const getFilteredStrategies = (categoryStrategies, categoryId) => {
     if (!categoryStrategies) return [];
 
-    return categoryStrategies.filter(strategy => {
+    const filtered = categoryStrategies.filter(strategy => {
       const matchesSearch = searchQuery === '' ||
         strategy.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         strategy.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -273,13 +285,29 @@ const MarketplacePage = () => {
 
       return matchesSearch && matchesCategory;
     });
+
+    // Apply sorting
+    const sortOption = sortOptions.find(opt => opt.value === sortBy);
+    if (sortOption) {
+      return [...filtered].sort(sortOption.sortFn);
+    }
+
+    return filtered;
   };
 
-  // Get subscribed strategies
+  // Get subscribed strategies (with sorting applied)
   const getSubscribedStrategiesArray = () => {
-    return Object.values(strategies)
+    const subscribed = Object.values(strategies)
       .flat()
       .filter(strategy => subscribedStrategies.has(strategy.token));
+
+    // Apply sorting
+    const sortOption = sortOptions.find(opt => opt.value === sortBy);
+    if (sortOption) {
+      return [...subscribed].sort(sortOption.sortFn);
+    }
+
+    return subscribed;
   };
 
   // Component for empty states
@@ -556,8 +584,18 @@ const MarketplacePage = () => {
   const isGuest = !user;
 
   return (
-    <Flex minH="100vh" bg="background" color="text.primary" fontFamily="body" direction="column">
-      {isGuest ? (
+    <>
+      <Helmet>
+        <title>Strategy Marketplace | Atomik Trading</title>
+        <meta name="description" content="Browse proven trading strategies from top traders. Subscribe with one click and automate your trading with TradingView alerts." />
+        <meta property="og:title" content="Strategy Marketplace | Atomik Trading" />
+        <meta property="og:description" content="Browse proven trading strategies from top traders. Subscribe with one click and automate your trading." />
+        <meta property="og:url" content="https://www.atomiktrading.io/marketplace" />
+        <meta property="og:type" content="website" />
+        <link rel="canonical" href="https://www.atomiktrading.io/marketplace" />
+      </Helmet>
+      <Flex minH="100vh" bg="background" color="text.primary" fontFamily="body" direction="column">
+        {isGuest ? (
         <Box position="fixed" top={0} left={0} right={0} zIndex={1000}>
           <Navbar />
         </Box>
@@ -615,56 +653,94 @@ const MarketplacePage = () => {
                       Strategy Marketplace
                     </Text>
                     <Text color="whiteAlpha.700" fontSize={{ base: "xs", md: "sm" }}>
-                      {totalStrategies} Available • {totalSubscribed} Subscribed
+                      {totalStrategies} Available{user && ` • ${totalSubscribed} Subscribed`}
                     </Text>
                   </VStack>
 
                   {/* Desktop Controls */}
                   {!isMobile && (
                     <HStack spacing={4}>
-                      <ButtonGroup size="sm" isAttached variant="outline">
-                        <Button
-                          onClick={() => setViewMode('all')}
-                          colorScheme={viewMode === 'all' ? 'blue' : 'gray'}
-                          borderColor="whiteAlpha.200"
-                          leftIcon={<Layout size={16} />}
+                      {/* Only show toggle for authenticated users */}
+                      {user ? (
+                        <ButtonGroup size="sm" isAttached variant="outline">
+                          <Button
+                            onClick={() => setViewMode('all')}
+                            colorScheme={viewMode === 'all' ? 'blue' : 'gray'}
+                            borderColor="whiteAlpha.200"
+                            leftIcon={<Layout size={16} />}
+                          >
+                            All
+                          </Button>
+                          <Button
+                            onClick={() => setViewMode('subscribed')}
+                            colorScheme={viewMode === 'subscribed' ? 'blue' : 'gray'}
+                            borderColor="whiteAlpha.200"
+                            leftIcon={<BookMarked size={16} />}
+                          >
+                            Subscribed
+                          </Button>
+                        </ButtonGroup>
+                      ) : (
+                        <Badge
+                          colorScheme="cyan"
+                          variant="subtle"
+                          px={3}
+                          py={1}
+                          borderRadius="full"
+                          fontSize="xs"
                         >
-                          All
-                        </Button>
-                        <Button
-                          onClick={() => setViewMode('subscribed')}
-                          colorScheme={viewMode === 'subscribed' ? 'blue' : 'gray'}
-                          borderColor="whiteAlpha.200"
-                          leftIcon={<BookMarked size={16} />}
-                        >
-                          Subscribed
-                        </Button>
-                      </ButtonGroup>
+                          All Strategies
+                        </Badge>
+                      )}
 
                       <SearchBar />
 
                       {viewMode === 'all' && (
-                        <Select
-                          value={selectedCategory}
-                          onChange={(e) => setSelectedCategory(e.target.value)}
-                          bg="whiteAlpha.100"
-                          border="1px solid"
-                          borderColor="whiteAlpha.200"
-                          _hover={{ borderColor: "whiteAlpha.300" }}
-                          _focus={{
-                            borderColor: "rgba(0, 198, 224, 0.6)",
-                            boxShadow: "0 0 0 1px rgba(0, 198, 224, 0.6)"
-                          }}
-                          maxW="200px"
-                          color="white"
-                        >
-                          <option value="all">All Types</option>
-                          {STRATEGY_TYPE_OPTIONS.map(option => (
-                            <option key={option.value} value={option.value}>
-                              {option.label}
-                            </option>
-                          ))}
-                        </Select>
+                        <>
+                          <Select
+                            value={selectedCategory}
+                            onChange={(e) => setSelectedCategory(e.target.value)}
+                            bg="whiteAlpha.100"
+                            border="1px solid"
+                            borderColor="whiteAlpha.200"
+                            _hover={{ borderColor: "whiteAlpha.300" }}
+                            _focus={{
+                              borderColor: "rgba(0, 198, 224, 0.6)",
+                              boxShadow: "0 0 0 1px rgba(0, 198, 224, 0.6)"
+                            }}
+                            maxW="200px"
+                            color="white"
+                          >
+                            <option value="all">All Types</option>
+                            {STRATEGY_TYPE_OPTIONS.map(option => (
+                              <option key={option.value} value={option.value}>
+                                {option.label}
+                              </option>
+                            ))}
+                          </Select>
+
+                          <Select
+                            value={sortBy}
+                            onChange={(e) => setSortBy(e.target.value)}
+                            bg="whiteAlpha.100"
+                            border="1px solid"
+                            borderColor="whiteAlpha.200"
+                            _hover={{ borderColor: "whiteAlpha.300" }}
+                            _focus={{
+                              borderColor: "rgba(0, 198, 224, 0.6)",
+                              boxShadow: "0 0 0 1px rgba(0, 198, 224, 0.6)"
+                            }}
+                            maxW="160px"
+                            color="white"
+                            icon={<ArrowUpDown size={14} />}
+                          >
+                            {sortOptions.map(option => (
+                              <option key={option.value} value={option.value}>
+                                {option.label}
+                              </option>
+                            ))}
+                          </Select>
+                        </>
                       )}
                     </HStack>
                   )}
@@ -676,34 +752,70 @@ const MarketplacePage = () => {
                     {/* Search Bar - Full Width */}
                     <SearchBar />
 
-                    {/* Toggle and Filter Row */}
+                    {/* Toggle and Sort Row - Only show toggle for authenticated users */}
                     <HStack justify="space-between" align="center" w="100%">
-                      <ButtonGroup size="sm" isAttached variant="outline">
-                        <Button
-                          onClick={() => setViewMode('all')}
-                          colorScheme={viewMode === 'all' ? 'blue' : 'gray'}
-                          borderColor="whiteAlpha.200"
-                          minH="44px"
-                          minW="44px"
+                      {user ? (
+                        <>
+                          <ButtonGroup size="sm" isAttached variant="outline">
+                            <Button
+                              onClick={() => setViewMode('all')}
+                              colorScheme={viewMode === 'all' ? 'blue' : 'gray'}
+                              borderColor="whiteAlpha.200"
+                              minH="44px"
+                              minW="44px"
+                              px={3}
+                            >
+                              <Layout size={18} />
+                            </Button>
+                            <Button
+                              onClick={() => setViewMode('subscribed')}
+                              colorScheme={viewMode === 'subscribed' ? 'blue' : 'gray'}
+                              borderColor="whiteAlpha.200"
+                              minH="44px"
+                              minW="44px"
+                              px={3}
+                            >
+                              <BookMarked size={18} />
+                            </Button>
+                          </ButtonGroup>
+                        </>
+                      ) : (
+                        <Badge
+                          colorScheme="cyan"
+                          variant="subtle"
                           px={3}
+                          py={1}
+                          borderRadius="full"
+                          fontSize="xs"
                         >
-                          <Layout size={18} />
-                        </Button>
-                        <Button
-                          onClick={() => setViewMode('subscribed')}
-                          colorScheme={viewMode === 'subscribed' ? 'blue' : 'gray'}
-                          borderColor="whiteAlpha.200"
-                          minH="44px"
-                          minW="44px"
-                          px={3}
-                        >
-                          <BookMarked size={18} />
-                        </Button>
-                      </ButtonGroup>
+                          All Strategies
+                        </Badge>
+                      )}
 
-                      <Text fontSize="xs" color="whiteAlpha.600">
-                        {viewMode === 'all' ? 'All Strategies' : 'Subscribed'}
-                      </Text>
+                      {/* Sort Select - Mobile */}
+                      <Select
+                        value={sortBy}
+                        onChange={(e) => setSortBy(e.target.value)}
+                        bg="whiteAlpha.100"
+                        border="1px solid"
+                        borderColor="whiteAlpha.200"
+                        _hover={{ borderColor: "whiteAlpha.300" }}
+                        _focus={{
+                          borderColor: "rgba(0, 198, 224, 0.6)",
+                          boxShadow: "0 0 0 1px rgba(0, 198, 224, 0.6)"
+                        }}
+                        maxW="130px"
+                        size="sm"
+                        color="white"
+                        h="36px"
+                        fontSize="xs"
+                      >
+                        {sortOptions.map(option => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </Select>
                     </HStack>
 
                     {/* Category Pills - Horizontal Scroll */}
@@ -764,6 +876,7 @@ const MarketplacePage = () => {
         </Box>
       </Box>
     </Flex>
+    </>
   );
 }
 

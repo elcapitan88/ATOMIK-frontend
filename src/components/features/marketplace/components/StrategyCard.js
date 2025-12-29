@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link as RouterLink } from 'react-router-dom';
 import {
   Box,
   VStack,
@@ -350,7 +350,20 @@ const StrategyCard = ({ strategy, onSubscriptionChange, isMobile = false, isGues
               </Text>
             </HStack>
             <Text fontSize="sm" color="whiteAlpha.700">
-              by {username}
+              by{' '}
+              <Text
+                as={RouterLink}
+                to={`/creator/${username}`}
+                color="whiteAlpha.700"
+                _hover={{
+                  color: '#00C6E0',
+                  textDecoration: 'underline'
+                }}
+                transition="color 0.2s"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {username}
+              </Text>
             </Text>
           </VStack>
           {/* Pricing Badge - Glassmorphic style matching app aesthetic */}

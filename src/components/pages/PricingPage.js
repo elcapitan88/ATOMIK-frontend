@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { Helmet } from 'react-helmet-async';
 import { useNavigate } from 'react-router-dom';
 import {
   Box,
@@ -1038,18 +1039,27 @@ const PricingPage = () => {
   };
   
   return (
-    // Replace your existing MotionBox container with this one
-    <MotionBox 
-      minH="100vh" 
-      bg="black" 
-      py={containerSpacing.py}
-      px={containerSpacing.px}
-      initial="hidden"
-      animate="visible"
-      variants={containerVariants}
-      overflow="hidden"
-      position="relative"
-    >
+    <>
+      <Helmet>
+        <title>Pricing Plans | Atomik Trading</title>
+        <meta name="description" content="Choose the perfect plan for your automated trading journey. Start free, scale as you grow. Connect TradingView alerts to your broker in minutes." />
+        <meta property="og:title" content="Pricing Plans | Atomik Trading" />
+        <meta property="og:description" content="Choose the perfect plan for your automated trading journey. Start free, scale as you grow." />
+        <meta property="og:url" content="https://www.atomiktrading.io/pricing" />
+        <meta property="og:type" content="website" />
+        <link rel="canonical" href="https://www.atomiktrading.io/pricing" />
+      </Helmet>
+      <MotionBox
+        minH="100vh"
+        bg="black"
+        py={containerSpacing.py}
+        px={containerSpacing.px}
+        initial="hidden"
+        animate="visible"
+        variants={containerVariants}
+        overflow="hidden"
+        position="relative"
+      >
       {/* Background decorative elements */}
       <Box
         position="absolute"
@@ -1254,6 +1264,7 @@ const PricingPage = () => {
         </Box>
       )}
     </MotionBox>
+    </>
   );
 };
 
