@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Helmet } from 'react-helmet-async';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   Box,
@@ -179,9 +180,27 @@ const CreatorProfilePage = () => {
   const isOwnProfile = user?.username === username;
   const isLoggedIn = !!user;
 
+  // Dynamic meta content based on profile
+  const pageTitle = profile?.display_name
+    ? `${profile.display_name} (@${username}) | Atomik Trading`
+    : `@${username} | Atomik Trading`;
+  const pageDescription = profile?.bio
+    ? `${profile.bio.slice(0, 150)}${profile.bio.length > 150 ? '...' : ''}`
+    : `Check out @${username}'s trading strategies on Atomik Trading. Subscribe and automate your trading.`;
+
   return (
-    <Flex minH="100vh" bg="#000000" color="white">
-      <Box flexGrow={1} p={{ base: 4, md: 6 }}>
+    <>
+      <Helmet>
+        <title>{pageTitle}</title>
+        <meta name="description" content={pageDescription} />
+        <meta property="og:title" content={pageTitle} />
+        <meta property="og:description" content={pageDescription} />
+        <meta property="og:url" content={`https://www.atomiktrading.io/creator/${username}`} />
+        <meta property="og:type" content="profile" />
+        <link rel="canonical" href={`https://www.atomiktrading.io/creator/${username}`} />
+      </Helmet>
+      <Flex minH="100vh" bg="#000000" color="white">
+        <Box flexGrow={1} p={{ base: 4, md: 6 }}>
         <MotionFlex
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -279,6 +298,7 @@ const CreatorProfilePage = () => {
         </MotionFlex>
       </Box>
     </Flex>
+    </>
   );
 };
 

@@ -19,11 +19,10 @@ const Navbar = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  // Navigation items - only include links that work across all public pages
   const navItems = [
     { label: 'Marketplace', href: '/marketplace' },
-    { label: 'Features', href: '/#features' },
-    { label: 'How It Works', href: '/#how-to-use' },
-    { label: 'Security', href: '/#security' },
+    { label: 'Support', href: '/docs' },
     { label: 'Pricing', href: '/pricing' },
   ];
 
@@ -91,12 +90,16 @@ const Navbar = () => {
           </RouterLink>
           <RouterLink to="/pricing">
             <Button
-              bg="transparent"
+              bg="rgba(0, 198, 224, 1)"
               color="white"
-              fontWeight="medium"
-              borderWidth={1}
-              borderColor="rgba(0, 198, 224, 1)"
-              _hover={{ bg: 'whiteAlpha.100' }}
+              fontWeight="semibold"
+              px={6}
+              _hover={{
+                bg: 'rgba(0, 198, 224, 0.85)',
+                transform: 'translateY(-1px)',
+                boxShadow: '0 4px 12px rgba(0, 198, 224, 0.3)'
+              }}
+              transition="all 0.2s"
             >
               Get Started
             </Button>
@@ -155,12 +158,14 @@ const Navbar = () => {
             <RouterLink to="/pricing" style={{ width: '100%' }}>
               <Button
                 w="full"
-                bg="transparent"
+                bg="rgba(0, 198, 224, 1)"
                 color="white"
-                fontWeight="medium"
-                borderWidth={1}
-                borderColor="rgba(0, 198, 224, 1)"
-                _hover={{ bg: 'whiteAlpha.100' }}
+                fontWeight="semibold"
+                _hover={{
+                  bg: 'rgba(0, 198, 224, 0.85)',
+                  boxShadow: '0 4px 12px rgba(0, 198, 224, 0.3)'
+                }}
+                transition="all 0.2s"
               >
                 Get Started
               </Button>

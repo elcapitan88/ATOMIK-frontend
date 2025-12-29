@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link as RouterLink } from 'react-router-dom';
 import {
   Box,
   VStack,
@@ -92,14 +92,19 @@ const StrategyCard = ({ strategy, onSubscriptionChange, isMobile = false, isGues
 
   const handleSubscription = async () => {
     if (isGuest) {
-      toast({
-        title: "Please Sign In",
-        description: "You must be logged in to subscribe to strategies.",
-        status: "info",
-        duration: 3000,
-        isClosable: true,
-      });
-      navigate("/auth", { state: { from: "/marketplace" } });
+      // Save strategy info for auto-subscription after signup
+      const pendingStrategy = {
+        token,
+        name,
+        strategyType,
+        source_id,
+        isMonetized: isStrategyMonetized,
+        timestamp: Date.now()
+      };
+      sessionStorage.setItem('pendingStrategySubscription', JSON.stringify(pendingStrategy));
+
+      // Navigate to pricing page with strategy context
+      navigate("/pricing?source=strategy_subscribe");
       return;
     }
 
@@ -345,7 +350,20 @@ const StrategyCard = ({ strategy, onSubscriptionChange, isMobile = false, isGues
               </Text>
             </HStack>
             <Text fontSize="sm" color="whiteAlpha.700">
-              by {username}
+              by{' '}
+              <Text
+                as={RouterLink}
+                to={`/creator/${username}`}
+                color="whiteAlpha.700"
+                _hover={{
+                  color: '#00C6E0',
+                  textDecoration: 'underline'
+                }}
+                transition="color 0.2s"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {username}
+              </Text>
             </Text>
           </VStack>
           {/* Pricing Badge - Glassmorphic style matching app aesthetic */}
@@ -488,9 +506,11 @@ const StrategyCard = ({ strategy, onSubscriptionChange, isMobile = false, isGues
         >
           {subscribed
             ? "Subscribed"
-            : isStrategyMonetized
-              ? "View Pricing"
-              : "Subscribe Free"
+            : isGuest
+              ? "Sign Up to Subscribe"
+              : isStrategyMonetized
+                ? "View Pricing"
+                : "Subscribe Free"
           }
         </Button>
       </VStack>
