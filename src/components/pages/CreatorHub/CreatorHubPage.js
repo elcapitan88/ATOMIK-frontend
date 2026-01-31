@@ -8,7 +8,8 @@ import CreatorSettings from './CreatorSettings';
 
 const CreatorHubPage = () => {
   const navigate = useNavigate();
-  const { user, creatorProfile, isLoading, error } = useCreator();
+  const { useCreatorProfile } = useCreator();
+  const { data: creatorProfile, isLoading, error } = useCreatorProfile();
   const [activeTab, setActiveTab] = useState('dashboard');
 
   useEffect(() => {
@@ -81,10 +82,10 @@ const CreatorHubPage = () => {
         <div className="header-content">
           <div className="creator-info">
             <div className="creator-avatar">
-              {creatorProfile.username?.charAt(0) || user?.username?.charAt(0) || 'C'}
+              {creatorProfile?.username?.charAt(0) || creatorProfile?.display_name?.charAt(0) || 'C'}
             </div>
             <div className="creator-details">
-              <h1>Welcome back, {creatorProfile.username || user?.username}</h1>
+              <h1>Welcome back, {creatorProfile?.username || creatorProfile?.display_name || 'Creator'}</h1>
               <div className="creator-status">
                 <span className={`tier-badge ${creatorProfile.currentTier}`}>
                   {creatorProfile.currentTier?.toUpperCase()} TIER
