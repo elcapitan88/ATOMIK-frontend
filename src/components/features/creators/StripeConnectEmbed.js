@@ -78,49 +78,7 @@ const StripeConnectEmbed = ({ onComplete, onError }) => {
       const prevStatus = accountStatus;
       setAccountStatus(response.data);
 
-      // Auto-accept TOS if account exists but TOS not accepted
-      // This handles any case where TOS needs to be accepted
-      if (response.data.account_id && !response.data.tos_accepted && 
-          response.data.requirements?.currently_due?.includes('tos_acceptance.date')) {
-        console.log('🔵 Account exists but TOS not accepted - auto-accepting TOS...');
-        
-        try {
-          // Get user info
-          const userAgent = navigator.userAgent;
-          let userIP = '127.0.0.1';
-          
-          try {
-            const ipResponse = await fetch('https://api.ipify.org?format=json');
-            const ipData = await ipResponse.json();
-            userIP = ipData.ip;
-          } catch (ipError) {
-            console.warn('Could not get user IP, using fallback');
-          }
-          
-          // Accept TOS via API
-          await axiosInstance.post('/api/v1/creators/accept-tos', {
-            user_ip: userIP,
-            user_agent: userAgent
-          });
-          
-          console.log('🎉 TOS auto-accepted via API!');
-          
-          toast({
-            title: "Terms accepted!",
-            description: "Terms of Service automatically accepted.",
-            status: "success",
-            duration: 4000,
-            isClosable: true,
-          });
-          
-          // Re-check status after TOS acceptance
-          const updatedResponse = await axiosInstance.get('/api/v1/creators/stripe-status');
-          setAccountStatus(updatedResponse.data);
-          
-        } catch (tosError) {
-          console.error('❌ Failed to auto-accept TOS:', tosError);
-        }
-      }
+      // TOS is handled by Stripe's embedded onboarding component
 
       // Check if status changed from incomplete to complete
       if (!prevStatus?.onboarding_complete && response.data.onboarding_complete) {
@@ -475,71 +433,6 @@ const StripeConnectEmbed = ({ onComplete, onError }) => {
             </Box>
           )}
 
-          {/* Always visible manual TOS button for testing */}
-          <Box mt={4} textAlign="center">
-            <Button
-              size="sm"
-              colorScheme="orange"
-              variant="outline"
-              onClick={async () => {
-                console.log('🔧 Manual TOS acceptance triggered...');
-                try {
-                  setLoading(true);
-                  
-                  // Get user info
-                  const userAgent = navigator.userAgent;
-                  let userIP = '127.0.0.1';
-                  
-                  try {
-                    const ipResponse = await fetch('https://api.ipify.org?format=json');
-                    const ipData = await ipResponse.json();
-                    userIP = ipData.ip;
-                  } catch (ipError) {
-                    console.warn('Could not get user IP, using fallback');
-                  }
-                  
-                  // Call API to accept TOS
-                  const response = await axiosInstance.post('/api/v1/creators/accept-tos', {
-                    user_ip: userIP,
-                    user_agent: userAgent
-                  });
-                  
-                  console.log('🎉 Manual TOS acceptance successful:', response.data);
-                  
-                  toast({
-                    title: "TOS Accepted Manually!",
-                    description: "Terms of Service accepted via API for testing.",
-                    status: "success",
-                    duration: 5000,
-                    isClosable: true,
-                  });
-                  
-                  // Refresh account status
-                  await checkAccountStatus();
-                  
-                } catch (error) {
-                  console.error('❌ Manual TOS acceptance failed:', error);
-                  toast({
-                    title: "Manual TOS Failed",
-                    description: error.response?.data?.detail || "Failed to accept TOS manually",
-                    status: "error",
-                    duration: 5000,
-                    isClosable: true,
-                  });
-                } finally {
-                  setLoading(false);
-                }
-              }}
-              _hover={{ borderColor: "#ff8c00", color: "#ff8c00" }}
-              isLoading={loading}
-              loadingText="Accepting TOS..."
-            >
-              🔧 Manual TOS Accept (Testing)
-            </Button>
-            <Text color="whiteAlpha.500" fontSize="xs" mt={1}>
-              Always visible for testing - sends TOS acceptance directly to Stripe API
-            </Text>
-          </Box>
         </ConnectComponentsProvider>
       ) : (
         <Box
