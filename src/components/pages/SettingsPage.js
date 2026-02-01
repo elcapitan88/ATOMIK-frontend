@@ -69,15 +69,15 @@ import {
   Building2
 } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import axiosInstance from '@/services/axiosConfig';
 import { ProfilePicture } from '@/components/common/ProfilePicture';
 import { AffiliateDashboard, BecomeAffiliateModal } from '@/components/affiliate';
 import { useAffiliate } from '@/hooks/useAffiliate';
-import StripeConnectEmbed from '@/components/features/creators/StripeConnectEmbed';
-import StripeAccountManagement from '@/components/features/creators/StripeAccountManagement';
 import { BillingDashboard } from '@/components/features/billing/BillingDashboard';
+import CreatorOnboardingFlow from '@/components/pages/CreatorHub/onboarding/CreatorOnboardingFlow';
+import CreatorDashboardView from '@/components/pages/CreatorHub/CreatorDashboardView';
 import ConnectedAccountsSection from '@/components/features/settings/ConnectedAccountsSection';
 
 const MotionBox = motion(Box);
@@ -472,183 +472,35 @@ const PasswordChangeModal = ({ isOpen, onClose }) => {
 };
 
 // Creator Settings Flow Component
+// Now delegates to extracted CreatorOnboardingFlow and CreatorDashboardView
 const CreatorSettingsFlow = ({ user }) => {
-  const [currentStep, setCurrentStep] = useState(1);
-  const [isCreatingProfile, setIsCreatingProfile] = useState(false);
-  const [onboardingCompleted, setOnboardingCompleted] = useState(false);
-  const [creatorData, setCreatorData] = useState({
-    bio: '',
-    trading_experience: 'intermediate'
-  });
-  const [isLoadingOnboarding, setIsLoadingOnboarding] = useState(true);
-  const [analytics, setAnalytics] = useState(null);
-  const [isLoadingAnalytics, setIsLoadingAnalytics] = useState(false);
-  const toast = useToast();
-  const { updateUserProfile } = useAuth();
+  const [showDashboard, setShowDashboard] = useState(false);
+  const [isLoadingStatus, setIsLoadingStatus] = useState(true);
+  const [creatorProfile, setCreatorProfile] = useState(null);
 
-  // Determine if user is already a creator
   const isCreator = user?.creator_profile_id != null;
 
-  // Load onboarding status on component mount
+  // Check if user is a creator and load profile
   React.useEffect(() => {
-    const loadOnboardingStatus = async () => {
-      try {
-        const response = await axiosInstance.get('/api/v1/creators/onboarding-status');
-        const { onboarding_step, onboarding_data, is_creator } = response.data;
-
-        if (is_creator) {
-          // If already a creator, show management view or skip to Stripe if incomplete
-          if (onboarding_step === 3) {
-            setCurrentStep(3); // Continue Stripe setup
-            if (onboarding_data) {
-              setCreatorData(onboarding_data);
-            }
-          } else {
-            // Already a creator and onboarding complete, show management view
-            setCurrentStep(null);
-          }
-        } else if (onboarding_step) {
-          // Resume from saved step
-          setCurrentStep(onboarding_step);
-          if (onboarding_data) {
-            setCreatorData(onboarding_data);
-          }
-        } else {
-          // Start fresh
-          setCurrentStep(1);
-        }
-      } catch (error) {
-        console.error('Failed to load onboarding status:', error);
-        setCurrentStep(1); // Default to start
-      } finally {
-        setIsLoadingOnboarding(false);
-      }
-    };
-
-    loadOnboardingStatus();
-  }, []);
-
-  // Update onboarding step in database
-  const saveOnboardingStep = async (step, data = null) => {
-    try {
-      const response = await axiosInstance.post('/api/v1/creators/update-onboarding-step', {
-        step,
-        data
-      });
-      return response.data;
-    } catch (error) {
-      console.error(`Failed to save onboarding step ${step}:`, error);
-
-      // Show user-friendly error
-      toast({
-        title: "Failed to save progress",
-        description: error.response?.data?.detail || "Please check your connection and try again",
-        status: "error",
-        duration: 5000,
-        isClosable: true,
-      });
-
-      throw error;
-    }
-  };
-
-  // Complete onboarding and clear progress
-  const completeOnboarding = async () => {
-    try {
-      await axiosInstance.post('/api/v1/creators/complete-onboarding');
-    } catch (error) {
-      console.error('Failed to complete onboarding:', error);
-    }
-  };
-
-  // Handle creator profile creation (now separate from Stripe)
-  const handleCreateCreatorProfile = async () => {
-    setIsCreatingProfile(true);
-    try {
-      // Check if user already has a creator profile
+    const checkCreatorStatus = async () => {
       if (isCreator) {
-        console.log('User already has creator profile, skipping to Stripe setup');
-        setCurrentStep(3);
-        return;
-      }
-
-      // Create creator profile
-      const profileResponse = await axiosInstance.post('/api/v1/creators/become-creator', {
-        bio: creatorData.bio,
-        trading_experience: creatorData.trading_experience
-      });
-
-      console.log('Creator profile created:', profileResponse.data);
-
-      // Update user context
-      if (profileResponse.data.id) {
-        updateUserProfile({
-          creator_profile_id: profileResponse.data.id
-        });
-      }
-
-      // Move to Stripe setup step
-      setCurrentStep(3);
-      try {
-        await saveOnboardingStep(3, creatorData);
-      } catch (error) {
-        console.error('Failed to save step 3:', error);
-      }
-
-      toast({
-        title: "Profile created!",
-        description: "Now let's set up your payment details",
-        status: "success",
-        duration: 3000,
-        isClosable: true,
-      });
-
-    } catch (error) {
-      console.error('Creator setup error:', error);
-      toast({
-        title: "Setup failed",
-        description: error.response?.data?.detail || error.message || "Please try again",
-        status: "error",
-        duration: 5000,
-        isClosable: true,
-      });
-    } finally {
-      setIsCreatingProfile(false);
-    }
-  };
-
-  // Reset step when user navigates away and comes back
-  React.useEffect(() => {
-    if (isCreator && currentStep < 3) {
-      setCurrentStep(3); // Skip to Stripe setup if already a creator
-    }
-  }, [isCreator, currentStep]);
-
-  // Fetch analytics when showing creator dashboard
-  React.useEffect(() => {
-    const fetchAnalytics = async () => {
-      if ((isCreator || onboardingCompleted) && currentStep === null) {
-        setIsLoadingAnalytics(true);
         try {
-          console.log('[Creator Analytics] Fetching analytics from /api/v1/analytics/dashboard...');
-          const response = await axiosInstance.get('/api/v1/analytics/dashboard?period=30d');
-          console.log('[Creator Analytics] Response:', response.data);
-          setAnalytics(response.data);
+          const response = await axiosInstance.get('/api/v1/creators/profile');
+          setCreatorProfile(response.data);
+          setShowDashboard(true);
         } catch (error) {
-          console.error('[Creator Analytics] Failed to fetch:', error);
-          console.error('[Creator Analytics] Error details:', error.response?.data);
-          // Don't show error toast, just use fallback zeros
-        } finally {
-          setIsLoadingAnalytics(false);
+          console.error('Failed to load creator profile:', error);
+          // If profile fetch fails but user is a creator, still show dashboard
+          setShowDashboard(true);
         }
       }
+      setIsLoadingStatus(false);
     };
+    checkCreatorStatus();
+  }, [isCreator]);
 
-    fetchAnalytics();
-  }, [isCreator, onboardingCompleted, currentStep]);
 
-  // Show loading state while fetching onboarding status
-  if (isLoadingOnboarding) {
+  if (isLoadingStatus) {
     return (
       <SectionContainer icon={Zap} title="Creator">
         <Box p={8} textAlign="center">
@@ -659,528 +511,17 @@ const CreatorSettingsFlow = ({ user }) => {
     );
   }
 
-  // If already a creator and onboarding complete, show full settings view
-  console.log('🔍 Checking creator management condition:', { isCreator, onboardingCompleted, currentStep });
-  if ((isCreator || onboardingCompleted) && currentStep === null) {
-    console.log('✅ Showing creator management interface');
-    return (
-      <VStack spacing={8} align="stretch">
-        {/* Creator Dashboard */}
-        <SectionContainer icon={Zap} title="Creator Dashboard">
-          <VStack spacing={6} align="stretch">
-            {/* Status Badge */}
-            <HStack justify="space-between" align="center">
-              <HStack>
-                <Box
-                  bg="rgba(0, 198, 224, 0.2)"
-                  p={2}
-                  borderRadius="md"
-                >
-                  <CheckCircle size={20} color="#00C6E0" />
-                </Box>
-                <VStack align="start" spacing={0}>
-                  <Text color="white" fontSize="md" fontWeight="semibold">
-                    Creator Status: Active
-                  </Text>
-                  <Text color="whiteAlpha.600" fontSize="sm">
-                    You're part of the AtomikTrading Creator Program
-                  </Text>
-                </VStack>
-              </HStack>
-              <Button
-                variant="outline"
-                size="sm"
-                color="white"
-                borderColor="#333"
-                _hover={{ borderColor: "#00C6E0", color: "#00C6E0" }}
-              >
-                View Creator Hub
-              </Button>
-            </HStack>
-
-            <Divider borderColor="#333" />
-
-            {/* Earnings Overview */}
-            <Box>
-              <Text color="white" fontSize="lg" fontWeight="semibold" mb={4}>
-                Earnings Overview
-              </Text>
-              {isLoadingAnalytics ? (
-                <Center py={8}>
-                  <Spinner color="#00C6E0" size="lg" />
-                </Center>
-              ) : (
-                <SimpleGrid columns={{ base: 1, md: 3 }} spacing={4}>
-                  <Box bg="#1a1a1a" p={4} borderRadius="lg" border="1px solid #333">
-                    <VStack align="start" spacing={2}>
-                      <Text color="whiteAlpha.600" fontSize="sm">Total Earnings</Text>
-                      <Text color="white" fontSize="xl" fontWeight="bold">
-                        ${(analytics?.revenue?.total_revenue || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                      </Text>
-                    </VStack>
-                  </Box>
-                  <Box bg="#1a1a1a" p={4} borderRadius="lg" border="1px solid #333">
-                    <VStack align="start" spacing={2}>
-                      <Text color="whiteAlpha.600" fontSize="sm">This Month</Text>
-                      <Text color="white" fontSize="xl" fontWeight="bold">
-                        ${(analytics?.revenue?.total_revenue || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                      </Text>
-                    </VStack>
-                  </Box>
-                  <Box bg="#1a1a1a" p={4} borderRadius="lg" border="1px solid #333">
-                    <VStack align="start" spacing={2}>
-                      <Text color="whiteAlpha.600" fontSize="sm">Subscribers</Text>
-                      <Text color="white" fontSize="xl" fontWeight="bold">
-                        {analytics?.subscribers?.total_active || 0}
-                      </Text>
-                    </VStack>
-                  </Box>
-                </SimpleGrid>
-              )}
-            </Box>
-          </VStack>
-        </SectionContainer>
-
-        {/* Creator Profile Management */}
-        <SectionContainer icon={User} title="Creator Profile">
-          <VStack spacing={4} align="stretch">
-            <FormInput
-              label="Bio"
-              placeholder="Tell your audience about your trading experience..."
-              helperText="Share your trading background and expertise"
-            />
-            <FormInput
-              label="Trading Experience"
-              placeholder="e.g., 5+ years in forex and crypto markets"
-              helperText="Describe your years of experience and markets you trade"
-            />
-          </VStack>
-        </SectionContainer>
-
-        {/* Stripe Account Management */}
-        <StripeAccountManagement />
-      </VStack>
-    );
+  if (showDashboard) {
+    return <CreatorDashboardView creatorProfile={creatorProfile} />;
   }
 
-  // First-time creator onboarding flow
-  const renderOnboardingStep = () => {
-    switch (currentStep) {
-      case 1:
-        // Welcome & Benefits
-        return (
-          <SectionContainer icon={Zap} title="Join the Creator Program">
-            <VStack spacing={8} align="stretch">
-              {/* Hero Section */}
-              <Box
-                bg="linear-gradient(135deg, rgba(0, 198, 224, 0.1) 0%, rgba(0, 198, 224, 0.05) 100%)"
-                p={8}
-                borderRadius="lg"
-                border="1px solid rgba(0, 198, 224, 0.3)"
-                position="relative"
-                overflow="hidden"
-              >
-                <Box
-                  position="absolute"
-                  top="-50%"
-                  right="-20%"
-                  width="300px"
-                  height="300px"
-                  bg="radial-gradient(circle, rgba(0, 198, 224, 0.2) 0%, transparent 70%)"
-                  borderRadius="full"
-                  filter="blur(40px)"
-                />
-
-                <VStack spacing={6} align="center" position="relative" textAlign="center">
-                  <Box color="#00C6E0">
-                    <Zap size={48} />
-                  </Box>
-
-                  <VStack spacing={3}>
-                    <Text color="white" fontSize="2xl" fontWeight="bold">
-                      Monetize Your Trading Expertise
-                    </Text>
-                    <Text color="whiteAlpha.700" fontSize="lg">
-                      Share strategies, build a following, earn recurring revenue
-                    </Text>
-                    <Text color="whiteAlpha.600" fontSize="sm" maxW="md">
-                      Join thousands of traders who are earning passive income by sharing their
-                      proven trading strategies with our community.
-                    </Text>
-                  </VStack>
-                </VStack>
-              </Box>
-
-              {/* Benefits Grid */}
-              <SimpleGrid columns={{ base: 1, md: 3 }} spacing={6}>
-                <Box bg="#1a1a1a" p={6} borderRadius="lg" border="1px solid #333">
-                  <VStack align="start" spacing={4}>
-                    <Box bg="rgba(0, 198, 224, 0.2)" p={3} borderRadius="md">
-                      <DollarSign size={24} color="#00C6E0" />
-                    </Box>
-                    <VStack align="start" spacing={2}>
-                      <Text color="white" fontSize="lg" fontWeight="semibold">
-                        Recurring Revenue
-                      </Text>
-                      <Text color="whiteAlpha.700" fontSize="sm">
-                        Earn monthly subscription fees from traders who follow your strategies.
-                      </Text>
-                    </VStack>
-                  </VStack>
-                </Box>
-
-                <Box bg="#1a1a1a" p={6} borderRadius="lg" border="1px solid #333">
-                  <VStack align="start" spacing={4}>
-                    <Box bg="rgba(0, 198, 224, 0.2)" p={3} borderRadius="md">
-                      <User size={24} color="#00C6E0" />
-                    </Box>
-                    <VStack align="start" spacing={2}>
-                      <Text color="white" fontSize="lg" fontWeight="semibold">
-                        Build Your Brand
-                      </Text>
-                      <Text color="whiteAlpha.700" fontSize="sm">
-                        Establish yourself as a thought leader in the trading community.
-                      </Text>
-                    </VStack>
-                  </VStack>
-                </Box>
-
-                <Box bg="#1a1a1a" p={6} borderRadius="lg" border="1px solid #333">
-                  <VStack align="start" spacing={4}>
-                    <Box bg="rgba(0, 198, 224, 0.2)" p={3} borderRadius="md">
-                      <Zap size={24} color="#00C6E0" />
-                    </Box>
-                    <VStack align="start" spacing={2}>
-                      <Text color="white" fontSize="lg" fontWeight="semibold">
-                        Easy Setup
-                      </Text>
-                      <Text color="whiteAlpha.700" fontSize="sm">
-                        Get started in minutes with our streamlined onboarding process.
-                      </Text>
-                    </VStack>
-                  </VStack>
-                </Box>
-              </SimpleGrid>
-
-              {/* CTA */}
-              <HStack justify="center">
-                <Button
-                  size="lg"
-                  bg="#00C6E0"
-                  color="white"
-                  px={8}
-                  _hover={{ bg: "#00A3B8" }}
-                  leftIcon={<Zap size={20} />}
-                  onClick={async () => {
-                    setCurrentStep(2);
-                    try {
-                      await saveOnboardingStep(2);
-                    } catch (error) {
-                      console.error('Failed to save step 2:', error);
-                    }
-                  }}
-                >
-                  Get Started
-                </Button>
-              </HStack>
-            </VStack>
-          </SectionContainer>
-        );
-
-      case 2:
-        // Creator Profile Setup
-        return (
-          <SectionContainer icon={User} title="Set Up Your Creator Profile">
-            <VStack spacing={6} align="stretch">
-              <Box>
-                <Text color="white" fontSize="lg" fontWeight="semibold" mb={2}>
-                  Tell us about yourself
-                </Text>
-                <Text color="whiteAlpha.600" fontSize="sm" mb={6}>
-                  This information will be displayed on your creator profile to help potential
-                  subscribers understand your trading background and expertise.
-                </Text>
-              </Box>
-
-              <VStack spacing={4} align="stretch">
-                <FormInput
-                  label="Bio"
-                  value={creatorData.bio}
-                  onChange={(e) => setCreatorData(prev => ({ ...prev, bio: e.target.value }))}
-                  placeholder="Tell your audience about your trading experience..."
-                  helperText="Share your trading background, years of experience, and what makes your strategies unique"
-                />
-
-                <Box>
-                  <FormLabel color="white" fontSize="sm" fontWeight="medium" mb={2}>
-                    Trading Experience Level
-                  </FormLabel>
-                  <SimpleGrid columns={{ base: 1, md: 3 }} spacing={3}>
-                    {['beginner', 'intermediate', 'expert'].map((level) => (
-                      <Button
-                        key={level}
-                        variant={creatorData.trading_experience === level ? "solid" : "outline"}
-                        bg={creatorData.trading_experience === level ? "#00C6E0" : "transparent"}
-                        color={creatorData.trading_experience === level ? "white" : "whiteAlpha.700"}
-                        borderColor="#333"
-                        _hover={{
-                          bg: creatorData.trading_experience === level ? "#00A3B8" : "rgba(0, 198, 224, 0.1)",
-                          borderColor: "#00C6E0"
-                        }}
-                        onClick={() => setCreatorData(prev => ({ ...prev, trading_experience: level }))}
-                        textTransform="capitalize"
-                      >
-                        {level}
-                      </Button>
-                    ))}
-                  </SimpleGrid>
-                </Box>
-              </VStack>
-
-              <HStack justify="space-between" pt={4}>
-                <Button
-                  variant="ghost"
-                  color="whiteAlpha.600"
-                  onClick={async () => {
-                    setCurrentStep(1);
-                    try {
-                      await saveOnboardingStep(1);
-                    } catch (error) {
-                      console.error('Failed to save step 1:', error);
-                    }
-                  }}
-                  leftIcon={<ArrowLeft size={16} />}
-                >
-                  Back
-                </Button>
-                <Button
-                  bg="#00C6E0"
-                  color="white"
-                  _hover={{ bg: "#00A3B8" }}
-                  onClick={handleCreateCreatorProfile}
-                  isDisabled={!creatorData.bio.trim()}
-                  isLoading={isCreatingProfile}
-                  loadingText="Creating profile..."
-                >
-                  Continue to Payment Setup
-                </Button>
-              </HStack>
-            </VStack>
-          </SectionContainer>
-        );
-
-      case 3:
-        // Stripe Connect Setup with Embedded Components
-        return (
-          <SectionContainer icon={CreditCard} title="Set Up Payments">
-            <VStack spacing={6} align="stretch">
-              <Box>
-                <Text color="white" fontSize="lg" fontWeight="semibold" mb={2}>
-                  Complete your payment setup
-                </Text>
-                <Text color="whiteAlpha.600" fontSize="sm" mb={6}>
-                  Fill out the secure form below to start receiving payments. This information is
-                  handled entirely by Stripe - we never see your banking details.
-                </Text>
-              </Box>
-
-              {/* Embedded Stripe Connect Component */}
-              <StripeConnectEmbed
-                onComplete={async (status) => {
-                  console.log('Stripe onboarding complete:', status);
-
-                  // Mark onboarding as complete
-                  await completeOnboarding();
-                  setOnboardingCompleted(true); // Mark locally as completed
-
-                  // Show success state and redirect to creator area after longer delay
-                  setCurrentStep('success');
-
-                  // Redirect to creator area after showing success for longer
-                  setTimeout(async () => {
-                    // Refresh user data to ensure creator_profile_id is updated
-                    try {
-                      const response = await axiosInstance.get('/api/v1/auth/me');
-                      if (response.data && response.data.creator_profile_id) {
-                        console.log('🎉 User data refreshed, creator_profile_id found:', response.data.creator_profile_id);
-                        // Update the auth context with fresh user data
-                        if (updateUserProfile) {
-                          updateUserProfile(response.data);
-                        }
-                      }
-                    } catch (error) {
-                      console.error('Failed to refresh user data:', error);
-                    }
-
-                    setCurrentStep(null); // This will show the creator management interface
-                    console.log('🎯 Transitioning to creator management interface. isCreator:', isCreator, 'onboardingCompleted:', onboardingCompleted);
-                  }, 4000); // Show success screen for 4 seconds
-                }}
-                onError={(error) => {
-                  console.error('Stripe onboarding error:', error);
-                  toast({
-                    title: "Setup error",
-                    description: "Please try again or contact support",
-                    status: "error",
-                    duration: 5000,
-                    isClosable: true,
-                  });
-                }}
-              />
-
-              <HStack justify="space-between" pt={4}>
-                <Button
-                  variant="ghost"
-                  color="whiteAlpha.600"
-                  onClick={async () => {
-                    setCurrentStep(2);
-                    try {
-                      await saveOnboardingStep(2);
-                    } catch (error) {
-                      console.error('Failed to save step 2:', error);
-                    }
-                  }}
-                  leftIcon={<ArrowLeft size={16} />}
-                  isDisabled // Disable back button during Stripe setup
-                >
-                  Back
-                </Button>
-                <Text color="whiteAlpha.500" fontSize="xs">
-                  Complete the form above to finish setup
-                </Text>
-              </HStack>
-            </VStack>
-          </SectionContainer>
-        );
-
-      case 'success':
-        // Success screen after completion
-        return (
-          <SectionContainer icon={CheckCircle} title="Welcome to the Creator Program!">
-            <VStack spacing={8} align="center">
-              {/* Success Animation */}
-              <MotionBox
-                initial={{ scale: 0, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                transition={{ duration: 0.5, ease: "backOut" }}
-              >
-                <Box
-                  bg="linear-gradient(135deg, rgba(0, 198, 224, 0.2) 0%, rgba(0, 198, 224, 0.1) 100%)"
-                  p={8}
-                  borderRadius="full"
-                  border="1px solid rgba(0, 198, 224, 0.3)"
-                >
-                  <CheckCircle size={64} color="#00C6E0" />
-                </Box>
-              </MotionBox>
-
-              {/* Success Message */}
-              <VStack spacing={4} textAlign="center">
-                <Text color="white" fontSize="2xl" fontWeight="bold">
-                  🎉 Setup Complete!
-                </Text>
-                <Text color="whiteAlpha.700" fontSize="lg" maxW="md">
-                  Your payment account is ready and you're now part of the creator program.
-                  You can start monetizing your trading strategies immediately.
-                </Text>
-              </VStack>
-
-              {/* Success Features */}
-              <SimpleGrid columns={{ base: 1, md: 3 }} spacing={6} w="full" maxW="2xl">
-                <Box bg="#1a1a1a" p={4} borderRadius="lg" border="1px solid #333" textAlign="center">
-                  <DollarSign size={32} color="#00C6E0" style={{ margin: '0 auto 12px' }} />
-                  <Text color="white" fontSize="md" fontWeight="semibold" mb={2}>
-                    Start Earning
-                  </Text>
-                  <Text color="whiteAlpha.600" fontSize="sm">
-                    Monetize your strategies with subscription pricing
-                  </Text>
-                </Box>
-
-                <Box bg="#1a1a1a" p={4} borderRadius="lg" border="1px solid #333" textAlign="center">
-                  <Shield size={32} color="#00C6E0" style={{ margin: '0 auto 12px' }} />
-                  <Text color="white" fontSize="md" fontWeight="semibold" mb={2}>
-                    Secure Payments
-                  </Text>
-                  <Text color="whiteAlpha.600" fontSize="sm">
-                    Powered by Stripe with automatic payouts
-                  </Text>
-                </Box>
-
-                <Box bg="#1a1a1a" p={4} borderRadius="lg" border="1px solid #333" textAlign="center">
-                  <Zap size={32} color="#00C6E0" style={{ margin: '0 auto 12px' }} />
-                  <Text color="white" fontSize="md" fontWeight="semibold" mb={2}>
-                    Full Control
-                  </Text>
-                  <Text color="whiteAlpha.600" fontSize="sm">
-                    Manage pricing, payouts, and analytics
-                  </Text>
-                </Box>
-              </SimpleGrid>
-
-              {/* Loading indicator with countdown */}
-              <VStack spacing={3}>
-                <Text color="whiteAlpha.600" fontSize="sm">
-                  Redirecting to your creator dashboard...
-                </Text>
-                <Spinner size="sm" color="#00C6E0" />
-              </VStack>
-            </VStack>
-          </SectionContainer>
-        );
-
-      default:
-        return null;
-    }
-  };
-
   return (
-    <VStack spacing={8} align="stretch">
-      {/* Progress Indicator - hide during success screen */}
-      {currentStep !== 'success' && (
-        <Box>
-          <HStack spacing={4} justify="center" mb={2}>
-            {[1, 2, 3].map((step) => (
-              <HStack key={step} spacing={2}>
-                <Box
-                  w="8"
-                  h="8"
-                  borderRadius="full"
-                  bg={currentStep >= step ? "#00C6E0" : "#333"}
-                  display="flex"
-                  alignItems="center"
-                  justifyContent="center"
-                  transition="all 0.3s"
-                >
-                  <Text
-                    color={currentStep >= step ? "white" : "whiteAlpha.600"}
-                    fontSize="sm"
-                    fontWeight="semibold"
-                  >
-                    {step}
-                  </Text>
-                </Box>
-                {step < 3 && (
-                  <Box
-                    w="12"
-                    h="1"
-                    bg={currentStep > step ? "#00C6E0" : "#333"}
-                    transition="all 0.3s"
-                  />
-                )}
-              </HStack>
-            ))}
-          </HStack>
-          <HStack justify="center">
-            <Text color="whiteAlpha.600" fontSize="xs">
-              Step {currentStep} of 3
-            </Text>
-          </HStack>
-        </Box>
-      )}
-
-      {renderOnboardingStep()}
-    </VStack>
+    <CreatorOnboardingFlow
+      user={user}
+      onComplete={() => {
+        setShowDashboard(true);
+      }}
+    />
   );
 };
 
@@ -1188,7 +529,11 @@ const SettingsPage = () => {
   // Update this line to include updateUserProfile
   const { user, updateUserProfile } = useAuth();
   const navigate = useNavigate();
-  const [selectedSection, setSelectedSection] = useState('profile');
+  const location = useLocation();
+  const tabFromUrl = new URLSearchParams(location.search).get('tab');
+  const [selectedSection, setSelectedSection] = useState(
+    ['profile', 'accounts', 'billing', 'creator', 'affiliate'].includes(tabFromUrl) ? tabFromUrl : 'profile'
+  );
   const [isLoadingStripePortal, setIsLoadingStripePortal] = useState(false);
   const [personalName, setPersonalName] = useState('');
   const [isEditingName, setIsEditingName] = useState(false);

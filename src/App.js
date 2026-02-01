@@ -23,7 +23,6 @@ const StrategyBuilderPage = lazy(() => import('./components/pages/Builder/Strate
 const EngineStrategiesPage = lazy(() => import('./components/features/strategies/EngineStrategies'));
 const LandingPage = lazy(() => import('./components/pages/landing/LandingPage'));
 const ComingSoon = lazy(() => import('./components/common/ComingSoon'));
-const CreatorHubPage = lazy(() => import('./components/pages/CreatorHub/CreatorHubPage'));
 const CreatorProfilePage = lazy(() => import('./components/pages/CreatorProfile/CreatorProfilePage'));
 const BlueprintPage = lazy(() => import('./components/pages/BlueprintPage/BlueprintPage'));
 const BlueprintSuccess = lazy(() => import('./components/pages/BlueprintPage/BlueprintSuccess'));
@@ -406,13 +405,7 @@ function App() {
 
         <Route
           path="/creator-hub"
-          element={
-            <WithAuth>
-              <DashboardLayout>
-                <CreatorHubPage />
-              </DashboardLayout>
-            </WithAuth>
-          }
+          element={<Navigate to="/settings?tab=creator" replace />}
         />
 
         {/* Admin Routes */}
