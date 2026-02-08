@@ -70,4 +70,44 @@ export const chartStorage = {
       writeStore(store);
     });
   },
+
+  // Study template methods required by TradingView when study_templates is enabled
+  getAllStudyTemplates() {
+    return Promise.resolve().then(() => {
+      const raw = localStorage.getItem('atomik_tv_study_templates');
+      return raw ? JSON.parse(raw) : [];
+    });
+  },
+
+  saveStudyTemplate(studyTemplateData) {
+    return Promise.resolve().then(() => {
+      const raw = localStorage.getItem('atomik_tv_study_templates');
+      const templates = raw ? JSON.parse(raw) : [];
+      const existing = templates.findIndex((t) => t.name === studyTemplateData.name);
+      if (existing >= 0) {
+        templates[existing] = studyTemplateData;
+      } else {
+        templates.push(studyTemplateData);
+      }
+      localStorage.setItem('atomik_tv_study_templates', JSON.stringify(templates));
+    });
+  },
+
+  removeStudyTemplate(studyTemplateData) {
+    return Promise.resolve().then(() => {
+      const raw = localStorage.getItem('atomik_tv_study_templates');
+      const templates = raw ? JSON.parse(raw) : [];
+      const filtered = templates.filter((t) => t.name !== studyTemplateData.name);
+      localStorage.setItem('atomik_tv_study_templates', JSON.stringify(filtered));
+    });
+  },
+
+  getStudyTemplateContent(studyTemplateData) {
+    return Promise.resolve().then(() => {
+      const raw = localStorage.getItem('atomik_tv_study_templates');
+      const templates = raw ? JSON.parse(raw) : [];
+      const found = templates.find((t) => t.name === studyTemplateData.name);
+      return found || null;
+    });
+  },
 };
