@@ -176,7 +176,7 @@ const AccountOptions = ({ account, onEditName, onDelete, onPowerToggle, onRestar
     );
 };
 
-const Management = () => {
+const Management = ({ onAccountSelect }) => {
     // State Management
     const [accounts, setAccounts] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -744,13 +744,14 @@ const Management = () => {
     
 
     // AccountItem Component
-    const AccountItem = ({ 
-        account, 
-        isExpanded, 
-        connectionStatus, 
-        onToggleExpand, 
+    const AccountItem = ({
+        account,
+        isExpanded,
+        connectionStatus,
+        onToggleExpand,
         onDelete,
         onEditName,
+        onSelect,
         getAccountData,
     }) => {
         // Get real-time account data from WebSocket context
@@ -792,11 +793,13 @@ const Management = () => {
                     _hover={{ bg: "whiteAlpha.200" }}
                 >
                 {/* Main Account Row - More Compact */}
-                <Flex 
+                <Flex
                     py={2}
                     px={3}
                     align="center"
                     justify="space-between"
+                    cursor="pointer"
+                    onClick={() => onSelect?.(account)}
                 >
                     {/* Account Info Group - More Compact */}
                     <Flex align="center" gap={2} flex="2">  
@@ -950,6 +953,15 @@ const Management = () => {
                 onEditName={() => {
                     setEditingAccount(account);
                     openNicknameModal();
+                }}
+                onSelect={(acct) => {
+                    if (onAccountSelect) {
+                        onAccountSelect({
+                            accountId: acct.account_id,
+                            brokerId: acct.broker_id,
+                            nickname: acct.nickname || acct.name,
+                        });
+                    }
                 }}
                 getAccountData={getAccountData}
             />

@@ -2,7 +2,6 @@ import React, { useEffect, useRef, useState, useMemo } from 'react';
 import { Box, Spinner, Text, VStack } from '@chakra-ui/react';
 import CustomDatafeed from './CustomDatafeed';
 import { chartStorage } from '@services/datafeed/chartStorage';
-import { createMockBrokerFactory } from '@services/datafeed/mockBroker';
 
 const EMPTY_OVERRIDES = {};
 
@@ -15,14 +14,37 @@ const TVAdvancedChart = ({
     fullscreen = false,
     autosize = true,
     studiesOverrides = EMPTY_OVERRIDES,
+    onWidgetReady,
+    onSymbolChanged,
+    onChartOrder,
+    activeAccount,
+    currentQuantity = 1,
+    selectionMode = 'single',
+    groupInfo = null,
 }) => {
     const containerRef = useRef(null);
     const widgetRef = useRef(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
 
+    // Refs for stale closure prevention
+    const activeAccountRef = useRef(activeAccount);
+    const currentQuantityRef = useRef(currentQuantity);
+    const selectionModeRef = useRef(selectionMode);
+    const groupInfoRef = useRef(groupInfo);
+    const onChartOrderRef = useRef(onChartOrder);
+    const onWidgetReadyRef = useRef(onWidgetReady);
+    const onSymbolChangedRef = useRef(onSymbolChanged);
+
+    useEffect(() => { activeAccountRef.current = activeAccount; }, [activeAccount]);
+    useEffect(() => { currentQuantityRef.current = currentQuantity; }, [currentQuantity]);
+    useEffect(() => { selectionModeRef.current = selectionMode; }, [selectionMode]);
+    useEffect(() => { groupInfoRef.current = groupInfo; }, [groupInfo]);
+    useEffect(() => { onChartOrderRef.current = onChartOrder; }, [onChartOrder]);
+    useEffect(() => { onWidgetReadyRef.current = onWidgetReady; }, [onWidgetReady]);
+    useEffect(() => { onSymbolChangedRef.current = onSymbolChanged; }, [onSymbolChanged]);
+
     // Memoize objects that should not trigger re-creation
-    const brokerFactory = useMemo(() => createMockBrokerFactory(), []);
     const datafeed = useMemo(() => new CustomDatafeed(), []);
 
     useEffect(() => {
@@ -62,28 +84,7 @@ const TVAdvancedChart = ({
                     'create_volume_indicator_by_default',
                     'save_chart_properties_to_local_storage',
                     'side_toolbar_in_fullscreen_mode',
-                    'trading_account_manager',
-                    'order_panel',
-                    'buy_sell_buttons',
-                    'show_order_panel_on_start',
                 ],
-                broker_factory: brokerFactory,
-                broker_config: {
-                    configFlags: {
-                        supportOrderBrackets: true,
-                        supportPositionBrackets: true,
-                        supportClosePosition: true,
-                        supportReversePosition: true,
-                        supportModifyOrder: true,
-                        supportCancelOrder: true,
-                        supportMarketOrders: true,
-                        supportLimitOrders: true,
-                        supportStopOrders: true,
-                        supportStopLimitOrders: true,
-                        supportPartialClosePosition: false,
-                        showQuantityInsteadOfAmount: true,
-                    },
-                },
                 fullscreen: fullscreen,
                 autosize: autosize,
                 studies_overrides: studiesOverrides,
@@ -115,6 +116,60 @@ const TVAdvancedChart = ({
                 w.onChartReady(() => {
                     console.log('Chart has loaded!');
                     setIsLoading(false);
+
+                    // Expose widget and chart to parent
+                    if (onWidgetReadyRef.current) onWidgetReadyRef.current(w, w.activeChart());
+
+                    // Track symbol changes
+                    try {
+                        w.activeChart().onSymbolChanged().subscribe(null, () => {
+                            const info = w.activeChart().symbolExt();
+                            if (onSymbolChangedRef.current) {
+                                onSymbolChangedRef.current(info?.ticker || info?.symbol || '');
+                            }
+                        });
+                    } catch (e) {
+                        console.warn('Could not subscribe to symbol changes:', e);
+                    }
+
+                    // Right-click context menu for trading
+                    try {
+                        w.onContextMenu((unixTime, price) => {
+                            if (!activeAccountRef.current) return [];
+
+                            const p = price.toFixed(2);
+                            const qty = currentQuantityRef.current || 1;
+                            const mode = selectionModeRef.current;
+                            const group = groupInfoRef.current;
+                            const label = mode === 'group' && group
+                                ? `(${group.groupName})`
+                                : `(${qty} ct)`;
+
+                            const placeOrder = (side, type) => {
+                                onChartOrderRef.current?.({
+                                    side,
+                                    type,
+                                    price,
+                                    quantity: qty,
+                                    isGroupOrder: mode === 'group',
+                                    groupInfo: mode === 'group' ? group : null,
+                                });
+                            };
+
+                            return [
+                                { position: 'top', text: `Buy Limit @ ${p} ${label}`, click: () => placeOrder('buy', 'LIMIT') },
+                                { position: 'top', text: `Sell Limit @ ${p} ${label}`, click: () => placeOrder('sell', 'LIMIT') },
+                                { position: 'top', text: '-', click: () => {} },
+                                { position: 'top', text: `Buy Stop @ ${p} ${label}`, click: () => placeOrder('buy', 'STOP') },
+                                { position: 'top', text: `Sell Stop @ ${p} ${label}`, click: () => placeOrder('sell', 'STOP') },
+                                { position: 'top', text: '-', click: () => {} },
+                                { position: 'top', text: `Buy Market ${label}`, click: () => placeOrder('buy', 'MARKET') },
+                                { position: 'top', text: `Sell Market ${label}`, click: () => placeOrder('sell', 'MARKET') },
+                            ];
+                        });
+                    } catch (e) {
+                        console.warn('Could not set up context menu:', e);
+                    }
                 });
             } catch (err) {
                 console.error('Error initializing TradingView widget:', err);

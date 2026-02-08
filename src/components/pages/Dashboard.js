@@ -1,4 +1,4 @@
-import React, { useState, lazy, Suspense, useEffect, useRef } from 'react';
+import React, { useState, useCallback, useMemo, lazy, Suspense, useEffect, useRef } from 'react';
 import {
     Box,
     Flex,
@@ -24,6 +24,10 @@ import MemberChatComponent from '../chat/MemberChat';
 import MaintenanceBanner from '@/components/common/MaintenanceBanner';
 import PaymentStatusWarning from '@/components/subscription/PaymentStatusWarning';
 import ARIAAssistant from '@/components/ARIA/ARIAAssistant';
+import useChartTrading from '@/hooks/useChartTrading';
+import useWebSocketPositions from '@/services/websocket-proxy/hooks/useWebSocketPositions';
+import useWebSocketOrders from '@/services/websocket-proxy/hooks/useWebSocketOrders';
+import { getContractTicker } from '@/utils/formatting/tickerUtils';
 import logger from '@/utils/logger';
 
 // Lazy loaded components
@@ -104,6 +108,19 @@ const DashboardContent = () => {
         accounts: [],
         strategies: [],
         activeAccountId: null
+    });
+
+    // Chart trading state
+    const [activeChart, setActiveChart] = useState(null);
+    const [chartSymbol, setChartSymbol] = useState('NQ');
+    const [activeAccount, setActiveAccount] = useState(null);
+    const [orderControlState, setOrderControlState] = useState({
+        quantity: 1,
+        orderType: 'MARKET',
+        selectionMode: 'single',
+        groupInfo: null,
+        selectedAccounts: [],
+        selectedTicker: '',
     });
 
     // Cache reference
@@ -278,12 +295,110 @@ const DashboardContent = () => {
     }, [isAuthenticated, navigate]);
 
 
-    const handleAccountSelect = (accountId) => {
+    const handleAccountSelect = useCallback((accountInfo) => {
+        // Support both old format (just accountId string) and new format (object)
+        if (typeof accountInfo === 'string') {
+            setDashboardData(prev => ({ ...prev, activeAccountId: accountInfo }));
+            return;
+        }
+        setActiveAccount(accountInfo);
         setDashboardData(prev => ({
             ...prev,
-            activeAccountId: accountId
+            activeAccountId: accountInfo.accountId
         }));
-    };
+    }, []);
+
+    // WebSocket hooks for active account positions & orders
+    const { positions } = useWebSocketPositions(
+        activeAccount?.brokerId,
+        activeAccount?.accountId
+    );
+    const { orders, cancelOrder: wsCancelOrder } = useWebSocketOrders(
+        activeAccount?.brokerId,
+        activeAccount?.accountId
+    );
+
+    // Chart line callbacks
+    const chartCallbacks = useMemo(() => ({
+        onClosePosition: async (positionId, accountId) => {
+            try {
+                await axiosInstance.post(`/api/v1/brokers/accounts/${accountId}/positions/${positionId}/close`);
+                toast({ title: 'Position closed', status: 'success', duration: 2000 });
+            } catch (err) {
+                toast({ title: 'Failed to close position', description: err.response?.data?.detail || err.message, status: 'error', duration: 4000 });
+            }
+        },
+        onReversePosition: async (positionId, accountId) => {
+            try {
+                await axiosInstance.post(`/api/v1/brokers/accounts/${accountId}/positions/${positionId}/reverse`);
+                toast({ title: 'Position reversed', status: 'success', duration: 2000 });
+            } catch (err) {
+                toast({ title: 'Failed to reverse position', description: err.response?.data?.detail || err.message, status: 'error', duration: 4000 });
+            }
+        },
+        onCancelOrder: async (orderId, accountId) => {
+            try {
+                await axiosInstance.delete(`/api/v1/brokers/accounts/${accountId}/orders/${orderId}`);
+                toast({ title: 'Order cancelled', status: 'success', duration: 2000 });
+            } catch (err) {
+                toast({ title: 'Failed to cancel order', description: err.response?.data?.detail || err.message, status: 'error', duration: 4000 });
+            }
+        },
+        onModifyOrder: async (orderId, accountId, modifications) => {
+            try {
+                await axiosInstance.put(`/api/v1/brokers/accounts/${accountId}/orders/${orderId}`, modifications);
+                toast({ title: 'Order modified', status: 'success', duration: 2000 });
+            } catch (err) {
+                toast({ title: 'Failed to modify order', description: err.response?.data?.detail || err.message, status: 'error', duration: 4000 });
+            }
+        },
+    }), [toast]);
+
+    // Position/order lines on chart
+    useChartTrading({
+        activeChart,
+        positions: activeAccount ? positions : [],
+        orders: activeAccount ? orders : [],
+        chartSymbol,
+        callbacks: chartCallbacks,
+    });
+
+    // Handle chart right-click order placement
+    const handleChartOrder = useCallback(async (order) => {
+        try {
+            const { selectedAccounts } = orderControlState;
+            const symbol = getContractTicker(chartSymbol || orderControlState.selectedTicker);
+
+            if (order.isGroupOrder && order.groupInfo?.id) {
+                await axiosInstance.post(`/api/v1/strategies/${order.groupInfo.id}/execute`, {
+                    action: order.side.toUpperCase(),
+                    order_type: order.type,
+                    price: (order.type === 'LIMIT' || order.type === 'STOP_LIMIT') ? order.price : undefined,
+                    stop_price: (order.type === 'STOP' || order.type === 'STOP_LIMIT') ? order.price : undefined,
+                    time_in_force: 'GTC',
+                });
+            } else if (selectedAccounts[0]) {
+                await axiosInstance.post(`/api/v1/brokers/accounts/${selectedAccounts[0]}/discretionary/orders`, {
+                    symbol,
+                    side: order.side,
+                    type: order.type,
+                    quantity: order.quantity,
+                    price: (order.type === 'LIMIT' || order.type === 'STOP_LIMIT') ? order.price : undefined,
+                    stop_price: (order.type === 'STOP' || order.type === 'STOP_LIMIT') ? order.price : undefined,
+                    time_in_force: 'GTC',
+                });
+            }
+
+            toast({ title: `${order.side.toUpperCase()} ${order.type} placed`, status: 'success', duration: 2000 });
+        } catch (err) {
+            toast({
+                title: 'Order failed',
+                description: err.response?.data?.detail || err.message,
+                status: 'error',
+                duration: 4000,
+            });
+        }
+    }, [orderControlState, chartSymbol, toast]);
 
     // Loading state - wait for both auth and dashboard data
     if (isLoading || authLoading || !user) {
@@ -339,7 +454,15 @@ const DashboardContent = () => {
                                     >
                                         <ErrorBoundary>
                                             <Suspense fallback={<LoadingSpinner />}>
-                                                <TradingViewWidget />
+                                                <TradingViewWidget
+                                                    onWidgetReady={(w, c) => setActiveChart(c)}
+                                                    onSymbolChanged={setChartSymbol}
+                                                    onChartOrder={handleChartOrder}
+                                                    activeAccount={activeAccount}
+                                                    currentQuantity={orderControlState.quantity}
+                                                    selectionMode={orderControlState.selectionMode}
+                                                    groupInfo={orderControlState.groupInfo}
+                                                />
                                             </Suspense>
                                         </ErrorBoundary>
                                     </Box>
@@ -380,6 +503,7 @@ const DashboardContent = () => {
                                                     <OrderControl
                                                         accounts={dashboardData.accounts}
                                                         activeAccountId={dashboardData.activeAccountId}
+                                                        onStateChange={setOrderControlState}
                                                     />
                                                 </Suspense>
                                             </ErrorBoundary>

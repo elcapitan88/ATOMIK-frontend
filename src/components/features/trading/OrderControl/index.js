@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   Box,
   VStack,
@@ -31,7 +31,7 @@ import logger from '@/utils/logger';
 // Import the ticker utilities
 import { getDisplayTickers, getContractTicker } from '@/utils/formatting/tickerUtils';
 
-const OrderControl = () => {
+const OrderControl = ({ onStateChange }) => {
   const toast = useToast();
   const {
     isOpen: isConfirmationOpen,
@@ -53,9 +53,28 @@ const OrderControl = () => {
   const [selectedAccounts, setSelectedAccounts] = useState([]);
   const [groupInfo, setGroupInfo] = useState(null);
   
+  // Order type state
+  const [orderType, setOrderType] = useState('MARKET');
+  const [limitPrice, setLimitPrice] = useState('');
+  const [stopPrice, setStopPrice] = useState('');
+
   // Order state
   const [pendingOrder, setPendingOrder] = useState(null);
   const [orderStatus, setOrderStatus] = useState(null);
+
+  // Lift state to parent
+  useEffect(() => {
+    if (onStateChange) {
+      onStateChange({
+        quantity,
+        orderType,
+        selectionMode,
+        groupInfo,
+        selectedAccounts,
+        selectedTicker,
+      });
+    }
+  }, [quantity, orderType, selectionMode, groupInfo, selectedAccounts, selectedTicker, onStateChange]);
 
   // Handle account selection change from AccountSelection component
   const handleAccountSelectionChange = (accounts, type, selectedGroupInfo = null) => {
@@ -98,7 +117,10 @@ const OrderControl = () => {
       } else if (order.isGroupOrder && order.groupInfo?.id) {
         // Execute group strategy order
         await axios.post(`/api/v1/strategies/${order.groupInfo.id}/execute`, {
-          action: order.type
+          action: order.type,
+          order_type: order.orderType,
+          price: order.limitPrice || undefined,
+          stop_price: order.stopPrice || undefined,
         });
         
         toast({
@@ -113,10 +135,12 @@ const OrderControl = () => {
         const contractTicker = getContractTicker(order.ticker);
         
         await axios.post(`/api/v1/brokers/accounts/${order.accounts[0]}/discretionary/orders`, {
-          symbol: contractTicker, // Use full contract specification
+          symbol: contractTicker,
           side: order.type,
-          type: 'MARKET',
+          type: order.orderType,
           quantity: order.quantity,
+          price: order.limitPrice || undefined,
+          stop_price: order.stopPrice || undefined,
           time_in_force: 'GTC'
         });
         
@@ -153,7 +177,7 @@ const OrderControl = () => {
   };
 
   // Handle order submission (buy/sell)
-  const handleOrderSubmit = useCallback((orderType) => {
+  const handleOrderSubmit = useCallback((side) => {
     // Validation
     if (selectedAccounts.length === 0) {
       toast({
@@ -165,11 +189,11 @@ const OrderControl = () => {
       });
       return;
     }
-    
+
     // For group selection, use group ticker; otherwise use selected ticker
-    const orderTicker = selectionMode === 'group' && groupInfo ? 
+    const orderTicker = selectionMode === 'group' && groupInfo ?
       groupInfo.ticker : selectedTicker;
-      
+
     if (!orderTicker) {
       toast({
         title: "No Ticker Selected",
@@ -180,28 +204,31 @@ const OrderControl = () => {
       });
       return;
     }
-    
+
     // For group, use leader quantity; otherwise use input quantity
-    const orderQuantity = selectionMode === 'group' && groupInfo ? 
+    const orderQuantity = selectionMode === 'group' && groupInfo ?
       groupInfo.leaderQuantity : quantity;
-    
+
     // Create order
     const order = {
-      type: orderType,
+      type: side,
       ticker: orderTicker,
       quantity: orderQuantity,
       accounts: selectedAccounts,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      orderType: orderType,
+      limitPrice: limitPrice || undefined,
+      stopPrice: stopPrice || undefined,
     };
-    
+
     // Add group info if applicable
     if (selectionMode === 'group' && groupInfo) {
       order.isGroupOrder = true;
       order.groupInfo = groupInfo;
     }
-    
-    logger.info(`Preparing ${orderType} order:`, order);
-    
+
+    logger.info(`Preparing ${side} order:`, order);
+
     if (skipConfirmation) {
       executeOrder(order);
     } else {
@@ -209,13 +236,16 @@ const OrderControl = () => {
       onConfirmationOpen();
     }
   }, [
-    selectedAccounts, 
-    selectionMode, 
-    groupInfo, 
-    selectedTicker, 
-    quantity, 
-    skipConfirmation, 
-    toast, 
+    selectedAccounts,
+    selectionMode,
+    groupInfo,
+    selectedTicker,
+    quantity,
+    orderType,
+    limitPrice,
+    stopPrice,
+    skipConfirmation,
+    toast,
     onConfirmationOpen
   ]);
 
@@ -249,10 +279,14 @@ const OrderControl = () => {
   // Check if trading buttons should be disabled
   const isTradingDisabled = () => {
     if (isSubmitting) return true;
-    
+
     // We need accounts
     if (selectedAccounts.length === 0) return true;
-    
+
+    // Price validation for non-market orders
+    if ((orderType === 'LIMIT' || orderType === 'STOP_LIMIT') && !limitPrice) return true;
+    if ((orderType === 'STOP' || orderType === 'STOP_LIMIT') && !stopPrice) return true;
+
     if (selectionMode === 'single') {
       // Single mode needs ticker and quantity
       return !selectedTicker || quantity <= 0;
@@ -378,6 +412,68 @@ const OrderControl = () => {
               )}
             </HStack>
           </Box>
+        )}
+
+        {/* Order Type Controls */}
+        {selectedAccounts.length > 0 && (
+          <VStack width="full" spacing={2}>
+            <Select
+              value={orderType}
+              onChange={(e) => {
+                setOrderType(e.target.value);
+                if (e.target.value === 'MARKET') {
+                  setLimitPrice('');
+                  setStopPrice('');
+                }
+              }}
+              size="sm"
+              bg="whiteAlpha.50"
+              borderColor="whiteAlpha.200"
+              _hover={{ borderColor: "whiteAlpha.300" }}
+              _focus={{ borderColor: "rgba(0, 198, 224, 0.6)", boxShadow: "0 0 0 1px rgba(0, 198, 224, 0.6)" }}
+            >
+              <option value="MARKET">Market</option>
+              <option value="LIMIT">Limit</option>
+              <option value="STOP">Stop</option>
+              <option value="STOP_LIMIT">Stop Limit</option>
+            </Select>
+
+            {(orderType === 'LIMIT' || orderType === 'STOP_LIMIT') && (
+              <NumberInput
+                value={limitPrice}
+                onChange={(val) => setLimitPrice(val)}
+                min={0}
+                precision={2}
+                size="sm"
+              >
+                <NumberInputField
+                  placeholder="Limit Price"
+                  bg="whiteAlpha.50"
+                  borderColor="whiteAlpha.200"
+                  _hover={{ borderColor: "whiteAlpha.300" }}
+                  _focus={{ borderColor: "rgba(0, 198, 224, 0.6)", boxShadow: "0 0 0 1px rgba(0, 198, 224, 0.6)" }}
+                />
+              </NumberInput>
+            )}
+
+            {(orderType === 'STOP' || orderType === 'STOP_LIMIT') && (
+              <NumberInput
+                value={stopPrice}
+                onChange={(val) => setStopPrice(val)}
+                min={0}
+                precision={2}
+                size="sm"
+              >
+                <NumberInputField
+                  placeholder="Stop Price"
+                  bg="whiteAlpha.50"
+                  borderColor="whiteAlpha.200"
+                  _hover={{ borderColor: "whiteAlpha.300" }}
+                  _focus={{ borderColor: "rgba(0, 198, 224, 0.6)", boxShadow: "0 0 0 1px rgba(0, 198, 224, 0.6)" }}
+                />
+              </NumberInput>
+            )}
+          </VStack>
         )}
 
         {/* Validation messages */}
