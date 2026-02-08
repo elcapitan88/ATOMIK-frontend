@@ -123,6 +123,27 @@ const DashboardContent = () => {
         selectedTicker: '',
     });
 
+    // Auto-set activeAccount when OrderControl accounts change
+    useEffect(() => {
+        if (orderControlState.selectedAccounts.length > 0 && !activeAccount) {
+            // Find the full account info from dashboardData
+            const acctId = orderControlState.selectedAccounts[0];
+            const fullAcct = dashboardData.accounts?.find(a => a.account_id === acctId);
+            if (fullAcct) {
+                setActiveAccount({
+                    accountId: fullAcct.account_id,
+                    brokerId: fullAcct.broker_id,
+                    nickname: fullAcct.nickname || fullAcct.name,
+                });
+            } else {
+                // Fallback — set with just the ID so chart menu works
+                setActiveAccount({ accountId: acctId });
+            }
+        } else if (orderControlState.selectedAccounts.length === 0) {
+            setActiveAccount(null);
+        }
+    }, [orderControlState.selectedAccounts, dashboardData.accounts]);
+
     // Cache reference
     const dataCache = useRef({
         accounts: null,
@@ -367,6 +388,18 @@ const DashboardContent = () => {
     const handleChartOrder = useCallback(async (order) => {
         try {
             const { selectedAccounts } = orderControlState;
+
+            if (!selectedAccounts || selectedAccounts.length === 0) {
+                toast({
+                    title: 'No Account Selected',
+                    description: 'Select an account in Order Control before placing trades from the chart.',
+                    status: 'warning',
+                    duration: 4000,
+                    isClosable: true,
+                });
+                return;
+            }
+
             const symbol = getContractTicker(chartSymbol || orderControlState.selectedTicker);
 
             if (order.isGroupOrder && order.groupInfo?.id) {

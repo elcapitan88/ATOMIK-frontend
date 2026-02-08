@@ -29,6 +29,7 @@ const TVAdvancedChart = ({
 
     // Refs for stale closure prevention
     const activeAccountRef = useRef(activeAccount);
+    const hasAccountRef = useRef(!!activeAccount);
     const currentQuantityRef = useRef(currentQuantity);
     const selectionModeRef = useRef(selectionMode);
     const groupInfoRef = useRef(groupInfo);
@@ -36,7 +37,7 @@ const TVAdvancedChart = ({
     const onWidgetReadyRef = useRef(onWidgetReady);
     const onSymbolChangedRef = useRef(onSymbolChanged);
 
-    useEffect(() => { activeAccountRef.current = activeAccount; }, [activeAccount]);
+    useEffect(() => { activeAccountRef.current = activeAccount; hasAccountRef.current = !!activeAccount; }, [activeAccount]);
     useEffect(() => { currentQuantityRef.current = currentQuantity; }, [currentQuantity]);
     useEffect(() => { selectionModeRef.current = selectionMode; }, [selectionMode]);
     useEffect(() => { groupInfoRef.current = groupInfo; }, [groupInfo]);
@@ -135,12 +136,11 @@ const TVAdvancedChart = ({
                     // Right-click context menu for trading
                     try {
                         w.onContextMenu((unixTime, price) => {
-                            if (!activeAccountRef.current) return [];
-
                             const p = price.toFixed(2);
                             const qty = currentQuantityRef.current || 1;
                             const mode = selectionModeRef.current;
                             const group = groupInfoRef.current;
+                            const hasAccount = hasAccountRef.current;
                             const label = mode === 'group' && group
                                 ? `(${group.groupName})`
                                 : `(${qty} ct)`;
@@ -156,15 +156,19 @@ const TVAdvancedChart = ({
                                 });
                             };
 
+                            // Always show menu — order handler will validate account selection
+                            const noAcctSuffix = hasAccount ? '' : ' (select account first)';
+
                             return [
-                                { position: 'top', text: `Buy Limit @ ${p} ${label}`, click: () => placeOrder('buy', 'LIMIT') },
-                                { position: 'top', text: `Sell Limit @ ${p} ${label}`, click: () => placeOrder('sell', 'LIMIT') },
+                                { position: 'top', text: '-Trading-', click: () => {} },
+                                { position: 'top', text: `Buy Limit @ ${p} ${label}${noAcctSuffix}`, click: () => placeOrder('buy', 'LIMIT') },
+                                { position: 'top', text: `Sell Limit @ ${p} ${label}${noAcctSuffix}`, click: () => placeOrder('sell', 'LIMIT') },
                                 { position: 'top', text: '-', click: () => {} },
-                                { position: 'top', text: `Buy Stop @ ${p} ${label}`, click: () => placeOrder('buy', 'STOP') },
-                                { position: 'top', text: `Sell Stop @ ${p} ${label}`, click: () => placeOrder('sell', 'STOP') },
+                                { position: 'top', text: `Buy Stop @ ${p} ${label}${noAcctSuffix}`, click: () => placeOrder('buy', 'STOP') },
+                                { position: 'top', text: `Sell Stop @ ${p} ${label}${noAcctSuffix}`, click: () => placeOrder('sell', 'STOP') },
                                 { position: 'top', text: '-', click: () => {} },
-                                { position: 'top', text: `Buy Market ${label}`, click: () => placeOrder('buy', 'MARKET') },
-                                { position: 'top', text: `Sell Market ${label}`, click: () => placeOrder('sell', 'MARKET') },
+                                { position: 'top', text: `Buy Market ${label}${noAcctSuffix}`, click: () => placeOrder('buy', 'MARKET') },
+                                { position: 'top', text: `Sell Market ${label}${noAcctSuffix}`, click: () => placeOrder('sell', 'MARKET') },
                             ];
                         });
                     } catch (e) {
