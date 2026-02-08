@@ -1,21 +1,18 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Box, Spinner, Text, VStack } from '@chakra-ui/react';
 import CustomDatafeed from './CustomDatafeed';
+import { chartStorage } from '@services/datafeed/chartStorage';
+import { createMockBrokerFactory } from '@services/datafeed/mockBroker';
 
 const TVAdvancedChart = ({
-    symbol = 'AMEX:SPY',
+    symbol = 'NQ',
     interval = '5',
     theme = 'Dark',
     containerId = 'tv_chart_container',
     libraryPath = '/charting_library/',
-    chartsStorageUrl = 'https://saveload.tradingview.com',
-    chartsStorageApiVersion = '1.1',
-    clientId = 'tradingview.com',
-    userId = 'public_user_id',
     fullscreen = false,
     autosize = true,
     studiesOverrides = {},
-    useCustomDatafeed = true, // Toggle between custom and demo datafeed
 }) => {
     const containerRef = useRef(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -31,25 +28,9 @@ const TVAdvancedChart = ({
                 return;
             }
 
-            // Check if we need Datafeeds for demo feed
-            if (!useCustomDatafeed && !window.Datafeeds) {
-                setError('Datafeeds library not loaded');
-                setIsLoading(false);
-                return;
-            }
+            const datafeed = new CustomDatafeed();
 
-            // Choose datafeed based on configuration
-            let datafeed;
-            if (useCustomDatafeed) {
-                console.log('[TVAdvancedChart]: Using custom datafeed');
-                datafeed = new CustomDatafeed();
-            } else {
-                console.log('[TVAdvancedChart]: Using TradingView demo datafeed');
-                datafeed = new window.Datafeeds.UDFCompatibleDatafeed("https://demo-feed.tradingview.com", {
-                    maxResponseLength: 1000000,
-                    expectedOrder: 'latestFirst'
-                });
-            }
+            const brokerFactory = createMockBrokerFactory();
 
             const widgetOptions = {
                 symbol: symbol,
@@ -58,18 +39,60 @@ const TVAdvancedChart = ({
                 container: containerRef.current,
                 library_path: libraryPath,
                 locale: 'en',
-                disabled_features: ['use_localstorage_for_settings'],
-                enabled_features: ['study_templates'],
-                charts_storage_url: chartsStorageUrl,
-                charts_storage_api_version: chartsStorageApiVersion,
-                client_id: clientId,
-                user_id: userId,
+                disabled_features: [
+                    'header_compare',
+                    'display_market_status',
+                    'header_saveload',
+                ],
+                enabled_features: [
+                    'study_templates',
+                    'create_volume_indicator_by_default',
+                    'save_chart_properties_to_local_storage',
+                    'side_toolbar_in_fullscreen_mode',
+                    'trading_account_manager',
+                    'order_panel',
+                    'buy_sell_buttons',
+                    'show_order_panel_on_start',
+                ],
+                broker_factory: brokerFactory,
+                broker_config: {
+                    configFlags: {
+                        supportOrderBrackets: true,
+                        supportPositionBrackets: true,
+                        supportClosePosition: true,
+                        supportReversePosition: true,
+                        supportModifyOrder: true,
+                        supportCancelOrder: true,
+                        supportMarketOrders: true,
+                        supportLimitOrders: true,
+                        supportStopOrders: true,
+                        supportStopLimitOrders: true,
+                        supportPartialClosePosition: false,
+                        showQuantityInsteadOfAmount: true,
+                    },
+                },
                 fullscreen: fullscreen,
                 autosize: autosize,
                 studies_overrides: studiesOverrides,
                 theme: theme,
-                // Add debug mode to see potential issues
-                debug: true,
+                timezone: 'America/Chicago',
+                save_load_adapter: chartStorage,
+                auto_save_delay: 5,
+                overrides: {
+                    'paneProperties.background': '#1C1C1C',
+                    'paneProperties.backgroundType': 'solid',
+                    'paneProperties.vertGridProperties.color': '#363c4e',
+                    'paneProperties.horzGridProperties.color': '#363c4e',
+                    'scalesProperties.backgroundColor': '#1C1C1C',
+                    'scalesProperties.textColor': '#AAA',
+                    'symbolWatermarkProperties.transparency': 90,
+                    'mainSeriesProperties.candleStyle.upColor': '#26a69a',
+                    'mainSeriesProperties.candleStyle.downColor': '#ef5350',
+                    'mainSeriesProperties.candleStyle.wickUpColor': '#26a69a',
+                    'mainSeriesProperties.candleStyle.wickDownColor': '#ef5350',
+                },
+                loading_screen: { backgroundColor: '#1C1C1C', foregroundColor: '#00C6E0' },
+                toolbar_bg: '#1C1C1C',
             };
 
             try {
@@ -86,39 +109,16 @@ const TVAdvancedChart = ({
             }
         };
 
-        const loadDatafeedScript = (callback) => {
-            // Skip loading datafeed script if using custom datafeed
-            if (useCustomDatafeed) {
-                callback();
-                return;
-            }
-
-            if (window.Datafeeds) {
-                callback();
-                return;
-            }
-
-            const datafeedScript = document.createElement('script');
-            datafeedScript.src = '/datafeeds/udf/dist/bundle.js';
-            datafeedScript.async = true;
-            datafeedScript.onload = callback;
-            datafeedScript.onerror = () => {
-                setError('Failed to load datafeed script');
-                setIsLoading(false);
-            };
-            document.head.appendChild(datafeedScript);
-        };
-
         const loadChartingLibrary = () => {
             if (window.TradingView) {
-                loadDatafeedScript(initWidget);
+                initWidget();
                 return;
             }
 
             const script = document.createElement('script');
             script.src = `${libraryPath}charting_library.standalone.js`;
             script.async = true;
-            script.onload = () => loadDatafeedScript(initWidget);
+            script.onload = () => initWidget();
             script.onerror = () => {
                 setError('Failed to load charting library script');
                 setIsLoading(false);
@@ -137,7 +137,7 @@ const TVAdvancedChart = ({
                 }
             }
         };
-    }, [symbol, interval, theme, libraryPath, chartsStorageUrl, chartsStorageApiVersion, clientId, userId, fullscreen, autosize, studiesOverrides, useCustomDatafeed]);
+    }, [symbol, interval, theme, libraryPath, fullscreen, autosize, studiesOverrides]);
 
     return (
         <Box
