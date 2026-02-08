@@ -1,8 +1,10 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useMemo } from 'react';
 import { Box, Spinner, Text, VStack } from '@chakra-ui/react';
 import CustomDatafeed from './CustomDatafeed';
 import { chartStorage } from '@services/datafeed/chartStorage';
 import { createMockBrokerFactory } from '@services/datafeed/mockBroker';
+
+const EMPTY_OVERRIDES = {};
 
 const TVAdvancedChart = ({
     symbol = 'NQ',
@@ -12,14 +14,27 @@ const TVAdvancedChart = ({
     libraryPath = '/charting_library/',
     fullscreen = false,
     autosize = true,
-    studiesOverrides = {},
+    studiesOverrides = EMPTY_OVERRIDES,
 }) => {
     const containerRef = useRef(null);
+    const widgetRef = useRef(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
 
+    // Memoize objects that should not trigger re-creation
+    const brokerFactory = useMemo(() => createMockBrokerFactory(), []);
+    const datafeed = useMemo(() => new CustomDatafeed(), []);
+
     useEffect(() => {
-        let widget = null;
+        // Prevent duplicate initialization
+        if (widgetRef.current) {
+            try {
+                widgetRef.current.remove();
+            } catch (e) {
+                // ignore
+            }
+            widgetRef.current = null;
+        }
 
         const initWidget = () => {
             if (!window.TradingView) {
@@ -28,9 +43,7 @@ const TVAdvancedChart = ({
                 return;
             }
 
-            const datafeed = new CustomDatafeed();
-
-            const brokerFactory = createMockBrokerFactory();
+            if (!containerRef.current) return;
 
             const widgetOptions = {
                 symbol: symbol,
@@ -96,9 +109,10 @@ const TVAdvancedChart = ({
             };
 
             try {
-                widget = new window.TradingView.widget(widgetOptions);
+                const w = new window.TradingView.widget(widgetOptions);
+                widgetRef.current = w;
 
-                widget.onChartReady(() => {
+                w.onChartReady(() => {
                     console.log('Chart has loaded!');
                     setIsLoading(false);
                 });
@@ -129,15 +143,17 @@ const TVAdvancedChart = ({
         loadChartingLibrary();
 
         return () => {
-            if (widget) {
+            if (widgetRef.current) {
                 try {
-                    widget.remove();
+                    widgetRef.current.remove();
                 } catch (e) {
                     console.warn('Error removing widget:', e);
                 }
+                widgetRef.current = null;
             }
         };
-    }, [symbol, interval, theme, libraryPath, fullscreen, autosize, studiesOverrides]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [symbol, interval, theme]);
 
     return (
         <Box

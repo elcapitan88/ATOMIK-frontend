@@ -109,8 +109,13 @@ class CustomDatafeed {
       url += `&end=${new Date(periodParams.to * 1000).toISOString()}`;
     }
 
+    const t0 = performance.now();
+    console.log(`[CustomDatafeed] getBars: ${ticker} ${interval} bars=${countBack} firstRequest=${periodParams.firstDataRequest}`);
+
     fetch(url)
       .then((response) => {
+        const fetchMs = (performance.now() - t0).toFixed(0);
+        console.log(`[CustomDatafeed] HTTP ${response.status} in ${fetchMs}ms for ${ticker}`);
         if (!response.ok) {
           throw new Error(`HTTP ${response.status}`);
         }
@@ -131,6 +136,9 @@ class CustomDatafeed {
           .filter((bar) => !isNaN(bar.time) && !isNaN(bar.close))
           .sort((a, b) => a.time - b.time);
 
+        const totalMs = (performance.now() - t0).toFixed(0);
+        console.log(`[CustomDatafeed] ${ticker}: ${bars.length} bars in ${totalMs}ms`);
+
         if (bars.length > 0) {
           lastBarsCache.set(ticker, { ...bars[bars.length - 1] });
         }
@@ -138,7 +146,8 @@ class CustomDatafeed {
         onResult(bars, { noData: bars.length === 0 });
       })
       .catch((err) => {
-        console.error(`[CustomDatafeed] getBars error for ${ticker}:`, err);
+        const failMs = (performance.now() - t0).toFixed(0);
+        console.error(`[CustomDatafeed] getBars FAILED for ${ticker} after ${failMs}ms:`, err);
         onError('Failed to fetch historical data');
       });
   }
