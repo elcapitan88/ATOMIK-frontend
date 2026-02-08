@@ -1,224 +1,157 @@
-// Custom Datafeed Implementation for TradingView Advanced Charts
-// This provides a basic implementation that can be extended with your own data source
+import {
+  SYMBOL_CONFIG,
+  SUPPORTED_RESOLUTIONS,
+  RESOLUTION_MAP,
+  DATAHUB_URL,
+  DATAHUB_API_KEY,
+} from '@services/datafeed/helpers';
+import { subscribeOnStream, unsubscribeFromStream } from '@services/datafeed/streaming';
+
+// Shared cache of the last bar per symbol, used to seed streaming subscriptions
+const lastBarsCache = new Map();
+
+const configurationData = {
+  supported_resolutions: SUPPORTED_RESOLUTIONS,
+  exchanges: [
+    { value: 'CME',   name: 'CME',   desc: 'Chicago Mercantile Exchange' },
+    { value: 'CBOT',  name: 'CBOT',  desc: 'Chicago Board of Trade' },
+    { value: 'NYMEX', name: 'NYMEX', desc: 'New York Mercantile Exchange' },
+    { value: 'COMEX', name: 'COMEX', desc: 'Commodity Exchange' },
+  ],
+  symbols_types: [
+    { name: 'Futures', value: 'futures' },
+  ],
+  supports_marks: false,
+  supports_timescale_marks: false,
+  supports_time: true,
+};
 
 class CustomDatafeed {
-    constructor(datafeedUrl = '/api/v1/tradingview') {
-        this.datafeedUrl = datafeedUrl;
-        this.configuration = {
-            exchanges: [
-                { value: 'NASDAQ', name: 'NASDAQ', desc: 'NASDAQ Stock Exchange' },
-                { value: 'NYSE', name: 'NYSE', desc: 'New York Stock Exchange' },
-                { value: 'AMEX', name: 'AMEX', desc: 'American Stock Exchange' }
-            ],
-            symbols_types: [
-                { name: 'Stock', value: 'stock' },
-                { name: 'Index', value: 'index' }
-            ],
-            supported_resolutions: ['1', '5', '15', '30', '60', '120', '240', 'D', 'W', 'M'],
-            supports_marks: false,
-            supports_timescale_marks: false,
-            supports_time: true
-        };
-    }
+  onReady(callback) {
+    setTimeout(() => callback(configurationData), 0);
+  }
 
-    // Main configuration method
-    onReady(callback) {
-        console.log('[CustomDatafeed]: onReady called');
-        setTimeout(() => callback(this.configuration), 0);
-    }
-
-    // Search symbols
-    searchSymbols(userInput, exchange, symbolType, onResultReadyCallback) {
-        console.log('[CustomDatafeed]: searchSymbols called', { userInput, exchange, symbolType });
-
-        // For demo purposes, return some hardcoded symbols
-        // Replace this with actual API call to your backend
-        const symbols = [
-            {
-                symbol: 'SPY',
-                full_name: 'AMEX:SPY',
-                description: 'SPDR S&P 500 ETF',
-                exchange: 'AMEX',
-                ticker: 'SPY',
-                type: 'stock'
-            },
-            {
-                symbol: 'QQQ',
-                full_name: 'NASDAQ:QQQ',
-                description: 'Invesco QQQ Trust',
-                exchange: 'NASDAQ',
-                ticker: 'QQQ',
-                type: 'stock'
-            },
-            {
-                symbol: 'AAPL',
-                full_name: 'NASDAQ:AAPL',
-                description: 'Apple Inc.',
-                exchange: 'NASDAQ',
-                ticker: 'AAPL',
-                type: 'stock'
-            }
-        ];
-
-        const results = symbols.filter(sym =>
-            sym.symbol.toLowerCase().includes(userInput.toLowerCase()) ||
-            sym.description.toLowerCase().includes(userInput.toLowerCase())
+  searchSymbols(userInput, exchange, symbolType, onResult) {
+    const query = (userInput || '').toUpperCase();
+    const results = Object.values(SYMBOL_CONFIG)
+      .filter((cfg) => {
+        if (exchange && cfg.exchange !== exchange) return false;
+        return (
+          cfg.name.toUpperCase().includes(query) ||
+          cfg.description.toUpperCase().includes(query)
         );
+      })
+      .map((cfg) => ({
+        symbol: cfg.name,
+        full_name: `${cfg.exchange}:${cfg.name}`,
+        description: cfg.description,
+        exchange: cfg.exchange,
+        ticker: cfg.name,
+        type: cfg.type,
+      }));
 
-        onResultReadyCallback(results);
+    onResult(results);
+  }
+
+  resolveSymbol(symbolName, onResolve, onError) {
+    // Strip exchange prefix if present (e.g. "CME:NQ" -> "NQ")
+    const ticker = symbolName.includes(':') ? symbolName.split(':').pop() : symbolName;
+    const cfg = SYMBOL_CONFIG[ticker.toUpperCase()];
+
+    if (!cfg) {
+      onError(`[CustomDatafeed] Unknown symbol: ${symbolName}`);
+      return;
     }
 
-    // Resolve symbol
-    resolveSymbol(symbolName, onSymbolResolvedCallback, onResolveErrorCallback, extension) {
-        console.log('[CustomDatafeed]: resolveSymbol called', { symbolName });
+    const symbolInfo = {
+      ticker: cfg.name,
+      name: `${cfg.exchange}:${cfg.name}`,
+      description: cfg.description,
+      type: cfg.type,
+      session: cfg.session,
+      exchange: cfg.exchange,
+      listed_exchange: cfg.exchange,
+      timezone: cfg.timezone,
+      minmov: cfg.minmov,
+      pricescale: cfg.pricescale,
+      has_intraday: true,
+      has_daily: true,
+      has_weekly_and_monthly: true,
+      supported_resolutions: SUPPORTED_RESOLUTIONS,
+      volume_precision: 0,
+      data_status: 'streaming',
+      visible_plots_set: 'ohlcv',
+      format: 'price',
+    };
 
-        const symbol_stub = {
-            name: symbolName,
-            description: symbolName,
-            type: 'stock',
-            session: '24x7',
-            timezone: 'America/New_York',
-            ticker: symbolName,
-            exchange: symbolName.split(':')[0] || 'NASDAQ',
-            minmov: 1,
-            pricescale: 100,
-            has_intraday: true,
-            has_daily: true,
-            has_weekly_and_monthly: true,
-            supported_resolutions: this.configuration.supported_resolutions,
-            volume_precision: 2,
-            data_status: 'streaming',
-            full_name: symbolName
-        };
+    setTimeout(() => onResolve(symbolInfo), 0);
+  }
 
-        setTimeout(() => onSymbolResolvedCallback(symbol_stub), 0);
+  getBars(symbolInfo, resolution, periodParams, onResult, onError) {
+    const interval = RESOLUTION_MAP[resolution];
+    if (!interval) {
+      onError(`[CustomDatafeed] Unsupported resolution: ${resolution}`);
+      return;
     }
 
-    // Get bars (historical data)
-    getBars(symbolInfo, resolution, periodParams, onHistoryCallback, onErrorCallback) {
-        const { from, to, firstDataRequest } = periodParams;
-        console.log('[CustomDatafeed]: getBars called', {
-            symbol: symbolInfo.name,
-            resolution,
-            from: new Date(from * 1000),
-            to: new Date(to * 1000),
-            firstDataRequest
-        });
+    const ticker = symbolInfo.ticker;
+    const countBack = periodParams.countBack || 300;
 
-        // Generate demo candlestick data
-        // Replace this with actual API call to your backend
-        const bars = [];
-        const resolutionMinutes = this.getResolutionInMinutes(resolution);
-        const barTime = from * 1000; // Convert to milliseconds
-        const endTime = to * 1000;
+    let url = `${DATAHUB_URL}/api/v1/historical/${ticker}?bars=${countBack}&interval=${interval}`;
 
-        let currentTime = barTime;
-        let lastClose = 100;
+    if (DATAHUB_API_KEY) {
+      url += `&api_key=${DATAHUB_API_KEY}`;
+    }
 
-        while (currentTime < endTime) {
-            const open = lastClose;
-            const change = (Math.random() - 0.5) * 2; // Random change between -1 and 1
-            const high = open + Math.random() * 2;
-            const low = open - Math.random() * 2;
-            const close = open + change;
-            const volume = Math.floor(Math.random() * 1000000) + 100000;
+    // For scrollback requests (not the initial load), send time range
+    if (!periodParams.firstDataRequest && periodParams.from && periodParams.to) {
+      url += `&start=${new Date(periodParams.from * 1000).toISOString()}`;
+      url += `&end=${new Date(periodParams.to * 1000).toISOString()}`;
+    }
 
-            bars.push({
-                time: currentTime,
-                open: open,
-                high: Math.max(high, open, close),
-                low: Math.min(low, open, close),
-                close: close,
-                volume: volume
-            });
+    fetch(url)
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+        return response.json();
+      })
+      .then((data) => {
+        const rawBars = Array.isArray(data) ? data : data.bars || data.data || [];
 
-            lastClose = close;
-            currentTime += resolutionMinutes * 60 * 1000;
+        const bars = rawBars
+          .map((bar) => ({
+            time: new Date(bar.time || bar.timestamp || bar.t).getTime(),
+            open: Number(bar.open ?? bar.o),
+            high: Number(bar.high ?? bar.h),
+            low: Number(bar.low ?? bar.l),
+            close: Number(bar.close ?? bar.c),
+            volume: Number(bar.volume ?? bar.v ?? 0),
+          }))
+          .filter((bar) => !isNaN(bar.time) && !isNaN(bar.close))
+          .sort((a, b) => a.time - b.time);
+
+        if (bars.length > 0) {
+          lastBarsCache.set(ticker, { ...bars[bars.length - 1] });
         }
 
-        if (bars.length === 0) {
-            onHistoryCallback([], { noData: true });
-        } else {
-            onHistoryCallback(bars, { noData: false });
-        }
-    }
+        onResult(bars, { noData: bars.length === 0 });
+      })
+      .catch((err) => {
+        console.error(`[CustomDatafeed] getBars error for ${ticker}:`, err);
+        onError('Failed to fetch historical data');
+      });
+  }
 
-    // Subscribe to real-time updates
-    subscribeBars(symbolInfo, resolution, onRealtimeCallback, subscriberUID, onResetCacheNeededCallback) {
-        console.log('[CustomDatafeed]: subscribeBars called', {
-            symbol: symbolInfo.name,
-            resolution,
-            subscriberUID
-        });
+  subscribeBars(symbolInfo, resolution, onRealtimeCallback, subscriberUID) {
+    const ticker = symbolInfo.ticker;
+    const lastBar = lastBarsCache.get(ticker) || null;
+    subscribeOnStream(symbolInfo, resolution, onRealtimeCallback, subscriberUID, lastBar);
+  }
 
-        // For demo purposes, generate random updates every 5 seconds
-        // Replace this with actual WebSocket or SSE connection to your backend
-        const intervalId = setInterval(() => {
-            const lastBar = {
-                time: Date.now(),
-                open: 100 + Math.random() * 10,
-                high: 105 + Math.random() * 10,
-                low: 95 + Math.random() * 10,
-                close: 100 + Math.random() * 10,
-                volume: Math.floor(Math.random() * 1000000) + 100000
-            };
-            onRealtimeCallback(lastBar);
-        }, 5000);
-
-        // Store the interval ID for cleanup
-        window.tvDatafeedIntervals = window.tvDatafeedIntervals || {};
-        window.tvDatafeedIntervals[subscriberUID] = intervalId;
-    }
-
-    // Unsubscribe from real-time updates
-    unsubscribeBars(subscriberUID) {
-        console.log('[CustomDatafeed]: unsubscribeBars called', { subscriberUID });
-
-        if (window.tvDatafeedIntervals && window.tvDatafeedIntervals[subscriberUID]) {
-            clearInterval(window.tvDatafeedIntervals[subscriberUID]);
-            delete window.tvDatafeedIntervals[subscriberUID];
-        }
-    }
-
-    // Helper method to convert resolution to minutes
-    getResolutionInMinutes(resolution) {
-        const resolutionMap = {
-            '1': 1,
-            '5': 5,
-            '15': 15,
-            '30': 30,
-            '60': 60,
-            '120': 120,
-            '240': 240,
-            'D': 1440,
-            'W': 10080,
-            'M': 43200
-        };
-        return resolutionMap[resolution] || 60;
-    }
-
-    // Calculate history depth (optional but recommended)
-    calculateHistoryDepth(resolution, resolutionBack, intervalBack) {
-        // This helps TradingView understand how much data to request
-        return undefined; // Let TradingView decide
-    }
-
-    // Get marks (optional)
-    getMarks(symbolInfo, from, to, onDataCallback, resolution) {
-        // Can be used to show special marks on the chart
-        onDataCallback([]);
-    }
-
-    // Get time scale marks (optional)
-    getTimescaleMarks(symbolInfo, from, to, onDataCallback, resolution) {
-        // Can be used to show special time marks
-        onDataCallback([]);
-    }
-
-    // Get server time (optional but recommended for real-time data)
-    getServerTime(callback) {
-        callback(Math.floor(Date.now() / 1000));
-    }
+  unsubscribeBars(subscriberUID) {
+    unsubscribeFromStream(subscriberUID);
+  }
 }
 
 export default CustomDatafeed;
