@@ -66,13 +66,28 @@ function getBackoffDelay(attempt) {
   return Math.min(1000 * Math.pow(2, attempt), 30000);
 }
 
+let tradeCount = 0;
+
 function handleTradeMessage(data) {
   const { symbol, price, size, timestamp } = data;
   const tradeTimeMs = new Date(timestamp).getTime();
+  tradeCount++;
 
+  // Log first 5 trades and then every 100th
+  if (tradeCount <= 5 || tradeCount % 100 === 0) {
+    console.log(`[Streaming] Trade #${tradeCount}: ${symbol} $${price} x${size}`);
+  }
+
+  let matched = false;
   for (const [channelKey, sub] of channelToSubscription) {
     if (sub.symbol !== symbol) continue;
-    if (!sub.lastBar) continue;
+    if (!sub.lastBar) {
+      if (tradeCount <= 5) {
+        console.warn(`[Streaming] Skipping trade for ${symbol} - no lastBar yet (channel: ${channelKey})`);
+      }
+      continue;
+    }
+    matched = true;
 
     const nextBarTime = getNextBarTime(sub.lastBar.time, sub.resolution);
 
@@ -102,7 +117,14 @@ function handleTradeMessage(data) {
     sub.lastBar = updatedBar;
     pendingUpdates.set(channelKey, updatedBar);
   }
+
+  if (!matched && tradeCount <= 10) {
+    console.warn(`[Streaming] Trade for ${symbol} did not match any subscription. Active channels:`,
+      [...channelToSubscription.keys()]);
+  }
 }
+
+let msgCount = 0;
 
 function onMessage(event) {
   let msg;
@@ -110,6 +132,12 @@ function onMessage(event) {
     msg = JSON.parse(event.data);
   } catch {
     return;
+  }
+
+  msgCount++;
+  // Log first 5 messages and then every 500th
+  if (msgCount <= 5 || msgCount % 500 === 0) {
+    console.log(`[Streaming] WS message #${msgCount}: type=${msg.type}`);
   }
 
   if (msg.type === 'trade' && msg.data) {
@@ -186,10 +214,13 @@ function ensureSocket() {
 
 function sendSubscribe(symbol) {
   if (socket && socket.readyState === WebSocket.OPEN) {
+    console.log(`[Streaming] Sending subscribe for ${symbol}`);
     socket.send(JSON.stringify({
       type: 'subscribe',
       symbols: [symbol],
     }));
+  } else {
+    console.warn(`[Streaming] Cannot subscribe to ${symbol} - socket not open (state=${socket?.readyState})`);
   }
 }
 
