@@ -132,7 +132,10 @@ axiosInstance.interceptors.response.use(
             switch (error.response.status) {
                 case 403:
                     if (error.response.data?.detail?.includes('subscription')) {
-                        window.location.href = '/pricing';
+                        // Prevent redirect loop: only redirect if not already on pricing
+                        if (!window.location.pathname.startsWith('/pricing')) {
+                            window.location.href = '/pricing?source=subscription';
+                        }
                     }
                     break;
                 case 500:

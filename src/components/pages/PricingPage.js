@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Navigate } from 'react-router-dom';
 import {
   Box,
   Button,
@@ -922,23 +922,15 @@ const PricingPage = () => {
     lg: { py: 8, px: 4 }     // On desktop, use more vertical padding
   });
   
-  // Check for authentication on mount
-  useEffect(() => {
-    const queryParams = new URLSearchParams(window.location.search);
-    const fromAuth = queryParams.get('source') === 'auth';
-    const isRegister = queryParams.get('register') === 'true';
-    
-    // If user is authenticated and NOT coming from auth page, redirect to dashboard
-    if (isAuthenticated && !fromAuth) {
-      logger.info('User is already authenticated, redirecting to dashboard');
-      navigate('/dashboard');
-    }
-    
-    // Cleanup
-    return () => {
-      componentMounted.current = false;
-    };
-  }, [isAuthenticated, navigate]);
+  // Redirect authenticated users to dashboard (unless they arrived here for a reason)
+  const queryParams = new URLSearchParams(window.location.search);
+  const fromAuth = queryParams.get('source') === 'auth';
+  const fromSubscription = queryParams.get('source') === 'subscription';
+  const isRegister = queryParams.get('register') === 'true';
+
+  if (isAuthenticated && !fromAuth && !fromSubscription && !isRegister) {
+    return <Navigate to="/dashboard" replace />;
+  }
   
   // Handle plan selection
   const handleSelectPlan = (tier, interval) => {

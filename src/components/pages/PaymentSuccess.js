@@ -139,8 +139,8 @@ const PaymentSuccess = () => {
   // Handle authentication redirect
   useEffect(() => {
     if (isAuthenticated) {
-      logger.info('User already authenticated, redirecting to Trading Lab');
-      navigate('/trading-lab/payment-success-loading', { replace: true });
+      logger.info('User already authenticated, redirecting to dashboard');
+      navigate('/dashboard', { replace: true });
     }
   }, [isAuthenticated, navigate]);
 
@@ -242,7 +242,7 @@ const PaymentSuccess = () => {
               if (mounted.current) {
                 // Clear auth redirect flag right before navigation
                 sessionStorage.removeItem('auth_redirect_in_progress');
-                navigate('/trading-lab/payment-success-loading', { replace: true });
+                navigate('/dashboard', { replace: true });
               }
             }, AUTO_REDIRECT_DELAY);
           
@@ -338,7 +338,7 @@ useEffect(() => {
               
               redirectTimeout.current = setTimeout(() => {
                 if (mounted.current) {
-                  navigate('/trading-lab/payment-success-loading', { replace: true });
+                  navigate('/dashboard', { replace: true });
                 }
               }, AUTO_REDIRECT_DELAY);
               return;
