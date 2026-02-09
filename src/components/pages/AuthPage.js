@@ -93,12 +93,8 @@ const AuthPage = () => {
     }
   }, [location, navigate]);
 
-  // Check if user is already authenticated
-  useEffect(() => {
-    if (isAuthenticated) {
-      navigate('/dashboard', { replace: true });
-    }
-  }, [isAuthenticated, navigate]);
+  // Auth redirect is handled by WithoutAuth wrapper in App.js
+  // Do NOT add a duplicate navigate('/dashboard') here — it causes navigation loops
 
 
   // Form validation

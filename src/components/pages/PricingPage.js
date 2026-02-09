@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate, Navigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import {
   Box,
   Button,
@@ -922,15 +922,8 @@ const PricingPage = () => {
     lg: { py: 8, px: 4 }     // On desktop, use more vertical padding
   });
   
-  // Redirect authenticated users to dashboard (unless they arrived here for a reason)
-  const queryParams = new URLSearchParams(window.location.search);
-  const fromAuth = queryParams.get('source') === 'auth';
-  const fromSubscription = queryParams.get('source') === 'subscription';
-  const isRegister = queryParams.get('register') === 'true';
-
-  if (isAuthenticated && !fromAuth && !fromSubscription && !isRegister) {
-    return <Navigate to="/dashboard" replace />;
-  }
+  // NOTE: No auth redirect here. PricingPage is public and accessible to all users.
+  // Redirecting authenticated users caused infinite navigation loops.
   
   // Handle plan selection
   const handleSelectPlan = (tier, interval) => {
