@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Navigate } from 'react-router-dom';
 import {
   Box,
   Button,
@@ -938,10 +938,9 @@ const PricingPage = () => {
     lg: { py: 8, px: 4 }     // On desktop, use more vertical padding
   });
   
-  // Check for authentication on mount and capture source param
+  // Capture source params for contextual messaging
   useEffect(() => {
     const queryParams = new URLSearchParams(window.location.search);
-    const fromAuth = queryParams.get('source') === 'auth';
     const source = queryParams.get('source');
 
     // Set entry source for contextual messaging
@@ -963,17 +962,22 @@ const PricingPage = () => {
       }
     }
 
-    // If user is authenticated and NOT coming from auth page, redirect to dashboard
-    if (isAuthenticated && !fromAuth) {
-      logger.info('User is already authenticated, redirecting to dashboard');
-      navigate('/dashboard');
-    }
-
     // Cleanup
     return () => {
       componentMounted.current = false;
     };
-  }, [isAuthenticated, navigate]);
+  }, []);
+
+  // Redirect authenticated users to dashboard (unless they arrived here for a reason)
+  // Uses <Navigate> component instead of navigate() in useEffect to prevent infinite re-render loops
+  const queryParams = new URLSearchParams(window.location.search);
+  const source = queryParams.get('source');
+  const allowedSources = ['auth', 'subscription', 'marketplace', 'creator', 'strategy_subscribe'];
+  const isRegister = queryParams.get('register') === 'true';
+
+  if (isAuthenticated && !allowedSources.includes(source) && !isRegister) {
+    return <Navigate to="/dashboard" replace />;
+  }
   
   // Handle plan selection
   const handleSelectPlan = (tier, interval) => {
