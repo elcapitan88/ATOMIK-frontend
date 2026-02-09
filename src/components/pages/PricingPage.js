@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { useNavigate, Navigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import {
   Box,
   Button,
@@ -968,16 +968,8 @@ const PricingPage = () => {
     };
   }, []);
 
-  // Redirect authenticated users to dashboard (unless they arrived here for a reason)
-  // Uses <Navigate> component instead of navigate() in useEffect to prevent infinite re-render loops
-  const queryParams = new URLSearchParams(window.location.search);
-  const source = queryParams.get('source');
-  const allowedSources = ['auth', 'subscription', 'marketplace', 'creator', 'strategy_subscribe'];
-  const isRegister = queryParams.get('register') === 'true';
-
-  if (isAuthenticated && !allowedSources.includes(source) && !isRegister) {
-    return <Navigate to="/dashboard" replace />;
-  }
+  // NOTE: No auth redirect here. PricingPage is public and accessible to all users.
+  // Redirecting authenticated users caused infinite navigation loops.
   
   // Handle plan selection
   const handleSelectPlan = (tier, interval) => {
