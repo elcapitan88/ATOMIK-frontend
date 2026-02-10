@@ -21,11 +21,12 @@ import {
   Badge
 } from '@chakra-ui/react';
 import { MoreVertical, Settings, Trash2, SlidersHorizontal, Zap, Activity } from 'lucide-react';
-const WebhooksView = lazy(() => import('@/components/features/trading/WebhooksView'));
 import ActivateStrategyModal from './ActivateStrategyModal';
 import DeleteStrategy from './DeleteStrategy';
 import { useUnifiedStrategies as useStrategies } from '@/hooks/useUnifiedStrategies';
 import { strategyCodesApi } from '@/services/api/strategies/strategyCodesApi';
+
+const WebhooksView = lazy(() => import('@/components/features/trading/WebhooksView'));
 
 // Helper function to get broker display info
 const getBrokerInfo = (brokerId) => {

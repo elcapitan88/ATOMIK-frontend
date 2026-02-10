@@ -8,8 +8,7 @@ import {
     useToast,
     Alert,
     AlertIcon,
-    Button,
-    useBreakpointValue
+    Button
 } from '@chakra-ui/react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -24,7 +23,6 @@ import MaintenanceBanner from '@/components/common/MaintenanceBanner';
 import PaymentStatusWarning from '@/components/subscription/PaymentStatusWarning';
 import ARIAAssistant from '@/components/ARIA/ARIAAssistant';
 import useChartTrading from '@/hooks/useChartTrading';
-import { getContractTicker } from '@/utils/formatting/tickerUtils';
 import logger from '@/utils/logger';
 import useMultiAccountTrading from '@/hooks/useMultiAccountTrading';
 import useAggregatedPositions from '@/hooks/useAggregatedPositions';
@@ -113,36 +111,6 @@ const DashboardContent = () => {
     // Chart trading state
     const [activeChart, setActiveChart] = useState(null);
     const [chartSymbol, setChartSymbol] = useState('NQ');
-    const [activeAccount, setActiveAccount] = useState(null);
-    const [orderControlState, setOrderControlState] = useState({
-        quantity: 1,
-        orderType: 'MARKET',
-        selectionMode: 'single',
-        groupInfo: null,
-        selectedAccounts: [],
-        selectedTicker: '',
-    });
-
-    // Auto-set activeAccount when OrderControl accounts change
-    useEffect(() => {
-        if (orderControlState.selectedAccounts.length > 0 && !activeAccount) {
-            // Find the full account info from dashboardData
-            const acctId = orderControlState.selectedAccounts[0];
-            const fullAcct = dashboardData.accounts?.find(a => a.account_id === acctId);
-            if (fullAcct) {
-                setActiveAccount({
-                    accountId: fullAcct.account_id,
-                    brokerId: fullAcct.broker_id,
-                    nickname: fullAcct.nickname || fullAcct.name,
-                });
-            } else {
-                // Fallback — set with just the ID so chart menu works
-                setActiveAccount({ accountId: acctId });
-            }
-        } else if (orderControlState.selectedAccounts.length === 0) {
-            setActiveAccount(null);
-        }
-    }, [orderControlState.selectedAccounts, dashboardData.accounts]);
 
     // Cache reference
     const dataCache = useRef({
@@ -157,9 +125,6 @@ const DashboardContent = () => {
     const { isAuthenticated, user, isLoading: authLoading, refreshAuthState } = useAuth();
     const toast = useToast();
     const { hasMemberChat, hasAriaAssistant } = useFeatureFlags();
-
-    // Responsive breakpoints
-    const isMobile = useBreakpointValue({ base: true, md: false });
 
     // Multi-account trading hooks
     const { getConnectionState: wsGetConnectionState } = useWebSocketContext();
@@ -321,19 +286,6 @@ const DashboardContent = () => {
     }, [isAuthenticated, navigate]);
 
 
-    const handleAccountSelect = useCallback((accountInfo) => {
-        // Support both old format (just accountId string) and new format (object)
-        if (typeof accountInfo === 'string') {
-            setDashboardData(prev => ({ ...prev, activeAccountId: accountInfo }));
-            return;
-        }
-        setActiveAccount(accountInfo);
-        setDashboardData(prev => ({
-            ...prev,
-            activeAccountId: accountInfo.accountId
-        }));
-    }, []);
-
     // Chart line callbacks
     const chartCallbacks = useMemo(() => ({
         onClosePosition: async (positionId, accountId) => {
@@ -380,31 +332,15 @@ const DashboardContent = () => {
     });
 
     // Handle chart right-click order placement
-    // Uses multi-account trading when accounts are toggled active in the panel
+    // Dispatches to all active manual accounts via multi-account trading
     const handleChartOrder = useCallback(async (order) => {
         try {
             const { activeAccounts, placeMultiAccountOrder } = multiAccountTrading;
 
-            // If multi-account panel has active accounts, use that
-            if (activeAccounts.length > 0) {
-                const symbol = chartSymbol || 'NQ';
-                await placeMultiAccountOrder({
-                    side: order.side,
-                    type: order.type,
-                    price: (order.type === 'LIMIT' || order.type === 'STOP_LIMIT') ? order.price : undefined,
-                    stopPrice: (order.type === 'STOP' || order.type === 'STOP_LIMIT') ? order.price : undefined,
-                    symbol,
-                });
-                return;
-            }
-
-            // Fallback: use old OrderControl flow
-            const { selectedAccounts } = orderControlState;
-
-            if (!selectedAccounts || selectedAccounts.length === 0) {
+            if (activeAccounts.length === 0) {
                 toast({
                     title: 'No Active Accounts',
-                    description: 'Toggle at least one account ON in the Accounts panel, or select one in Order Control.',
+                    description: 'Toggle at least one account ON in the Accounts panel.',
                     status: 'warning',
                     duration: 4000,
                     isClosable: true,
@@ -412,29 +348,14 @@ const DashboardContent = () => {
                 return;
             }
 
-            const symbol = getContractTicker(chartSymbol || orderControlState.selectedTicker);
-
-            if (order.isGroupOrder && order.groupInfo?.id) {
-                await axiosInstance.post(`/api/v1/strategies/${order.groupInfo.id}/execute`, {
-                    action: order.side.toUpperCase(),
-                    order_type: order.type,
-                    price: (order.type === 'LIMIT' || order.type === 'STOP_LIMIT') ? order.price : undefined,
-                    stop_price: (order.type === 'STOP' || order.type === 'STOP_LIMIT') ? order.price : undefined,
-                    time_in_force: 'GTC',
-                });
-            } else if (selectedAccounts[0]) {
-                await axiosInstance.post(`/api/v1/brokers/accounts/${selectedAccounts[0]}/discretionary/orders`, {
-                    symbol,
-                    side: order.side,
-                    type: order.type,
-                    quantity: order.quantity,
-                    price: (order.type === 'LIMIT' || order.type === 'STOP_LIMIT') ? order.price : undefined,
-                    stop_price: (order.type === 'STOP' || order.type === 'STOP_LIMIT') ? order.price : undefined,
-                    time_in_force: 'GTC',
-                });
-            }
-
-            toast({ title: `${order.side.toUpperCase()} ${order.type} placed`, status: 'success', duration: 2000 });
+            const symbol = chartSymbol || 'NQ';
+            await placeMultiAccountOrder({
+                side: order.side,
+                type: order.type,
+                price: (order.type === 'LIMIT' || order.type === 'STOP_LIMIT') ? order.price : undefined,
+                stopPrice: (order.type === 'STOP' || order.type === 'STOP_LIMIT') ? order.price : undefined,
+                symbol,
+            });
         } catch (err) {
             toast({
                 title: 'Order failed',
@@ -443,7 +364,7 @@ const DashboardContent = () => {
                 duration: 4000,
             });
         }
-    }, [multiAccountTrading, orderControlState, chartSymbol, toast]);
+    }, [multiAccountTrading, chartSymbol, toast]);
 
     // Loading state - wait for both auth and dashboard data
     if (isLoading || authLoading || !user) {
@@ -503,10 +424,10 @@ const DashboardContent = () => {
                                                     onWidgetReady={(w, c) => setActiveChart(c)}
                                                     onSymbolChanged={setChartSymbol}
                                                     onChartOrder={handleChartOrder}
-                                                    activeAccount={multiAccountTrading.activeCount > 0 ? { accountId: 'multi' } : activeAccount}
-                                                    currentQuantity={multiAccountTrading.activeCount > 0 ? multiAccountTrading.totalContracts : orderControlState.quantity}
-                                                    selectionMode={multiAccountTrading.activeCount > 0 ? 'multi' : orderControlState.selectionMode}
-                                                    groupInfo={multiAccountTrading.activeCount > 0 ? { groupName: `${multiAccountTrading.totalContracts} cts / ${multiAccountTrading.activeCount} acct${multiAccountTrading.activeCount !== 1 ? 's' : ''}` } : orderControlState.groupInfo}
+                                                    activeAccount={multiAccountTrading.activeCount > 0 ? { accountId: 'multi' } : null}
+                                                    currentQuantity={multiAccountTrading.totalContracts}
+                                                    selectionMode={multiAccountTrading.activeCount > 0 ? 'multi' : 'single'}
+                                                    groupInfo={multiAccountTrading.activeCount > 0 ? { groupName: `${multiAccountTrading.totalContracts} cts / ${multiAccountTrading.activeCount} acct${multiAccountTrading.activeCount !== 1 ? 's' : ''}` } : null}
                                                 />
                                             </Suspense>
                                         </ErrorBoundary>
