@@ -100,10 +100,10 @@ const QuickOrderBar = ({ chartSymbol, multiAccountTrading }) => {
 
   return (
     <Box
-      bg="rgba(20, 22, 28, 0.9)"
-      borderTop="1px solid"
-      borderBottom="1px solid"
-      borderColor="whiteAlpha.100"
+      bg="whiteAlpha.100"
+      borderRadius="xl"
+      borderWidth="1px"
+      borderColor="whiteAlpha.200"
       px={3}
       py={1.5}
     >
