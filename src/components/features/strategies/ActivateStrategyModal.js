@@ -1095,18 +1095,15 @@ const ActivateStrategyModal = ({
 
             <Button
               width="full"
-              bg="linear-gradient(135deg, rgba(0, 198, 224, 0.8), rgba(0, 140, 255, 0.8))"
-              color="white"
-              size="lg"
+              size="md"
+              variant="outline"
+              borderColor="whiteAlpha.300"
+              color="whiteAlpha.800"
+              leftIcon={<Plus size={14} />}
               onClick={handleSubmit}
               isLoading={isCreating || isUpdating}
               loadingText={strategy ? "Updating..." : "Activating..."}
-              _hover={{
-                bg: "linear-gradient(135deg, rgba(0, 198, 224, 1), rgba(0, 140, 255, 1))",
-                transform: 'translateY(-2px)',
-                boxShadow: 'lg'
-              }}
-              _active={{ transform: 'translateY(0)' }}
+              _hover={{ bg: 'whiteAlpha.100', borderColor: 'cyan.400', color: 'cyan.400' }}
               borderRadius="lg"
             >
               {strategy ? 'Update Strategy' : 'Activate Strategy'}

@@ -20,7 +20,7 @@ import {
   useToast,
   Badge
 } from '@chakra-ui/react';
-import { MoreVertical, Settings, Trash2, SlidersHorizontal, Zap, Activity, Plus } from 'lucide-react';
+import { MoreVertical, Settings, Trash2, SlidersHorizontal, Zap, Activity } from 'lucide-react';
 import ActivateStrategyModal from './ActivateStrategyModal';
 import DeleteStrategy from './DeleteStrategy';
 import { useUnifiedStrategies as useStrategies } from '@/hooks/useUnifiedStrategies';
@@ -300,20 +300,21 @@ const ActivateStrategies = () => {
         {/* Strategies View (existing content) */}
         {panelView === 'strategies' && (
         <>
-        <Box>
+        <Flex justify="space-between" align="center">
           <Button
-            w="100%"
-            size="sm"
-            variant="outline"
-            borderColor="rgba(0, 198, 224, 0.3)"
-            color="cyan.300"
-            leftIcon={<Plus size={14} />}
+            bg="transparent"
+            color="white"
+            fontWeight="medium"
+            borderWidth={1}
+            borderColor="rgba(0, 198, 224, 1)"
             onClick={onActivateOpen}
-            _hover={{ bg: 'rgba(0, 198, 224, 0.08)', borderColor: 'cyan.400', color: 'cyan.200' }}
+            _hover={{
+              bg: 'whiteAlpha.100'
+            }}
           >
             Activate Strategy
           </Button>
-        </Box>
+        </Flex>
     
         {isLoading ? (
           <Flex justify="center" align="center" height="200px">
