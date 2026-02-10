@@ -18,7 +18,7 @@ import axiosInstance from '@/services/axiosConfig';
 import useFeatureFlags from '@/hooks/useFeatureFlags';
 import AdminService from '@/services/api/admin';
 import Menu from '../layout/Sidebar/Menu';
-import TradingViewWidget from '../features/trading/TVAdvancedChart';
+import TradingViewWidget from '../features/trading/TradingViewWidget';
 import MemberChatMenu from '../chat/MemberChatMenu';
 import MemberChatComponent from '../chat/MemberChat';
 import MaintenanceBanner from '@/components/common/MaintenanceBanner';
