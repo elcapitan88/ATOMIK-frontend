@@ -20,7 +20,7 @@ import {
   useToast,
   Badge
 } from '@chakra-ui/react';
-import { MoreVertical, Settings, Trash2, SlidersHorizontal, Zap, Activity } from 'lucide-react';
+import { MoreVertical, Settings, Trash2, SlidersHorizontal, Zap, Activity, Plus } from 'lucide-react';
 import ActivateStrategyModal from './ActivateStrategyModal';
 import DeleteStrategy from './DeleteStrategy';
 import { useUnifiedStrategies as useStrategies } from '@/hooks/useUnifiedStrategies';
@@ -229,10 +229,10 @@ const ActivateStrategies = () => {
           }}
         />
         <MenuList
-          bg="rgba(255, 255, 255, 0.1)"
-          backdropFilter="blur(10px)"
-          borderColor="rgba(255, 255, 255, 0.18)"
-          boxShadow="0 8px 32px 0 rgba(0, 198, 224, 0.37)"
+          bg="rgba(0, 0, 0, 0.85)"
+          backdropFilter="blur(20px)"
+          borderColor="rgba(255, 255, 255, 0.1)"
+          boxShadow="0 4px 20px rgba(0, 0, 0, 0.4)"
           borderRadius="xl"
         >
           {sortOptions.map((option) => (
@@ -300,21 +300,20 @@ const ActivateStrategies = () => {
         {/* Strategies View (existing content) */}
         {panelView === 'strategies' && (
         <>
-        <Flex justify="space-between" align="center">
+        <Box>
           <Button
-            bg="transparent"
-            color="white"
-            fontWeight="medium"
-            borderWidth={1}
-            borderColor="rgba(0, 198, 224, 1)"
+            w="100%"
+            size="sm"
+            variant="outline"
+            borderColor="whiteAlpha.300"
+            color="whiteAlpha.800"
+            leftIcon={<Plus size={14} />}
             onClick={onActivateOpen}
-            _hover={{
-              bg: 'whiteAlpha.100'
-            }}
+            _hover={{ bg: 'whiteAlpha.100', borderColor: 'cyan.400', color: 'cyan.400' }}
           >
             Activate Strategy
           </Button>
-        </Flex>
+        </Box>
     
         {isLoading ? (
           <Flex justify="center" align="center" height="200px">
