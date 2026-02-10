@@ -16,7 +16,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import { ChatProvider, useChat } from '@/contexts/ChatContext';
 import axiosInstance from '@/services/axiosConfig';
 import useFeatureFlags from '@/hooks/useFeatureFlags';
-import AdminService from '@/services/api/admin';
 import Menu from '../layout/Sidebar/Menu';
 import TradingViewWidget from '../features/trading/TVAdvancedChart';
 import MemberChatMenu from '../chat/MemberChatMenu';
@@ -25,8 +24,6 @@ import MaintenanceBanner from '@/components/common/MaintenanceBanner';
 import PaymentStatusWarning from '@/components/subscription/PaymentStatusWarning';
 import ARIAAssistant from '@/components/ARIA/ARIAAssistant';
 import useChartTrading from '@/hooks/useChartTrading';
-import useWebSocketPositions from '@/services/websocket-proxy/hooks/useWebSocketPositions';
-import useWebSocketOrders from '@/services/websocket-proxy/hooks/useWebSocketOrders';
 import { getContractTicker } from '@/utils/formatting/tickerUtils';
 import logger from '@/utils/logger';
 import useMultiAccountTrading from '@/hooks/useMultiAccountTrading';
@@ -34,13 +31,11 @@ import useAggregatedPositions from '@/hooks/useAggregatedPositions';
 import { useWebSocketContext } from '@/services/websocket-proxy/contexts/WebSocketContext';
 
 // Lazy loaded components
-const Management = lazy(() => import('../features/trading/Management'));
-const OrderControl = lazy(() => import('../features/trading/OrderControl'));
 const StrategyGroups = lazy(() => import('../features/strategies/ActivateStrategies'));
-const TradesTable = lazy(() => import('../features/trading/TradesTable'));
 const MarketplacePage = lazy(() => import('./MarketplacePage'));
 const TradingAccountsPanel = lazy(() => import('../features/trading/TradingAccountsPanel'));
 const QuickOrderBar = lazy(() => import('../features/trading/QuickOrderBar'));
+const TradingPanel = lazy(() => import('../features/trading/TradingPanel'));
 
 // Loading Spinner Component
 const LoadingSpinner = () => (
@@ -339,16 +334,6 @@ const DashboardContent = () => {
         }));
     }, []);
 
-    // WebSocket hooks for active account positions & orders
-    const { positions } = useWebSocketPositions(
-        activeAccount?.brokerId,
-        activeAccount?.accountId
-    );
-    const { orders, cancelOrder: wsCancelOrder } = useWebSocketOrders(
-        activeAccount?.brokerId,
-        activeAccount?.accountId
-    );
-
     // Chart line callbacks
     const chartCallbacks = useMemo(() => ({
         onClosePosition: async (positionId, accountId) => {
@@ -539,48 +524,18 @@ const DashboardContent = () => {
                                         </ErrorBoundary>
                                     </Box>
 
-                                    {/* Bottom section */}
-                                    <Flex
-                                        mt={2}
-                                        gap={4}
-                                        flex="1"
-                                        minH="0"
-                                        direction={{ base: "column", xl: "row" }}
-                                    >
-                                        {/* TradesTable container */}
-                                        <Box
-                                            flex="1"
-                                            borderRadius="xl"
-                                            overflow="hidden"
-                                            mb={{ base: 4, xl: 0 }}
-                                        >
-                                            <ErrorBoundary>
-                                                <Suspense fallback={<LoadingSpinner />}>
-                                                    <TradesTable
-                                                        accounts={dashboardData.accounts}
-                                                        activeAccountId={dashboardData.activeAccountId}
-                                                    />
-                                                </Suspense>
-                                            </ErrorBoundary>
-                                        </Box>
-
-                                        {/* OrderControl container */}
-                                        <Box
-                                            flex={{ base: "1", xl: "0 0 400px" }}
-                                            bg="whiteAlpha.100"
-                                            borderRadius="xl"
-                                        >
-                                            <ErrorBoundary>
-                                                <Suspense fallback={<LoadingSpinner />}>
-                                                    <OrderControl
-                                                        accounts={dashboardData.accounts}
-                                                        activeAccountId={dashboardData.activeAccountId}
-                                                        onStateChange={setOrderControlState}
-                                                    />
-                                                </Suspense>
-                                            </ErrorBoundary>
-                                        </Box>
-                                    </Flex>
+                                    {/* Bottom section — TradingPanel (Positions, Orders, History) */}
+                                    <Box mt={2} flex="1" minH="0">
+                                        <ErrorBoundary>
+                                            <Suspense fallback={<LoadingSpinner />}>
+                                                <TradingPanel
+                                                    positions={aggregatedPositions}
+                                                    orders={aggregatedOrders}
+                                                    chartSymbol={chartSymbol}
+                                                />
+                                            </Suspense>
+                                        </ErrorBoundary>
+                                    </Box>
                                 </Flex>
 
                                 {/* Right Column */}

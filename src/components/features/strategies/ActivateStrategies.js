@@ -1,8 +1,9 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, lazy, Suspense } from 'react';
 import {
   Box,
   Flex,
   Button,
+  ButtonGroup,
   VStack,
   Switch,
   Spinner,
@@ -19,7 +20,8 @@ import {
   useToast,
   Badge
 } from '@chakra-ui/react';
-import { MoreVertical, Settings, Trash2, SlidersHorizontal } from 'lucide-react';
+import { MoreVertical, Settings, Trash2, SlidersHorizontal, Zap, Activity } from 'lucide-react';
+const WebhooksView = lazy(() => import('@/components/features/trading/WebhooksView'));
 import ActivateStrategyModal from './ActivateStrategyModal';
 import DeleteStrategy from './DeleteStrategy';
 import { useUnifiedStrategies as useStrategies } from '@/hooks/useUnifiedStrategies';
@@ -248,9 +250,55 @@ const ActivateStrategies = () => {
     );
   };
 
+  const [panelView, setPanelView] = useState('strategies');
+
   return (
     <Box h="full" bg="whiteAlpha.100" borderRadius="xl" borderWidth="1px" borderColor="whiteAlpha.200" boxShadow="lg" overflow="hidden">
       <VStack p={4} color="white" h="full" spacing={4} align="stretch">
+        {/* Tab Toggle: Strategies | Webhooks */}
+        <Flex justify="space-between" align="center">
+          <ButtonGroup size="xs" isAttached variant="ghost" spacing={0}>
+            <Button
+              onClick={() => setPanelView('strategies')}
+              bg={panelView === 'strategies' ? 'whiteAlpha.200' : 'transparent'}
+              color={panelView === 'strategies' ? 'white' : 'whiteAlpha.600'}
+              _hover={{ bg: 'whiteAlpha.100', color: 'white' }}
+              leftIcon={<Activity size={13} />}
+              fontWeight={panelView === 'strategies' ? 'semibold' : 'normal'}
+              borderRadius="md"
+              px={3}
+            >
+              Strategies
+            </Button>
+            <Button
+              onClick={() => setPanelView('webhooks')}
+              bg={panelView === 'webhooks' ? 'whiteAlpha.200' : 'transparent'}
+              color={panelView === 'webhooks' ? 'white' : 'whiteAlpha.600'}
+              _hover={{ bg: 'whiteAlpha.100', color: 'white' }}
+              leftIcon={<Zap size={13} />}
+              fontWeight={panelView === 'webhooks' ? 'semibold' : 'normal'}
+              borderRadius="md"
+              px={3}
+            >
+              Webhooks
+            </Button>
+          </ButtonGroup>
+
+          {panelView === 'strategies' && <SortButton onSort={handleSort} />}
+        </Flex>
+
+        {/* Webhooks View */}
+        {panelView === 'webhooks' && (
+          <Box flex="1" overflow="auto">
+            <Suspense fallback={<Flex justify="center" py={6}><Spinner size="md" color="cyan.400" /></Flex>}>
+              <WebhooksView />
+            </Suspense>
+          </Box>
+        )}
+
+        {/* Strategies View (existing content) */}
+        {panelView === 'strategies' && (
+        <>
         <Flex justify="space-between" align="center">
           <Button
             bg="transparent"
@@ -265,8 +313,6 @@ const ActivateStrategies = () => {
           >
             Activate Strategy
           </Button>
-
-          <SortButton onSort={handleSort} />
         </Flex>
     
         {isLoading ? (
@@ -475,8 +521,10 @@ const ActivateStrategies = () => {
             )}
           </VStack>
         )}
+        </>
+        )}
       </VStack>
-  
+
       <ActivateStrategyModal
         isOpen={isActivateOpen}
         onClose={() => {
