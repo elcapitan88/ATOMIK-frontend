@@ -74,7 +74,9 @@ const useChartTrading = ({
 
     // Create or update position lines
     matchingPositions.forEach(async (pos) => {
-      const id = pos.positionId;
+      // Use accountId-prefixed key for uniqueness across accounts
+      const acctPrefix = pos._accountId || pos.accountId || '';
+      const id = acctPrefix ? `${acctPrefix}-${pos.positionId}` : pos.positionId;
       currentPositionIds.add(id);
 
       const isLong = pos.side === 'LONG' || (pos.netPos && pos.netPos > 0);
@@ -82,8 +84,17 @@ const useChartTrading = ({
       const sideLabel = isLong ? 'LONG' : 'SHORT';
       const qty = pos.quantity || Math.abs(pos.netPos || 0);
       const displaySym = normalizeSymbol(pos.symbol);
+      const acctLabel = pos._accountNickname || '';
       const pnl = pos.unrealizedPnL || 0;
       const pnlStr = pnl >= 0 ? `+$${pnl.toFixed(2)}` : `-$${Math.abs(pnl).toFixed(2)}`;
+
+      const lineText = acctLabel
+        ? `${sideLabel} ${qty} ${displaySym} [${acctLabel}]`
+        : `${sideLabel} ${qty} ${displaySym}`;
+      const tooltipText = acctLabel
+        ? `${acctLabel} | P&L: ${pnlStr}`
+        : `P&L: ${pnlStr}`;
+      const posAccountId = pos._accountId || pos.accountId;
 
       if (positionLinesRef.current.has(id)) {
         // Update existing line
@@ -91,8 +102,8 @@ const useChartTrading = ({
           const line = positionLinesRef.current.get(id);
           line
             .setPrice(pos.avgPrice || 0)
-            .setText(`${sideLabel} ${qty} ${displaySym}`)
-            .setTooltip(`P&L: ${pnlStr}`)
+            .setText(lineText)
+            .setTooltip(tooltipText)
             .setQuantity(String(qty));
         } catch (e) {
           // Line may have been invalidated
@@ -104,8 +115,8 @@ const useChartTrading = ({
           const line = await activeChart.createPositionLine();
           line
             .setPrice(pos.avgPrice || 0)
-            .setText(`${sideLabel} ${qty} ${displaySym}`)
-            .setTooltip(`P&L: ${pnlStr}`)
+            .setText(lineText)
+            .setTooltip(tooltipText)
             .setQuantity(String(qty))
             .setLineColor(color)
             .setBodyBackgroundColor(color)
@@ -116,11 +127,11 @@ const useChartTrading = ({
             .setQuantityTextColor('#ffffff')
             .setCloseTooltip('Close position')
             .setReverseTooltip('Reverse position')
-            .onClose(id, (posId) => {
-              callbacksRef.current.onClosePosition?.(posId, pos.accountId);
+            .onClose(id, () => {
+              callbacksRef.current.onClosePosition?.(pos.positionId, posAccountId);
             })
-            .onReverse(id, (posId) => {
-              callbacksRef.current.onReversePosition?.(posId, pos.accountId);
+            .onReverse(id, () => {
+              callbacksRef.current.onReversePosition?.(pos.positionId, posAccountId);
             });
 
           positionLinesRef.current.set(id, line);
@@ -163,7 +174,8 @@ const useChartTrading = ({
     });
 
     matchingOrders.forEach(async (ord) => {
-      const id = ord.orderId;
+      const ordAcctPrefix = ord._accountId || ord.accountId || '';
+      const id = ordAcctPrefix ? `${ordAcctPrefix}-${ord.orderId}` : ord.orderId;
       currentOrderIds.add(id);
 
       const isBuy =
@@ -172,6 +184,7 @@ const useChartTrading = ({
         ord.side === 1;
       const color = isBuy ? '#26a69a' : '#ef5350';
       const sideLabel = isBuy ? 'BUY' : 'SELL';
+      const ordAcctLabel = ord._accountNickname || '';
 
       // Determine order type label
       const typeLabel =
@@ -191,13 +204,18 @@ const useChartTrading = ({
       const price = ord.price || ord.limitPrice || ord.stopPrice || 0;
       const qty = ord.qty || ord.quantity || ord.orderQty || 1;
 
+      const orderText = ordAcctLabel
+        ? `${sideLabel} ${shortType} [${ordAcctLabel}]`
+        : `${sideLabel} ${shortType}`;
+      const ordAccountId = ord._accountId || ord.accountId;
+
       if (orderLinesRef.current.has(id)) {
         // Update existing line
         try {
           const line = orderLinesRef.current.get(id);
           line
             .setPrice(price)
-            .setText(`${sideLabel} ${shortType}`)
+            .setText(orderText)
             .setQuantity(String(qty));
         } catch (e) {
           orderLinesRef.current.delete(id);
@@ -208,7 +226,7 @@ const useChartTrading = ({
           const line = await activeChart.createOrderLine();
           line
             .setPrice(price)
-            .setText(`${sideLabel} ${shortType}`)
+            .setText(orderText)
             .setQuantity(String(qty))
             .setEditable(true)
             .setCancellable(true)
@@ -221,15 +239,15 @@ const useChartTrading = ({
             .setQuantityTextColor('#ffffff')
             .setCancelTooltip('Cancel order')
             .setModifyTooltip('Modify order')
-            .onCancel(id, (ordId) => {
-              callbacksRef.current.onCancelOrder?.(ordId, ord.accountId);
+            .onCancel(id, () => {
+              callbacksRef.current.onCancelOrder?.(ord.orderId, ordAccountId);
             })
-            .onMove(id, (ordId) => {
+            .onMove(id, () => {
               // After drag, get the new price from the line
-              const existingLine = orderLinesRef.current.get(ordId);
+              const existingLine = orderLinesRef.current.get(id);
               if (existingLine) {
                 const newPrice = existingLine.getPrice();
-                callbacksRef.current.onModifyOrder?.(ordId, ord.accountId, {
+                callbacksRef.current.onModifyOrder?.(ord.orderId, ordAccountId, {
                   price: newPrice,
                 });
               }

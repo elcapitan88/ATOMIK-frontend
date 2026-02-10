@@ -40,6 +40,7 @@ const StrategyGroups = lazy(() => import('../features/strategies/ActivateStrateg
 const TradesTable = lazy(() => import('../features/trading/TradesTable'));
 const MarketplacePage = lazy(() => import('./MarketplacePage'));
 const TradingAccountsPanel = lazy(() => import('../features/trading/TradingAccountsPanel'));
+const QuickOrderBar = lazy(() => import('../features/trading/QuickOrderBar'));
 
 // Loading Spinner Component
 const LoadingSpinner = () => (
@@ -168,7 +169,7 @@ const DashboardContent = () => {
     // Multi-account trading hooks
     const { getConnectionState: wsGetConnectionState } = useWebSocketContext();
     const multiAccountTrading = useMultiAccountTrading(dashboardData.accounts, dashboardData.strategies);
-    const { positions: aggregatedPositions } = useAggregatedPositions(dashboardData.accounts, wsGetConnectionState);
+    const { positions: aggregatedPositions, orders: aggregatedOrders } = useAggregatedPositions(dashboardData.accounts, wsGetConnectionState);
 
     // Set up API request interception for caching
     useEffect(() => {
@@ -384,11 +385,11 @@ const DashboardContent = () => {
         },
     }), [toast]);
 
-    // Position/order lines on chart
+    // Position/order lines on chart — use aggregated data from all accounts
     useChartTrading({
         activeChart,
-        positions: activeAccount ? positions : [],
-        orders: activeAccount ? orders : [],
+        positions: aggregatedPositions,
+        orders: aggregatedOrders,
         chartSymbol,
         callbacks: chartCallbacks,
     });
@@ -526,9 +527,21 @@ const DashboardContent = () => {
                                         </ErrorBoundary>
                                     </Box>
 
+                                    {/* Quick Order Bar */}
+                                    <Box mt={2} borderRadius="lg" overflow="hidden">
+                                        <ErrorBoundary>
+                                            <Suspense fallback={null}>
+                                                <QuickOrderBar
+                                                    chartSymbol={chartSymbol}
+                                                    multiAccountTrading={multiAccountTrading}
+                                                />
+                                            </Suspense>
+                                        </ErrorBoundary>
+                                    </Box>
+
                                     {/* Bottom section */}
                                     <Flex
-                                        mt={4}
+                                        mt={2}
                                         gap={4}
                                         flex="1"
                                         minH="0"
