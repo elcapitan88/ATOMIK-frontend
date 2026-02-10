@@ -29,6 +29,9 @@ import useWebSocketPositions from '@/services/websocket-proxy/hooks/useWebSocket
 import useWebSocketOrders from '@/services/websocket-proxy/hooks/useWebSocketOrders';
 import { getContractTicker } from '@/utils/formatting/tickerUtils';
 import logger from '@/utils/logger';
+import useMultiAccountTrading from '@/hooks/useMultiAccountTrading';
+import useAggregatedPositions from '@/hooks/useAggregatedPositions';
+import { useWebSocketContext } from '@/services/websocket-proxy/contexts/WebSocketContext';
 
 // Lazy loaded components
 const Management = lazy(() => import('../features/trading/Management'));
@@ -36,6 +39,7 @@ const OrderControl = lazy(() => import('../features/trading/OrderControl'));
 const StrategyGroups = lazy(() => import('../features/strategies/ActivateStrategies'));
 const TradesTable = lazy(() => import('../features/trading/TradesTable'));
 const MarketplacePage = lazy(() => import('./MarketplacePage'));
+const TradingAccountsPanel = lazy(() => import('../features/trading/TradingAccountsPanel'));
 
 // Loading Spinner Component
 const LoadingSpinner = () => (
@@ -160,6 +164,11 @@ const DashboardContent = () => {
 
     // Responsive breakpoints
     const isMobile = useBreakpointValue({ base: true, md: false });
+
+    // Multi-account trading hooks
+    const { getConnectionState: wsGetConnectionState } = useWebSocketContext();
+    const multiAccountTrading = useMultiAccountTrading(dashboardData.accounts, dashboardData.strategies);
+    const { positions: aggregatedPositions } = useAggregatedPositions(dashboardData.accounts, wsGetConnectionState);
 
     // Set up API request interception for caching
     useEffect(() => {
@@ -385,14 +394,31 @@ const DashboardContent = () => {
     });
 
     // Handle chart right-click order placement
+    // Uses multi-account trading when accounts are toggled active in the panel
     const handleChartOrder = useCallback(async (order) => {
         try {
+            const { activeAccounts, placeMultiAccountOrder } = multiAccountTrading;
+
+            // If multi-account panel has active accounts, use that
+            if (activeAccounts.length > 0) {
+                const symbol = chartSymbol || 'NQ';
+                await placeMultiAccountOrder({
+                    side: order.side,
+                    type: order.type,
+                    price: (order.type === 'LIMIT' || order.type === 'STOP_LIMIT') ? order.price : undefined,
+                    stopPrice: (order.type === 'STOP' || order.type === 'STOP_LIMIT') ? order.price : undefined,
+                    symbol,
+                });
+                return;
+            }
+
+            // Fallback: use old OrderControl flow
             const { selectedAccounts } = orderControlState;
 
             if (!selectedAccounts || selectedAccounts.length === 0) {
                 toast({
-                    title: 'No Account Selected',
-                    description: 'Select an account in Order Control before placing trades from the chart.',
+                    title: 'No Active Accounts',
+                    description: 'Toggle at least one account ON in the Accounts panel, or select one in Order Control.',
                     status: 'warning',
                     duration: 4000,
                     isClosable: true,
@@ -431,7 +457,7 @@ const DashboardContent = () => {
                 duration: 4000,
             });
         }
-    }, [orderControlState, chartSymbol, toast]);
+    }, [multiAccountTrading, orderControlState, chartSymbol, toast]);
 
     // Loading state - wait for both auth and dashboard data
     if (isLoading || authLoading || !user) {
@@ -491,10 +517,10 @@ const DashboardContent = () => {
                                                     onWidgetReady={(w, c) => setActiveChart(c)}
                                                     onSymbolChanged={setChartSymbol}
                                                     onChartOrder={handleChartOrder}
-                                                    activeAccount={activeAccount}
-                                                    currentQuantity={orderControlState.quantity}
-                                                    selectionMode={orderControlState.selectionMode}
-                                                    groupInfo={orderControlState.groupInfo}
+                                                    activeAccount={multiAccountTrading.activeCount > 0 ? { accountId: 'multi' } : activeAccount}
+                                                    currentQuantity={multiAccountTrading.activeCount > 0 ? multiAccountTrading.totalContracts : orderControlState.quantity}
+                                                    selectionMode={multiAccountTrading.activeCount > 0 ? 'multi' : orderControlState.selectionMode}
+                                                    groupInfo={multiAccountTrading.activeCount > 0 ? { groupName: `${multiAccountTrading.totalContracts} cts / ${multiAccountTrading.activeCount} acct${multiAccountTrading.activeCount !== 1 ? 's' : ''}` } : orderControlState.groupInfo}
                                                 />
                                             </Suspense>
                                         </ErrorBoundary>
@@ -554,13 +580,21 @@ const DashboardContent = () => {
                                     flexShrink={0.3}
                                     minW={{ base: "auto", lg: "280px" }}
                                 >
-                                    {/* Management Section */}
-                                    <Box flex="0 0 auto">
+                                    {/* Trading Accounts Panel (replaces Management) */}
+                                    <Box
+                                        flex="1"
+                                        bg="whiteAlpha.50"
+                                        borderRadius="xl"
+                                        overflow="hidden"
+                                        minH="200px"
+                                        maxH={{ base: "400px", lg: "50%" }}
+                                    >
                                         <ErrorBoundary>
                                             <Suspense fallback={<LoadingSpinner />}>
-                                                <Management
-                                                    accounts={dashboardData.accounts}
-                                                    onAccountSelect={handleAccountSelect}
+                                                <TradingAccountsPanel
+                                                    multiAccountTrading={multiAccountTrading}
+                                                    aggregatedPositions={aggregatedPositions}
+                                                    strategies={dashboardData.strategies}
                                                 />
                                             </Suspense>
                                         </ErrorBoundary>

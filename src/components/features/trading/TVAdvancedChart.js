@@ -141,7 +141,7 @@ const TVAdvancedChart = ({
                             const mode = selectionModeRef.current;
                             const group = groupInfoRef.current;
                             const hasAccount = hasAccountRef.current;
-                            const label = mode === 'group' && group
+                            const label = (mode === 'group' || mode === 'multi') && group
                                 ? `(${group.groupName})`
                                 : `(${qty} ct)`;
 
