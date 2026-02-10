@@ -256,7 +256,7 @@ const ActivateStrategies = () => {
   return (
     <Box h="full" bg="whiteAlpha.100" borderRadius="xl" borderWidth="1px" borderColor="whiteAlpha.200" boxShadow="lg" overflow="hidden" display="flex" flexDirection="column">
       {/* Header: Tabs + Sort */}
-      <Flex px={4} pt={4} pb={2} justify="space-between" align="center" flexShrink={0}>
+      <Flex px={4} pt={4} pb={2} justify="center" align="center" flexShrink={0} position="relative">
         <ButtonGroup size="xs" isAttached variant="ghost" spacing={0}>
           <Button
             onClick={() => setPanelView('strategies')}
@@ -284,7 +284,7 @@ const ActivateStrategies = () => {
           </Button>
         </ButtonGroup>
 
-        {panelView === 'strategies' && <SortButton onSort={handleSort} />}
+        {panelView === 'strategies' && <Box position="absolute" right={4}><SortButton onSort={handleSort} /></Box>}
       </Flex>
 
       {/* Scrollable Content */}
