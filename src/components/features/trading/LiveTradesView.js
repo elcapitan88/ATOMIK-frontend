@@ -3,7 +3,7 @@
 
 import React, { useState, useCallback } from 'react';
 import {
-  Box,
+  Box, 
   Flex,
   Text,
   VStack,
@@ -26,8 +26,7 @@ import {
   Spinner,
   Alert,
   AlertIcon,
-  Button,
-  useBreakpointValue,
+  Button
 } from '@chakra-ui/react';
 import { 
   TrendingUp, 
@@ -51,69 +50,11 @@ import AnimatedPositionRow from './components/AnimatedPositionRow';
 import { useThrottledPositions } from '@/services/websocket-proxy/hooks/useThrottledPositions';
 import { useAudioAlerts } from '@/hooks/useAudioAlerts';
 
-// Mobile Position Card Component
-const MobilePositionCard = ({ position, onClose, calculateDuration }) => {
-  const isLong = position.side === 'LONG';
-
-  return (
-    <Box
-      bg="whiteAlpha.50"
-      borderRadius="lg"
-      p={3}
-      borderLeft="3px solid"
-      borderLeftColor={isLong ? 'green.400' : 'red.400'}
-    >
-      <Flex justify="space-between" align="flex-start" mb={2}>
-        <VStack align="flex-start" spacing={0}>
-          <HStack spacing={2}>
-            <Text color="white" fontWeight="bold" fontSize="md">
-              {position.symbol}
-            </Text>
-            <Badge
-              bg={isLong ? 'rgba(72, 187, 120, 0.2)' : 'rgba(245, 101, 101, 0.2)'}
-              color={isLong ? 'green.400' : 'red.400'}
-              fontSize="xs"
-              px={2}
-              borderRadius="md"
-            >
-              {position.side}
-            </Badge>
-          </HStack>
-          <Text color="whiteAlpha.600" fontSize="xs">
-            {position.quantity} @ {position.averagePrice?.toFixed(2) || '-'}
-          </Text>
-        </VStack>
-        <Button
-          size="sm"
-          colorScheme="red"
-          variant="outline"
-          onClick={() => onClose(position)}
-          minH="44px"
-          minW="44px"
-          px={4}
-          fontSize="sm"
-        >
-          Close
-        </Button>
-      </Flex>
-      <Flex justify="space-between" align="center">
-        <Text color="whiteAlpha.500" fontSize="xs">
-          {calculateDuration(position.timeEntered)}
-        </Text>
-        <Text color="whiteAlpha.600" fontSize="xs">
-          {position.accountId}
-        </Text>
-      </Flex>
-    </Box>
-  );
-};
-
 const LiveTradesView = ({ selectedAccount, onAccountChange, selectedBroker, filters = {} }) => {
   const [sort, setSort] = useState({ field: 'timeEntered', direction: 'desc' });
   const [filter, setFilter] = useState({ side: filters.side || 'all', symbol: filters.symbol || 'all' });
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState('disconnected');
-  const isMobile = useBreakpointValue({ base: true, md: false });
   
   console.log('[LiveTradesView] Component rendered - selectedBroker:', selectedBroker, 'selectedAccount:', selectedAccount);
 
@@ -406,12 +347,11 @@ const LiveTradesView = ({ selectedAccount, onAccountChange, selectedBroker, filt
       )}
       
 
-      {/* Positions - Mobile Cards or Desktop Table */}
-      <Box
-        flex="1"
+      {/* Positions Table */}
+      <Box 
+        flex="1" 
         overflowY="auto"
-        px={{ base: 3, md: 4 }}
-        maxH={{ base: '300px', md: 'none' }}
+        px={4}
         sx={{
           '&::-webkit-scrollbar': {
             width: '8px',
@@ -433,97 +373,75 @@ const LiveTradesView = ({ selectedAccount, onAccountChange, selectedBroker, filt
           scrollbarColor: 'rgba(255, 255, 255, 0.1) transparent',
         }}
       >
-        {/* Mobile Card View */}
-        {isMobile ? (
-          <VStack spacing={3} align="stretch" pb={4}>
-            {!throttledPositions || throttledPositions.length === 0 ? (
-              <Flex justify="center" align="center" py={8}>
-                <Text color="whiteAlpha.600" fontSize="sm">
-                  No open trades
-                </Text>
-              </Flex>
-            ) : (
-              throttledPositions.map((position) => (
-                <MobilePositionCard
-                  key={`${position.positionId || position.contractId}-${position.accountId}`}
-                  position={position}
-                  onClose={handleClosePosition}
-                  calculateDuration={calculateDuration}
-                />
-              ))
-            )}
-          </VStack>
-        ) : (
-          /* Desktop Table View */
-          <Table variant="unstyled" size="sm">
-            <Thead>
-              <Tr>
-                <Th color="whiteAlpha.600">Time</Th>
-                <Th color="whiteAlpha.600">Duration</Th>
-                <Th color="whiteAlpha.600">Symbol</Th>
-                <Th color="whiteAlpha.600">Side</Th>
-                <Th color="whiteAlpha.600" isNumeric>Qty</Th>
-                <Th color="whiteAlpha.600" isNumeric>Entry</Th>
-                <Th color="whiteAlpha.600">Strategy</Th>
-                <Th color="whiteAlpha.600" isNumeric>Account</Th>
-                <Th width="50px"></Th>
-              </Tr>
-            </Thead>
-            <Tbody>
-              {!throttledPositions || throttledPositions.length === 0 ? (
-                <Tr>
-                  <Td colSpan={9}>
-                    <Flex justify="center" align="center" py={8}>
-                      <Text color="whiteAlpha.600" fontSize="sm">
-                        No open trades
-                      </Text>
-                    </Flex>
-                  </Td>
-                </Tr>
-              ) : (
-                throttledPositions.map((position) => (
-                  <AnimatedPositionRow
-                    key={`${position.positionId || position.contractId}-${position.accountId}`}
-                    position={position}
-                    onClose={handleClosePosition}
-                    onAlert={handleSetAlert}
-                    onDetails={handleViewDetails}
-                    calculateDuration={calculateDuration}
-                  />
-                ))
-              )}
-            </Tbody>
-          </Table>
-        )}
+        <Table variant="unstyled" size="sm">
+        <Thead>
+          <Tr>
+            <Th color="whiteAlpha.600">Time</Th>
+            <Th color="whiteAlpha.600">Duration</Th>
+            <Th color="whiteAlpha.600">Symbol</Th>
+            <Th color="whiteAlpha.600">Side</Th>
+            <Th color="whiteAlpha.600" isNumeric>Qty</Th>
+            <Th color="whiteAlpha.600" isNumeric>Entry</Th>
+            <Th color="whiteAlpha.600">Strategy</Th>
+            <Th color="whiteAlpha.600" isNumeric>Account</Th>
+            <Th width="50px"></Th>
+          </Tr>
+        </Thead>
+        <Tbody>
+          {!throttledPositions || throttledPositions.length === 0 ? (
+            <Tr>
+              <Td colSpan={9}>
+                <Flex justify="center" align="center" py={8}>
+                  <Text color="whiteAlpha.600" fontSize="sm">
+                    No open trades
+                  </Text>
+                </Flex>
+              </Td>
+            </Tr>
+          ) : (
+            throttledPositions.map((position) => (
+              <AnimatedPositionRow
+                key={`${position.positionId || position.contractId}-${position.accountId}`}
+                position={position}
+                onClose={handleClosePosition}
+                onAlert={handleSetAlert}
+                onDetails={handleViewDetails}
+                calculateDuration={calculateDuration}
+              />
+            ))
+          )}
+        </Tbody>
+      </Table>
       </Box>
 
       
       {/* Footer with Stats */}
       <VStack spacing={2} mt={2}>
         {/* Stats Row */}
-        <Flex
+        <Flex 
           w="100%"
-          px={{ base: 3, md: 4 }}
+          px={4}
           py={2}
           borderTop="1px solid"
           borderColor="rgba(255, 255, 255, 0.1)"
           justifyContent="space-between"
           alignItems="center"
-          flexWrap="wrap"
-          gap={2}
         >
-          <HStack spacing={{ base: 2, md: 4 }} color="rgba(255, 255, 255, 0.6)" fontSize={{ base: 'xs', md: 'sm' }}>
+          <HStack spacing={4} color="rgba(255, 255, 255, 0.6)" fontSize="sm">
             <HStack>
-              <Text>{isMobile ? 'Pos:' : 'Total Positions:'}</Text>
+              <Text>Total Positions:</Text>
               <Text color="white" fontWeight="medium">{throttledPositions?.length || 0}</Text>
             </HStack>
-            <Badge
-              colorScheme={connectionStatus === 'connected' ? 'green' : 'red'}
-              fontSize="xs"
-            >
-              {connectionStatus === 'connected' ? (isMobile ? '●' : 'Connected') : (isMobile ? '○' : 'Disconnected')}
-            </Badge>
-            {!isMobile && updateStats && updateStats.opened !== undefined && updateStats.closed !== undefined && (updateStats.opened > 0 || updateStats.closed > 0) && (
+            <HStack>
+              <Text>Status:</Text>
+              <Badge
+                colorScheme={connectionStatus === 'connected' ? 'green' : 'red'}
+                fontSize="xs"
+              >
+                {connectionStatus === 'connected' ? 'Connected' : 'Disconnected'}
+              </Badge>
+            </HStack>
+            {updateStats && updateStats.opened !== undefined && updateStats.closed !== undefined && (updateStats.opened > 0 || updateStats.closed > 0) && (
               <HStack spacing={2}>
                 <Badge colorScheme="green" variant="subtle" fontSize="xs">
                   +{updateStats.opened} opened
@@ -534,12 +452,14 @@ const LiveTradesView = ({ selectedAccount, onAccountChange, selectedBroker, filt
               </HStack>
             )}
           </HStack>
-
-          {!isMobile && lastUpdate && (
-            <Text fontSize="sm" color="rgba(255, 255, 255, 0.6)">
-              Last update: {new Date(lastUpdate).toLocaleTimeString()}
-            </Text>
-          )}
+          
+          <HStack>
+            {lastUpdate && (
+              <Text fontSize="sm" color="rgba(255, 255, 255, 0.6)">
+                Last update: {new Date(lastUpdate).toLocaleTimeString()}
+              </Text>
+            )}
+          </HStack>
         </Flex>
       </VStack>
     </Box>

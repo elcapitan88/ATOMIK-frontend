@@ -10,11 +10,11 @@ import {
   Heading,
   Container,
 } from '@chakra-ui/react';
-import {
-  CheckCircle,
-  AlertCircle,
-  RefreshCw,
-  Home
+import { 
+  CheckCircle, 
+  AlertCircle, 
+  RefreshCw, 
+  Home 
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, useSearchParams, Link as RouterLink, useLocation } from 'react-router-dom';
@@ -22,58 +22,12 @@ import { useAuth } from '@/contexts/AuthContext';
 import axiosInstance from '@/services/axiosConfig';
 import logger from '@/utils/logger';
 import affiliateService from '@/services/affiliateService';
-import { webhookApi } from '@/services/api/Webhooks/webhookApi';
-import { engineStrategiesApi } from '@/services/api/strategies/engineStrategiesApi';
 
 const MotionBox = motion(Box);
 
 const MAX_RETRIES = 3;
 const RETRY_DELAY = 2000; // 2 seconds
 const AUTO_REDIRECT_DELAY = 2000; // 2 seconds
-
-// Helper function to auto-subscribe to a pending strategy
-const autoSubscribeToStrategy = async (pendingStrategy, toast) => {
-  if (!pendingStrategy) return false;
-
-  try {
-    logger.info('Auto-subscribing to pending strategy:', pendingStrategy.name);
-
-    if (pendingStrategy.strategyType === 'engine') {
-      // For engine strategies
-      const strategyId = pendingStrategy.source_id;
-      await engineStrategiesApi.subscribeToStrategy(strategyId);
-    } else {
-      // For webhook strategies
-      await webhookApi.subscribeToStrategy(pendingStrategy.token);
-    }
-
-    // Clear the pending strategy from sessionStorage
-    sessionStorage.removeItem('pendingStrategySubscription');
-
-    toast({
-      title: 'Strategy Subscribed!',
-      description: `You're now subscribed to "${pendingStrategy.name}"`,
-      status: 'success',
-      duration: 5000,
-      isClosable: true,
-    });
-
-    logger.info('Successfully auto-subscribed to strategy:', pendingStrategy.name);
-    return true;
-  } catch (error) {
-    logger.error('Failed to auto-subscribe to strategy:', error);
-    // Don't block the flow if subscription fails - they can subscribe manually
-    toast({
-      title: 'Note',
-      description: `We couldn't automatically subscribe you to "${pendingStrategy.name}". You can subscribe from the Marketplace.`,
-      status: 'info',
-      duration: 8000,
-      isClosable: true,
-    });
-    sessionStorage.removeItem('pendingStrategySubscription');
-    return false;
-  }
-};
 
 const PaymentSuccess = () => {
   // State
@@ -274,33 +228,15 @@ const PaymentSuccess = () => {
             if (regResponse.data.user) {
               setAuthenticatedState(regResponse.data.user, regResponse.data.access_token);
             }
-
-            // Check for pending strategy subscription and auto-subscribe
-            const pendingStrategyData = sessionStorage.getItem('pendingStrategySubscription');
-            if (pendingStrategyData) {
-              try {
-                const pendingStrategy = JSON.parse(pendingStrategyData);
-                // Only auto-subscribe to free strategies (monetized strategies need separate purchase)
-                if (!pendingStrategy.isMonetized) {
-                  await autoSubscribeToStrategy(pendingStrategy, toast);
-                } else {
-                  // Clear for monetized - they'll need to purchase separately
-                  sessionStorage.removeItem('pendingStrategySubscription');
-                }
-              } catch (e) {
-                logger.error('Error parsing pending strategy:', e);
-                sessionStorage.removeItem('pendingStrategySubscription');
-              }
-            }
-
+            
             // IMPORTANT: Only clear data after successful registration
             localStorage.removeItem('pendingRegistration');
             localStorage.removeItem('processing_registration');
             registrationDataRef.current = null; // Also clear the ref
-
+            
             // Set success status and prepare for redirect
             setStatus('success');
-
+            
             // Schedule redirect with animation delay
             redirectTimeout.current = setTimeout(() => {
               if (mounted.current) {
@@ -378,60 +314,35 @@ useEffect(() => {
         const token = sessionToken || sessionStorage.getItem('registration_session_token');
         
         if (token) {
-          // Exchange session token for auth tokens
-          const tokenResponse = await axiosInstance.post('/api/v1/auth/get-credentials-by-token', {
+          // Try to get credentials and login
+          const credResponse = await axiosInstance.post('/api/v1/auth/get-credentials-by-token', {
             session_token: token
           });
-
-          if (tokenResponse.data && tokenResponse.data.access_token) {
-            // Set auth redirect flag to prevent auth page flash
-            sessionStorage.setItem('auth_redirect_in_progress', 'true');
-
-            // Store token and set authentication state
-            localStorage.setItem('access_token', tokenResponse.data.access_token);
-            axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${tokenResponse.data.access_token}`;
-
-            // Set authenticated state directly with user data from token response
-            if (tokenResponse.data.user) {
-              setAuthenticatedState(tokenResponse.data.user, tokenResponse.data.access_token);
-            }
-
-            // Check for pending strategy subscription and auto-subscribe
-            const pendingStrategyData = sessionStorage.getItem('pendingStrategySubscription');
-            if (pendingStrategyData) {
-              try {
-                const pendingStrategy = JSON.parse(pendingStrategyData);
-                // Only auto-subscribe to free strategies (monetized strategies need separate purchase)
-                if (!pendingStrategy.isMonetized) {
-                  await autoSubscribeToStrategy(pendingStrategy, toast);
-                } else {
-                  // Clear for monetized - they'll need to purchase separately
-                  sessionStorage.removeItem('pendingStrategySubscription');
-                }
-              } catch (e) {
-                logger.error('Error parsing pending strategy:', e);
-                sessionStorage.removeItem('pendingStrategySubscription');
-              }
-            }
-
-            setStatus('success');
-            sessionStorage.removeItem('registration_session_token');
-
-            toast({
-              title: 'Welcome to Atomik Trading!',
-              description: 'Your account is ready. Redirecting to dashboard...',
-              status: 'success',
-              duration: 5000,
+          
+          if (credResponse.data) {
+            const loginResponse = await login({
+              email: credResponse.data.email,
+              password: credResponse.data.temp_password
             });
-
-            redirectTimeout.current = setTimeout(() => {
-              if (mounted.current) {
-                // Clear auth redirect flag right before navigation
-                sessionStorage.removeItem('auth_redirect_in_progress');
-                navigate('/dashboard', { replace: true });
-              }
-            }, AUTO_REDIRECT_DELAY);
-            return;
+            
+            if (loginResponse.success) {
+              setStatus('success');
+              sessionStorage.removeItem('registration_session_token');
+              
+              toast({
+                title: 'Welcome to Atomik Trading!',
+                description: 'Your account is ready. Redirecting to dashboard...',
+                status: 'success',
+                duration: 5000,
+              });
+              
+              redirectTimeout.current = setTimeout(() => {
+                if (mounted.current) {
+                  navigate('/dashboard', { replace: true });
+                }
+              }, AUTO_REDIRECT_DELAY);
+              return;
+            }
           }
         }
         

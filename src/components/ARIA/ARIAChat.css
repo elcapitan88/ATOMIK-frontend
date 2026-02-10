@@ -1,0 +1,446 @@
+/* ARIAChat.css - Core chat UI styles */
+
+.aria-chat-v2 {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* Messages Container */
+.aria-chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  scroll-behavior: smooth;
+}
+
+.aria-chat-messages::-webkit-scrollbar {
+  width: 6px;
+}
+
+.aria-chat-messages::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 3px;
+}
+
+.aria-chat-messages::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+}
+
+.aria-chat-messages::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* Message Bubbles */
+.aria-chat-message {
+  margin-bottom: 16px;
+  display: flex;
+  flex-direction: column;
+}
+
+.aria-chat-message.user {
+  align-items: flex-end;
+}
+
+.aria-chat-message.aria {
+  align-items: flex-start;
+}
+
+.aria-message-content {
+  padding: 12px 16px;
+  border-radius: 16px;
+  font-size: 14px;
+  line-height: 1.5;
+  max-width: 85%;
+  word-wrap: break-word;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.aria-chat-message.user .aria-message-content {
+  background: linear-gradient(135deg, #00C6E0, #10B981);
+  color: white;
+  border-bottom-right-radius: 4px;
+}
+
+.aria-chat-message.aria .aria-message-content {
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.95);
+  border-bottom-left-radius: 4px;
+}
+
+.aria-chat-message.error .aria-message-content {
+  background: rgba(239, 68, 68, 0.2);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #FCA5A5;
+}
+
+.aria-message-time {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.4);
+  margin-top: 4px;
+  padding: 0 8px;
+}
+
+/* Typing Indicator */
+.aria-typing {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  padding: 4px 0;
+}
+
+.aria-typing span {
+  width: 6px;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 50%;
+  animation: typing-dot 1.4s infinite ease-in-out;
+}
+
+.aria-typing span:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.aria-typing span:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes typing-dot {
+  0%, 60%, 100% {
+    transform: translateY(0);
+    opacity: 0.4;
+  }
+  30% {
+    transform: translateY(-8px);
+    opacity: 1;
+  }
+}
+
+/* Loading More */
+.aria-loading-more {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 12px;
+}
+
+/* Quick Tips */
+.aria-quick-tips {
+  background: rgba(0, 198, 224, 0.08);
+  border: 1px solid rgba(0, 198, 224, 0.2);
+  border-radius: 12px;
+  padding: 14px;
+  margin-bottom: 16px;
+}
+
+.aria-tips-label {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 12px;
+  margin-bottom: 10px;
+  font-weight: 500;
+}
+
+.aria-tips-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.aria-tip-button {
+  padding: 8px 14px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 20px;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.aria-tip-button:hover {
+  background: rgba(0, 198, 224, 0.2);
+  border-color: rgba(0, 198, 224, 0.4);
+  color: white;
+}
+
+/* Confirmation UI */
+.aria-confirmation {
+  background: rgba(255, 165, 0, 0.1);
+  border: 1px solid rgba(255, 165, 0, 0.3);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.aria-confirmation-text {
+  color: #FED7AA;
+  font-size: 14px;
+  margin-bottom: 12px;
+  font-weight: 500;
+}
+
+.aria-confirmation-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+.aria-confirm-btn {
+  flex: 1;
+  padding: 10px 16px;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.aria-confirm-btn.yes {
+  background: rgba(34, 197, 94, 0.2);
+  color: #86EFAC;
+  border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+.aria-confirm-btn.yes:hover {
+  background: rgba(34, 197, 94, 0.3);
+}
+
+.aria-confirm-btn.no {
+  background: rgba(239, 68, 68, 0.2);
+  color: #FCA5A5;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.aria-confirm-btn.no:hover {
+  background: rgba(239, 68, 68, 0.3);
+}
+
+/* Input Area */
+.aria-chat-input-area {
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.03);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.aria-chat-input-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 8px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: border-color 0.2s ease;
+}
+
+.aria-chat-input-container:focus-within {
+  border-color: rgba(0, 198, 224, 0.4);
+}
+
+.aria-chat-voice-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: none;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.aria-chat-voice-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+}
+
+.aria-chat-voice-btn.listening {
+  background: rgba(239, 68, 68, 0.3);
+  color: #FCA5A5;
+  animation: pulse-recording 1s infinite;
+}
+
+@keyframes pulse-recording {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.aria-chat-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: white;
+  font-size: 14px;
+  padding: 8px 4px;
+  outline: none;
+  min-width: 0;
+}
+
+.aria-chat-input::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.aria-chat-input:disabled {
+  opacity: 0.6;
+}
+
+.aria-chat-send-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: none;
+  background: linear-gradient(135deg, #00C6E0, #10B981);
+  border-radius: 8px;
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.aria-chat-send-btn:hover:not(:disabled) {
+  box-shadow: 0 4px 12px rgba(0, 198, 224, 0.4);
+}
+
+.aria-chat-send-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Markdown Styling */
+.aria-md-p {
+  margin: 0 0 8px 0;
+}
+
+.aria-md-p:last-child {
+  margin-bottom: 0;
+}
+
+.aria-md-ul,
+.aria-md-ol {
+  margin: 8px 0;
+  padding-left: 20px;
+}
+
+.aria-md-li {
+  margin: 4px 0;
+  line-height: 1.5;
+}
+
+.aria-md-strong {
+  font-weight: 600;
+  color: #00C6E0;
+}
+
+.aria-md-em {
+  font-style: italic;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.aria-md-code-inline {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 12px;
+  color: #10B981;
+}
+
+.aria-md-pre {
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 8px;
+  padding: 12px;
+  margin: 8px 0;
+  overflow-x: auto;
+}
+
+.aria-md-code-block {
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.9);
+  line-height: 1.4;
+}
+
+.aria-md-h1 {
+  font-size: 18px;
+  font-weight: 700;
+  margin: 12px 0 8px 0;
+  color: #00C6E0;
+}
+
+.aria-md-h2 {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 10px 0 6px 0;
+  color: #00C6E0;
+}
+
+.aria-md-h3 {
+  font-size: 14px;
+  font-weight: 600;
+  margin: 8px 0 4px 0;
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.aria-md-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 8px 0;
+  font-size: 12px;
+}
+
+.aria-md-th {
+  background: rgba(0, 198, 224, 0.15);
+  padding: 8px 10px;
+  text-align: left;
+  font-weight: 600;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  color: #00C6E0;
+}
+
+.aria-md-td {
+  padding: 6px 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.aria-md-link {
+  color: #00C6E0;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.aria-md-link:hover {
+  color: #10B981;
+  text-decoration: underline;
+}
+
+/* Blockquote */
+.aria-message-content blockquote {
+  border-left: 3px solid #00C6E0;
+  margin: 8px 0;
+  padding: 4px 12px;
+  background: rgba(0, 198, 224, 0.08);
+  border-radius: 0 4px 4px 0;
+}
+
+/* Horizontal rule */
+.aria-message-content hr {
+  border: none;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.2);
+  margin: 12px 0;
+}

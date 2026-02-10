@@ -8,7 +8,6 @@ import {
   ModalCloseButton,
   VStack,
   HStack,
-  SimpleGrid,
   Text,
   Box,
   Icon,
@@ -21,7 +20,7 @@ import { getAvailableBrokers } from '@/utils/constants/brokers';
 
 const BrokerOption = ({ broker, onClick, isDisabled = false }) => {
   const isPopular = broker.id === 'tradovate'; // Mark Tradovate as popular
-
+  
   return (
     <Box
       as="button"
@@ -40,12 +39,13 @@ const BrokerOption = ({ broker, onClick, isDisabled = false }) => {
         transform: "translateY(-2px)",
         boxShadow: "0 8px 25px 0 rgba(0, 0, 0, 0.3)"
       } : {}}
-      _disabled={{
-        opacity: 0.5,
+      _disabled={{ 
+        opacity: 0.5, 
         cursor: 'not-allowed'
       }}
       position="relative"
       w="full"
+      maxW="200px"
     >
       <VStack spacing={3}>
         <Box position="relative">
@@ -59,8 +59,8 @@ const BrokerOption = ({ broker, onClick, isDisabled = false }) => {
             justifyContent="center"
             overflow="hidden"
           >
-            <img
-              src={broker.logo}
+            <img 
+              src={broker.logo} 
               alt={`${broker.name} logo`}
               style={{
                 width: '60px',
@@ -73,15 +73,15 @@ const BrokerOption = ({ broker, onClick, isDisabled = false }) => {
                 e.target.nextElementSibling.style.display = 'flex';
               }}
             />
-            <Box
-              display="none"
+            <Box 
+              display="none" 
               alignItems="center"
               justifyContent="center"
               w="60px"
               h="60px"
               bg="rgba(0, 198, 224, 0.15)"
               borderRadius="md"
-              fontSize="xs"
+              fontSize="xs" 
               textAlign="center"
               color="#00C6E0"
               fontWeight="semibold"
@@ -90,7 +90,7 @@ const BrokerOption = ({ broker, onClick, isDisabled = false }) => {
               {broker.name}
             </Box>
           </Box>
-
+          
           {isPopular && (
             <Badge
               position="absolute"
@@ -106,7 +106,7 @@ const BrokerOption = ({ broker, onClick, isDisabled = false }) => {
             </Badge>
           )}
         </Box>
-
+        
         <VStack spacing={1}>
           <Text fontSize="md" fontWeight="semibold" color="white">
             {broker.name}
@@ -124,26 +124,26 @@ const BrokerSelectionModal = ({ isOpen, onClose, onBrokerSelect }) => {
   const availableBrokers = getAvailableBrokers();
 
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={onClose}
+    <Modal 
+      isOpen={isOpen} 
+      onClose={onClose} 
       isCentered
     >
-      <ModalOverlay
-        bg="blackAlpha.300"
-        backdropFilter="blur(10px)"
+      <ModalOverlay 
+        bg="blackAlpha.300" 
+        backdropFilter="blur(10px)" 
       />
-      <ModalContent
+      <ModalContent 
         bg="rgba(0, 0, 0, 0.75)"
         backdropFilter="blur(10px)"
         boxShadow="0 8px 32px 0 rgba(0, 0, 0, 0.5)"
         border="1px solid rgba(255, 255, 255, 0.1)"
         borderRadius="xl"
-        maxW="550px"
+        maxW="500px"
         color="white"
       >
-        <ModalHeader
-          borderBottom="1px solid rgba(255, 255, 255, 0.1)"
+        <ModalHeader 
+          borderBottom="1px solid rgba(255, 255, 255, 0.1)" 
           pb={4}
         >
           <HStack spacing={3}>
@@ -171,8 +171,8 @@ const BrokerSelectionModal = ({ isOpen, onClose, onBrokerSelect }) => {
                 </Text>
               </VStack>
             </Alert>
-
-            <SimpleGrid columns={2} spacing={4} w="full">
+            
+            <HStack spacing={4} justify="center" w="full">
               {availableBrokers.map((broker) => (
                 <BrokerOption
                   key={broker.id}
@@ -180,7 +180,7 @@ const BrokerSelectionModal = ({ isOpen, onClose, onBrokerSelect }) => {
                   onClick={onBrokerSelect}
                 />
               ))}
-            </SimpleGrid>
+            </HStack>
           </VStack>
         </ModalBody>
       </ModalContent>

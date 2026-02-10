@@ -1,6 +1,6 @@
 {
   "name": "tradovate-frontend",
-  "version": "0.1.1",
+  "version": "0.1.0",
   "private": true,
   "dependencies": {
     "@chakra-ui/react": "2.8.2",
@@ -30,6 +30,8 @@
     "react": "^18.2.0",
     "react-countup": "^6.5.3",
     "react-dom": "^18.2.0",
+    "react-markdown": "^9.0.1",
+    "remark-gfm": "^4.0.0",
     "react-gtm-module": "^2.0.11",
     "react-helmet-async": "^2.0.5",
     "react-image-crop": "^11.0.10",
@@ -51,7 +53,7 @@
     "start": "node server.js",
     "dev": "craco start",
     "generate-sitemap": "node scripts/generate-sitemap.js",
-    "prebuild": "echo 'Skipping sitemap generation temporarily'",
+    "prebuild": "npm run generate-sitemap",
     "build": "CI=false BABEL_ENV=production NODE_OPTIONS=--openssl-legacy-provider craco build",
     "test": "set NODE_OPTIONS=--openssl-legacy-provider && craco test",
     "optimize:images": "node scripts/optimize-images-manual.js",

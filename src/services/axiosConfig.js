@@ -18,20 +18,6 @@ const axiosInstance = axios.create({
     baseURL: API_URL,
     withCredentials: true,
 });
-// CRITICAL FIX: Force HTTPS after instance creation if baseURL has HTTP
-if (axiosInstance.defaults.baseURL && axiosInstance.defaults.baseURL.includes("api.atomiktrading.io")) {
-    if (axiosInstance.defaults.baseURL.startsWith("http://")) {
-        console.warn("[AxiosConfig] CRITICAL: Forcing baseURL from HTTP to HTTPS after instance creation");
-        axiosInstance.defaults.baseURL = axiosInstance.defaults.baseURL.replace("http://", "https://");
-    }
-}
-// Log the actual baseURL being used
-console.log("[AxiosConfig] Instance created with baseURL:", axiosInstance.defaults.baseURL);
-console.log("[AxiosConfig] Environment check:", {
-    API_URL,
-    envVar: process.env.REACT_APP_API_URL,
-    nodeEnv: process.env.NODE_ENV
-});
 
 // Function to get cookies
 function getCookie(name) {
@@ -43,17 +29,6 @@ function getCookie(name) {
 // Request interceptor
 axiosInstance.interceptors.request.use(
     function (config) {
-        // AGGRESSIVE HTTPS ENFORCEMENT - Fix CSP violations
-        console.log("[Axios Interceptor] Processing request to:", config.url || config.baseURL);
-        if (config.url && config.url.includes("http://api.atomiktrading.io")) {
-            console.warn("[HTTPS FIX] Forcing HTTP to HTTPS in URL:", config.url);
-            config.url = config.url.replace("http://", "https://");
-        }
-        if (config.baseURL && config.baseURL.includes("http://api.atomiktrading.io")) {
-            console.warn("[HTTPS FIX] Forcing HTTP to HTTPS in baseURL:", config.baseURL);
-            config.baseURL = config.baseURL.replace("http://", "https://");
-        }
-
         // Add CSRF token if available
         const csrfToken = getCookie('csrftoken');
         if (csrfToken) {
@@ -97,7 +72,7 @@ axiosInstance.interceptors.response.use(
             originalRequest._retry = true;
             try {
                 // Skip token refresh for checkout-related paths
-                if (originalRequest.url.includes('subscriptions/create') ||
+                if (originalRequest.url.includes('subscriptions/create') || 
                     originalRequest.url.includes('checkout')) {
                   // For checkout flows, just fail gracefully
                   localStorage.removeItem('access_token');
@@ -106,16 +81,16 @@ axiosInstance.interceptors.response.use(
                   }
                   return Promise.reject(error);
                 }
-
+                
                 // For all other paths, attempt token refresh
                 logger.info('Attempting token refresh');
-
+                
                 // Check if you have a refresh-token endpoint
                 // If not, use this fallback approach
                 localStorage.removeItem('access_token');
                 window.location.href = '/auth';
                 return Promise.reject(error);
-
+                
                 // If you do have a refresh-token endpoint, uncomment this:
                 /*
                 const refreshResponse = await axios.post(
@@ -127,11 +102,11 @@ axiosInstance.interceptors.response.use(
                     }
                   }
                 );
-
+                
                 if (refreshResponse.data.access_token) {
                   logger.info('Token refresh successful');
                   localStorage.setItem('access_token', refreshResponse.data.access_token);
-                  axiosInstance.defaults.headers.common['Authorization'] =
+                  axiosInstance.defaults.headers.common['Authorization'] = 
                     `Bearer ${refreshResponse.data.access_token}`;
                   return axiosInstance(originalRequest);
                 }

@@ -22,8 +22,6 @@ import {
   useDisclosure,
   Icon,
   Spinner,
-  useBreakpointValue,
-  Button,
 } from '@chakra-ui/react';
 import {
   Settings,
@@ -46,112 +44,6 @@ import DeleteWebhook from '@/components/common/Modal/DeleteWebhook';
 import EnvironmentConfig, { envConfig } from '@/config/environment';
 
 
-
-// Mobile Webhook Card Component
-const MobileWebhookCard = ({ webhook, onAction }) => {
-  return (
-    <Box
-      bg="whiteAlpha.50"
-      borderRadius="lg"
-      p={3}
-      borderLeft="3px solid"
-      borderLeftColor={
-        webhook.isSubscribed
-          ? "purple.400"
-          : webhook.is_shared
-            ? "cyan.400"
-            : "whiteAlpha.300"
-      }
-    >
-      <Flex justify="space-between" align="flex-start" mb={2}>
-        <VStack align="flex-start" spacing={0} flex={1}>
-          <Text color="white" fontWeight="medium" fontSize="sm" isTruncated maxW="200px">
-            {webhook.name || 'Unnamed Webhook'}
-          </Text>
-          <Text fontSize="xs" color="whiteAlpha.600">
-            {webhook.isSubscribed
-              ? `From ${webhook.username}`
-              : webhook.source_type}
-          </Text>
-        </VStack>
-        <Menu>
-          <MenuButton
-            as={IconButton}
-            icon={<MoreVertical size={20} />}
-            variant="ghost"
-            size="md"
-            minH="44px"
-            minW="44px"
-            color="whiteAlpha.600"
-            _hover={{ bg: 'whiteAlpha.100' }}
-          />
-          <MenuList
-            bg="rgba(20, 20, 20, 0.95)"
-            backdropFilter="blur(10px)"
-            borderColor="rgba(255, 255, 255, 0.18)"
-            borderRadius="xl"
-          >
-            {webhook.isSubscribed ? (
-              <MenuItem
-                onClick={() => onAction(webhook, 'unsubscribe')}
-                _hover={{ bg: "whiteAlpha.200" }}
-                bg="transparent"
-                color="red.400"
-                icon={<UserMinus size={14} />}
-              >
-                Unsubscribe
-              </MenuItem>
-            ) : (
-              <>
-                <MenuItem
-                  onClick={() => onAction(webhook, 'details')}
-                  _hover={{ bg: "whiteAlpha.200" }}
-                  bg="transparent"
-                  color="white"
-                  icon={<Settings size={14} />}
-                >
-                  Setup
-                </MenuItem>
-                <MenuItem
-                  onClick={() => onAction(webhook, 'share')}
-                  _hover={{ bg: "whiteAlpha.200" }}
-                  bg="transparent"
-                  color="white"
-                  icon={<Share size={14} />}
-                >
-                  Share
-                </MenuItem>
-                <MenuItem
-                  onClick={() => onAction(webhook, 'delete')}
-                  _hover={{ bg: "whiteAlpha.200" }}
-                  bg="transparent"
-                  color="red.400"
-                  icon={<Trash2 size={14} />}
-                >
-                  Delete
-                </MenuItem>
-              </>
-            )}
-          </MenuList>
-        </Menu>
-      </Flex>
-      {webhook.is_shared && (
-        <HStack spacing={3} color="whiteAlpha.700" fontSize="xs">
-          <HStack spacing={1}>
-            <Icon as={Users} size={12} />
-            <Text>{webhook.subscriber_count || 0}</Text>
-          </HStack>
-          {webhook.rating > 0 && (
-            <HStack spacing={1}>
-              <Icon as={Star} size={12} color="yellow.400" />
-              <Text>{webhook.rating.toFixed(1)}</Text>
-            </HStack>
-          )}
-        </HStack>
-      )}
-    </Box>
-  );
-};
 
 // URL Display Component
 const WebhookUrl = ({ webhook }) => {
@@ -202,7 +94,6 @@ const WebhooksView = ({ onWebhooksChange }) => {
   const [error, setError] = useState(null);
   const [isAtTop, setIsAtTop] = useState(true);
   const [isAtBottom, setIsAtBottom] = useState(true);
-  const isMobile = useBreakpointValue({ base: true, md: false });
 
   // Modal Controls
   const {
@@ -416,14 +307,14 @@ const WebhooksView = ({ onWebhooksChange }) => {
   };
 
   return (
-    <Flex direction="column" position="relative" h="full" overflow="hidden">
+    <Box position="relative" h="full" overflow="hidden">
       {/* Loading State */}
       {isLoading && (
         <Flex justify="center" align="center" h="200px">
           <Spinner size="xl" color="blue.400" />
         </Flex>
       )}
-
+  
       {/* Error State */}
       {error && (
         <Flex justify="center" align="center" h="200px" color="red.400">
@@ -433,13 +324,13 @@ const WebhooksView = ({ onWebhooksChange }) => {
           </VStack>
         </Flex>
       )}
-
+  
       {/* Empty State */}
       {!isLoading && !error && webhooks.length === 0 ? (
-        <Flex
-          justify="center"
-          align="center"
-          flex="1"
+        <Flex 
+          justify="center" 
+          align="center" 
+          h="full" 
           color="whiteAlpha.600"
           flexDirection="column"
           gap={4}
@@ -448,11 +339,10 @@ const WebhooksView = ({ onWebhooksChange }) => {
           <Text>No webhooks created yet</Text>
         </Flex>
       ) : (
-        <Box
-          flex="1"
-          overflowY="auto"
-          px={{ base: 3, md: 4 }}
-          maxH={{ base: '300px', md: 'none' }}
+        <Box 
+          h="full" 
+          overflowY="auto" 
+          px={4}
           onScroll={handleScroll}
           className="scrolled-container"
           data-at-top={isAtTop}
@@ -481,210 +371,162 @@ const WebhooksView = ({ onWebhooksChange }) => {
           }}
         >
           <ScrollFade position="top" />
-
-          {/* Mobile Card View */}
-          {isMobile ? (
-            <VStack spacing={3} align="stretch" pb={4}>
+          <Table variant="unstyled" size="sm">
+            <Thead>
+              <Tr>
+                <Th color="whiteAlpha.600">Name</Th>
+                <Th color="whiteAlpha.600">URL</Th>
+                <Th color="whiteAlpha.600">Status</Th>
+                <Th color="whiteAlpha.600">Details</Th>
+                <Th color="whiteAlpha.600" width="80px">Actions</Th>
+              </Tr>
+            </Thead>
+            <Tbody>
               <AnimatePresence mode="wait">
                 {webhooks.map((webhook) => (
-                  <motion.div
+                  <motion.tr
                     key={webhook.token}
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -10 }}
                     transition={{ duration: 0.2 }}
+                    style={{ position: 'relative' }}
                   >
-                    <MobileWebhookCard webhook={webhook} onAction={handleAction} />
-                  </motion.div>
-                ))}
-              </AnimatePresence>
-            </VStack>
-          ) : (
-            /* Desktop Table View */
-            <Table variant="unstyled" size="sm">
-              <Thead>
-                <Tr>
-                  <Th color="whiteAlpha.600">Name</Th>
-                  <Th color="whiteAlpha.600">URL</Th>
-                  <Th color="whiteAlpha.600">Status</Th>
-                  <Th color="whiteAlpha.600">Details</Th>
-                  <Th color="whiteAlpha.600" width="80px">Actions</Th>
-                </Tr>
-              </Thead>
-              <Tbody>
-                <AnimatePresence mode="wait">
-                  {webhooks.map((webhook) => (
-                    <motion.tr
-                      key={webhook.token}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -10 }}
-                      transition={{ duration: 0.2 }}
-                      style={{ position: 'relative' }}
-                    >
-                      <Td position="relative">
-                        <Box
-                          position="absolute"
-                          left={0}
-                          top="6px"
-                          bottom="6px"
-                          width="2px"
-                          bg={
-                            webhook.isSubscribed
-                              ? "purple.400"
-                              : webhook.is_shared
-                                ? "cyan.400"
-                                : "transparent"
-                          }
-                        />
-                        <VStack align="flex-start" spacing={1} pl={1}>
-                          <Text color="white" fontWeight="medium">
-                            {webhook.name || 'Unnamed Webhook'}
-                          </Text>
-                          <Text fontSize="xs" color="whiteAlpha.600">
-                            {webhook.isSubscribed
-                              ? `Subscribed from ${webhook.username}`
-                              : webhook.source_type}
-                          </Text>
-                        </VStack>
-                      </Td>
-
-                      <Td>
-                        {!webhook.isSubscribed && <WebhookUrl webhook={webhook} />}
-                      </Td>
-
-                      <Td>
-                        {webhook.is_shared && (
-                          <HStack spacing={4} color="whiteAlpha.800">
-                            <HStack spacing={1}>
-                              <Icon as={Users} size={14} />
-                              <Text fontSize="sm">{webhook.subscriber_count || 0}</Text>
-                            </HStack>
-                            {webhook.rating > 0 && (
-                              <HStack spacing={1}>
-                                <Icon as={Star} size={14} color="yellow.400" />
-                                <Text fontSize="sm">{webhook.rating.toFixed(1)}</Text>
-                              </HStack>
-                            )}
+                    <Td position="relative">
+                      <Box
+                        position="absolute"
+                        left={0}
+                        top="6px"
+                        bottom="6px"
+                        width="2px"
+                        bg={
+                          webhook.isSubscribed 
+                            ? "purple.400" 
+                            : webhook.is_shared 
+                              ? "cyan.400" 
+                              : "transparent"
+                        }
+                      />
+                      <VStack align="flex-start" spacing={1} pl={1}>
+                        <Text color="white" fontWeight="medium">
+                          {webhook.name || 'Unnamed Webhook'}
+                        </Text>
+                        <Text fontSize="xs" color="whiteAlpha.600">
+                          {webhook.isSubscribed 
+                            ? `Subscribed from ${webhook.username}` 
+                            : webhook.source_type}
+                        </Text>
+                      </VStack>
+                    </Td>
+  
+                    <Td>
+                      {!webhook.isSubscribed && <WebhookUrl webhook={webhook} />}
+                    </Td>
+  
+                    <Td>
+                      {webhook.is_shared && (
+                        <HStack spacing={4} color="whiteAlpha.800">
+                          <HStack spacing={1}>
+                            <Icon as={Users} size={14} />
+                            <Text fontSize="sm">{webhook.subscriber_count || 0}</Text>
                           </HStack>
-                        )}
-                      </Td>
-
-                      <Td>
-                        {webhook.details ? (
-                          <Tooltip label={webhook.details}>
-                            <Box cursor="help">
-                              <Icon as={Info} color="whiteAlpha.600" size={14} />
-                            </Box>
-                          </Tooltip>
-                        ) : (
-                          <Text color="whiteAlpha.400" fontSize="xs">
-                            No details
-                          </Text>
-                        )}
-                      </Td>
-
-                      <Td>
-                        <Menu>
-                          <MenuButton
-                            as={IconButton}
-                            icon={<MoreVertical size={16} />}
-                            variant="ghost"
-                            size="sm"
-                            color="whiteAlpha.600"
-                            _hover={{ bg: 'whiteAlpha.100' }}
-                          />
-                          <MenuList
-                            bg="rgba(255, 255, 255, 0.1)"
-                            backdropFilter="blur(10px)"
-                            borderColor="rgba(255, 255, 255, 0.18)"
-                            boxShadow="0 8px 32px 0 rgba(0, 198, 224, 0.37)"
-                            borderRadius="xl"
-                          >
-                            {webhook.isSubscribed ? (
+                          {webhook.rating > 0 && (
+                            <HStack spacing={1}>
+                              <Icon as={Star} size={14} color="yellow.400" />
+                              <Text fontSize="sm">{webhook.rating.toFixed(1)}</Text>
+                            </HStack>
+                          )}
+                        </HStack>
+                      )}
+                    </Td>
+  
+                    <Td>
+                      {webhook.details ? (
+                        <Tooltip label={webhook.details}>
+                          <Box cursor="help">
+                            <Icon as={Info} color="whiteAlpha.600" size={14} />
+                          </Box>
+                        </Tooltip>
+                      ) : (
+                        <Text color="whiteAlpha.400" fontSize="xs">
+                          No details
+                        </Text>
+                      )}
+                    </Td>
+  
+                    <Td>
+                      <Menu>
+                        <MenuButton
+                          as={IconButton}
+                          icon={<MoreVertical size={16} />}
+                          variant="ghost"
+                          size="sm"
+                          color="whiteAlpha.600"
+                          _hover={{ bg: 'whiteAlpha.100' }}
+                        />
+                        <MenuList
+                          bg="rgba(255, 255, 255, 0.1)"
+                          backdropFilter="blur(10px)"
+                          borderColor="rgba(255, 255, 255, 0.18)"
+                          boxShadow="0 8px 32px 0 rgba(0, 198, 224, 0.37)"
+                          borderRadius="xl"
+                        >
+                          {webhook.isSubscribed ? (
+                            <MenuItem
+                              onClick={() => handleAction(webhook, 'unsubscribe')}
+                              _hover={{ bg: "whiteAlpha.200" }}
+                              bg="transparent"
+                              color="red.400"
+                              icon={<UserMinus size={14} />}
+                            >
+                              Unsubscribe
+                            </MenuItem>
+                          ) : (
+                            <>
                               <MenuItem
-                                onClick={() => handleAction(webhook, 'unsubscribe')}
+                                onClick={() => handleAction(webhook, 'details')}
+                                _hover={{ bg: "whiteAlpha.200" }}
+                                bg="transparent"
+                                color="white"
+                                icon={<Settings size={14} />}
+                              >
+                                Setup
+                              </MenuItem>
+                              <MenuItem
+                                onClick={() => handleAction(webhook, 'share')}
+                                _hover={{ bg: "whiteAlpha.200" }}
+                                bg="transparent"
+                                color="white"
+                                icon={<Share size={14} />}
+                              >
+                                Share Strategy
+                              </MenuItem>
+                              <MenuItem
+                                onClick={() => {
+                                  console.log('Delete clicked for webhook:', webhook); // Debug log
+                                  handleAction(webhook, 'delete');
+                                }}
                                 _hover={{ bg: "whiteAlpha.200" }}
                                 bg="transparent"
                                 color="red.400"
-                                icon={<UserMinus size={14} />}
+                                icon={<Trash2 size={14} />}
                               >
-                                Unsubscribe
+                                Delete
                               </MenuItem>
-                            ) : (
-                              <>
-                                <MenuItem
-                                  onClick={() => handleAction(webhook, 'details')}
-                                  _hover={{ bg: "whiteAlpha.200" }}
-                                  bg="transparent"
-                                  color="white"
-                                  icon={<Settings size={14} />}
-                                >
-                                  Setup
-                                </MenuItem>
-                                <MenuItem
-                                  onClick={() => handleAction(webhook, 'share')}
-                                  _hover={{ bg: "whiteAlpha.200" }}
-                                  bg="transparent"
-                                  color="white"
-                                  icon={<Share size={14} />}
-                                >
-                                  Share Strategy
-                                </MenuItem>
-                                <MenuItem
-                                  onClick={() => {
-                                    console.log('Delete clicked for webhook:', webhook);
-                                    handleAction(webhook, 'delete');
-                                  }}
-                                  _hover={{ bg: "whiteAlpha.200" }}
-                                  bg="transparent"
-                                  color="red.400"
-                                  icon={<Trash2 size={14} />}
-                                >
-                                  Delete
-                                </MenuItem>
-                              </>
-                            )}
-                          </MenuList>
-                        </Menu>
-                      </Td>
-                    </motion.tr>
-                  ))}
-                </AnimatePresence>
-              </Tbody>
-            </Table>
-          )}
+                            </>
+                          )}
+                        </MenuList>
+                      </Menu>
+                    </Td>
+                  </motion.tr>
+                ))}
+              </AnimatePresence>
+            </Tbody>
+          </Table>
           <ScrollFade position="bottom" />
         </Box>
       )}
-
-      {/* Legend Footer */}
-      {!isLoading && !error && webhooks.length > 0 && (
-        <Flex
-          justify="center"
-          borderTop="1px solid"
-          borderColor="whiteAlpha.100"
-          py={2}
-          px={3}
-          mt="auto"
-        >
-          <HStack
-            spacing={{ base: 4, md: 6 }}
-            color="whiteAlpha.600"
-            fontSize={{ base: 'xs', md: 'sm' }}
-          >
-            <HStack spacing={2}>
-              <Box w="3px" h={{ base: '12px', md: '16px' }} bg="purple.400" borderRadius="full" />
-              <Text>{isMobile ? 'Subscribed' : 'Subscribed Strategies'}</Text>
-            </HStack>
-            <HStack spacing={2}>
-              <Box w="3px" h={{ base: '12px', md: '16px' }} bg="cyan.400" borderRadius="full" />
-              <Text>{isMobile ? 'Shared' : 'Shared Strategies'}</Text>
-            </HStack>
-          </HStack>
-        </Flex>
-      )}
-
+  
       {/* Modals */}
       {selectedWebhook && (
         <>
@@ -696,7 +538,7 @@ const WebhooksView = ({ onWebhooksChange }) => {
             }}
             webhook={selectedWebhook}
           />
-
+  
           <ShareStrategyModal
             isOpen={isShareOpen}
             onClose={() => {
@@ -706,7 +548,7 @@ const WebhooksView = ({ onWebhooksChange }) => {
             webhook={selectedWebhook}
             onWebhookUpdate={handleShareUpdate}
           />
-
+  
           <DeleteWebhook
             isOpen={isDeleteOpen}
             onClose={() => {
@@ -716,10 +558,10 @@ const WebhooksView = ({ onWebhooksChange }) => {
             webhookToken={selectedWebhook.token}
             onWebhookDeleted={handleDeleteWebhook}
           />
-
+          
         </>
       )}
-    </Flex>
+    </Box>
   );
 };
 

@@ -14,18 +14,28 @@ export const ariaApi = {
    * @param {string} message - User's message or voice transcript
    * @param {string} inputType - 'text' or 'voice'
    * @param {Object} context - Additional context (optional)
-   * @returns {Promise} ARIA response
+   * @param {number} conversationId - Conversation ID (optional - creates new if not provided)
+   * @returns {Promise} ARIA response with conversation_id
    */
-  async sendMessage(message, inputType = 'text', context = null) {
+  async sendMessage(message, inputType = 'text', context = null, conversationId = null) {
+    console.log('[ARIA] API sendMessage called:', { message, inputType, context, conversationId });
+    console.log('[ARIA] API endpoint:', `${ARIA_BASE_PATH}/chat`);
     try {
-      const response = await axiosInstance.post(`${ARIA_BASE_PATH}/chat`, {
+      const payload = {
         message,
         input_type: inputType,
         context
-      });
+      };
+      if (conversationId) {
+        payload.conversation_id = conversationId;
+      }
+      const response = await axiosInstance.post(`${ARIA_BASE_PATH}/chat`, payload);
+      console.log('[ARIA] API sendMessage success:', response.data);
       return response.data;
     } catch (error) {
-      console.error('ARIA message error:', error);
+      console.error('[ARIA] API sendMessage error:', error);
+      console.error('[ARIA] API error response:', error.response?.data);
+      console.error('[ARIA] API error status:', error.response?.status);
       throw this.handleError(error);
     }
   },
@@ -36,14 +46,16 @@ export const ariaApi = {
    * @returns {Promise} ARIA response
    */
   async sendVoiceCommand(command) {
+    console.log('[ARIA] API sendVoiceCommand called:', command);
     try {
       const response = await axiosInstance.post(`${ARIA_BASE_PATH}/voice`, {
         message: command,
         input_type: 'voice'
       });
+      console.log('[ARIA] API sendVoiceCommand success:', response.data);
       return response.data;
     } catch (error) {
-      console.error('ARIA voice command error:', error);
+      console.error('[ARIA] API sendVoiceCommand error:', error);
       throw this.handleError(error);
     }
   },
@@ -55,14 +67,16 @@ export const ariaApi = {
    * @returns {Promise} ARIA response
    */
   async sendConfirmation(interactionId, confirmed) {
+    console.log('[ARIA] API sendConfirmation called:', { interactionId, confirmed });
     try {
       const response = await axiosInstance.post(`${ARIA_BASE_PATH}/confirm`, {
         interaction_id: interactionId,
         confirmed
       });
+      console.log('[ARIA] API sendConfirmation success:', response.data);
       return response.data;
     } catch (error) {
-      console.error('ARIA confirmation error:', error);
+      console.error('[ARIA] API sendConfirmation error:', error);
       throw this.handleError(error);
     }
   },
@@ -72,11 +86,13 @@ export const ariaApi = {
    * @returns {Promise} User's trading context
    */
   async getUserContext() {
+    console.log('[ARIA] API getUserContext called');
     try {
       const response = await axiosInstance.get(`${ARIA_BASE_PATH}/context`);
+      console.log('[ARIA] API getUserContext success');
       return response.data;
     } catch (error) {
-      console.error('ARIA context error:', error);
+      console.error('[ARIA] API getUserContext error:', error);
       throw this.handleError(error);
     }
   },
@@ -122,6 +138,105 @@ export const ariaApi = {
       return response.data;
     } catch (error) {
       console.error('ARIA analytics error:', error);
+      throw this.handleError(error);
+    }
+  },
+
+  // ==================== Conversation Methods ====================
+
+  /**
+   * Get list of user's conversations (last 15 days)
+   * @returns {Promise} Conversations list
+   */
+  async getConversations() {
+    console.log('[ARIA] API getConversations called');
+    try {
+      const response = await axiosInstance.get(`${ARIA_BASE_PATH}/conversations`);
+      console.log('[ARIA] API getConversations success:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('[ARIA] API getConversations error:', error);
+      throw this.handleError(error);
+    }
+  },
+
+  /**
+   * Get messages for a specific conversation with pagination
+   * @param {number} conversationId - Conversation ID
+   * @param {Object} options - Pagination options
+   * @param {number} options.limit - Number of messages (default 30)
+   * @param {number} options.before_id - Get messages before this ID
+   * @returns {Promise} Messages and pagination info
+   */
+  async getMessages(conversationId, { limit = 30, before_id } = {}) {
+    console.log('[ARIA] API getMessages called:', { conversationId, limit, before_id });
+    try {
+      const params = { limit };
+      if (before_id) params.before_id = before_id;
+      const response = await axiosInstance.get(
+        `${ARIA_BASE_PATH}/conversations/${conversationId}/messages`,
+        { params }
+      );
+      console.log('[ARIA] API getMessages success:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('[ARIA] API getMessages error:', error);
+      throw this.handleError(error);
+    }
+  },
+
+  /**
+   * Create a new conversation
+   * @returns {Promise} New conversation details
+   */
+  async createConversation() {
+    console.log('[ARIA] API createConversation called');
+    try {
+      const response = await axiosInstance.post(`${ARIA_BASE_PATH}/conversations`);
+      console.log('[ARIA] API createConversation success:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('[ARIA] API createConversation error:', error);
+      throw this.handleError(error);
+    }
+  },
+
+  /**
+   * Rename a conversation
+   * @param {number} conversationId - Conversation ID
+   * @param {string} title - New title
+   * @returns {Promise} Updated conversation
+   */
+  async renameConversation(conversationId, title) {
+    console.log('[ARIA] API renameConversation called:', { conversationId, title });
+    try {
+      const response = await axiosInstance.patch(
+        `${ARIA_BASE_PATH}/conversations/${conversationId}`,
+        { title }
+      );
+      console.log('[ARIA] API renameConversation success:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('[ARIA] API renameConversation error:', error);
+      throw this.handleError(error);
+    }
+  },
+
+  /**
+   * Delete (archive) a conversation
+   * @param {number} conversationId - Conversation ID
+   * @returns {Promise} Deletion confirmation
+   */
+  async deleteConversation(conversationId) {
+    console.log('[ARIA] API deleteConversation called:', conversationId);
+    try {
+      const response = await axiosInstance.delete(
+        `${ARIA_BASE_PATH}/conversations/${conversationId}`
+      );
+      console.log('[ARIA] API deleteConversation success:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('[ARIA] API deleteConversation error:', error);
       throw this.handleError(error);
     }
   },

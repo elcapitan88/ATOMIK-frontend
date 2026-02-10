@@ -171,6 +171,28 @@ const OrderConfirmationModal = ({ isOpen, onClose, order, onConfirm }) => {
                     </HStack>
                   </HStack>
                 )}
+
+                {/* Order type details */}
+                {order.orderType && order.orderType !== 'MARKET' && (
+                  <HStack justify="space-between">
+                    <Text color="whiteAlpha.700">Order Type:</Text>
+                    <Badge colorScheme="purple">{order.orderType.replace('_', ' ')}</Badge>
+                  </HStack>
+                )}
+
+                {order.limitPrice && (
+                  <HStack justify="space-between">
+                    <Text color="whiteAlpha.700">Limit Price:</Text>
+                    <Text fontWeight="bold">{order.limitPrice}</Text>
+                  </HStack>
+                )}
+
+                {order.stopPrice && (
+                  <HStack justify="space-between">
+                    <Text color="whiteAlpha.700">Stop Price:</Text>
+                    <Text fontWeight="bold">{order.stopPrice}</Text>
+                  </HStack>
+                )}
               </>
             )}
 

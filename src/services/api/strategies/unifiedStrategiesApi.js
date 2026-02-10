@@ -22,7 +22,6 @@ const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
 class UnifiedStrategiesApi {
   constructor() {
-    // NOTE: Backend endpoint is defined with trailing slash - must match to avoid redirects
     this.baseUrl = '/api/v1/strategies';
     this.retryAttempts = 3;
     this.retryDelay = 1000;
@@ -91,14 +90,8 @@ class UnifiedStrategiesApi {
         throw new Error('execution_type is required (webhook or engine)');
       }
 
-      // Use explicit path construction to ensure proper URL handling
-      // IMPORTANT: Use trailing slash to match backend endpoint and avoid 307 redirects
       const response = await this.withRetry(() =>
-        axiosInstance.post(`${this.baseUrl}/`, strategyData, {
-          headers: {
-            'Content-Type': 'application/json',
-          }
-        })
+        axiosInstance.post(this.baseUrl, strategyData)
       );
 
       this.clearCache();
@@ -322,14 +315,6 @@ class UnifiedStrategiesApi {
   async refreshStrategies() {
     this.clearCache();
     return this.listStrategies({}, false);
-  }
-
-  /**
-   * Force refresh strategies - bypasses cache and logs results
-   */
-  async forceRefreshStrategies() {
-    this.clearCache();
-    return await this.listStrategies({}, false);
   }
 
   // Legacy compatibility methods (will be removed after migration)

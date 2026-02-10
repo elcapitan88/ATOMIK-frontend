@@ -79,16 +79,9 @@ export const useUnifiedStrategies = (filters = {}) => {
       const previousStrategies = queryClient.getQueryData(UNIFIED_STRATEGIES_KEYS.lists(filters));
       return { previousStrategies };
     },
-    onSuccess: async (response, variables) => {
+    onSuccess: (response, variables) => {
       // Invalidate all strategy queries to ensure fresh data
       queryClient.invalidateQueries(UNIFIED_STRATEGIES_KEYS.all);
-
-      // Force refresh to ensure strategies are loaded from server
-      try {
-        await unifiedStrategiesApi.forceRefreshStrategies();
-      } catch (error) {
-        console.error('[useUnifiedStrategies] Error force refreshing strategies:', error);
-      }
 
       toast({
         title: "Strategy Created",

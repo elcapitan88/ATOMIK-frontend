@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { useNavigate, Link as RouterLink } from 'react-router-dom';
 import {
   Box,
   VStack,
@@ -10,15 +9,14 @@ import {
   Tooltip,
   Button,
   useToast,
-  useClipboard,
 } from '@chakra-ui/react';
-import { Users, Lock, Unlock, CheckCircle2, Shield, TrendingUp, Copy } from 'lucide-react';
+import { Users, Lock, Unlock, CheckCircle2 } from 'lucide-react';
 import { webhookApi } from '@/services/api/Webhooks/webhookApi';
 import { engineStrategiesApi } from '@/services/api/strategies/engineStrategiesApi';
 import StarRating from '../StarRating';
 import StrategyPurchaseModal from './StrategyPurchaseModal';
 
-const StrategyCard = ({ strategy, onSubscriptionChange, isMobile = false, isGuest = false }) => {
+const StrategyCard = ({ strategy, onSubscriptionChange }) => {
   const {
     token,
     source_id, // This is the ID for engine strategies or token for webhooks
@@ -33,14 +31,7 @@ const StrategyCard = ({ strategy, onSubscriptionChange, isMobile = false, isGues
     isMonetized = false,
     usageIntent = 'personal',
     marketplacePurchaseUrl,
-    pricingEndpoint,
-    // Phase 2: Trust metrics for verified live performance
-    live_total_trades = 0,
-    live_winning_trades = 0,
-    live_total_pnl = 0,
-    live_win_rate = 0,
-    combined_hash = null,
-    is_locked = false
+    pricingEndpoint
   } = strategy;
 
   // Special handling for Break N Enter - always treat as monetized
@@ -53,29 +44,7 @@ const StrategyCard = ({ strategy, onSubscriptionChange, isMobile = false, isGues
   const [isPurchaseModalOpen, setIsPurchaseModalOpen] = useState(false);
   const [pricing, setPricing] = useState(null);
   const toast = useToast();
-  const navigate = useNavigate();
-  const { onCopy: onCopyHash, hasCopied: hasCopiedHash } = useClipboard(combined_hash || '');
-
-  // Helper to format and copy verification hash
-  const handleCopyHash = () => {
-    if (combined_hash) {
-      onCopyHash();
-      toast({
-        title: "Hash Copied",
-        description: "Verification hash copied to clipboard",
-        status: "success",
-        duration: 2000,
-        isClosable: true,
-      });
-    }
-  };
-
-  // Helper to truncate hash for display
-  const truncateHash = (hash) => {
-    if (!hash) return null;
-    return `${hash.slice(0, 6)}...${hash.slice(-4)}`;
-  };
-
+  
   // Debug logging for the specific purchased strategy
   React.useEffect(() => {
     if (token === 'OGgxOp0wOd60YGb4kc4CEh8oSz2ZCscKVVZtfwbCbHg') {
@@ -91,23 +60,6 @@ const StrategyCard = ({ strategy, onSubscriptionChange, isMobile = false, isGues
   }, [token, name, isSubscribed, subscribed, isMonetized, usageIntent]);
 
   const handleSubscription = async () => {
-    if (isGuest) {
-      // Save strategy info for auto-subscription after signup
-      const pendingStrategy = {
-        token,
-        name,
-        strategyType,
-        source_id,
-        isMonetized: isStrategyMonetized,
-        timestamp: Date.now()
-      };
-      sessionStorage.setItem('pendingStrategySubscription', JSON.stringify(pendingStrategy));
-
-      // Navigate to pricing page with strategy context
-      navigate("/pricing?source=strategy_subscribe");
-      return;
-    }
-
     try {
       setIsLoading(true);
       if (subscribed) {
@@ -224,13 +176,13 @@ const StrategyCard = ({ strategy, onSubscriptionChange, isMobile = false, isGues
     try {
       // Import and use marketplace API
       const { marketplaceApi } = await import('@/services/api/marketplace/marketplaceApi');
-
+      
       // Fetch pricing information using the API service
       const pricingData = await marketplaceApi.getStrategyPricing(token);
-
+      
       // Transform backend response to expected frontend format
       const transformedPricing = transformPricingData(pricingData);
-
+      
       setPricing(transformedPricing);
       setIsPurchaseModalOpen(true);
     } catch (error) {
@@ -256,7 +208,7 @@ const StrategyCard = ({ strategy, onSubscriptionChange, isMobile = false, isGues
     }
 
     const prices = [];
-
+    
     // Add monthly option if available
     if (pricingData.base_amount && pricingData.billing_intervals?.includes('monthly')) {
       prices.push({
@@ -266,7 +218,7 @@ const StrategyCard = ({ strategy, onSubscriptionChange, isMobile = false, isGues
         display_name: 'Monthly Subscription'
       });
     }
-
+    
     // Add yearly option if available
     if (pricingData.yearly_amount && pricingData.billing_intervals?.includes('yearly')) {
       prices.push({
@@ -276,7 +228,7 @@ const StrategyCard = ({ strategy, onSubscriptionChange, isMobile = false, isGues
         display_name: 'Annual Subscription'
       });
     }
-
+    
     // Add setup fee if available
     if (pricingData.setup_fee) {
       prices.push({
@@ -326,16 +278,14 @@ const StrategyCard = ({ strategy, onSubscriptionChange, isMobile = false, isGues
       overflow="hidden"
       transition="all 0.2s"
       _hover={{
-        transform: isMobile ? 'none' : 'translateY(-2px)',
+        transform: 'translateY(-2px)',
         borderColor: "rgba(0, 198, 224, 0.6)",
-        boxShadow: isMobile ? "none" : "0 4px 12px rgba(0, 198, 224, 0.15)"
+        boxShadow: "0 4px 12px rgba(0, 198, 224, 0.15)"
       }}
-      w={isMobile ? "320px" : "280px"}
-      maxW={isMobile ? "calc(100% - 16px)" : "280px"}
-      h={isMobile ? "auto" : "260px"}
-      minH={isMobile ? "160px" : "260px"}
+      w="280px"
+      h="260px"
     >
-      <VStack p={isMobile ? 3 : 4} spacing={isMobile ? 2 : 3} align="stretch" h="full">
+      <VStack p={4} spacing={3} align="stretch" h="full">
         {/* Header Section */}
         <HStack justify="space-between" align="start">
           <VStack align="start" spacing={0} flex={1}>
@@ -350,20 +300,7 @@ const StrategyCard = ({ strategy, onSubscriptionChange, isMobile = false, isGues
               </Text>
             </HStack>
             <Text fontSize="sm" color="whiteAlpha.700">
-              by{' '}
-              <Text
-                as={RouterLink}
-                to={`/creator/${username}`}
-                color="whiteAlpha.700"
-                _hover={{
-                  color: '#00C6E0',
-                  textDecoration: 'underline'
-                }}
-                transition="color 0.2s"
-                onClick={(e) => e.stopPropagation()}
-              >
-                {username}
-              </Text>
+              by {username}
             </Text>
           </VStack>
           {/* Pricing Badge - Glassmorphic style matching app aesthetic */}
@@ -409,11 +346,11 @@ const StrategyCard = ({ strategy, onSubscriptionChange, isMobile = false, isGues
         </HStack>
 
         {/* Description */}
-        <Text
-          fontSize={isMobile ? "xs" : "sm"}
-          color="whiteAlpha.800"
-          noOfLines={isMobile ? 2 : 2}
-          flex={isMobile ? "none" : 1}
+        <Text 
+          fontSize="sm" 
+          color="whiteAlpha.800" 
+          noOfLines={2}
+          flex={1}
         >
           {description}
         </Text>
@@ -434,66 +371,13 @@ const StrategyCard = ({ strategy, onSubscriptionChange, isMobile = false, isGues
           </HStack>
         </HStack>
 
-        {/* Trust Metrics - Phase 2: Verified Live Performance */}
-        {is_locked && live_total_trades > 0 && (
-          <Box
-            bg="rgba(16, 185, 129, 0.08)"
-            border="1px solid rgba(16, 185, 129, 0.3)"
-            borderRadius="md"
-            p={2}
-          >
-            <HStack justify="space-between" align="center" mb={1}>
-              <HStack spacing={1}>
-                <Icon as={Shield} boxSize={3} color="green.400" />
-                <Text fontSize="xs" fontWeight="semibold" color="green.400">
-                  Verified Performance
-                </Text>
-              </HStack>
-              <Tooltip label={hasCopiedHash ? "Copied!" : "Copy verification hash"}>
-                <HStack
-                  spacing={1}
-                  cursor="pointer"
-                  onClick={handleCopyHash}
-                  _hover={{ opacity: 0.8 }}
-                >
-                  <Text fontSize="xs" color="whiteAlpha.600" fontFamily="mono">
-                    {truncateHash(combined_hash)}
-                  </Text>
-                  <Icon as={Copy} boxSize={3} color="whiteAlpha.600" />
-                </HStack>
-              </Tooltip>
-            </HStack>
-            <HStack justify="space-between" spacing={2}>
-              <VStack spacing={0} align="start">
-                <Text fontSize="xs" color="whiteAlpha.600">Trades</Text>
-                <Text fontSize="sm" fontWeight="bold" color="white">
-                  {live_total_trades}
-                </Text>
-              </VStack>
-              <VStack spacing={0} align="center">
-                <Text fontSize="xs" color="whiteAlpha.600">Win Rate</Text>
-                <Text fontSize="sm" fontWeight="bold" color={live_win_rate >= 50 ? "green.400" : "red.400"}>
-                  {live_win_rate.toFixed(1)}%
-                </Text>
-              </VStack>
-              <VStack spacing={0} align="end">
-                <Text fontSize="xs" color="whiteAlpha.600">PnL</Text>
-                <Text fontSize="sm" fontWeight="bold" color={live_total_pnl >= 0 ? "green.400" : "red.400"}>
-                  {live_total_pnl >= 0 ? '+' : ''}{live_total_pnl.toFixed(2)}%
-                </Text>
-              </VStack>
-            </HStack>
-          </Box>
-        )}
-
         {/* Subscribe Button */}
         <Button
           onClick={handleSubscription}
           isLoading={isLoading}
           variant="outline"
-          size={isMobile ? "md" : "sm"}
+          size="sm"
           w="full"
-          minH="44px"
           colorScheme={subscribed ? "blue" : "gray"}
           borderColor={subscribed ? "rgba(0, 198, 224, 0.6)" : "whiteAlpha.200"}
           color={subscribed ? "rgba(0, 198, 224, 0.9)" : "white"}
@@ -501,20 +385,17 @@ const StrategyCard = ({ strategy, onSubscriptionChange, isMobile = false, isGues
             bg: subscribed ? "rgba(0, 198, 224, 0.1)" : "whiteAlpha.100",
             borderColor: "rgba(0, 198, 224, 0.6)"
           }}
-          leftIcon={subscribed ? <CheckCircle2 size={isMobile ? 18 : 16} /> : null}
-          fontSize={isMobile ? "sm" : "xs"}
+          leftIcon={subscribed ? <CheckCircle2 size={16} /> : null}
         >
           {subscribed
             ? "Subscribed"
-            : isGuest
-              ? "Sign Up to Subscribe"
-              : isStrategyMonetized
-                ? "View Pricing"
-                : "Subscribe Free"
+            : isStrategyMonetized
+              ? "View Pricing"
+              : "Subscribe Free"
           }
         </Button>
       </VStack>
-
+      
       {/* Purchase Modal */}
       {isPurchaseModalOpen && pricing && (
         <StrategyPurchaseModal

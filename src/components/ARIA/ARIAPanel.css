@@ -1,0 +1,332 @@
+/* ARIAPanel.css - Right-side sliding panel styles */
+/* Push Layout - Panel pushes dashboard content instead of overlaying */
+
+:root {
+  --aria-panel-width: 380px;
+  --aria-panel-width-with-sidebar: 600px;
+  --aria-z-panel: 999;
+}
+
+/* ===== PUSH LAYOUT - Dashboard Content Adjustment ===== */
+/* Target the dashboard main content area directly by class/id */
+body.aria-panel-open #dashboard-main-content,
+body.aria-panel-open .dashboard-main-content {
+  margin-right: var(--aria-panel-width) !important;
+}
+
+body.aria-panel-with-sidebar #dashboard-main-content,
+body.aria-panel-with-sidebar .dashboard-main-content {
+  margin-right: var(--aria-panel-width-with-sidebar) !important;
+}
+
+/* Dashboard scroll container - prevent vertical scrollbar */
+.dashboard-content-scroll {
+  overflow: hidden !important;
+}
+
+/* Dashboard columns - smooth transitions */
+.dashboard-columns {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Left column absorbs more of the width reduction */
+.dashboard-left-column {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  flex-shrink: 1 !important;
+}
+
+/* Right column shrinks less - maintains minimum usable width */
+.dashboard-right-column {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  flex-shrink: 0.3 !important;
+  min-width: 280px;
+}
+
+/* When ARIA panel is open, ensure proper flex behavior */
+body.aria-panel-open .dashboard-left-column {
+  flex-shrink: 1.5 !important;
+}
+
+body.aria-panel-open .dashboard-right-column {
+  flex-shrink: 0.2 !important;
+}
+
+/* Panel Container */
+.aria-panel {
+  position: fixed;
+  top: 24px; /* Match dashboard padding */
+  right: 0;
+  bottom: 24px; /* Match dashboard padding */
+  width: var(--aria-panel-width);
+  max-width: 90vw;
+  z-index: var(--aria-z-panel);
+
+  background: rgba(20, 20, 20, 0.95);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-right: none; /* Flush with right edge */
+  border-radius: 16px 0 0 16px; /* Rounded left corners */
+  box-shadow: -10px 0 40px rgba(0, 0, 0, 0.3);
+
+  display: flex;
+  flex-direction: row;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  color: white;
+  overflow: hidden;
+}
+
+.aria-panel.with-sidebar {
+  width: var(--aria-panel-width-with-sidebar);
+}
+
+/* Sidebar */
+.aria-panel-sidebar {
+  width: 220px;
+  min-width: 220px;
+  background: rgba(0, 0, 0, 0.3);
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.aria-sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.aria-sidebar-new-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: rgba(0, 198, 224, 0.2);
+  border-radius: 6px;
+  color: #00C6E0;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.aria-sidebar-new-btn:hover {
+  background: rgba(0, 198, 224, 0.3);
+}
+
+/* Conversation List */
+.aria-conversation-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px;
+}
+
+.aria-conversation-list::-webkit-scrollbar {
+  width: 4px;
+}
+
+.aria-conversation-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.aria-conversation-list::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 2px;
+}
+
+.aria-no-conversations {
+  padding: 20px 16px;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 13px;
+}
+
+.aria-conversation-item {
+  padding: 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  margin-bottom: 4px;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.aria-conversation-item.active {
+  background: rgba(0, 198, 224, 0.15);
+  border: 1px solid rgba(0, 198, 224, 0.3);
+}
+
+.aria-conv-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.9);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 4px;
+}
+
+.aria-conv-preview {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.5);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 6px;
+}
+
+.aria-conv-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.aria-conv-date {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.aria-conv-delete {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border: none;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.3);
+  cursor: pointer;
+  border-radius: 4px;
+  opacity: 0;
+  transition: all 0.2s ease;
+}
+
+.aria-conversation-item:hover .aria-conv-delete {
+  opacity: 1;
+}
+
+.aria-conv-delete:hover {
+  background: rgba(239, 68, 68, 0.2);
+  color: #FCA5A5;
+}
+
+/* Main Panel Content */
+.aria-panel-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+}
+
+/* Header */
+.aria-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  background: rgba(255, 255, 255, 0.03);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  flex-shrink: 0;
+}
+
+.aria-panel-header-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.aria-panel-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  font-size: 16px;
+}
+
+.aria-panel-icon {
+  color: #00C6E0;
+}
+
+.aria-conv-count {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.5);
+  font-weight: 400;
+}
+
+.aria-panel-header-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.aria-panel-header-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.aria-panel-header-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: white;
+}
+
+.aria-panel-header-btn.close:hover {
+  background: rgba(239, 68, 68, 0.2);
+  color: #FCA5A5;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .aria-panel {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .aria-panel.with-sidebar {
+    width: 100%;
+  }
+
+  .aria-panel-sidebar {
+    width: 180px;
+    min-width: 180px;
+  }
+}
+
+@media (max-width: 480px) {
+  .aria-panel.with-sidebar {
+    flex-direction: column;
+  }
+
+  .aria-panel-sidebar {
+    width: 100%;
+    min-width: 100%;
+    max-height: 200px;
+    border-right: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  }
+}
+
+/* Dark mode */
+@media (prefers-color-scheme: dark) {
+  .aria-panel {
+    background: rgba(10, 10, 10, 0.98);
+  }
+
+  .aria-panel-sidebar {
+    background: rgba(0, 0, 0, 0.4);
+  }
+}

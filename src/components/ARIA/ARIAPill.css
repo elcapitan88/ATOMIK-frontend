@@ -1,0 +1,286 @@
+/* ARIAPill.css - Top-center input pill styles with enhanced animations */
+
+/* CSS Variables for ARIA */
+:root {
+  --aria-primary: #00C6E0;
+  --aria-primary-dim: rgba(0, 198, 224, 0.2);
+  --aria-bg: rgba(20, 20, 20, 0.95);
+  --aria-bg-light: rgba(255, 255, 255, 0.1);
+  --aria-border: rgba(255, 255, 255, 0.15);
+  --aria-text: rgba(255, 255, 255, 0.95);
+  --aria-text-dim: rgba(255, 255, 255, 0.6);
+  --aria-pill-height: 48px;
+  --aria-pill-min-width: 280px;
+  --aria-pill-max-width: 400px;
+  --aria-transition-fast: 150ms;
+  --aria-transition-normal: 300ms;
+  --aria-easing: cubic-bezier(0.4, 0, 0.2, 1);
+  --aria-z-pill: 1000;
+}
+
+/* Pill Container */
+.aria-pill-v2 {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: var(--aria-z-pill);
+
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  min-width: var(--aria-pill-min-width);
+  max-width: var(--aria-pill-max-width);
+  height: var(--aria-pill-height);
+
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--aria-border);
+  border-radius: 50px;
+
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  overflow: hidden;
+  transition: background var(--aria-transition-fast) var(--aria-easing),
+              border-color var(--aria-transition-fast) var(--aria-easing);
+}
+
+.aria-pill-v2:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+.aria-pill-v2.focused {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(0, 198, 224, 0.4);
+}
+
+.aria-pill-v2.voice-active {
+  background: var(--aria-primary-dim);
+  border-color: rgba(0, 198, 224, 0.5);
+}
+
+.aria-pill-v2.sending {
+  background: rgba(0, 198, 224, 0.15);
+  border-color: rgba(0, 198, 224, 0.4);
+}
+
+/* Shimmer Effect */
+.aria-pill-shimmer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.1) 50%,
+    transparent 100%
+  );
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Icon */
+.aria-pill-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--aria-primary);
+  flex-shrink: 0;
+  position: relative;
+  z-index: 2;
+}
+
+/* Input */
+.aria-pill-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--aria-text);
+  font-size: 14px;
+  font-weight: 500;
+  min-width: 0;
+  position: relative;
+  z-index: 2;
+}
+
+.aria-pill-input::placeholder {
+  color: var(--aria-text-dim);
+  font-weight: 400;
+  transition: color var(--aria-transition-fast) var(--aria-easing);
+}
+
+.aria-pill-v2.focused .aria-pill-input::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.aria-pill-input:disabled {
+  opacity: 0.7;
+}
+
+/* Actions Container */
+.aria-pill-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 2;
+}
+
+/* Send Button */
+.aria-pill-send {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: linear-gradient(135deg, #00C6E0, #10B981);
+  border-radius: 50%;
+  color: white;
+  cursor: pointer;
+}
+
+/* Loader */
+.aria-pill-loader {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  color: var(--aria-primary);
+}
+
+/* Voice Button */
+.aria-pill-voice {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  color: var(--aria-text-dim);
+  cursor: pointer;
+  transition: color var(--aria-transition-fast) var(--aria-easing);
+}
+
+.aria-pill-voice:hover {
+  color: white;
+}
+
+.aria-pill-voice.listening {
+  color: #FCA5A5;
+}
+
+/* Pulse Animation Rings */
+.aria-pill-pulse {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: 50px;
+  border: 2px solid var(--aria-primary);
+  pointer-events: none;
+}
+
+/* Keyboard Shortcut Hint */
+.aria-pill-hint {
+  position: absolute;
+  right: 60px;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  opacity: 0.4;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.aria-pill-hint kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: fit-content;
+  height: 20px;
+  padding: 0 6px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  font-size: 11px;
+  font-family: inherit;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+/* Panel Open State */
+.aria-pill-v2.panel-open {
+  /* Slight shift when panel is open */
+  transform: translateX(calc(-50% - 100px));
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .aria-pill-v2 {
+    top: 10px;
+    left: 10px;
+    right: 10px;
+    transform: none;
+    max-width: none;
+    min-width: auto;
+  }
+
+  .aria-pill-v2.panel-open {
+    transform: none;
+  }
+
+  .aria-pill-hint {
+    display: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .aria-pill-v2 {
+    padding: 8px 12px;
+    gap: 8px;
+  }
+
+  .aria-pill-input {
+    font-size: 13px;
+  }
+
+  .aria-pill-send,
+  .aria-pill-voice,
+  .aria-pill-loader {
+    width: 28px;
+    height: 28px;
+  }
+}
+
+/* Dark mode optimizations */
+@media (prefers-color-scheme: dark) {
+  .aria-pill-v2 {
+    background: rgba(0, 0, 0, 0.4);
+  }
+
+  .aria-pill-v2:hover,
+  .aria-pill-v2.focused {
+    background: rgba(0, 0, 0, 0.5);
+  }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .aria-pill-v2,
+  .aria-pill-shimmer,
+  .aria-pill-icon,
+  .aria-pill-pulse {
+    animation: none !important;
+    transition: none !important;
+  }
+}

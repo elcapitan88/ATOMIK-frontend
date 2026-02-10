@@ -17,29 +17,27 @@ import {
   Avatar,
 } from '@chakra-ui/react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import {
-  Settings,
-  HelpCircle,
-  LifeBuoy,
-  LogOut,
-  ChevronDown,
-  User,
-  LayoutDashboard,
-  Wand2,
-  Store,
-  Menu as MenuIcon,
+import { 
+  Settings, 
+  HelpCircle, 
+  LifeBuoy, 
+  LogOut, 
+  ChevronDown, 
+  User, 
+  LayoutDashboard, 
+  Wand2, 
+  Store, 
+  Menu as MenuIcon, 
   ChevronLeft,
-  Shield,
-  Share2
+  Shield
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import { useCreator } from '@/hooks/useCreator';
 import SupportModal from '../../common/Modal/SupportModal';
 
 // Simplified MenuItem with fewer conditionals
 const MenuItem = memo(({ icon, item, isSelected, onClick, isExpanded }) => {
   const IconComponent = icon;
-
+  
   return (
     <Flex
       py={2.5}
@@ -69,8 +67,8 @@ const MenuItem = memo(({ icon, item, isSelected, onClick, isExpanded }) => {
     >
       {IconComponent && <IconComponent size={16} color={isSelected ? "#00C6E0" : "rgba(255, 255, 255, 0.9)"} />}
       {isExpanded && (
-        <Text
-          color="white"
+        <Text 
+          color="white" 
           fontSize="sm"
           fontWeight={isSelected ? "medium" : "normal"}
         >
@@ -86,7 +84,7 @@ MenuItem.displayName = 'MenuItem';
 // Mobile menu item for bottom navigation
 const MobileMenuItem = memo(({ icon, item, isSelected, onClick }) => {
   const IconComponent = icon;
-
+  
   return (
     <Flex
       direction="column"
@@ -110,9 +108,9 @@ const MobileMenuItem = memo(({ icon, item, isSelected, onClick }) => {
       data-nav-item="true"
     >
       {IconComponent && <IconComponent size={20} color={isSelected ? "#00C6E0" : "rgba(255, 255, 255, 0.9)"} />}
-      <Text
-        color="white"
-        fontSize="xs"
+      <Text 
+        color="white" 
+        fontSize="xs" 
         mt={1}
         fontWeight={isSelected ? "medium" : "normal"}
       >
@@ -130,7 +128,7 @@ const Menu = ({ onSelectItem }) => {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const { isOpen: isSupportOpen, onOpen: onSupportOpen, onClose: onSupportClose } = useDisclosure();
   const menuRef = useRef(null);
-
+  
   const navigate = useNavigate();
   const location = useLocation();
   const toast = useToast();
@@ -139,14 +137,10 @@ const Menu = ({ onSelectItem }) => {
   // Use Chakra's breakpoint hook
   const isMobile = useBreakpointValue({ base: true, md: false });
 
-  // Creator check
-  const { useIsCreator } = useCreator();
-  const { data: isCreator } = useIsCreator();
-
   // Compute display name directly from user data
   const displayName = React.useMemo(() => {
     if (!user) return '';
-
+    
     if (user.username) {
       return user.username;
     } else if (user.full_name || user.fullName) {
@@ -154,7 +148,7 @@ const Menu = ({ onSelectItem }) => {
     } else if (user.email) {
       return user.email.split('@')[0];
     }
-
+    
     return '';
   }, [user]);
 
@@ -172,18 +166,18 @@ const Menu = ({ onSelectItem }) => {
   // Define menu items
   const menuItems = React.useMemo(() => {
     const baseItems = [
-      {
-        name: 'Dashboard',
+      { 
+        name: 'Dashboard', 
         icon: LayoutDashboard,
         path: '/dashboard'
       },
-      {
-        name: 'Strategy Builder',
+      { 
+        name: 'Strategy Builder', 
         icon: Wand2,
         path: '/strategy-builder'
       },
-      {
-        name: 'Marketplace',
+      { 
+        name: 'Marketplace', 
         icon: Store,
         path: '/marketplace'
       },
@@ -200,18 +194,18 @@ const Menu = ({ onSelectItem }) => {
 
     return baseItems;
   }, [hasAdminAccess]);
-
+  
   const toggleMenu = (e) => {
     if (e) {
       const clickedElement = e.target;
       const isNavItem = clickedElement.closest('[data-nav-item="true"]');
       const isUserMenu = clickedElement.closest('[data-user-menu="true"]');
-
+      
       if (isNavItem || isUserMenu) {
         return;
       }
     }
-
+    
     setIsMenuExpanded(!isMenuExpanded);
   };
 
@@ -278,32 +272,6 @@ const Menu = ({ onSelectItem }) => {
     navigate('/settings');
   };
 
-  const handleShareProfile = (e) => {
-    e.stopPropagation();
-    if (!user?.username) return;
-
-    const profileUrl = `${window.location.origin}/creator/${user.username}`;
-
-    navigator.clipboard.writeText(profileUrl).then(() => {
-      toast({
-        title: "Link copied!",
-        description: "Profile URL copied to clipboard",
-        status: "success",
-        duration: 2000,
-        isClosable: true,
-        position: "top-right"
-      });
-      setIsUserMenuOpen(false);
-    }).catch(() => {
-      toast({
-        title: "Failed to copy",
-        status: "error",
-        duration: 2000,
-        isClosable: true,
-      });
-    });
-  };
-
   return (
     <>
       {/* Mobile Menu (Bottom Navigation) */}
@@ -331,7 +299,7 @@ const Menu = ({ onSelectItem }) => {
               onClick={handleItemClick}
             />
           ))}
-
+          
           <MobileMenuItem
             icon={Settings}
             item="Settings"
@@ -370,7 +338,7 @@ const Menu = ({ onSelectItem }) => {
               icon={isMenuExpanded ? <ChevronLeft size={16} /> : <MenuIcon size={16} />}
               variant="ghost"
               color="rgba(255, 255, 255, 0.9)"
-              _hover={{
+              _hover={{ 
                 bg: "rgba(0, 198, 224, 0.08)",
                 color: "#00C6E0"
               }}
@@ -400,9 +368,9 @@ const Menu = ({ onSelectItem }) => {
           {/* User Profile */}
           {isAuthenticated && (
             <Box mt="auto" width="100%" px={1}>
-              <Popover
-                placement="top-start"
-                isLazy
+              <Popover 
+                placement="top-start" 
+                isLazy 
                 isOpen={isUserMenuOpen}
                 onClose={() => setIsUserMenuOpen(false)}
                 closeOnBlur={true}
@@ -434,7 +402,7 @@ const Menu = ({ onSelectItem }) => {
                         borderWidth="2px"
                         borderColor="#333"
                       />
-
+                      
                       {isMenuExpanded && (
                         <Box ml={3} maxW="100px">
                           <Text fontSize="xs" color="white" noOfLines={1}>
@@ -443,12 +411,12 @@ const Menu = ({ onSelectItem }) => {
                         </Box>
                       )}
                     </Flex>
-
+                    
                     {isMenuExpanded && (
-                      <ChevronDown
-                        size={16}
-                        color="white"
-                        style={{
+                      <ChevronDown 
+                        size={16} 
+                        color="white" 
+                        style={{ 
                           opacity: 0.6,
                           transform: isUserMenuOpen ? 'rotate(180deg)' : 'rotate(0deg)',
                           transition: 'transform 0.3s ease'
@@ -466,9 +434,9 @@ const Menu = ({ onSelectItem }) => {
                   onClick={(e) => e.stopPropagation()} // Prevent menu toggle
                 >
                   <PopoverHeader borderBottomWidth="1px" borderColor="whiteAlpha.200" p={3}>
-                    <Text
-                      fontSize="xs"
-                      color="whiteAlpha.600"
+                    <Text 
+                      fontSize="xs" 
+                      color="whiteAlpha.600" 
                       textAlign="center"
                     >
                       Pro plan
@@ -476,37 +444,29 @@ const Menu = ({ onSelectItem }) => {
                   </PopoverHeader>
                   <PopoverBody p={2}>
                     <VStack spacing={1} align="stretch">
-                      <MenuItem
-                        icon={Settings}
-                        item="Settings"
-                        onClick={() => navigate('/settings')}
+                      <MenuItem 
+                        icon={Settings} 
+                        item="Settings" 
+                        onClick={() => navigate('/settings')} 
                         isExpanded={true}
                       />
-                      {isCreator && (
-                        <MenuItem
-                          icon={Share2}
-                          item="Share Profile"
-                          onClick={handleShareProfile}
-                          isExpanded={true}
-                        />
-                      )}
-                      <MenuItem
-                        icon={HelpCircle}
-                        item="Help Center"
-                        onClick={openHelpCenter}
+                      <MenuItem 
+                        icon={HelpCircle} 
+                        item="Help Center" 
+                        onClick={openHelpCenter} 
                         isExpanded={true}
                       />
-                      <MenuItem
-                        icon={LifeBuoy}
-                        item="Get Support"
-                        onClick={handleSupportClick}
+                      <MenuItem 
+                        icon={LifeBuoy} 
+                        item="Get Support" 
+                        onClick={handleSupportClick} 
                         isExpanded={true}
                       />
                       <Box my={2} h="1px" bg="whiteAlpha.300" />
-                      <MenuItem
-                        icon={LogOut}
-                        item="Log Out"
-                        onClick={handleLogout}
+                      <MenuItem 
+                        icon={LogOut} 
+                        item="Log Out" 
+                        onClick={handleLogout} 
                         isExpanded={true}
                       />
                     </VStack>
@@ -520,7 +480,7 @@ const Menu = ({ onSelectItem }) => {
 
       {/* Support Modal */}
       <SupportModal isOpen={isSupportOpen} onClose={onSupportClose} />
-
+      
     </>
   );
 };

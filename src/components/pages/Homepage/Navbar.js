@@ -19,10 +19,10 @@ const Navbar = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Navigation items - only include links that work across all public pages
   const navItems = [
-    { label: 'Marketplace', href: '/marketplace' },
-    { label: 'Support', href: '/docs' },
+    { label: 'Features', href: '#features' },
+    { label: 'How It Works', href: '#how-to-use' },
+    { label: 'Security', href: '#security' },
     { label: 'Pricing', href: '/pricing' },
   ];
 
@@ -48,7 +48,7 @@ const Navbar = () => {
         {/* Logo */}
         <RouterLink to="/">
           <Image
-            src="/logos/atomik-logo.svg"
+            src="/logos/atomik-logo.svg" 
             alt="Atomik Trading - Automated Trading Platform for Beginners"
             height="36px"
             width="180px"
@@ -90,16 +90,12 @@ const Navbar = () => {
           </RouterLink>
           <RouterLink to="/pricing">
             <Button
-              bg="rgba(0, 198, 224, 1)"
+              bg="transparent"
               color="white"
-              fontWeight="semibold"
-              px={6}
-              _hover={{
-                bg: 'rgba(0, 198, 224, 0.85)',
-                transform: 'translateY(-1px)',
-                boxShadow: '0 4px 12px rgba(0, 198, 224, 0.3)'
-              }}
-              transition="all 0.2s"
+              fontWeight="medium"
+              borderWidth={1}
+              borderColor="rgba(0, 198, 224, 1)"
+              _hover={{ bg: 'whiteAlpha.100' }}
             >
               Get Started
             </Button>
@@ -158,14 +154,12 @@ const Navbar = () => {
             <RouterLink to="/pricing" style={{ width: '100%' }}>
               <Button
                 w="full"
-                bg="rgba(0, 198, 224, 1)"
+                bg="transparent"
                 color="white"
-                fontWeight="semibold"
-                _hover={{
-                  bg: 'rgba(0, 198, 224, 0.85)',
-                  boxShadow: '0 4px 12px rgba(0, 198, 224, 0.3)'
-                }}
-                transition="all 0.2s"
+                fontWeight="medium"
+                borderWidth={1}
+                borderColor="rgba(0, 198, 224, 1)"
+                _hover={{ bg: 'whiteAlpha.100' }}
               >
                 Get Started
               </Button>

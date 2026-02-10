@@ -1,7 +1,7 @@
 // src/components/features/trading/HistoricalTradesView.js
 import React, { useState, useMemo, useCallback } from 'react';
 import {
-  Box,
+  Box, 
   Flex,
   Text,
   VStack,
@@ -24,8 +24,7 @@ import {
   Input,
   InputRightElement,
   Spinner,
-  Button,
-  useBreakpointValue,
+  Button
 } from '@chakra-ui/react';
 import { 
   TrendingUp,
@@ -84,83 +83,22 @@ const customScrollbarStyle = {
   scrollbarColor: 'rgba(0, 198, 224, 0.3) rgba(0, 0, 0, 0.2)',
 };
 
-// Mobile Trade Card Component
-const MobileTradeCard = ({ trade, formatDate, formatCurrency }) => {
-  const pnl = Number(trade.realized_pnl || 0);
-  const isProfit = pnl >= 0;
-
-  return (
-    <Box
-      bg="whiteAlpha.50"
-      borderRadius="lg"
-      p={3}
-      borderLeft="3px solid"
-      borderLeftColor={isProfit ? 'green.400' : 'red.400'}
-    >
-      <Flex justify="space-between" align="flex-start" mb={2}>
-        <VStack align="flex-start" spacing={0}>
-          <HStack spacing={2}>
-            <Text color="white" fontWeight="bold" fontSize="md">
-              {trade.symbol}
-            </Text>
-            <Badge
-              bg={trade.side === 'BUY' ? 'rgba(72, 187, 120, 0.2)' : 'rgba(245, 101, 101, 0.2)'}
-              color={trade.side === 'BUY' ? 'green.400' : 'red.400'}
-              fontSize="xs"
-              px={2}
-              borderRadius="md"
-            >
-              {trade.side}
-            </Badge>
-          </HStack>
-          <Text color="whiteAlpha.600" fontSize="xs">
-            {trade.total_quantity} @ {formatCurrency(trade.average_entry_price)}
-          </Text>
-        </VStack>
-        <VStack align="flex-end" spacing={0}>
-          <HStack spacing={1}>
-            <Text
-              color={isProfit ? 'green.400' : 'red.400'}
-              fontWeight="bold"
-              fontSize="md"
-            >
-              {formatCurrency(pnl)}
-            </Text>
-            {isProfit ? (
-              <TrendingUp size={14} color="#48BB78" />
-            ) : (
-              <TrendingDown size={14} color="#F56565" />
-            )}
-          </HStack>
-          <Text color="whiteAlpha.500" fontSize="xs">
-            {trade.duration_seconds ? `${Math.floor(trade.duration_seconds / 60)}m` : '-'}
-          </Text>
-        </VStack>
-      </Flex>
-      <Text color="whiteAlpha.500" fontSize="xs">
-        {formatDate(trade.close_time)}
-      </Text>
-    </Box>
-  );
-};
-
 const HistoricalTradesView = () => {
   // Get data from our new trades hook
-  const {
-    historicalTrades,
-    tradedSymbols,
+  const { 
+    historicalTrades, 
+    tradedSymbols, 
     tradeStrategies,
     performanceData,
-    isLoading,
+    isLoading, 
     isRefreshing,
-    error,
+    error, 
     pagination,
     filters,
     refreshData,
     updateFilters,
     loadPage
   } = useTrades();
-  const isMobile = useBreakpointValue({ base: true, md: false });
   
   // State for UI filters (separate from API filters)
   const [searchQuery, setSearchQuery] = useState('');
@@ -293,135 +231,132 @@ const HistoricalTradesView = () => {
 
   return (
     <Box height="100%" overflow="hidden" display="flex" flexDirection="column">
-      {/* Header with filters - Hidden on mobile */}
-      {!isMobile && (
-        <Flex justify="flex-end" px={4} pt={2} pb={2} gap={2}>
-          <HStack spacing={3} flexWrap="wrap">
-            {/* Time range selector */}
-            <Select
-              size="sm"
-              value={uiFilters.timeRange}
-              onChange={(e) => handleFilterChange('timeRange', e.target.value)}
+      {/* Header with filters */}
+      <Flex justify="flex-end" px={4} pt={2} pb={2} gap={2}>
+        <HStack spacing={3} flexWrap="wrap">
+          {/* Time range selector */}
+          <Select
+            size="sm"
+            value={uiFilters.timeRange}
+            onChange={(e) => handleFilterChange('timeRange', e.target.value)}
+            bg="rgba(0, 0, 0, 0.3)"
+            borderColor="rgba(255, 255, 255, 0.1)"
+            color="white"
+            width="120px"
+            h="32px"
+            fontSize="xs"
+            _hover={{ borderColor: "rgba(255, 255, 255, 0.2)" }}
+            _focus={{ borderColor: "#00C6E0", boxShadow: "0 0 0 1px #00C6E0" }}
+          >
+            <option value="1">Today</option>
+            <option value="7">Last 7 Days</option>
+            <option value="30">Last 30 Days</option>
+            <option value="90">Last 90 Days</option>
+            <option value="365">All Time</option>
+          </Select>
+          
+          {/* Symbol filter */}
+          <Select
+            size="sm"
+            value={uiFilters.symbol}
+            onChange={(e) => handleFilterChange('symbol', e.target.value)}
+            bg="rgba(0, 0, 0, 0.3)"
+            borderColor="rgba(255, 255, 255, 0.1)"
+            color="white"
+            width="110px"
+            h="32px"
+            fontSize="xs"
+            _hover={{ borderColor: "rgba(255, 255, 255, 0.2)" }}
+            _focus={{ borderColor: "#00C6E0", boxShadow: "0 0 0 1px #00C6E0" }}
+          >
+            <option value="all">All Symbols</option>
+            {tradedSymbols.map(symbol => (
+              <option key={symbol} value={symbol}>{symbol}</option>
+            ))}
+          </Select>
+          
+          {/* Strategy filter */}
+          <Select
+            size="sm"
+            value={uiFilters.strategy}
+            onChange={(e) => handleFilterChange('strategy', e.target.value)}
+            bg="rgba(0, 0, 0, 0.3)"
+            borderColor="rgba(255, 255, 255, 0.1)"
+            color="white"
+            width="120px"
+            h="32px"
+            fontSize="xs"
+            _hover={{ borderColor: "rgba(255, 255, 255, 0.2)" }}
+            _focus={{ borderColor: "#00C6E0", boxShadow: "0 0 0 1px #00C6E0" }}
+          >
+            <option value="all">All Strategies</option>
+            {tradeStrategies.map(strategy => (
+              <option key={strategy.id} value={strategy.id}>{strategy.name}</option>
+            ))}
+          </Select>
+          
+          {/* Profitability filter */}
+          <Select
+            size="sm"
+            value={uiFilters.profitable_only}
+            onChange={(e) => handleFilterChange('profitable_only', e.target.value)}
+            bg="rgba(0, 0, 0, 0.3)"
+            borderColor="rgba(255, 255, 255, 0.1)"
+            color="white"
+            width="110px"
+            h="32px"
+            fontSize="xs"
+            _hover={{ borderColor: "rgba(255, 255, 255, 0.2)" }}
+            _focus={{ borderColor: "#00C6E0", boxShadow: "0 0 0 1px #00C6E0" }}
+          >
+            <option value="all">All Trades</option>
+            <option value="true">Profitable Only</option>
+            <option value="false">Losing Only</option>
+          </Select>
+          
+          
+          {/* Search input */}
+          <InputGroup size="sm" width="180px" h="32px">
+            <Input
+              placeholder="Search trades..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
               bg="rgba(0, 0, 0, 0.3)"
               borderColor="rgba(255, 255, 255, 0.1)"
               color="white"
-              width="120px"
-              h="32px"
               fontSize="xs"
               _hover={{ borderColor: "rgba(255, 255, 255, 0.2)" }}
               _focus={{ borderColor: "#00C6E0", boxShadow: "0 0 0 1px #00C6E0" }}
-            >
-              <option value="1">Today</option>
-              <option value="7">Last 7 Days</option>
-              <option value="30">Last 30 Days</option>
-              <option value="90">Last 90 Days</option>
-              <option value="365">All Time</option>
-            </Select>
-
-            {/* Symbol filter */}
-            <Select
+            />
+            <InputRightElement h="32px">
+              <Search size={14} color="rgba(255, 255, 255, 0.4)" />
+            </InputRightElement>
+          </InputGroup>
+          
+          {/* Refresh button */}
+          <Tooltip label="Refresh">
+            <IconButton
+              icon={<RefreshCw size={16} />}
+              variant="ghost"
               size="sm"
-              value={uiFilters.symbol}
-              onChange={(e) => handleFilterChange('symbol', e.target.value)}
-              bg="rgba(0, 0, 0, 0.3)"
-              borderColor="rgba(255, 255, 255, 0.1)"
-              color="white"
-              width="110px"
+              aria-label="Refresh trades"
+              color="rgba(255, 255, 255, 0.6)"
+              onClick={refreshData}
+              isLoading={isRefreshing}
+              _hover={{ color: 'white', bg: 'rgba(255, 255, 255, 0.1)' }}
               h="32px"
-              fontSize="xs"
-              _hover={{ borderColor: "rgba(255, 255, 255, 0.2)" }}
-              _focus={{ borderColor: "#00C6E0", boxShadow: "0 0 0 1px #00C6E0" }}
-            >
-              <option value="all">All Symbols</option>
-              {tradedSymbols.map(symbol => (
-                <option key={symbol} value={symbol}>{symbol}</option>
-              ))}
-            </Select>
-
-            {/* Strategy filter */}
-            <Select
-              size="sm"
-              value={uiFilters.strategy}
-              onChange={(e) => handleFilterChange('strategy', e.target.value)}
-              bg="rgba(0, 0, 0, 0.3)"
-              borderColor="rgba(255, 255, 255, 0.1)"
-              color="white"
-              width="120px"
-              h="32px"
-              fontSize="xs"
-              _hover={{ borderColor: "rgba(255, 255, 255, 0.2)" }}
-              _focus={{ borderColor: "#00C6E0", boxShadow: "0 0 0 1px #00C6E0" }}
-            >
-              <option value="all">All Strategies</option>
-              {tradeStrategies.map(strategy => (
-                <option key={strategy.id} value={strategy.id}>{strategy.name}</option>
-              ))}
-            </Select>
-
-            {/* Profitability filter */}
-            <Select
-              size="sm"
-              value={uiFilters.profitable_only}
-              onChange={(e) => handleFilterChange('profitable_only', e.target.value)}
-              bg="rgba(0, 0, 0, 0.3)"
-              borderColor="rgba(255, 255, 255, 0.1)"
-              color="white"
-              width="110px"
-              h="32px"
-              fontSize="xs"
-              _hover={{ borderColor: "rgba(255, 255, 255, 0.2)" }}
-              _focus={{ borderColor: "#00C6E0", boxShadow: "0 0 0 1px #00C6E0" }}
-            >
-              <option value="all">All Trades</option>
-              <option value="true">Profitable Only</option>
-              <option value="false">Losing Only</option>
-            </Select>
-
-
-            {/* Search input */}
-            <InputGroup size="sm" width="180px" h="32px">
-              <Input
-                placeholder="Search trades..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                bg="rgba(0, 0, 0, 0.3)"
-                borderColor="rgba(255, 255, 255, 0.1)"
-                color="white"
-                fontSize="xs"
-                _hover={{ borderColor: "rgba(255, 255, 255, 0.2)" }}
-                _focus={{ borderColor: "#00C6E0", boxShadow: "0 0 0 1px #00C6E0" }}
-              />
-              <InputRightElement h="32px">
-                <Search size={14} color="rgba(255, 255, 255, 0.4)" />
-              </InputRightElement>
-            </InputGroup>
-
-            {/* Refresh button */}
-            <Tooltip label="Refresh">
-              <IconButton
-                icon={<RefreshCw size={16} />}
-                variant="ghost"
-                size="sm"
-                aria-label="Refresh trades"
-                color="rgba(255, 255, 255, 0.6)"
-                onClick={refreshData}
-                isLoading={isRefreshing}
-                _hover={{ color: 'white', bg: 'rgba(255, 255, 255, 0.1)' }}
-                h="32px"
-                w="32px"
-                minW="32px"
-              />
-            </Tooltip>
-          </HStack>
-        </Flex>
-      )}
+              w="32px"
+              minW="32px"
+            />
+          </Tooltip>
+        </HStack>
+      </Flex>
 
       {/* Trades table */}
-      <Box
-        flex="1"
+      <Box 
+        flex="1" 
         overflowY="auto"
-        px={{ base: 3, md: 4 }}
-        maxH={{ base: '300px', md: 'none' }}
+        px={4}
         sx={customScrollbarStyle}
       >
         {isLoading && historicalTrades.length === 0 ? (
@@ -433,48 +368,7 @@ const HistoricalTradesView = () => {
             <AlertCircle size={20} />
             <Text ml={2}>{error}</Text>
           </Flex>
-        ) : isMobile ? (
-          /* Mobile Card View */
-          <VStack spacing={3} align="stretch" pb={4}>
-            {sortedTrades.length === 0 ? (
-              <Flex justify="center" align="center" py={8}>
-                <VStack spacing={4} textAlign="center">
-                  <Box
-                    w="50px"
-                    h="50px"
-                    borderRadius="full"
-                    bg="linear-gradient(135deg, rgba(0, 198, 224, 0.1), rgba(153, 50, 204, 0.1))"
-                    border="2px solid"
-                    borderColor="rgba(0, 198, 224, 0.3)"
-                    display="flex"
-                    alignItems="center"
-                    justifyContent="center"
-                  >
-                    <FileText size={24} color="#00C6E0" />
-                  </Box>
-                  <VStack spacing={2}>
-                    <Text color="white" fontSize="md" fontWeight="bold">
-                      No trades yet
-                    </Text>
-                    <Text color="rgba(255, 255, 255, 0.7)" fontSize="sm">
-                      Your trade history will appear here
-                    </Text>
-                  </VStack>
-                </VStack>
-              </Flex>
-            ) : (
-              sortedTrades.map((trade) => (
-                <MobileTradeCard
-                  key={trade.id}
-                  trade={trade}
-                  formatDate={formatDate}
-                  formatCurrency={formatCurrency}
-                />
-              ))
-            )}
-          </VStack>
         ) : (
-          /* Desktop Table View */
           <Table variant="unstyled" size="sm">
             <Thead>
               <Tr>
@@ -684,31 +578,27 @@ const HistoricalTradesView = () => {
       {/* Footer with Stats and Pagination */}
       <VStack spacing={2} mt={2}>
         {/* Stats Row */}
-        <Flex
+        <Flex 
           w="100%"
-          px={{ base: 3, md: 4 }}
+          px={4}
           py={2}
           borderTop="1px solid"
           borderColor="rgba(255, 255, 255, 0.1)"
           justifyContent="space-between"
           alignItems="center"
-          flexWrap="wrap"
-          gap={2}
         >
-          <HStack spacing={{ base: 2, md: 4 }} color="rgba(255, 255, 255, 0.6)" fontSize={{ base: 'xs', md: 'sm' }}>
+          <HStack spacing={4} color="rgba(255, 255, 255, 0.6)" fontSize="sm">
             <HStack>
-              <Text>{isMobile ? 'Trades:' : 'Total Trades:'}</Text>
+              <Text>Total Trades:</Text>
               <Text color="white" fontWeight="medium">{stats.totalTrades}</Text>
             </HStack>
-            {!isMobile && (
-              <HStack>
-                <Text>Win/Loss:</Text>
-                <Text color="white" fontWeight="medium">
-                  {stats.winningTrades}/{stats.losingTrades}
-                </Text>
-              </HStack>
-            )}
-            {!isMobile && stats.winRate !== undefined && (
+            <HStack>
+              <Text>Win/Loss:</Text>
+              <Text color="white" fontWeight="medium">
+                {stats.winningTrades}/{stats.losingTrades}
+              </Text>
+            </HStack>
+            {stats.winRate !== undefined && (
               <HStack>
                 <Text>Win Rate:</Text>
                 <Text color="white" fontWeight="medium">
@@ -717,11 +607,11 @@ const HistoricalTradesView = () => {
               </HStack>
             )}
           </HStack>
-
+          
           <HStack>
-            <Text fontSize={{ base: 'xs', md: 'sm' }} color="rgba(255, 255, 255, 0.6)">{isMobile ? 'P&L:' : 'Total P&L:'}</Text>
-            <Text
-              fontSize={{ base: 'xs', md: 'sm' }}
+            <Text fontSize="sm" color="rgba(255, 255, 255, 0.6)">Total P&L:</Text>
+            <Text 
+              fontSize="sm" 
               fontWeight="bold"
               color={stats.totalPnL >= 0 ? 'green.400' : 'red.400'}
             >
@@ -732,26 +622,22 @@ const HistoricalTradesView = () => {
 
         {/* Pagination Row */}
         {pagination.total > pagination.per_page && (
-          <Flex
+          <Flex 
             w="100%"
-            px={{ base: 3, md: 4 }}
+            px={4}
             py={2}
             borderTop="1px solid"
             borderColor="rgba(255, 255, 255, 0.1)"
             justifyContent="space-between"
             alignItems="center"
-            flexWrap="wrap"
-            gap={2}
           >
-            {!isMobile && (
-              <Text fontSize="sm" color="rgba(255, 255, 255, 0.6)">
-                Showing {((pagination.page - 1) * pagination.per_page) + 1} to{' '}
-                {Math.min(pagination.page * pagination.per_page, pagination.total)} of{' '}
-                {pagination.total} trades
-              </Text>
-            )}
-
-            <HStack spacing={2} flex={isMobile ? 1 : 'none'} justify={isMobile ? 'space-between' : 'flex-end'} w={isMobile ? '100%' : 'auto'}>
+            <Text fontSize="sm" color="rgba(255, 255, 255, 0.6)">
+              Showing {((pagination.page - 1) * pagination.per_page) + 1} to{' '}
+              {Math.min(pagination.page * pagination.per_page, pagination.total)} of{' '}
+              {pagination.total} trades
+            </Text>
+            
+            <HStack spacing={2}>
               <Button
                 size="sm"
                 variant="ghost"
@@ -759,15 +645,14 @@ const HistoricalTradesView = () => {
                 onClick={() => loadPage(pagination.page - 1)}
                 color="white"
                 _hover={{ bg: 'rgba(255, 255, 255, 0.1)' }}
-                fontSize={{ base: 'xs', md: 'sm' }}
               >
-                {isMobile ? '←' : 'Previous'}
+                Previous
               </Button>
-
-              <Text fontSize={{ base: 'xs', md: 'sm' }} color="white" px={{ base: 1, md: 3 }}>
-                {pagination.page}/{Math.ceil(pagination.total / pagination.per_page)}
+              
+              <Text fontSize="sm" color="white" px={3}>
+                Page {pagination.page} of {Math.ceil(pagination.total / pagination.per_page)}
               </Text>
-
+              
               <Button
                 size="sm"
                 variant="ghost"
@@ -775,9 +660,8 @@ const HistoricalTradesView = () => {
                 onClick={() => loadPage(pagination.page + 1)}
                 color="white"
                 _hover={{ bg: 'rgba(255, 255, 255, 0.1)' }}
-                fontSize={{ base: 'xs', md: 'sm' }}
               >
-                {isMobile ? '→' : 'Next'}
+                Next
               </Button>
             </HStack>
           </Flex>
