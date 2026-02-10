@@ -1,4 +1,4 @@
-import React, { memo, useCallback, useEffect } from 'react';
+import React, { memo, useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Box,
   Flex,
@@ -12,6 +12,8 @@ import {
   Tooltip,
   useToast,
 } from '@chakra-ui/react';
+import axiosInstance from '@/services/axiosConfig';
+import { useWebSocketContext } from '@/services/websocket-proxy/contexts/WebSocketContext';
 
 /**
  * QuickOrderBar — thin horizontal bar between chart and bottom panel.
@@ -22,9 +24,14 @@ import {
  * Props:
  *   chartSymbol        - current chart symbol (e.g. 'NQ')
  *   multiAccountTrading - return from useMultiAccountTrading hook
+ *   positions          - aggregated positions from useAggregatedPositions
+ *   orders             - aggregated orders from useAggregatedPositions
  */
-const QuickOrderBar = ({ chartSymbol, multiAccountTrading }) => {
+const QuickOrderBar = ({ chartSymbol, multiAccountTrading, positions = [], orders = [] }) => {
   const toast = useToast();
+  const { sendMessage } = useWebSocketContext();
+  const [isFlattening, setIsFlattening] = useState(false);
+  const [isCancelling, setIsCancelling] = useState(false);
 
   const {
     activeAccounts,
@@ -77,6 +84,112 @@ const QuickOrderBar = ({ chartSymbol, multiAccountTrading }) => {
     },
     [hasActiveAccounts, orderType, limitPrice, stopPrice, symbol, placeMultiAccountOrder, needsPrice, needsStop, toast]
   );
+
+  // Open positions count
+  const openPositions = useMemo(
+    () => positions.filter(
+      (p) => p && !p.isClosed && p.side !== 'FLAT' && (p.quantity > 0 || Math.abs(p.netPos || 0) > 0)
+    ),
+    [positions]
+  );
+
+  // Working orders count
+  const workingOrders = useMemo(
+    () => orders.filter((o) => {
+      if (!o || !o.orderId) return false;
+      return o.ordStatus === 'Working' || o.status === 'Working' || o.ordStatus === 6;
+    }),
+    [orders]
+  );
+
+  // Flatten — close all open positions across all accounts
+  const handleFlatten = useCallback(async () => {
+    if (openPositions.length === 0) {
+      toast({ title: 'No open positions', status: 'info', duration: 2000 });
+      return;
+    }
+
+    setIsFlattening(true);
+    try {
+      const results = await Promise.all(
+        openPositions.map(async (pos) => {
+          const accountId = pos._accountId || pos.accountId;
+          const brokerId = pos._brokerId || pos.brokerId;
+          if (!accountId || !brokerId) return { success: false, error: 'Missing account info' };
+
+          const closeSide = pos.side === 'LONG' ? 'SELL' : 'BUY';
+          const qty = pos.quantity || Math.abs(pos.netPos || 0);
+
+          try {
+            await sendMessage(brokerId, accountId, {
+              type: 'submit_order',
+              data: {
+                symbol: pos.symbol,
+                side: closeSide,
+                quantity: qty,
+                orderType: 'MARKET',
+                accountId,
+              },
+            });
+            return { success: true };
+          } catch (err) {
+            return { success: false, error: err.message };
+          }
+        })
+      );
+
+      const successes = results.filter((r) => r.success).length;
+      const failures = results.filter((r) => !r.success).length;
+
+      if (failures === 0) {
+        toast({ title: `Flattened ${successes} position${successes !== 1 ? 's' : ''}`, status: 'success', duration: 3000 });
+      } else {
+        toast({ title: `${successes} closed, ${failures} failed`, status: 'warning', duration: 4000, isClosable: true });
+      }
+    } catch (err) {
+      toast({ title: 'Flatten failed', description: err.message, status: 'error', duration: 4000 });
+    } finally {
+      setIsFlattening(false);
+    }
+  }, [openPositions, sendMessage, toast]);
+
+  // Cancel all working orders
+  const handleCancelAll = useCallback(async () => {
+    if (workingOrders.length === 0) {
+      toast({ title: 'No working orders', status: 'info', duration: 2000 });
+      return;
+    }
+
+    setIsCancelling(true);
+    try {
+      const results = await Promise.all(
+        workingOrders.map(async (ord) => {
+          const accountId = ord._accountId || ord.accountId;
+          if (!accountId) return { success: false, error: 'Missing account ID' };
+
+          try {
+            await axiosInstance.delete(`/api/v1/brokers/accounts/${accountId}/orders/${ord.orderId}`);
+            return { success: true };
+          } catch (err) {
+            return { success: false, error: err.response?.data?.detail || err.message };
+          }
+        })
+      );
+
+      const successes = results.filter((r) => r.success).length;
+      const failures = results.filter((r) => !r.success).length;
+
+      if (failures === 0) {
+        toast({ title: `Cancelled ${successes} order${successes !== 1 ? 's' : ''}`, status: 'success', duration: 3000 });
+      } else {
+        toast({ title: `${successes} cancelled, ${failures} failed`, status: 'warning', duration: 4000, isClosable: true });
+      }
+    } catch (err) {
+      toast({ title: 'Cancel failed', description: err.message, status: 'error', duration: 4000 });
+    } finally {
+      setIsCancelling(false);
+    }
+  }, [workingOrders, toast]);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -226,8 +339,43 @@ const QuickOrderBar = ({ chartSymbol, multiAccountTrading }) => {
           </Tooltip>
         </HStack>
 
-        {/* Right: Spacer to balance layout (hidden on mobile) */}
-        <Box w="100px" flexShrink={0} display={{ base: 'none', md: 'block' }} />
+        {/* Right: Flatten + Cancel Orders */}
+        <HStack spacing={1.5} flexShrink={0}>
+          <Tooltip label={`Flatten all positions${openPositions.length > 0 ? ` (${openPositions.length})` : ''}`} fontSize="xs" hasArrow>
+            <Button
+              size="xs"
+              px={2.5}
+              variant="ghost"
+              color="whiteAlpha.600"
+              fontWeight="medium"
+              fontSize="xs"
+              _hover={{ bg: 'rgba(239, 83, 80, 0.15)', color: 'red.300' }}
+              _active={{ bg: 'rgba(239, 83, 80, 0.25)' }}
+              isLoading={isFlattening}
+              isDisabled={openPositions.length === 0}
+              onClick={handleFlatten}
+            >
+              Flatten
+            </Button>
+          </Tooltip>
+          <Tooltip label={`Cancel all orders${workingOrders.length > 0 ? ` (${workingOrders.length})` : ''}`} fontSize="xs" hasArrow>
+            <Button
+              size="xs"
+              px={2.5}
+              variant="ghost"
+              color="whiteAlpha.600"
+              fontWeight="medium"
+              fontSize="xs"
+              _hover={{ bg: 'rgba(255, 152, 0, 0.15)', color: 'orange.300' }}
+              _active={{ bg: 'rgba(255, 152, 0, 0.25)' }}
+              isLoading={isCancelling}
+              isDisabled={workingOrders.length === 0}
+              onClick={handleCancelAll}
+            >
+              Cancel
+            </Button>
+          </Tooltip>
+        </HStack>
       </Flex>
     </Box>
   );

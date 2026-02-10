@@ -440,6 +440,8 @@ const DashboardContent = () => {
                                                 <QuickOrderBar
                                                     chartSymbol={chartSymbol}
                                                     multiAccountTrading={multiAccountTrading}
+                                                    positions={aggregatedPositions}
+                                                    orders={aggregatedOrders}
                                                 />
                                             </Suspense>
                                         </ErrorBoundary>
