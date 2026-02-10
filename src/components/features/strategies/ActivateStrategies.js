@@ -305,11 +305,11 @@ const ActivateStrategies = () => {
             w="100%"
             size="sm"
             variant="outline"
-            borderColor="whiteAlpha.300"
-            color="whiteAlpha.800"
+            borderColor="rgba(0, 198, 224, 0.3)"
+            color="cyan.300"
             leftIcon={<Plus size={14} />}
             onClick={onActivateOpen}
-            _hover={{ bg: 'whiteAlpha.100', borderColor: 'cyan.400', color: 'cyan.400' }}
+            _hover={{ bg: 'rgba(0, 198, 224, 0.08)', borderColor: 'cyan.400', color: 'cyan.200' }}
           >
             Activate Strategy
           </Button>

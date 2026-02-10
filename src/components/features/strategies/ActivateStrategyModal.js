@@ -560,17 +560,27 @@ const ActivateStrategyModal = ({
       size="xl"
       closeOnOverlayClick={!isCreating}
     >
-      <ModalOverlay bg="blackAlpha.600" backdropFilter="blur(8px)" />
+      <ModalOverlay bg="blackAlpha.400" />
       <ModalContent
-        bg="rgba(0, 0, 0, 0.85)"
-        backdropFilter="blur(20px)"
-        boxShadow="0 4px 20px rgba(0, 0, 0, 0.4)"
+        bg="rgba(0, 0, 0, 0.4)"
+        backdropFilter="blur(10px)"
+        boxShadow="0 4px 20px rgba(0, 0, 0, 0.2)"
         border="1px solid rgba(255, 255, 255, 0.1)"
         borderRadius="xl"
         color="white"
         p={4}
+        overflow="hidden"
       >
-        <ModalHeader borderBottom="1px solid rgba(255, 255, 255, 0.1)" pb={4}>
+        <ModalHeader
+          borderBottom="1px solid rgba(255, 255, 255, 0.05)"
+          bg="rgba(0, 0, 0, 0.3)"
+          mx={-4}
+          mt={-4}
+          px={4}
+          pt={4}
+          pb={4}
+          borderTopRadius="xl"
+        >
           <VStack spacing={2} align="start">
             <Text fontSize="lg" fontWeight="bold">
               {strategy ? 'Update Strategy' : 'Activate Strategy'}
