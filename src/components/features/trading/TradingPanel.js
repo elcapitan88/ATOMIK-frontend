@@ -164,7 +164,7 @@ const TradingPanel = ({ positions = [], orders = [], chartSymbol = '' }) => {
       </Flex>
 
       {/* Tab Content */}
-      <Box flex="1" overflow="auto" minH={0}>
+      <Box flex="1" overflow="auto" minH={0} overflowX="auto">
         {activeTab === 'positions' && (
           <PositionsTab
             positions={openPositions}
@@ -204,7 +204,7 @@ const PositionsTab = memo(({ positions, onClose, chartSymbol }) => {
           <Th color="whiteAlpha.500" fontSize="xs" borderBottom="1px solid" borderColor="whiteAlpha.100">Symbol</Th>
           <Th color="whiteAlpha.500" fontSize="xs" borderBottom="1px solid" borderColor="whiteAlpha.100">Side</Th>
           <Th color="whiteAlpha.500" fontSize="xs" borderBottom="1px solid" borderColor="whiteAlpha.100" isNumeric>Qty</Th>
-          <Th color="whiteAlpha.500" fontSize="xs" borderBottom="1px solid" borderColor="whiteAlpha.100" isNumeric>Entry</Th>
+          <Th color="whiteAlpha.500" fontSize="xs" borderBottom="1px solid" borderColor="whiteAlpha.100" isNumeric display={{ base: 'none', md: 'table-cell' }}>Entry</Th>
           <Th color="whiteAlpha.500" fontSize="xs" borderBottom="1px solid" borderColor="whiteAlpha.100" isNumeric>P&L</Th>
           <Th color="whiteAlpha.500" fontSize="xs" borderBottom="1px solid" borderColor="whiteAlpha.100" w="40px"></Th>
         </Tr>
@@ -243,7 +243,7 @@ const PositionsTab = memo(({ positions, onClose, chartSymbol }) => {
               <Td py={1.5} isNumeric>
                 <Text fontSize="xs" color="white">{qty}</Text>
               </Td>
-              <Td py={1.5} isNumeric>
+              <Td py={1.5} isNumeric display={{ base: 'none', md: 'table-cell' }}>
                 <Text fontSize="xs" color="whiteAlpha.700">
                   {(pos.avgPrice || 0).toLocaleString(undefined, {
                     minimumFractionDigits: 2,
@@ -323,7 +323,7 @@ const OrdersTab = memo(({ orders, onCancel }) => {
           <Th color="whiteAlpha.500" fontSize="xs" borderBottom="1px solid" borderColor="whiteAlpha.100">Account</Th>
           <Th color="whiteAlpha.500" fontSize="xs" borderBottom="1px solid" borderColor="whiteAlpha.100">Symbol</Th>
           <Th color="whiteAlpha.500" fontSize="xs" borderBottom="1px solid" borderColor="whiteAlpha.100">Side</Th>
-          <Th color="whiteAlpha.500" fontSize="xs" borderBottom="1px solid" borderColor="whiteAlpha.100">Type</Th>
+          <Th color="whiteAlpha.500" fontSize="xs" borderBottom="1px solid" borderColor="whiteAlpha.100" display={{ base: 'none', md: 'table-cell' }}>Type</Th>
           <Th color="whiteAlpha.500" fontSize="xs" borderBottom="1px solid" borderColor="whiteAlpha.100" isNumeric>Qty</Th>
           <Th color="whiteAlpha.500" fontSize="xs" borderBottom="1px solid" borderColor="whiteAlpha.100" isNumeric>Price</Th>
           <Th color="whiteAlpha.500" fontSize="xs" borderBottom="1px solid" borderColor="whiteAlpha.100" w="40px"></Th>
@@ -362,7 +362,7 @@ const OrdersTab = memo(({ orders, onCancel }) => {
                   {isBuy ? 'BUY' : 'SELL'}
                 </Badge>
               </Td>
-              <Td py={1.5}>
+              <Td py={1.5} display={{ base: 'none', md: 'table-cell' }}>
                 <Text fontSize="xs" color="whiteAlpha.600">{typeLabel}</Text>
               </Td>
               <Td py={1.5} isNumeric>

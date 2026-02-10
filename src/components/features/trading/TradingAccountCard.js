@@ -12,7 +12,6 @@ import {
   NumberIncrementStepper,
   NumberDecrementStepper,
   Badge,
-  Tooltip,
   Menu,
   MenuButton,
   MenuList,

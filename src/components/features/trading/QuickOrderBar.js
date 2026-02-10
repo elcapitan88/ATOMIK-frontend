@@ -107,7 +107,7 @@ const QuickOrderBar = ({ chartSymbol, multiAccountTrading }) => {
       px={3}
       py={1.5}
     >
-      <Flex align="center" justify="space-between" gap={3}>
+      <Flex align="center" justify="space-between" gap={{ base: 2, md: 3 }} wrap="wrap">
         {/* Left: Ticker + Summary */}
         <HStack spacing={2} flexShrink={0}>
           <Badge
@@ -122,7 +122,7 @@ const QuickOrderBar = ({ chartSymbol, multiAccountTrading }) => {
             {symbol}
           </Badge>
 
-          <Text fontSize="xs" color="whiteAlpha.500">
+          <Text fontSize="xs" color="whiteAlpha.500" display={{ base: 'none', sm: 'block' }}>
             {hasActiveAccounts
               ? `${totalContracts} ct${totalContracts !== 1 ? 's' : ''} / ${activeCount} acct${activeCount !== 1 ? 's' : ''}`
               : 'No accounts active'}
@@ -226,8 +226,8 @@ const QuickOrderBar = ({ chartSymbol, multiAccountTrading }) => {
           </Tooltip>
         </HStack>
 
-        {/* Right: Spacer to balance layout */}
-        <Box w="100px" flexShrink={0} />
+        {/* Right: Spacer to balance layout (hidden on mobile) */}
+        <Box w="100px" flexShrink={0} display={{ base: 'none', md: 'block' }} />
       </Flex>
     </Box>
   );
