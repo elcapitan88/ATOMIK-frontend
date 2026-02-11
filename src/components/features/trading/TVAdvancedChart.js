@@ -126,6 +126,7 @@ const TVAdvancedChart = ({
             // Add broker factory for TradingView trading terminal
             if (brokerFactory) {
                 widgetOptions.broker_factory = brokerFactory;
+                widgetOptions.debug_broker = 'normal'; // Log broker API calls in console
                 widgetOptions.broker_config = {
                     configFlags: {
                         supportOrderBrackets: true,

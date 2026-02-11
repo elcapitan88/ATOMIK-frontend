@@ -1,11 +1,17 @@
 /**
  * AtomikBrokerAdapter
  *
- * Implements TradingView's IBrokerTerminal interface.
+ * Implements TradingView's IBrokerTerminal interface (extends IBrokerCommon + IBrokerAccountInfo).
  * Bridges between TradingView's trading terminal and our backend REST API + WebSocket data.
  *
  * Orders -> Backend REST API (validation, execution, trade recording)
  * Real-time updates -> WebSocketManager (positions, orders, account data)
+ *
+ * Required interface methods:
+ *   IBrokerAccountInfo: accountsMetainfo(), currentAccount(), setCurrentAccount()
+ *   IBrokerCommon: connectionStatus(), orders(), positions(), executions(), symbolInfo(),
+ *                  accountManagerInfo(), isTradable(), chartContextMenuActions()
+ *   IBrokerTerminal: placeOrder(), modifyOrder(order), cancelOrder(), closePosition(), reversePosition()
  */
 import axios from 'axios';
 import webSocketManager from '@/services/websocket-proxy/WebSocketManager';
@@ -35,11 +41,17 @@ export class AtomikBrokerAdapter {
         this._accountName = '';
         this._listeners = [];
 
+        // WatchedValues for Account Manager summary fields
+        this._balanceWV = host.factory.createWatchedValue(0);
+        this._plWV = host.factory.createWatchedValue(0);
+        this._equityWV = host.factory.createWatchedValue(0);
+
         // Set up WebSocket listeners for real-time updates
         this._setupWebSocketListeners();
 
-        // Load initial account name
+        // Load initial account name and update summary values
         this._loadAccountName();
+        this._updateAccountSummary();
 
         // Tell TradingView we're connected (after a brief delay to let WS sync)
         setTimeout(() => {
@@ -53,8 +65,9 @@ export class AtomikBrokerAdapter {
         return ConnectionStatus.Connected;
     }
 
-    // --- Accounts -----------------------------------------------------------
-    accounts() {
+    // --- IBrokerAccountInfo (required) --------------------------------------
+    accountsMetainfo() {
+        console.log('[BrokerAdapter] accountsMetainfo() called');
         return Promise.resolve([{
             id: String(this._accountId),
             name: this._accountName || 'Trading Account',
@@ -69,23 +82,48 @@ export class AtomikBrokerAdapter {
     setCurrentAccount(accountId) {
         this._accountId = accountId;
         this._loadAccountName();
+        this._updateAccountSummary();
     }
 
-    async accountInfo() {
-        const data = webSocketManager.getAccountData(this._brokerId, String(this._accountId));
+    // --- IBrokerCommon: accountManagerInfo() (required, synchronous) ---------
+    accountManagerInfo() {
+        console.log('[BrokerAdapter] accountManagerInfo() called');
         return {
-            id: String(this._accountId),
-            name: this._accountName || 'Trading Account',
-            currency: 'USD',
-            balance: data?.balance || data?.cashBalance || 0,
-            pl: data?.unrealizedPnL || data?.openPL || 0,
-            equity: data?.equity || ((data?.balance || 0) + (data?.unrealizedPnL || 0)),
+            accountTitle: 'Atomik Trading',
+            summary: [
+                { text: 'Balance', wValue: this._balanceWV, formatter: 'fixed' },
+                { text: 'P&L', wValue: this._plWV, formatter: 'fixed' },
+                { text: 'Equity', wValue: this._equityWV, formatter: 'fixed' },
+            ],
+            orderColumns: [
+                { label: 'Symbol', id: 'symbol', dataFields: ['symbol'] },
+                { label: 'Side', id: 'side', dataFields: ['side'] },
+                { label: 'Type', id: 'type', dataFields: ['type'] },
+                { label: 'Qty', id: 'qty', dataFields: ['qty'] },
+                { label: 'Limit', id: 'limitPrice', dataFields: ['limitPrice'] },
+                { label: 'Stop', id: 'stopPrice', dataFields: ['stopPrice'] },
+                { label: 'Status', id: 'status', dataFields: ['status'] },
+            ],
+            positionColumns: [
+                { label: 'Symbol', id: 'symbol', dataFields: ['symbol'] },
+                { label: 'Side', id: 'side', dataFields: ['side'] },
+                { label: 'Qty', id: 'qty', dataFields: ['qty'] },
+                { label: 'Avg Price', id: 'avgPrice', dataFields: ['avgPrice'] },
+                { label: 'P&L', id: 'pl', dataFields: ['pl'] },
+            ],
+            pages: [],
         };
     }
 
-    async accountsInfo() {
-        const info = await this.accountInfo();
-        return [info];
+    // --- IBrokerCommon: isTradable() (required) -----------------------------
+    isTradable(symbol) {
+        console.log('[BrokerAdapter] isTradable() called for:', symbol);
+        return Promise.resolve(true);
+    }
+
+    // --- IBrokerCommon: chartContextMenuActions() (required) -----------------
+    chartContextMenuActions(context, options) {
+        return Promise.resolve([]);
     }
 
     // --- Orders -------------------------------------------------------------
@@ -103,6 +141,7 @@ export class AtomikBrokerAdapter {
     }
 
     async placeOrder(preOrder) {
+        console.log('[BrokerAdapter] placeOrder() called:', preOrder);
         const contractTicker = getContractTicker(preOrder.symbol);
 
         const payload = {
@@ -138,7 +177,7 @@ export class AtomikBrokerAdapter {
                 this._onOrderPlaced(orderId, payload);
             }
 
-            return orderId;
+            return { orderId };
         } catch (err) {
             const errorMsg = err.response?.data?.detail || err.message;
             this._host.showNotification(
@@ -153,11 +192,14 @@ export class AtomikBrokerAdapter {
         }
     }
 
-    async modifyOrder(orderId, modifications) {
+    async modifyOrder(order) {
+        // TradingView passes the full Order object with updated fields
+        console.log('[BrokerAdapter] modifyOrder() called:', order);
+        const orderId = order.id;
         const payload = {};
-        if (modifications.qty != null) payload.qty = modifications.qty;
-        if (modifications.limitPrice != null) payload.limitPrice = modifications.limitPrice;
-        if (modifications.stopPrice != null) payload.stopPrice = modifications.stopPrice;
+        if (order.qty != null) payload.qty = order.qty;
+        if (order.limitPrice != null) payload.limitPrice = order.limitPrice;
+        if (order.stopPrice != null) payload.stopPrice = order.stopPrice;
 
         try {
             await this._api('PUT',
@@ -177,6 +219,7 @@ export class AtomikBrokerAdapter {
     }
 
     async cancelOrder(orderId) {
+        console.log('[BrokerAdapter] cancelOrder() called:', orderId);
         try {
             await this._api('DELETE',
                 `/api/v1/brokers/accounts/${this._accountId}/orders/${orderId}`
@@ -193,6 +236,12 @@ export class AtomikBrokerAdapter {
         }
     }
 
+    async cancelOrders(symbol, side, ordersIds) {
+        console.log('[BrokerAdapter] cancelOrders() called:', symbol, side, ordersIds);
+        const promises = ordersIds.map(id => this.cancelOrder(id));
+        await Promise.all(promises);
+    }
+
     // --- Positions ----------------------------------------------------------
     async positions() {
         const wsPositions = webSocketManager.getPositions(this._brokerId, String(this._accountId));
@@ -204,7 +253,8 @@ export class AtomikBrokerAdapter {
         return filtered;
     }
 
-    async closePosition(positionId) {
+    async closePosition(positionId, amount) {
+        console.log('[BrokerAdapter] closePosition() called:', positionId, 'amount:', amount);
         try {
             await this._api('POST',
                 `/api/v1/brokers/accounts/${this._accountId}/positions/${positionId}/close`
@@ -222,6 +272,7 @@ export class AtomikBrokerAdapter {
     }
 
     async reversePosition(positionId) {
+        console.log('[BrokerAdapter] reversePosition() called:', positionId);
         try {
             await this._api('POST',
                 `/api/v1/brokers/accounts/${this._accountId}/positions/${positionId}/reverse`
@@ -240,6 +291,7 @@ export class AtomikBrokerAdapter {
 
     // --- Instrument Info ----------------------------------------------------
     symbolInfo(symbol) {
+        console.log('[BrokerAdapter] symbolInfo() called for:', symbol);
         const displaySymbol = getDisplayTicker(symbol);
         const config = SYMBOL_CONFIG[displaySymbol] || SYMBOL_CONFIG['ES'];
         const tickSize = config.minmov / config.pricescale;
@@ -282,6 +334,7 @@ export class AtomikBrokerAdapter {
 
     // --- Cleanup ------------------------------------------------------------
     destroy() {
+        console.log('[BrokerAdapter] destroy() called — cleaning up');
         // Remove all WebSocket listeners
         this._listeners.forEach(({ event, handler }) => {
             webSocketManager.removeListener(event, handler);
@@ -296,6 +349,15 @@ export class AtomikBrokerAdapter {
         this._accountName = data?.name || data?.nickname || 'Trading Account';
     }
 
+    _updateAccountSummary() {
+        const data = webSocketManager.getAccountData(this._brokerId, String(this._accountId));
+        if (data) {
+            this._balanceWV.setValue(data.balance || data.cashBalance || 0);
+            this._plWV.setValue(data.unrealizedPnL || data.openPL || 0);
+            this._equityWV.setValue(data.equity || ((data.balance || 0) + (data.unrealizedPnL || 0)));
+        }
+    }
+
     _setupWebSocketListeners() {
         console.log('[BrokerAdapter] Setting up WebSocket listeners for account:', this._accountId, 'broker:', this._brokerId);
 
@@ -305,6 +367,9 @@ export class AtomikBrokerAdapter {
             if (data.brokerId && data.brokerId !== this._brokerId) return;
 
             console.log('[BrokerAdapter] positionUpdate event received:', data.type, 'accountId:', data.accountId);
+
+            // Update account summary values (balance/PnL change with positions)
+            this._updateAccountSummary();
 
             // Rebuild all positions and push to TradingView
             const wsPositions = webSocketManager.getPositions(this._brokerId, String(this._accountId));
