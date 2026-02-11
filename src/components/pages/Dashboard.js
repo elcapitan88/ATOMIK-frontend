@@ -136,20 +136,19 @@ const DashboardContent = () => {
 
     // Create broker factory for TradingView trading terminal
     // Uses the first active manual account for chart-based trading
-    const brokerFactory = useMemo(() => {
-        const { activeAccounts } = multiAccountTrading;
-        if (activeAccounts.length === 0) return null;
+    // Extract primitive IDs so the factory only recreates when the actual account changes
+    const chartAccountId = multiAccountTrading.activeAccounts?.[0]?.account_id || null;
+    const chartBrokerId = multiAccountTrading.activeAccounts?.[0]?.broker_id || 'tradovate';
 
-        // Use the first active manual account for the TradingView terminal
-        const chartAccount = activeAccounts[0];
-        if (!chartAccount) return null;
+    const brokerFactory = useMemo(() => {
+        if (!chartAccountId) return null;
 
         return createAtomikBrokerFactory({
-            accountId: chartAccount.account_id,
-            brokerId: chartAccount.broker_id || 'tradovate',
+            accountId: chartAccountId,
+            brokerId: chartBrokerId,
             getAccessToken: () => localStorage.getItem('access_token'),
         });
-    }, [multiAccountTrading]);
+    }, [chartAccountId, chartBrokerId]);
 
     // Set up API request interception for caching
     useEffect(() => {

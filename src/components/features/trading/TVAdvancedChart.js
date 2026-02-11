@@ -249,7 +249,7 @@ const TVAdvancedChart = ({
             }
         };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [symbol, interval, theme]);
+    }, [symbol, interval, theme, brokerFactory]);
 
     return (
         <Box
