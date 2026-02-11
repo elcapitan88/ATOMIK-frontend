@@ -25,6 +25,7 @@ const API_BASE = process.env.REACT_APP_API_URL || 'https://api.atomiktrading.io'
 
 export class AtomikBrokerAdapter {
     constructor(host, config) {
+        console.log('[BrokerAdapter] Constructor called — accountId:', config.accountId, 'brokerId:', config.brokerId);
         this._host = host;
         this._accountId = config.accountId;
         this._brokerId = config.brokerId || 'tradovate';
@@ -42,6 +43,7 @@ export class AtomikBrokerAdapter {
 
         // Tell TradingView we're connected (after a brief delay to let WS sync)
         setTimeout(() => {
+            console.log('[BrokerAdapter] Sending ConnectionStatus.Connected to TradingView');
             host.connectionStatusUpdate(ConnectionStatus.Connected);
         }, 500);
     }
@@ -89,13 +91,15 @@ export class AtomikBrokerAdapter {
     // --- Orders -------------------------------------------------------------
     async orders() {
         const wsOrders = webSocketManager.getOrders(this._brokerId, String(this._accountId));
-        return wsOrders
+        console.log('[BrokerAdapter] orders() called — raw WS orders:', wsOrders.length, wsOrders.map(o => ({ id: o.orderId || o.id, symbol: o.symbol, status: o.orderStatus || o.status })));
+        const filtered = wsOrders
             .filter(o => {
                 const status = mapOrderStatus(o.orderStatus || o.status);
-                // Only return working/placing orders (not filled/canceled)
                 return status === OrderStatus.Working || status === OrderStatus.Placing;
             })
             .map(o => this._transformOrder(o));
+        console.log('[BrokerAdapter] orders() returning:', filtered.length, 'working orders', filtered);
+        return filtered;
     }
 
     async placeOrder(preOrder) {
@@ -192,9 +196,12 @@ export class AtomikBrokerAdapter {
     // --- Positions ----------------------------------------------------------
     async positions() {
         const wsPositions = webSocketManager.getPositions(this._brokerId, String(this._accountId));
-        return wsPositions
-            .filter(p => (p.netPos || 0) !== 0) // Only non-flat positions
+        console.log('[BrokerAdapter] positions() called — raw WS positions:', wsPositions.length, wsPositions.map(p => ({ positionId: p.positionId, symbol: p.symbol, contractId: p.contractId, netPos: p.netPos })));
+        const filtered = wsPositions
+            .filter(p => (p.netPos || 0) !== 0)
             .map(p => this._transformPosition(p));
+        console.log('[BrokerAdapter] positions() returning:', filtered.length, 'open positions', filtered);
+        return filtered;
     }
 
     async closePosition(positionId) {
@@ -290,10 +297,14 @@ export class AtomikBrokerAdapter {
     }
 
     _setupWebSocketListeners() {
+        console.log('[BrokerAdapter] Setting up WebSocket listeners for account:', this._accountId, 'broker:', this._brokerId);
+
         // Position updates from WebSocket -> TradingView
         const handlePositionUpdate = (data) => {
             if (String(data.accountId) !== String(this._accountId)) return;
             if (data.brokerId && data.brokerId !== this._brokerId) return;
+
+            console.log('[BrokerAdapter] positionUpdate event received:', data.type, 'accountId:', data.accountId);
 
             // Rebuild all positions and push to TradingView
             const wsPositions = webSocketManager.getPositions(this._brokerId, String(this._accountId));
@@ -305,9 +316,10 @@ export class AtomikBrokerAdapter {
 
             // Handle closed positions (netPos = 0) - tell TV to remove them
             if (data.type === 'closed' && data.position) {
-                const displaySymbol = getDisplayTicker(data.position.contractId || data.position.symbol || '');
+                // Use symbol string, not numeric contractId
+                const displaySymbol = getDisplayTicker(data.position.symbol || '');
                 this._host.positionUpdate({
-                    id: String(data.position.id || data.position.contractId),
+                    id: String(data.position.positionId || data.position.id || data.position.contractId),
                     symbol: displaySymbol,
                     qty: 0,
                     side: 1,
@@ -321,6 +333,8 @@ export class AtomikBrokerAdapter {
         const handleOrderUpdate = (data) => {
             if (String(data.accountId) !== String(this._accountId)) return;
             if (data.brokerId && data.brokerId !== this._brokerId) return;
+
+            console.log('[BrokerAdapter] orderUpdate event received:', data.type, 'accountId:', data.accountId);
 
             // Rebuild all orders and push to TradingView
             const wsOrders = webSocketManager.getOrders(this._brokerId, String(this._accountId));
@@ -369,24 +383,28 @@ export class AtomikBrokerAdapter {
     }
 
     _transformPosition(wsPos) {
-        const displaySymbol = getDisplayTicker(wsPos.contractId || wsPos.symbol || '');
+        // Use symbol string (e.g. "NQH6") for display ticker resolution, NOT contractId (numeric Tradovate ID)
+        const displaySymbol = getDisplayTicker(wsPos.symbol || '');
         const netPos = wsPos.netPos || wsPos.qty || 0;
 
-        return {
-            id: String(wsPos.id || wsPos.contractId),
+        const transformed = {
+            id: String(wsPos.positionId || wsPos.id || wsPos.contractId),
             symbol: displaySymbol,
             qty: Math.abs(netPos),
             side: netPos > 0 ? 1 : -1,
             avgPrice: wsPos.netPrice || wsPos.avgPrice || 0,
             pl: wsPos.unrealizedPnL || wsPos.pl || 0,
         };
+        console.log('[BrokerAdapter] _transformPosition:', wsPos.symbol, '→', displaySymbol, transformed);
+        return transformed;
     }
 
     _transformOrder(wsOrder) {
-        const displaySymbol = getDisplayTicker(wsOrder.contractId || wsOrder.symbol || '');
+        // Use symbol string (e.g. "NQH6") for display ticker resolution, NOT contractId (numeric Tradovate ID)
+        const displaySymbol = getDisplayTicker(wsOrder.symbol || '');
 
-        return {
-            id: String(wsOrder.id || wsOrder.orderId),
+        const transformed = {
+            id: String(wsOrder.orderId || wsOrder.id),
             symbol: displaySymbol,
             type: mapOrderType(wsOrder.orderType || 'Market'),
             side: mapSide(wsOrder.action || wsOrder.side),
@@ -399,6 +417,8 @@ export class AtomikBrokerAdapter {
             duration: { type: wsOrder.timeInForce || 'GTC' },
             updateTime: wsOrder.timestamp ? wsOrder.timestamp / 1000 : Date.now() / 1000,
         };
+        console.log('[BrokerAdapter] _transformOrder:', wsOrder.symbol, '→', displaySymbol, transformed);
+        return transformed;
     }
 
     async _api(method, path, data) {

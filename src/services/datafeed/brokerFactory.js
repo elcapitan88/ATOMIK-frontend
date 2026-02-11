@@ -15,8 +15,10 @@ import { AtomikBrokerAdapter } from './AtomikBrokerAdapter';
  * @param {Function} [config.onError] - Optional callback on error
  */
 export function createAtomikBrokerFactory(config) {
+    console.log('[BrokerFactory] createAtomikBrokerFactory called — accountId:', config.accountId, 'brokerId:', config.brokerId);
     return {
         createDelegate: () => {
+            console.log('[BrokerFactory] createDelegate called by TradingView');
             return Promise.resolve({
                 isTradable: (symbol) => Promise.resolve(true),
                 buttonDropdownActions: undefined,
@@ -27,6 +29,7 @@ export function createAtomikBrokerFactory(config) {
         },
         createLoginButtonActions: undefined,
         createBroker: (host) => {
+            console.log('[BrokerFactory] createBroker called by TradingView — instantiating AtomikBrokerAdapter');
             return new AtomikBrokerAdapter(host, config);
         },
     };

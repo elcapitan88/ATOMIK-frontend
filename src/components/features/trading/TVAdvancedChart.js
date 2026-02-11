@@ -168,48 +168,46 @@ const TVAdvancedChart = ({
                     }
 
                     // Right-click context menu for multi-account trading
-                    // Only shown when broker_factory is NOT active (TV terminal has its own order UI)
-                    if (!brokerFactory) {
-                        try {
-                            w.onContextMenu((unixTime, price) => {
-                                const p = price.toFixed(2);
-                                const qty = currentQuantityRef.current || 1;
-                                const mode = selectionModeRef.current;
-                                const group = groupInfoRef.current;
-                                const hasAccount = hasAccountRef.current;
-                                const label = (mode === 'group' || mode === 'multi') && group
-                                    ? `(${group.groupName})`
-                                    : `(${qty} ct)`;
+                    // Always registered — coexists with TV Terminal's order panel/buy-sell buttons
+                    try {
+                        w.onContextMenu((unixTime, price) => {
+                            const p = price.toFixed(2);
+                            const qty = currentQuantityRef.current || 1;
+                            const mode = selectionModeRef.current;
+                            const group = groupInfoRef.current;
+                            const hasAccount = hasAccountRef.current;
+                            const label = (mode === 'group' || mode === 'multi') && group
+                                ? `(${group.groupName})`
+                                : `(${qty} ct)`;
 
-                                const placeOrder = (side, type) => {
-                                    onChartOrderRef.current?.({
-                                        side,
-                                        type,
-                                        price,
-                                        quantity: qty,
-                                        isGroupOrder: mode === 'group',
-                                        groupInfo: mode === 'group' ? group : null,
-                                    });
-                                };
+                            const placeOrder = (side, type) => {
+                                onChartOrderRef.current?.({
+                                    side,
+                                    type,
+                                    price,
+                                    quantity: qty,
+                                    isGroupOrder: mode === 'group',
+                                    groupInfo: mode === 'group' ? group : null,
+                                });
+                            };
 
-                                // Always show menu — order handler will validate account selection
-                                const noAcctSuffix = hasAccount ? '' : ' (select account first)';
+                            // Always show menu — order handler will validate account selection
+                            const noAcctSuffix = hasAccount ? '' : ' (select account first)';
 
-                                return [
-                                    { position: 'top', text: '-Trading-', click: () => {} },
-                                    { position: 'top', text: `Buy Limit @ ${p} ${label}${noAcctSuffix}`, click: () => placeOrder('buy', 'LIMIT') },
-                                    { position: 'top', text: `Sell Limit @ ${p} ${label}${noAcctSuffix}`, click: () => placeOrder('sell', 'LIMIT') },
-                                    { position: 'top', text: '-', click: () => {} },
-                                    { position: 'top', text: `Buy Stop @ ${p} ${label}${noAcctSuffix}`, click: () => placeOrder('buy', 'STOP') },
-                                    { position: 'top', text: `Sell Stop @ ${p} ${label}${noAcctSuffix}`, click: () => placeOrder('sell', 'STOP') },
-                                    { position: 'top', text: '-', click: () => {} },
-                                    { position: 'top', text: `Buy Market ${label}${noAcctSuffix}`, click: () => placeOrder('buy', 'MARKET') },
-                                    { position: 'top', text: `Sell Market ${label}${noAcctSuffix}`, click: () => placeOrder('sell', 'MARKET') },
-                                ];
-                            });
-                        } catch (e) {
-                            console.warn('Could not set up context menu:', e);
-                        }
+                            return [
+                                { position: 'top', text: '-Trading-', click: () => {} },
+                                { position: 'top', text: `Buy Limit @ ${p} ${label}${noAcctSuffix}`, click: () => placeOrder('buy', 'LIMIT') },
+                                { position: 'top', text: `Sell Limit @ ${p} ${label}${noAcctSuffix}`, click: () => placeOrder('sell', 'LIMIT') },
+                                { position: 'top', text: '-', click: () => {} },
+                                { position: 'top', text: `Buy Stop @ ${p} ${label}${noAcctSuffix}`, click: () => placeOrder('buy', 'STOP') },
+                                { position: 'top', text: `Sell Stop @ ${p} ${label}${noAcctSuffix}`, click: () => placeOrder('sell', 'STOP') },
+                                { position: 'top', text: '-', click: () => {} },
+                                { position: 'top', text: `Buy Market ${label}${noAcctSuffix}`, click: () => placeOrder('buy', 'MARKET') },
+                                { position: 'top', text: `Sell Market ${label}${noAcctSuffix}`, click: () => placeOrder('sell', 'MARKET') },
+                            ];
+                        });
+                    } catch (e) {
+                        console.warn('Could not set up context menu:', e);
                     }
                 });
             } catch (err) {
