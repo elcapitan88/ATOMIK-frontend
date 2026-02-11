@@ -26,6 +26,7 @@ import useChartTrading from '@/hooks/useChartTrading';
 import logger from '@/utils/logger';
 import useMultiAccountTrading from '@/hooks/useMultiAccountTrading';
 import useAggregatedPositions from '@/hooks/useAggregatedPositions';
+import { useUnifiedStrategies } from '@/hooks/useUnifiedStrategies';
 import { useWebSocketContext } from '@/services/websocket-proxy/contexts/WebSocketContext';
 
 // Lazy loaded components
@@ -128,7 +129,8 @@ const DashboardContent = () => {
 
     // Multi-account trading hooks
     const { getConnectionState: wsGetConnectionState } = useWebSocketContext();
-    const multiAccountTrading = useMultiAccountTrading(dashboardData.accounts, dashboardData.strategies);
+    const { strategies: activatedStrategies } = useUnifiedStrategies();
+    const multiAccountTrading = useMultiAccountTrading(dashboardData.accounts, activatedStrategies);
     const { positions: aggregatedPositions, orders: aggregatedOrders } = useAggregatedPositions(dashboardData.accounts, wsGetConnectionState);
 
     // Set up API request interception for caching
@@ -485,7 +487,7 @@ const DashboardContent = () => {
                                                 <TradingAccountsPanel
                                                     multiAccountTrading={multiAccountTrading}
                                                     aggregatedPositions={aggregatedPositions}
-                                                    strategies={dashboardData.strategies}
+                                                    strategies={activatedStrategies}
                                                 />
                                             </Suspense>
                                         </ErrorBoundary>
