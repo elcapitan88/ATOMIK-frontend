@@ -107,12 +107,13 @@ class WebSocketManager extends EventEmitter {
     }
     
     // Determine the base URL based on environment
+    // REACT_APP_WS_PROXY_URL takes priority in any environment (allows dev → prod Tradesocket)
     let baseUrl;
-    if (process.env.NODE_ENV === 'production') {
-        // In production, use the Railway WebSocket URL
-        baseUrl = process.env.REACT_APP_WS_PROXY_URL || 'wss://websocket-proxy-production.up.railway.app';
+    if (process.env.REACT_APP_WS_PROXY_URL) {
+        baseUrl = process.env.REACT_APP_WS_PROXY_URL;
+    } else if (process.env.NODE_ENV === 'production') {
+        baseUrl = 'wss://tradesocket-production.up.railway.app';
     } else {
-        // In development, use localhost
         baseUrl = 'ws://localhost:8001';
     }
     

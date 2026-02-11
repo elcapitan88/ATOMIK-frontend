@@ -23,6 +23,7 @@ import MaintenanceBanner from '@/components/common/MaintenanceBanner';
 import PaymentStatusWarning from '@/components/subscription/PaymentStatusWarning';
 import ARIAAssistant from '@/components/ARIA/ARIAAssistant';
 import useChartTrading from '@/hooks/useChartTrading';
+import { createAtomikBrokerFactory } from '@services/datafeed/brokerFactory';
 import logger from '@/utils/logger';
 import useMultiAccountTrading from '@/hooks/useMultiAccountTrading';
 import useAggregatedPositions from '@/hooks/useAggregatedPositions';
@@ -132,6 +133,23 @@ const DashboardContent = () => {
     const { strategies: activatedStrategies } = useUnifiedStrategies();
     const multiAccountTrading = useMultiAccountTrading(dashboardData.accounts, activatedStrategies);
     const { positions: aggregatedPositions, orders: aggregatedOrders } = useAggregatedPositions(dashboardData.accounts, wsGetConnectionState);
+
+    // Create broker factory for TradingView trading terminal
+    // Uses the first active manual account for chart-based trading
+    const brokerFactory = useMemo(() => {
+        const { activeAccounts } = multiAccountTrading;
+        if (activeAccounts.length === 0) return null;
+
+        // Use the first active manual account for the TradingView terminal
+        const chartAccount = activeAccounts[0];
+        if (!chartAccount) return null;
+
+        return createAtomikBrokerFactory({
+            accountId: chartAccount.account_id,
+            brokerId: chartAccount.broker_id || 'tradovate',
+            getAccessToken: () => localStorage.getItem('access_token'),
+        });
+    }, [multiAccountTrading]);
 
     // Set up API request interception for caching
     useEffect(() => {
@@ -430,6 +448,7 @@ const DashboardContent = () => {
                                                     currentQuantity={multiAccountTrading.totalContracts}
                                                     selectionMode={multiAccountTrading.activeCount > 0 ? 'multi' : 'single'}
                                                     groupInfo={multiAccountTrading.activeCount > 0 ? { groupName: `${multiAccountTrading.totalContracts} cts / ${multiAccountTrading.activeCount} acct${multiAccountTrading.activeCount !== 1 ? 's' : ''}` } : null}
+                                                    brokerFactory={brokerFactory}
                                                 />
                                             </Suspense>
                                         </ErrorBoundary>
