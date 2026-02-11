@@ -23,7 +23,7 @@ import MaintenanceBanner from '@/components/common/MaintenanceBanner';
 import PaymentStatusWarning from '@/components/subscription/PaymentStatusWarning';
 import ARIAAssistant from '@/components/ARIA/ARIAAssistant';
 import useChartTrading from '@/hooks/useChartTrading';
-import { createAtomikBrokerFactory } from '@services/datafeed/brokerFactory';
+import OrderConfirmationModal from '../features/trading/OrderConfirmationModal';
 import logger from '@/utils/logger';
 import useMultiAccountTrading from '@/hooks/useMultiAccountTrading';
 import useAggregatedPositions from '@/hooks/useAggregatedPositions';
@@ -134,21 +134,15 @@ const DashboardContent = () => {
     const multiAccountTrading = useMultiAccountTrading(dashboardData.accounts, activatedStrategies);
     const { positions: aggregatedPositions, orders: aggregatedOrders } = useAggregatedPositions(dashboardData.accounts, wsGetConnectionState);
 
-    // Create broker factory for TradingView trading terminal
-    // Uses the first active manual account for chart-based trading
-    // Extract primitive IDs so the factory only recreates when the actual account changes
-    const chartAccountId = multiAccountTrading.activeAccounts?.[0]?.account_id || null;
-    const chartBrokerId = multiAccountTrading.activeAccounts?.[0]?.broker_id || 'tradovate';
-
-    const brokerFactory = useMemo(() => {
-        if (!chartAccountId) return null;
-
-        return createAtomikBrokerFactory({
-            accountId: chartAccountId,
-            brokerId: chartBrokerId,
-            getAccessToken: () => localStorage.getItem('access_token'),
-        });
-    }, [chartAccountId, chartBrokerId]);
+    // Skip confirmation preference (persisted in localStorage)
+    const [skipOrderConfirmation, setSkipOrderConfirmation] = useState(
+        () => localStorage.getItem('atomik_skip_order_confirm') === 'true'
+    );
+    const handleToggleSkip = useCallback((val) => {
+        const next = typeof val === 'boolean' ? val : !skipOrderConfirmation;
+        setSkipOrderConfirmation(next);
+        localStorage.setItem('atomik_skip_order_confirm', String(next));
+    }, [skipOrderConfirmation]);
 
     // Set up API request interception for caching
     useEffect(() => {
@@ -342,13 +336,13 @@ const DashboardContent = () => {
     }), [toast]);
 
     // Position/order lines on chart — use aggregated data from all accounts
-    // Skip when brokerFactory is active: TradingView's trading terminal draws its own lines
-    useChartTrading({
-        activeChart: brokerFactory ? null : activeChart,
+    const chartTrading = useChartTrading({
+        activeChart,
         positions: aggregatedPositions,
         orders: aggregatedOrders,
         chartSymbol,
         callbacks: chartCallbacks,
+        multiAccountTrading,
     });
 
     // Handle chart right-click order placement
@@ -448,7 +442,6 @@ const DashboardContent = () => {
                                                     currentQuantity={multiAccountTrading.totalContracts}
                                                     selectionMode={multiAccountTrading.activeCount > 0 ? 'multi' : 'single'}
                                                     groupInfo={multiAccountTrading.activeCount > 0 ? { groupName: `${multiAccountTrading.totalContracts} cts / ${multiAccountTrading.activeCount} acct${multiAccountTrading.activeCount !== 1 ? 's' : ''}` } : null}
-                                                    brokerFactory={brokerFactory}
                                                 />
                                             </Suspense>
                                         </ErrorBoundary>
@@ -644,6 +637,17 @@ const DashboardContent = () => {
 
                 {/* ARIA Assistant - Floating Chat (Only for Admin and Beta Testers) */}
                 {hasAriaAssistant && <ARIAAssistant />}
+
+                {/* Chart Trading Confirmation Modal */}
+                <OrderConfirmationModal
+                    isOpen={!!chartTrading.confirmState}
+                    action={chartTrading.confirmState?.action}
+                    details={chartTrading.confirmState?.details}
+                    onConfirm={chartTrading.handleConfirm}
+                    onCancel={chartTrading.handleCancel}
+                    skipConfirmation={skipOrderConfirmation}
+                    onToggleSkip={handleToggleSkip}
+                />
             </Flex>
         </>
     );

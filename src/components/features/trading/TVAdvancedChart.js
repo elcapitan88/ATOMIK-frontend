@@ -21,7 +21,6 @@ const TVAdvancedChart = ({
     currentQuantity = 1,
     selectionMode = 'single',
     groupInfo = null,
-    brokerFactory = null,
 }) => {
     const containerRef = useRef(null);
     const widgetRef = useRef(null);
@@ -69,23 +68,6 @@ const TVAdvancedChart = ({
 
             if (!containerRef.current) return;
 
-            // Build enabled features list
-            const enabledFeatures = [
-                'study_templates',
-                'create_volume_indicator_by_default',
-                'save_chart_properties_to_local_storage',
-                'side_toolbar_in_fullscreen_mode',
-            ];
-
-            // When broker is connected, enable trading terminal features
-            if (brokerFactory) {
-                enabledFeatures.push(
-                    'trading_terminal',
-                    'buy_sell_buttons',
-                    'order_panel',
-                );
-            }
-
             const widgetOptions = {
                 symbol: symbol,
                 datafeed: datafeed,
@@ -98,7 +80,12 @@ const TVAdvancedChart = ({
                     'display_market_status',
                     'header_saveload',
                 ],
-                enabled_features: enabledFeatures,
+                enabled_features: [
+                    'study_templates',
+                    'create_volume_indicator_by_default',
+                    'save_chart_properties_to_local_storage',
+                    'side_toolbar_in_fullscreen_mode',
+                ],
                 fullscreen: fullscreen,
                 autosize: autosize,
                 studies_overrides: studiesOverrides,
@@ -122,28 +109,6 @@ const TVAdvancedChart = ({
                 loading_screen: { backgroundColor: '#1C1C1C', foregroundColor: '#00C6E0' },
                 toolbar_bg: '#1C1C1C',
             };
-
-            // Add broker factory for TradingView trading terminal
-            if (brokerFactory) {
-                widgetOptions.broker_factory = brokerFactory;
-                widgetOptions.debug_broker = 'normal'; // Log broker API calls in console
-                widgetOptions.broker_config = {
-                    configFlags: {
-                        supportOrderBrackets: true,
-                        supportPositionBrackets: true,
-                        supportClosePosition: true,
-                        supportReversePosition: true,
-                        supportModifyOrder: true,
-                        supportCancelOrder: true,
-                        supportMarketOrders: true,
-                        supportLimitOrders: true,
-                        supportStopOrders: true,
-                        supportStopLimitOrders: true,
-                        supportModifyDuration: false,
-                        showQuantityInsteadOfAmount: true,
-                    },
-                };
-            }
 
             try {
                 const w = new window.TradingView.widget(widgetOptions);
@@ -169,7 +134,6 @@ const TVAdvancedChart = ({
                     }
 
                     // Right-click context menu for multi-account trading
-                    // Always registered — coexists with TV Terminal's order panel/buy-sell buttons
                     try {
                         w.onContextMenu((unixTime, price) => {
                             const p = price.toFixed(2);
@@ -248,7 +212,7 @@ const TVAdvancedChart = ({
             }
         };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [symbol, interval, theme, brokerFactory]);
+    }, [symbol, interval, theme]);
 
     return (
         <Box
