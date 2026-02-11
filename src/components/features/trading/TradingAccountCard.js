@@ -5,27 +5,32 @@ import {
   HStack,
   VStack,
   Text,
-  Switch,
   NumberInput,
   NumberInputField,
   NumberInputStepper,
   NumberIncrementStepper,
   NumberDecrementStepper,
-  Badge,
   Menu,
   MenuButton,
   MenuList,
   MenuItem,
   IconButton,
+  Icon,
+  keyframes,
 } from '@chakra-ui/react';
-import { MoreVertical, Edit, Trash2, Power, RefreshCw } from 'lucide-react';
+import { MoreVertical, Edit, Trash2, Power, RefreshCw, Crosshair, Zap } from 'lucide-react';
 import AccountStatusIndicator from '@/components/common/AccountStatusIndicator';
+
+const pulseGlow = keyframes`
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+`;
 
 /**
  * Compact account card that adapts to MANUAL or AUTO mode.
  *
- * MANUAL: qty input + active toggle (cyan accent when active)
- * AUTO: strategy name + live position/P&L (purple accent)
+ * MANUAL: click card to activate, qty input (cyan accent)
+ * AUTO: strategy name + live position/P&L (purple accent, read-only)
  */
 const TradingAccountCard = ({
   account,
@@ -58,25 +63,114 @@ const TradingAccountCard = ({
     [positions]
   );
 
-  const accentColor = isAuto ? 'purple.400' : 'cyan.400';
+  const hasActiveStrategy = strategies?.length > 0;
+
+  // Visual states
   const borderColor = isAuto
-    ? 'rgba(159, 122, 234, 0.4)'
+    ? 'rgba(159, 122, 234, 0.25)'
     : isActive
-    ? 'rgba(0, 198, 224, 0.5)'
-    : 'transparent';
-  const bgColor = isActive && !isAuto ? 'rgba(0, 198, 224, 0.06)' : 'whiteAlpha.50';
+    ? 'rgba(0, 198, 224, 0.4)'
+    : 'rgba(255, 255, 255, 0.06)';
+
+  const bgColor = isActive && !isAuto
+    ? 'rgba(0, 198, 224, 0.06)'
+    : 'rgba(255, 255, 255, 0.02)';
+
+  const accentStripeColor = isAuto
+    ? isActive // shouldn't happen, but guard
+      ? 'rgba(159, 122, 234, 0.8)'
+      : hasActiveStrategy
+      ? 'rgba(159, 122, 234, 0.6)'
+      : 'rgba(159, 122, 234, 0.3)'
+    : isActive
+    ? 'rgba(0, 198, 224, 0.9)'
+    : 'rgba(255, 255, 255, 0.12)';
+
+  const hoverBg = isAuto
+    ? 'rgba(159, 122, 234, 0.06)'
+    : isActive
+    ? 'rgba(0, 198, 224, 0.09)'
+    : 'rgba(255, 255, 255, 0.06)';
+
+  const cardOpacity = !isAuto && !isActive ? 0.7 : 1;
 
   return (
     <Box
+      position="relative"
       bg={bgColor}
       border="1px solid"
       borderColor={borderColor}
       borderRadius="lg"
-      p={3}
-      transition="all 0.2s"
-      _hover={{ bg: isAuto ? 'rgba(159, 122, 234, 0.06)' : 'whiteAlpha.100' }}
+      pl={5}
+      pr={3}
+      py={3}
+      transition="all 0.2s ease"
+      opacity={cardOpacity}
+      cursor={isAuto ? 'default' : 'pointer'}
+      onClick={isAuto ? undefined : onToggle}
+      _hover={
+        isAuto
+          ? { bg: hoverBg }
+          : {
+              bg: hoverBg,
+              opacity: 1,
+              borderColor: isActive
+                ? 'rgba(0, 198, 224, 0.5)'
+                : 'rgba(255, 255, 255, 0.15)',
+              transform: 'translateY(-1px)',
+            }
+      }
+      _active={
+        isAuto
+          ? {}
+          : { transform: 'translateY(0px)', transition: 'transform 0.05s' }
+      }
+      boxShadow={
+        isActive && !isAuto
+          ? '0 0 12px rgba(0, 198, 224, 0.15)'
+          : 'none'
+      }
     >
-      {/* Row 1: Status + Name + Broker + Mode Badge + Actions */}
+      {/* Left accent stripe */}
+      <Box
+        position="absolute"
+        left={0}
+        top="8px"
+        bottom="8px"
+        w="3px"
+        borderRadius="full"
+        bg={accentStripeColor}
+        transition="all 0.2s ease"
+      />
+
+      {/* Status dot — top right corner */}
+      {isActive && !isAuto && (
+        <Box
+          position="absolute"
+          top="10px"
+          right="36px"
+          w="6px"
+          h="6px"
+          borderRadius="full"
+          bg="green.400"
+          boxShadow="0 0 6px rgba(72, 187, 120, 0.6)"
+          animation={`${pulseGlow} 2s ease-in-out infinite`}
+        />
+      )}
+      {isAuto && hasActiveStrategy && (
+        <Box
+          position="absolute"
+          top="10px"
+          right="36px"
+          w="6px"
+          h="6px"
+          borderRadius="full"
+          bg="purple.400"
+          boxShadow="0 0 6px rgba(159, 122, 234, 0.5)"
+        />
+      )}
+
+      {/* Row 1: Status + Name + Broker + Mode Icon + Actions */}
       <Flex align="center" justify="space-between" mb={isAuto ? 1 : 2}>
         <HStack spacing={2} flex="1" minW={0}>
           <AccountStatusIndicator
@@ -93,7 +187,7 @@ const TradingAccountCard = ({
                 {account.broker_id}
               </Text>
               <Text fontSize="xs" color="whiteAlpha.400">
-                •
+                &bull;
               </Text>
               <Text fontSize="xs" color="whiteAlpha.600" lineHeight="1.2">
                 ${balance.toLocaleString(undefined, { maximumFractionDigits: 0 })}
@@ -103,17 +197,12 @@ const TradingAccountCard = ({
         </HStack>
 
         <HStack spacing={1}>
-          <Badge
-            fontSize="9px"
-            px={1.5}
-            py={0.5}
-            borderRadius="sm"
-            colorScheme={isAuto ? 'purple' : 'cyan'}
-            variant="subtle"
-          >
-            {isAuto ? 'AUTO' : 'MANUAL'}
-          </Badge>
-
+          <Icon
+            as={isAuto ? Zap : Crosshair}
+            boxSize={3.5}
+            color={isAuto ? 'purple.400' : isActive ? 'cyan.400' : 'whiteAlpha.400'}
+            transition="color 0.2s"
+          />
           <AccountOptionsMenu
             account={account}
             isIB={isIB}
@@ -136,7 +225,6 @@ const TradingAccountCard = ({
         <ManualModeContent
           isActive={isActive}
           quantity={quantity}
-          onToggle={onToggle}
           onQuantityChange={onQuantityChange}
           accountId={account.account_id}
         />
@@ -145,10 +233,10 @@ const TradingAccountCard = ({
   );
 };
 
-/** MANUAL mode: qty input + active toggle */
-const ManualModeContent = memo(({ isActive, quantity, onToggle, onQuantityChange, accountId }) => (
+/** MANUAL mode: qty input (no toggle — card click handles activation) */
+const ManualModeContent = memo(({ isActive, quantity, onQuantityChange, accountId }) => (
   <Flex align="center" justify="space-between">
-    <HStack spacing={2}>
+    <HStack spacing={2} onClick={(e) => e.stopPropagation()}>
       <Text fontSize="xs" color="whiteAlpha.600">
         Qty
       </Text>
@@ -159,7 +247,6 @@ const ManualModeContent = memo(({ isActive, quantity, onToggle, onQuantityChange
         max={999}
         w="60px"
         onChange={(_, val) => onQuantityChange(accountId, val)}
-        isDisabled={!isActive}
       >
         <NumberInputField
           bg="whiteAlpha.100"
@@ -179,22 +266,14 @@ const ManualModeContent = memo(({ isActive, quantity, onToggle, onQuantityChange
       </NumberInput>
     </HStack>
 
-    <HStack spacing={2}>
-      <Text fontSize="xs" color={isActive ? 'cyan.300' : 'whiteAlpha.500'}>
-        {isActive ? 'ON' : 'OFF'}
-      </Text>
-      <Switch
-        size="sm"
-        isChecked={isActive}
-        onChange={onToggle}
-        colorScheme="cyan"
-        sx={{
-          '.chakra-switch__track': {
-            bg: isActive ? 'rgba(0, 198, 224, 0.6)' : 'whiteAlpha.300',
-          },
-        }}
-      />
-    </HStack>
+    <Text
+      fontSize="xs"
+      fontWeight="medium"
+      color={isActive ? 'cyan.300' : 'whiteAlpha.400'}
+      letterSpacing="wide"
+    >
+      {isActive ? 'ACTIVE' : 'IDLE'}
+    </Text>
   </Flex>
 ));
 ManualModeContent.displayName = 'ManualModeContent';
@@ -268,6 +347,7 @@ const AccountOptionsMenu = memo(
           color="whiteAlpha.600"
           _hover={{ bg: 'whiteAlpha.200', color: 'white' }}
           aria-label="Account options"
+          onClick={(e) => e.stopPropagation()}
         />
         <MenuList
           bg="rgba(30, 30, 30, 0.95)"
@@ -278,7 +358,7 @@ const AccountOptionsMenu = memo(
           <MenuItem
             fontSize="sm"
             icon={<Edit size={14} />}
-            onClick={() => onEditName(account)}
+            onClick={(e) => { e.stopPropagation(); onEditName(account); }}
             _hover={{ bg: 'whiteAlpha.100' }}
             bg="transparent"
             color="white"
@@ -290,7 +370,7 @@ const AccountOptionsMenu = memo(
               <MenuItem
                 fontSize="sm"
                 icon={<Power size={14} />}
-                onClick={() => onPowerToggle?.(account)}
+                onClick={(e) => { e.stopPropagation(); onPowerToggle?.(account); }}
                 _hover={{ bg: 'whiteAlpha.100' }}
                 bg="transparent"
                 color="white"
@@ -300,7 +380,7 @@ const AccountOptionsMenu = memo(
               <MenuItem
                 fontSize="sm"
                 icon={<RefreshCw size={14} />}
-                onClick={() => onRestart?.(account)}
+                onClick={(e) => { e.stopPropagation(); onRestart?.(account); }}
                 _hover={{ bg: 'whiteAlpha.100' }}
                 bg="transparent"
                 color="white"
@@ -312,7 +392,7 @@ const AccountOptionsMenu = memo(
           <MenuItem
             fontSize="sm"
             icon={<Trash2 size={14} />}
-            onClick={() => onDelete(account)}
+            onClick={(e) => { e.stopPropagation(); onDelete(account); }}
             _hover={{ bg: 'whiteAlpha.100' }}
             bg="transparent"
             color="red.400"
