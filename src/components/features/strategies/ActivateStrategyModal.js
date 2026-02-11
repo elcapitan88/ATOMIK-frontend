@@ -208,7 +208,7 @@ const ActivateStrategyModal = ({
           setAccounts(accountsResponse.data || []);
 
           // Fetch user's own webhooks
-          const ownWebhooksResponse = await axiosInstance.get('/api/v1/webhooks');
+          const ownWebhooksResponse = await axiosInstance.get('/api/v1/webhooks/list');
           const ownWebhooks = ownWebhooksResponse.data || [];
 
           // Fetch subscribed marketplace webhooks
@@ -700,9 +700,9 @@ const ActivateStrategyModal = ({
                     _focus={{ borderColor: 'rgba(0, 198, 224, 0.6)', boxShadow: '0 0 0 1px rgba(0, 198, 224, 0.6)' }}
                     isDisabled={!!strategy}
                   >
-                    {Object.entries(displayTickers).map(([symbol, name]) => (
-                      <option key={symbol} value={symbol} style={{ background: '#1a1a1a' }}>
-                        {symbol} - {name}
+                    {displayTickers.map((ticker) => (
+                      <option key={ticker} value={ticker} style={{ background: '#1a1a1a' }}>
+                        {ticker}
                       </option>
                     ))}
                   </Select>
@@ -824,9 +824,9 @@ const ActivateStrategyModal = ({
                     _focus={{ borderColor: 'rgba(0, 198, 224, 0.6)', boxShadow: '0 0 0 1px rgba(0, 198, 224, 0.6)' }}
                     isDisabled={!!strategy}
                   >
-                    {Object.entries(displayTickers).map(([symbol, name]) => (
-                      <option key={symbol} value={symbol} style={{ background: '#1a1a1a' }}>
-                        {symbol} - {name}
+                    {displayTickers.map((ticker) => (
+                      <option key={ticker} value={ticker} style={{ background: '#1a1a1a' }}>
+                        {ticker}
                       </option>
                     ))}
                   </Select>
