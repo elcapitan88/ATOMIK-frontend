@@ -343,8 +343,9 @@ const DashboardContent = () => {
     }), [toast]);
 
     // Position/order lines on chart — use aggregated data from all accounts
+    // Skip when brokerFactory is active: TradingView's trading terminal draws its own lines
     useChartTrading({
-        activeChart,
+        activeChart: brokerFactory ? null : activeChart,
         positions: aggregatedPositions,
         orders: aggregatedOrders,
         chartSymbol,
