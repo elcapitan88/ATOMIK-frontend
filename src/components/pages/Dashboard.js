@@ -24,6 +24,7 @@ import PaymentStatusWarning from '@/components/subscription/PaymentStatusWarning
 import ARIAAssistant from '@/components/ARIA/ARIAAssistant';
 import useChartTrading from '@/hooks/useChartTrading';
 import OrderConfirmationModal from '../features/trading/OrderConfirmationModal';
+import ChartTradingOverlay from '../features/trading/ChartTradingOverlay';
 import logger from '@/utils/logger';
 import useMultiAccountTrading from '@/hooks/useMultiAccountTrading';
 import useAggregatedPositions from '@/hooks/useAggregatedPositions';
@@ -424,6 +425,7 @@ const DashboardContent = () => {
                                 >
                                     {/* Chart container */}
                                     <Box
+                                        position="relative"
                                         h={{ base: "300px", md: "50%" }}
                                         maxH={{ base: "none", md: "50%" }}
                                         flex={{ base: "0 0 auto", md: "0 0 50%" }}
@@ -445,6 +447,12 @@ const DashboardContent = () => {
                                                 />
                                             </Suspense>
                                         </ErrorBoundary>
+                                        {/* Trading lines overlay (positions + orders on chart) */}
+                                        <ChartTradingOverlay
+                                            activeChart={activeChart}
+                                            positionLines={chartTrading.positionLines}
+                                            orderLines={chartTrading.orderLines}
+                                        />
                                     </Box>
 
                                     {/* Quick Order Bar */}
