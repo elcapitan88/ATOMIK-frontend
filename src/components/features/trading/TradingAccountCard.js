@@ -15,16 +15,9 @@ import {
   MenuList,
   MenuItem,
   IconButton,
-  Icon,
-  keyframes,
 } from '@chakra-ui/react';
-import { MoreVertical, Edit, Trash2, Power, RefreshCw, Crosshair, Zap } from 'lucide-react';
+import { MoreVertical, Edit, Trash2, Power, RefreshCw } from 'lucide-react';
 import AccountStatusIndicator from '@/components/common/AccountStatusIndicator';
-
-const pulseGlow = keyframes`
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.4; }
-`;
 
 /**
  * Compact account card that adapts to MANUAL or AUTO mode.
@@ -143,34 +136,7 @@ const TradingAccountCard = ({
         transition="all 0.2s ease"
       />
 
-      {/* Status dot — top right corner */}
-      {isActive && !isAuto && (
-        <Box
-          position="absolute"
-          top="10px"
-          right="36px"
-          w="6px"
-          h="6px"
-          borderRadius="full"
-          bg="green.400"
-          boxShadow="0 0 6px rgba(72, 187, 120, 0.6)"
-          animation={`${pulseGlow} 2s ease-in-out infinite`}
-        />
-      )}
-      {isAuto && hasActiveStrategy && (
-        <Box
-          position="absolute"
-          top="10px"
-          right="36px"
-          w="6px"
-          h="6px"
-          borderRadius="full"
-          bg="purple.400"
-          boxShadow="0 0 6px rgba(159, 122, 234, 0.5)"
-        />
-      )}
-
-      {/* Row 1: Status + Name + Broker + Mode Icon + Actions */}
+      {/* Row 1: Status + Name + Broker + Actions */}
       <Flex align="center" justify="space-between" mb={isAuto ? 1 : 2}>
         <HStack spacing={2} flex="1" minW={0}>
           <AccountStatusIndicator
@@ -197,12 +163,6 @@ const TradingAccountCard = ({
         </HStack>
 
         <HStack spacing={1}>
-          <Icon
-            as={isAuto ? Zap : Crosshair}
-            boxSize={3.5}
-            color={isAuto ? 'purple.400' : isActive ? 'cyan.400' : 'whiteAlpha.400'}
-            transition="color 0.2s"
-          />
           <AccountOptionsMenu
             account={account}
             isIB={isIB}

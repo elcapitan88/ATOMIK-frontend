@@ -349,6 +349,22 @@ const TradingAccountsPanel = ({ multiAccountTrading, aggregatedPositions = [], s
               : `${accounts.length} connected`}
           </Text>
         </VStack>
+
+        {/* Legend */}
+        <HStack spacing={3}>
+          <HStack spacing={1.5}>
+            <Box w="8px" h="3px" borderRadius="full" bg="cyan.400" />
+            <Text fontSize="9px" color="whiteAlpha.500" textTransform="uppercase" letterSpacing="wider">
+              Manual
+            </Text>
+          </HStack>
+          <HStack spacing={1.5}>
+            <Box w="8px" h="3px" borderRadius="full" bg="purple.400" />
+            <Text fontSize="9px" color="whiteAlpha.500" textTransform="uppercase" letterSpacing="wider">
+              Auto
+            </Text>
+          </HStack>
+        </HStack>
       </Flex>
 
       {/* Account Cards */}
