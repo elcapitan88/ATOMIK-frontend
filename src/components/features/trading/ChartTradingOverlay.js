@@ -61,11 +61,14 @@ const ChartTradingOverlay = memo(({
       {/* Position lines */}
       {positionLines.map((pos) => {
         const y = priceToY(pos.price);
+        // Compute current price Y so the axis tag can dodge TV's price tag
+        const curPriceY = pos.currentPrice ? priceToY(pos.currentPrice) : null;
         return (
           <PositionLine
             key={pos.key}
             data={pos}
             yPosition={y}
+            currentPriceY={curPriceY}
             chartWidth={chartWidth}
             visible={isPriceVisible(pos.price)}
           />

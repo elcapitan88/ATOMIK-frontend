@@ -4,11 +4,18 @@ import React, { memo, useState } from 'react';
  * HTML overlay position line.
  * Renders a horizontal line at the position's price with:
  *   - Qty badge + P&L
- *   - Close (×), Reverse (⟲), Protect (🛡) buttons on hover
+ *   - Close, Reverse, Protect buttons on hover
+ *   - Price tag on the Y-axis (nudges to avoid TV's current price tag)
  *
  * Positioned via CSS transform translateY for 60fps performance.
- * Styled to match Atomik dark-glass aesthetic — cyan for long, red for short.
+ * Styled to match Atomik dark-glass aesthetic.
  */
+
+// Price axis tag colors — readable on dark chart background
+const AXIS_TAG = {
+  long: '#0097A7',   // teal-700: readable with white text, distinct from TV's blue
+  short: '#C62828',  // deep red: readable with white text
+};
 
 const ActionButton = memo(({ onClick, bgColor, title, children, visible }) => (
   <button
@@ -47,9 +54,13 @@ const ActionButton = memo(({ onClick, bgColor, title, children, visible }) => (
 
 ActionButton.displayName = 'ActionButton';
 
+const TAG_HEIGHT = 18;
+const OVERLAP_THRESHOLD = 22; // px — if closer than this, nudge
+
 const PositionLine = memo(({
   data,
   yPosition,
+  currentPriceY,
   chartWidth,
   visible,
 }) => {
@@ -64,6 +75,18 @@ const PositionLine = memo(({
 
   const pnlStr = pnl >= 0 ? `+$${pnl.toFixed(2)}` : `-$${Math.abs(pnl).toFixed(2)}`;
   const pnlColor = pnl >= 0 ? '#00E5FF' : '#ef5350';
+
+  // Nudge the price axis tag if it would overlap with TV's current price tag
+  let tagOffsetY = -9; // default: vertically centered on the line
+  if (currentPriceY != null) {
+    const gap = yPosition - currentPriceY; // positive = our line is below current price
+    if (Math.abs(gap) < OVERLAP_THRESHOLD) {
+      // Nudge away from the current price tag
+      tagOffsetY = gap >= 0 ? TAG_HEIGHT - 2 : -(TAG_HEIGHT + 8);
+    }
+  }
+
+  const axisTagColor = isLong ? AXIS_TAG.long : AXIS_TAG.short;
 
   return (
     <div
@@ -80,7 +103,7 @@ const PositionLine = memo(({
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
-      {/* Horizontal line — solid */}
+      {/* Horizontal line */}
       <div
         style={{
           position: 'absolute',
@@ -93,7 +116,7 @@ const PositionLine = memo(({
         }}
       />
 
-      {/* Hit area — taller invisible area for easy hover */}
+      {/* Hit area — taller invisible zone for easy hover */}
       <div
         style={{
           position: 'absolute',
@@ -105,7 +128,7 @@ const PositionLine = memo(({
         }}
       />
 
-      {/* Label + buttons container — anchored near price scale */}
+      {/* Label + buttons container */}
       <div
         style={{
           position: 'absolute',
@@ -174,21 +197,22 @@ const PositionLine = memo(({
         </span>
       </div>
 
-      {/* Price tag on the price axis — mimics TV's native price tags */}
+      {/* Price tag on the Y-axis */}
       <div
         style={{
           position: 'absolute',
           right: 0,
-          top: '-9px',
+          top: `${tagOffsetY}px`,
           width: '78px',
-          height: '18px',
+          height: `${TAG_HEIGHT}px`,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          backgroundColor: color,
+          backgroundColor: axisTagColor,
           borderRadius: '2px',
           zIndex: 11,
           pointerEvents: 'none',
+          transition: 'top 0.15s ease-out',
         }}
       >
         <span

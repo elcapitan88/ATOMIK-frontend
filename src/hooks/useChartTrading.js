@@ -237,6 +237,7 @@ const useChartTrading = ({
         return {
           key,
           price: avgPrice,
+          currentPrice: pos.currentPrice || pos.lastPrice || 0,
           isLong,
           side: isLong ? 'LONG' : 'SHORT',
           quantity: qty,
