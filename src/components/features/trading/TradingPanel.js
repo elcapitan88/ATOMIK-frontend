@@ -20,7 +20,7 @@ import {
   IconButton,
   useToast,
 } from '@chakra-ui/react';
-import { Activity, Clock, FileText, MoreVertical, TrendingUp, TrendingDown } from 'lucide-react';
+import { Activity, Clock, FileText, MoreVertical, TrendingUp, TrendingDown, ChevronDown, ChevronUp } from 'lucide-react';
 import HistoricalTradesView from './HistoricalTradesView';
 import axiosInstance from '@/services/axiosConfig';
 import { useWebSocketContext } from '@/services/websocket-proxy/contexts/WebSocketContext';
@@ -35,7 +35,7 @@ import { useWebSocketContext } from '@/services/websocket-proxy/contexts/WebSock
  *   orders         - aggregated orders from useAggregatedPositions
  *   chartSymbol    - current chart symbol for highlighting
  */
-const TradingPanel = ({ positions = [], orders = [], chartSymbol = '' }) => {
+const TradingPanel = ({ positions = [], orders = [], chartSymbol = '', isCollapsed = false, onToggleCollapse }) => {
   const [activeTab, setActiveTab] = useState('positions');
   const toast = useToast();
   const { sendMessage } = useWebSocketContext();
@@ -138,7 +138,7 @@ const TradingPanel = ({ positions = [], orders = [], chartSymbol = '' }) => {
       overflow="hidden"
     >
       {/* Tab Header */}
-      <Flex px={3} py={2} align="center" borderBottom="1px solid" borderColor="whiteAlpha.100">
+      <Flex px={3} py={2} align="center" borderBottom={isCollapsed ? 'none' : '1px solid'} borderColor="whiteAlpha.100">
         <ButtonGroup size="xs" isAttached variant="ghost" spacing={0}>
           {tabs.map((tab) => (
             <Button
@@ -161,10 +161,25 @@ const TradingPanel = ({ positions = [], orders = [], chartSymbol = '' }) => {
             </Button>
           ))}
         </ButtonGroup>
+
+        {onToggleCollapse && (
+          <>
+            <Box flex="1" />
+            <IconButton
+              icon={isCollapsed ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+              size="xs"
+              variant="ghost"
+              color="whiteAlpha.500"
+              _hover={{ color: 'white', bg: 'whiteAlpha.100' }}
+              onClick={onToggleCollapse}
+              aria-label={isCollapsed ? 'Expand panel' : 'Collapse panel'}
+            />
+          </>
+        )}
       </Flex>
 
-      {/* Tab Content */}
-      <Box flex="1" overflow="auto" minH={0} overflowX="auto">
+      {/* Tab Content — hidden when collapsed */}
+      {!isCollapsed && <Box flex="1" overflow="auto" minH={0} overflowX="auto">
         {activeTab === 'positions' && (
           <PositionsTab
             positions={openPositions}
@@ -179,7 +194,7 @@ const TradingPanel = ({ positions = [], orders = [], chartSymbol = '' }) => {
           />
         )}
         {activeTab === 'history' && <HistoricalTradesView />}
-      </Box>
+      </Box>}
     </Box>
   );
 };

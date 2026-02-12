@@ -116,6 +116,9 @@ const DashboardContent = () => {
     const [chartSymbol, setChartSymbol] = useState('NQ');
     const [chartCurrentPrice, setChartCurrentPrice] = useState(null);
 
+    // Trading panel collapse state
+    const [isTradingPanelCollapsed, setIsTradingPanelCollapsed] = useState(false);
+
     // Poll chart's last bar close for live P&L calculation (~1s)
     useEffect(() => {
         if (!activeChart) return;
@@ -449,13 +452,14 @@ const DashboardContent = () => {
                                     {/* Chart container */}
                                     <Box
                                         position="relative"
-                                        h={{ base: "300px", md: "50%" }}
-                                        maxH={{ base: "none", md: "50%" }}
-                                        flex={{ base: "0 0 auto", md: "0 0 50%" }}
+                                        h={isTradingPanelCollapsed ? "auto" : { base: "300px", md: "50%" }}
+                                        maxH={isTradingPanelCollapsed ? "none" : { base: "none", md: "50%" }}
+                                        flex={isTradingPanelCollapsed ? "1" : { base: "0 0 auto", md: "0 0 50%" }}
                                         bg="whiteAlpha.100"
                                         borderRadius="xl"
                                         overflow="hidden"
                                         mb={{ base: 4, md: 0 }}
+                                        transition="flex 0.2s ease"
                                     >
                                         <ErrorBoundary>
                                             <Suspense fallback={<LoadingSpinner />}>
@@ -493,13 +497,15 @@ const DashboardContent = () => {
                                     </Box>
 
                                     {/* Bottom section — TradingPanel (Positions, Orders, History) */}
-                                    <Box mt={2} flex="1" minH="0">
+                                    <Box mt={2} flex={isTradingPanelCollapsed ? "0 0 auto" : "1"} minH="0">
                                         <ErrorBoundary>
                                             <Suspense fallback={<LoadingSpinner />}>
                                                 <TradingPanel
                                                     positions={aggregatedPositions}
                                                     orders={aggregatedOrders}
                                                     chartSymbol={chartSymbol}
+                                                    isCollapsed={isTradingPanelCollapsed}
+                                                    onToggleCollapse={() => setIsTradingPanelCollapsed(prev => !prev)}
                                                 />
                                             </Suspense>
                                         </ErrorBoundary>
