@@ -332,24 +332,6 @@ const useChartTrading = ({
   const orderLines = useMemo(() => {
     if (!chartSymbol) return [];
 
-    // DEBUG: Log all incoming orders for diagnosis
-    if (orders.length > 0) {
-      console.log('[useChartTrading] DEBUG: chartSymbol=', chartSymbol, 'total orders=', orders.length);
-      orders.forEach((o, i) => {
-        if (!o) return;
-        console.log(`[useChartTrading] DEBUG order[${i}]:`, {
-          orderId: o.orderId, id: o.id,
-          symbol: o.symbol, contractId: o.contractId,
-          ordStatus: o.ordStatus, status: o.status,
-          ordType: o.ordType, action: o.action,
-          price: o.price, limitPrice: o.limitPrice, stopPrice: o.stopPrice,
-          hasOrderId: !!o.orderId,
-          isWorking: o.ordStatus === 'Working' || o.status === 'Working' || o.ordStatus === 6,
-          matchesChart: o.symbol ? matchesChart(o.symbol) : 'NO_SYMBOL',
-        });
-      });
-    }
-
     return orders
       .filter((o) => {
         if (!o || !o.orderId) return false;
