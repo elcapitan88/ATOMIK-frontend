@@ -355,11 +355,17 @@ const DashboardContent = () => {
             try {
                 console.log(`[Dashboard] Modifying order ${orderId} on account ${accountId}:`, modifications);
                 const resp = await axiosInstance.put(`/api/v1/brokers/accounts/${accountId}/orders/${orderId}`, modifications);
-                console.log('[Dashboard] Modify order response:', resp.data);
-                const order = resp.data?.order;
-                const status = order?.status;
-                if (status === 'ExecutionRejected' || status === 'OnHold') {
-                    toast({ title: 'Order modification rejected', description: `Tradovate returned: ${status}`, status: 'warning', duration: 4000 });
+                console.log('[Dashboard] Modify order response:', JSON.stringify(resp.data));
+                // Validate response format — backend returns { status, order, timestamp }
+                if (resp.data?.status !== 'success' || !resp.data?.order) {
+                    console.error('[Dashboard] Unexpected modify response format:', resp.data);
+                    toast({ title: 'Order modify failed', description: 'Unexpected response from server', status: 'error', duration: 4000 });
+                    return;
+                }
+                const order = resp.data.order;
+                const orderStatus = order?.status;
+                if (orderStatus === 'ExecutionRejected' || orderStatus === 'OnHold') {
+                    toast({ title: 'Order modification rejected', description: `Tradovate returned: ${orderStatus}`, status: 'warning', duration: 4000 });
                 } else {
                     toast({ title: 'Order modified', status: 'success', duration: 2000 });
                 }
