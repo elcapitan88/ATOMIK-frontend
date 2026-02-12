@@ -243,12 +243,25 @@ const useChartTrading = ({
         const posAccountId = pos._accountId || pos.accountId;
         const avgPrice = pos.avgPrice || 0;
 
-        // Compute P&L client-side using chart's live current price
-        // Fallback chain: chartCurrentPrice → pos.currentPrice → avgPrice
-        const livePrice = chartCurrentPrice || pos.currentPrice || pos.lastPrice || avgPrice;
+        // P&L calculation — prefer WebSocket server-computed P&L, fall back to client-side
+        // WebSocket Proxy sends position_price_update with accurate unrealizedPnL on every tick
+        const wsHasRecentPrice = pos.lastPriceUpdate && (Date.now() - pos.lastPriceUpdate < 10000);
+        const wsCurrentPrice = wsHasRecentPrice ? pos.currentPrice : null;
+
+        // Live price: WebSocket real-time > chart poll > position data > entry price
+        const livePrice = wsCurrentPrice || chartCurrentPrice || pos.currentPrice || pos.lastPrice || avgPrice;
         const pointVal = getPointValue(pos.symbol);
         const priceDiff = isLong ? (livePrice - avgPrice) : (avgPrice - livePrice);
-        const pnl = avgPrice > 0 && livePrice > 0 ? priceDiff * qty * pointVal : (pos.unrealizedPnL || 0);
+
+        // Use WebSocket's server-computed P&L when fresh, otherwise calculate client-side
+        let pnl;
+        if (wsHasRecentPrice && pos.unrealizedPnL != null && pos.unrealizedPnL !== 0) {
+          pnl = pos.unrealizedPnL;
+        } else if (avgPrice > 0 && livePrice > 0 && livePrice !== avgPrice) {
+          pnl = priceDiff * qty * pointVal;
+        } else {
+          pnl = pos.unrealizedPnL || 0;
+        }
 
         return {
           key,

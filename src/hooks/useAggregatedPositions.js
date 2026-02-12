@@ -20,6 +20,9 @@ const useAggregatedPositions = (accounts = [], getConnectionState) => {
     accountsRef.current = accounts;
   }, [accounts]);
 
+  // Track previous position count to detect 0→>0 transitions
+  const prevPositionCountRef = useRef(0);
+
   // Build full snapshot from all accounts
   const buildSnapshot = useCallback(() => {
     const accts = accountsRef.current;
@@ -32,12 +35,15 @@ const useAggregatedPositions = (accounts = [], getConnectionState) => {
 
       const pos = webSocketManager.getPositions(bid, aid);
       pos.forEach((p) => {
-        allPositions.push({
-          ...p,
-          _brokerId: bid,
-          _accountId: aid,
-          _accountNickname: acct.nickname || acct.name || aid,
-        });
+        // Only include positions with non-zero quantity
+        if (p.quantity > 0 || Math.abs(p.netPos || 0) > 0) {
+          allPositions.push({
+            ...p,
+            _brokerId: bid,
+            _accountId: aid,
+            _accountNickname: acct.nickname || acct.name || aid,
+          });
+        }
       });
 
       const ord = webSocketManager.getOrders(bid, aid);
@@ -51,6 +57,14 @@ const useAggregatedPositions = (accounts = [], getConnectionState) => {
       });
     }
 
+    // Log 0→>0 transitions (new position opened from flat)
+    if (allPositions.length > 0 && prevPositionCountRef.current === 0) {
+      console.log('[useAggregatedPositions] ⚡ New position detected (0→>0):', allPositions.map(p => ({
+        symbol: p.symbol, side: p.side, qty: p.quantity, price: p.avgPrice,
+      })));
+    }
+    prevPositionCountRef.current = allPositions.length;
+
     setPositions(allPositions);
     setOrders(allOrders);
   }, []);
@@ -63,6 +77,9 @@ const useAggregatedPositions = (accounts = [], getConnectionState) => {
 
     webSocketManager.on('positionUpdate', handlePositionUpdate);
     webSocketManager.on('positionOpened', handlePositionUpdate);
+    webSocketManager.on('positionClosed', handlePositionUpdate);
+    webSocketManager.on('positionPriceUpdate', handlePositionUpdate);
+    webSocketManager.on('positionsSnapshot', handlePositionUpdate);
     webSocketManager.on('orderUpdate', handleOrderUpdate);
     webSocketManager.on('userDataSynced', handleSync);
 
@@ -70,12 +87,15 @@ const useAggregatedPositions = (accounts = [], getConnectionState) => {
     buildSnapshot();
 
     // Periodic polling fallback (catches missed events, e.g. new positions after order fill)
-    const pollId = setInterval(buildSnapshot, 3000);
+    const pollId = setInterval(buildSnapshot, 2000);
 
     return () => {
       clearInterval(pollId);
       webSocketManager.removeListener('positionUpdate', handlePositionUpdate);
       webSocketManager.removeListener('positionOpened', handlePositionUpdate);
+      webSocketManager.removeListener('positionClosed', handlePositionUpdate);
+      webSocketManager.removeListener('positionPriceUpdate', handlePositionUpdate);
+      webSocketManager.removeListener('positionsSnapshot', handlePositionUpdate);
       webSocketManager.removeListener('orderUpdate', handleOrderUpdate);
       webSocketManager.removeListener('userDataSynced', handleSync);
     };

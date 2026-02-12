@@ -732,32 +732,53 @@ class WebSocketManager extends EventEmitter {
         console.log('[WebSocketManager] positions_snapshot received:', message.data);
         this.handlePositionSnapshot(brokerId, accountId, message.data);
       } else if (message.type === 'positionUpdate') {
-        // Handle positionUpdate messages from backend (camelCase)
-        console.log('[WebSocketManager] positionUpdate message:', {
-          type: message.type,
-          type_detail: message.type_detail,
+        // Handle positionUpdate messages from WebSocket Proxy (camelCase)
+        // This fires for: opened (0→>0), modified (qty change), closed (→0)
+        console.log('[WebSocketManager] ⚡ positionUpdate:', message.type_detail, {
           hasPosition: !!message.position,
+          posId: message.position?.id || message.position?.positionId,
+          symbol: message.position?.symbol,
+          netPos: message.position?.netPos,
+          qty: message.position?.quantity,
         });
 
-        // Store position data in cache (was previously missing — only emitted event)
+        // Store position data in cache
         if (message.position) {
           const pos = message.position;
-          const transformed = (pos.id && !pos.positionId)
-            ? this.transformTradovatePosition(pos, null)
+          const needsTransform = pos.id && !pos.positionId;
+          const transformed = needsTransform
+            ? this.transformTradovatePosition(pos, pos.contractInfo || null)
             : pos;
+
           if (transformed) {
-            this.updatePositionData(brokerId, accountId, transformed);
+            // For 'closed' events, remove position from cache instead of storing
+            if (message.type_detail === 'closed' && (transformed.netPos === 0 || transformed.quantity === 0)) {
+              const closeKey = `${brokerId}:${accountId}:${transformed.positionId || transformed.contractId || transformed.symbol}`;
+              console.log('[WebSocketManager] 🗑️ Removing closed position from cache:', closeKey);
+              this.dataCache.positions.delete(closeKey);
+              this.emit('positionClosed', { brokerId, accountId, position: transformed });
+              this.emit('positionUpdate', { brokerId, accountId, type: 'closed', position: transformed });
+            } else {
+              const storeKey = `${brokerId}:${accountId}:${transformed.positionId || transformed.contractId || transformed.symbol}`;
+              console.log('[WebSocketManager] 💾 Storing position in cache:', storeKey, {
+                symbol: transformed.symbol,
+                side: transformed.side,
+                qty: transformed.quantity || Math.abs(transformed.netPos || 0),
+              });
+              this.updatePositionData(brokerId, accountId, transformed);
+            }
           }
         }
 
         // Emit the position update with the type_detail preserved
-        this.emit('positionUpdate', {
-          brokerId,
-          accountId,
-          type: message.type_detail || 'update',
-          position: message.position,
-          type_detail: message.type_detail
-        });
+        // (updatePositionData already emits positionUpdate, but this gives extra detail)
+        if (message.type_detail === 'opened') {
+          this.emit('positionOpened', {
+            brokerId,
+            accountId,
+            position: message.position,
+          });
+        }
       }
     }
   }
@@ -1166,21 +1187,24 @@ class WebSocketManager extends EventEmitter {
   transformTradovatePosition(rawPosition, contractInfo) {
     const netPos = Number(rawPosition.netPos || 0);
     const quantity = Math.abs(netPos);
-    
+
+    // Symbol resolution: contractInfo.name > rawPosition.symbol > fallback
+    const symbol = contractInfo?.name || rawPosition.symbol || `Contract-${rawPosition.contractId}`;
+
     return {
       positionId: String(rawPosition.id),
       accountId: rawPosition.accountId,
-      symbol: contractInfo?.name || rawPosition.symbol || `Contract-${rawPosition.contractId}`,
+      symbol,
       side: netPos > 0 ? 'LONG' : netPos < 0 ? 'SHORT' : 'FLAT',
       quantity: quantity,
       avgPrice: rawPosition.netPrice || rawPosition.avgPrice || 0,
       currentPrice: rawPosition.currentPrice || rawPosition.netPrice || rawPosition.avgPrice || 0,
       unrealizedPnL: rawPosition.unrealizedPnL || 0,
+      lastPriceUpdate: rawPosition.currentPrice ? Date.now() : null,
       timeEntered: rawPosition.timestamp || rawPosition.timeEntered,
       contractId: rawPosition.contractId,
-      netPos: netPos, // Keep original netPos for reference
+      netPos: netPos,
       netPrice: rawPosition.netPrice,
-      // Keep original fields for debugging
       _original: rawPosition
     };
   }
