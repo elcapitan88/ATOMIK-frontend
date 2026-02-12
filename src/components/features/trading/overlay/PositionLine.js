@@ -1,47 +1,45 @@
 import React, { memo, useState } from 'react';
-import TradingLineLabel from './TradingLineLabel';
 
 /**
  * HTML overlay position line.
  * Renders a horizontal line at the position's price with:
- *   - Side/qty/symbol label pill
- *   - Close (×), Reverse (⟲), Protect (🛡) buttons
+ *   - Qty badge + P&L
+ *   - Close (×), Reverse (⟲), Protect (🛡) buttons on hover
  *
  * Positioned via CSS transform translateY for 60fps performance.
+ * Styled to match Atomik dark-glass aesthetic — cyan for long, red for short.
  */
-
-const BUTTON_STYLES = {
-  base: {
-    display: 'inline-flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: '20px',
-    height: '20px',
-    borderRadius: '3px',
-    border: 'none',
-    cursor: 'pointer',
-    fontSize: '12px',
-    fontWeight: 'bold',
-    lineHeight: 1,
-    padding: 0,
-    transition: 'opacity 0.15s, transform 0.1s',
-    color: '#ffffff',
-  },
-};
 
 const ActionButton = memo(({ onClick, bgColor, title, children, visible }) => (
   <button
     onClick={(e) => { e.stopPropagation(); onClick(); }}
     title={title}
     style={{
-      ...BUTTON_STYLES.base,
+      display: 'inline-flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      width: '18px',
+      height: '18px',
+      borderRadius: '4px',
+      border: '1px solid rgba(255,255,255,0.15)',
+      cursor: 'pointer',
+      fontSize: '10px',
+      fontWeight: 'bold',
+      lineHeight: 1,
+      padding: 0,
+      transition: 'opacity 0.15s, transform 0.1s',
+      color: '#ffffff',
       backgroundColor: bgColor,
-      opacity: visible ? 1 : 0,
+      opacity: visible ? 0.9 : 0,
       transform: visible ? 'scale(1)' : 'scale(0.8)',
       pointerEvents: visible ? 'auto' : 'none',
+      backdropFilter: 'blur(4px)',
     }}
     onMouseEnter={(e) => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.transform = 'scale(1.1)'; }}
-    onMouseLeave={(e) => { e.currentTarget.style.opacity = visible ? '1' : '0'; e.currentTarget.style.transform = visible ? 'scale(1)' : 'scale(0.8)'; }}
+    onMouseLeave={(e) => {
+      e.currentTarget.style.opacity = visible ? '0.9' : '0';
+      e.currentTarget.style.transform = visible ? 'scale(1)' : 'scale(0.8)';
+    }}
   >
     {children}
   </button>
@@ -60,17 +58,12 @@ const PositionLine = memo(({
   if (!visible || yPosition < -50 || yPosition > 5000) return null;
 
   const {
-    side, quantity, symbol, accountNickname,
-    formattedPrice, color, bodyColor, pnl,
+    isLong, quantity, formattedPrice, color, pnl,
     onClose, onReverse, onProtect,
   } = data;
 
   const pnlStr = pnl >= 0 ? `+$${pnl.toFixed(2)}` : `-$${Math.abs(pnl).toFixed(2)}`;
-  const pnlColor = pnl >= 0 ? '#4caf50' : '#ef5350';
-
-  const labelText = accountNickname
-    ? `${side} ${quantity} ${symbol} [${accountNickname}]`
-    : `${side} ${quantity} ${symbol}`;
+  const pnlColor = pnl >= 0 ? '#00E5FF' : '#ef5350';
 
   return (
     <div
@@ -87,20 +80,7 @@ const PositionLine = memo(({
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
-      {/* Horizontal line */}
-      <div
-        style={{
-          position: 'absolute',
-          left: 0,
-          right: '80px', // leave room for price scale
-          height: '1px',
-          top: '0px',
-          background: color,
-          opacity: 0.7,
-        }}
-      />
-
-      {/* Dashed line extension for visual clarity */}
+      {/* Horizontal line — solid */}
       <div
         style={{
           position: 'absolute',
@@ -108,55 +88,88 @@ const PositionLine = memo(({
           right: '80px',
           height: '1px',
           top: '0px',
-          backgroundImage: `repeating-linear-gradient(to right, ${color} 0, ${color} 6px, transparent 6px, transparent 10px)`,
-          opacity: 0.4,
+          background: color,
+          opacity: 0.6,
         }}
       />
 
-      {/* Label + buttons container — positioned right-center */}
+      {/* Hit area — taller invisible area for easy hover */}
       <div
         style={{
           position: 'absolute',
-          right: '84px', // to the left of price scale
+          left: 0,
+          right: '80px',
+          height: '11px',
+          top: '-5px',
+          cursor: 'default',
+        }}
+      />
+
+      {/* Label + buttons container — anchored near price scale */}
+      <div
+        style={{
+          position: 'absolute',
+          right: '84px',
           top: '-10px',
           display: 'flex',
           alignItems: 'center',
-          gap: '4px',
+          gap: '3px',
         }}
       >
-        {/* Action buttons */}
-        <ActionButton
-          onClick={onClose}
-          bgColor="#ef5350"
-          title="Close position"
-          visible={hovered}
-        >
+        {/* Action buttons — appear on hover */}
+        <ActionButton onClick={onClose} bgColor="rgba(239, 83, 80, 0.8)" title="Close position" visible={hovered}>
           ×
         </ActionButton>
-        <ActionButton
-          onClick={onReverse}
-          bgColor="#ff9800"
-          title="Reverse position"
-          visible={hovered}
-        >
+        <ActionButton onClick={onReverse} bgColor="rgba(255, 152, 0, 0.8)" title="Reverse position" visible={hovered}>
           ⟲
         </ActionButton>
-        <ActionButton
-          onClick={onProtect}
-          bgColor="#9c27b0"
-          title="Add TP/SL brackets"
-          visible={hovered}
-        >
+        <ActionButton onClick={onProtect} bgColor="rgba(156, 39, 176, 0.8)" title="Add TP/SL brackets" visible={hovered}>
           ⛨
         </ActionButton>
 
-        {/* Label pill */}
-        <TradingLineLabel
-          text={labelText}
-          price={formattedPrice}
-          color={color}
-          bodyColor={bodyColor}
-        />
+        {/* Compact pill: qty + price */}
+        <div
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '5px',
+            padding: '2px 8px',
+            borderRadius: '4px',
+            backgroundColor: isLong ? 'rgba(0, 229, 255, 0.12)' : 'rgba(239, 83, 80, 0.12)',
+            border: `1px solid ${color}`,
+            backdropFilter: 'blur(8px)',
+            whiteSpace: 'nowrap',
+            userSelect: 'none',
+            boxShadow: '0 1px 4px rgba(0,0,0,0.3)',
+          }}
+        >
+          {/* Qty */}
+          <span
+            style={{
+              fontSize: '11px',
+              fontWeight: 700,
+              fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+              color: color,
+              letterSpacing: '0.3px',
+            }}
+          >
+            {quantity}
+          </span>
+
+          <span style={{ opacity: 0.3, color: '#fff', fontSize: '10px' }}>|</span>
+
+          {/* Price */}
+          <span
+            style={{
+              fontSize: '11px',
+              fontWeight: 600,
+              fontFamily: 'monospace',
+              color: '#ffffffcc',
+            }}
+          >
+            {formattedPrice}
+          </span>
+        </div>
 
         {/* P&L badge */}
         <span
@@ -165,10 +178,12 @@ const PositionLine = memo(({
             fontFamily: 'monospace',
             color: pnlColor,
             fontWeight: 600,
-            padding: '1px 4px',
-            borderRadius: '3px',
-            backgroundColor: 'rgba(0,0,0,0.4)',
+            padding: '2px 5px',
+            borderRadius: '4px',
+            backgroundColor: 'rgba(0,0,0,0.45)',
+            border: `1px solid ${pnl >= 0 ? 'rgba(0, 229, 255, 0.2)' : 'rgba(239, 83, 80, 0.2)'}`,
             whiteSpace: 'nowrap',
+            backdropFilter: 'blur(4px)',
           }}
         >
           {pnlStr}

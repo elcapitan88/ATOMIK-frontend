@@ -50,10 +50,11 @@ function formatPrice(price, symbol) {
 // ── Style Constants (shared with overlay components) ─────────────────
 
 export const COLORS = {
-  buyLine: '#26a69a',
+  // Atomik brand: cyan for long/buy, red for short/sell
+  buyLine: '#00E5FF',
   sellLine: '#ef5350',
-  buyBody: 'rgba(38, 166, 154, 0.85)',
-  sellBody: 'rgba(239, 83, 80, 0.85)',
+  buyBody: 'rgba(0, 229, 255, 0.15)',
+  sellBody: 'rgba(239, 83, 80, 0.15)',
   orderBody: '#2a2e39',
   orderText: '#d1d4dc',
   white: '#ffffff',

@@ -31,6 +31,10 @@ const useChartCoordinates = (activeChart) => {
   const isLogRef = useRef(false);
 
   // ── Initialise pane + priceScale refs ──────────────────────────────
+  // The TV chart may not have panes/priceScale ready immediately after
+  // onWidgetReady fires. We poll every 200ms (up to 15s) until they
+  // become available, so the overlay always appears without needing
+  // a manual page refresh.
   useEffect(() => {
     if (!activeChart) {
       setIsReady(false);
@@ -38,47 +42,48 @@ const useChartCoordinates = (activeChart) => {
     }
 
     let cancelled = false;
+    let attempts = 0;
+    const MAX_ATTEMPTS = 75; // 75 × 200ms = 15s
+    let timerId = null;
 
-    const init = () => {
+    const tryInit = () => {
+      if (cancelled) return;
+      attempts++;
+
       try {
         const panes = activeChart.getPanes();
-        if (!panes || panes.length === 0) return;
+        if (!panes || panes.length === 0) throw new Error('no panes');
 
         const pane = panes[0];
         const ps = pane.getMainSourcePriceScale();
-        if (!ps) return;
+        if (!ps) throw new Error('no priceScale');
+
+        // Verify the price scale actually has data
+        const range = ps.getVisiblePriceRange();
+        if (!range || range.from === range.to) throw new Error('no range');
 
         paneRef.current = pane;
         priceScaleRef.current = ps;
 
-        // Detect log scale: PriceScaleMode.Log = 1
         try {
           isLogRef.current = ps.getMode() === 1;
-        } catch (e) {
+        } catch (_) {
           isLogRef.current = false;
         }
 
         if (!cancelled) setIsReady(true);
-      } catch (e) {
-        console.warn('[useChartCoordinates] init failed, retrying...', e);
-        // Pane may not be ready yet — retry once
-        setTimeout(() => {
-          if (cancelled) return;
-          try {
-            const panes = activeChart.getPanes();
-            if (!panes || panes.length === 0) return;
-            paneRef.current = panes[0];
-            priceScaleRef.current = panes[0].getMainSourcePriceScale();
-            if (priceScaleRef.current && !cancelled) setIsReady(true);
-          } catch (e2) {
-            console.warn('[useChartCoordinates] init retry failed:', e2);
-          }
-        }, 500);
+      } catch (_) {
+        if (attempts < MAX_ATTEMPTS && !cancelled) {
+          timerId = setTimeout(tryInit, 200);
+        }
       }
     };
 
-    init();
-    return () => { cancelled = true; };
+    tryInit();
+    return () => {
+      cancelled = true;
+      if (timerId) clearTimeout(timerId);
+    };
   }, [activeChart]);
 
   // ── Measure toolbar height ─────────────────────────────────────────
@@ -172,16 +177,15 @@ const useChartCoordinates = (activeChart) => {
     };
   }, [isReady, activeChart]);
 
-  // ── Also subscribe to onVisibleRangeChanged as backup trigger ──────
+  // ── Subscribe to chart events as backup triggers ─────────────────
   useEffect(() => {
-    if (!activeChart || !isReady) return;
+    if (!activeChart) return;
 
-    let sub;
+    // onVisibleRangeChanged — catch fast scrolls the rAF loop might miss
+    let rangeSub;
     try {
-      sub = activeChart.onVisibleRangeChanged();
-      sub.subscribe(null, () => {
-        // The rAF loop will pick up the change, but this ensures
-        // we don't miss fast scrolls where rAF might skip a frame.
+      rangeSub = activeChart.onVisibleRangeChanged();
+      rangeSub.subscribe(null, () => {
         const ps = priceScaleRef.current;
         if (!ps) return;
         const range = ps.getVisiblePriceRange();
@@ -190,15 +194,33 @@ const useChartCoordinates = (activeChart) => {
           setVisiblePriceRange({ from: range.from, to: range.to });
         }
       });
-    } catch (e) {
-      console.warn('[useChartCoordinates] Could not subscribe to onVisibleRangeChanged:', e);
-    }
+    } catch (_) { /* not ready yet — polling will handle it */ }
+
+    // onDataLoaded — fires when chart finishes loading bar data.
+    // If we weren't ready yet, this is our cue to re-acquire pane refs.
+    let dataLoadedSub;
+    try {
+      dataLoadedSub = activeChart.onDataLoaded();
+      dataLoadedSub.subscribe(null, () => {
+        if (paneRef.current && priceScaleRef.current) return; // already good
+        try {
+          const panes = activeChart.getPanes();
+          if (panes && panes.length > 0) {
+            paneRef.current = panes[0];
+            const ps = panes[0].getMainSourcePriceScale();
+            if (ps) {
+              priceScaleRef.current = ps;
+              setIsReady(true);
+            }
+          }
+        } catch (_) { /* ignore */ }
+      });
+    } catch (_) { /* not ready yet */ }
 
     return () => {
-      // The CL subscription API doesn't expose unsubscribe easily,
-      // but the chart cleanup handles it when the widget is destroyed.
+      // CL subscriptions are cleaned up when the widget is destroyed.
     };
-  }, [activeChart, isReady]);
+  }, [activeChart]);
 
   // ── Coordinate conversion functions ────────────────────────────────
 
