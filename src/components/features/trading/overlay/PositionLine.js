@@ -5,16 +5,18 @@ import React, { memo, useState } from 'react';
  * Renders a horizontal line at the position's price with:
  *   - Qty badge + P&L
  *   - Close, Reverse, Protect buttons on hover
- *   - Price tag on the Y-axis (nudges to avoid TV's current price tag)
+ *   - Price tag on the Y-axis
  *
- * Positioned via CSS transform translateY for 60fps performance.
- * Styled to match Atomik dark-glass aesthetic.
+ * Colors: green for LONG, red for SHORT.
+ * P&L: green if positive, red if negative.
  */
 
-// Price axis tag colors — readable on dark chart background
-const AXIS_TAG = {
-  long: '#0097A7',   // teal-700: readable with white text, distinct from TV's blue
-  short: '#C62828',  // deep red: readable with white text
+// Position line + axis tag colors
+const LINE_COLORS = {
+  long: '#26a69a',       // green — line + qty pill
+  short: '#ef5350',      // red   — line + qty pill
+  longTag: '#1B5E20',    // dark green — axis tag background
+  shortTag: '#B71C1C',   // dark red   — axis tag background
 };
 
 const ActionButton = memo(({ onClick, bgColor, title, children, visible }) => (
@@ -54,39 +56,46 @@ const ActionButton = memo(({ onClick, bgColor, title, children, visible }) => (
 
 ActionButton.displayName = 'ActionButton';
 
-const TAG_HEIGHT = 18;
-const OVERLAP_THRESHOLD = 22; // px — if closer than this, nudge
+const NUDGE_THRESHOLD = 22; // px – if within this distance, nudge away
 
 const PositionLine = memo(({
   data,
   yPosition,
-  currentPriceY,
   chartWidth,
   visible,
+  currentPriceY,
 }) => {
   const [hovered, setHovered] = useState(false);
 
   if (!visible || yPosition < -50 || yPosition > 5000) return null;
 
   const {
-    isLong, quantity, formattedPrice, color, pnl,
+    isLong, quantity, formattedPrice, pnl,
     onClose, onReverse, onProtect,
   } = data;
 
-  const pnlStr = pnl >= 0 ? `+$${pnl.toFixed(2)}` : `-$${Math.abs(pnl).toFixed(2)}`;
-  const pnlColor = pnl >= 0 ? '#00E5FF' : '#ef5350';
+  const lineColor = isLong ? LINE_COLORS.long : LINE_COLORS.short;
+  const axisTagColor = isLong ? LINE_COLORS.longTag : LINE_COLORS.shortTag;
 
-  // Nudge the price axis tag if it would overlap with TV's current price tag
-  let tagOffsetY = -9; // default: vertically centered on the line
+  const pnlStr = pnl >= 0 ? `+$${pnl.toFixed(2)}` : `-$${Math.abs(pnl).toFixed(2)}`;
+  const pnlColor = pnl >= 0 ? '#4caf50' : '#ef5350'; // green / red
+
+  // ── Smart nudge: shift axis tag away from TV's current price tag ──
+  let axisTagOffset = -9; // default centered on line
   if (currentPriceY != null) {
-    const gap = yPosition - currentPriceY; // positive = our line is below current price
-    if (Math.abs(gap) < OVERLAP_THRESHOLD) {
-      // Nudge away from the current price tag
-      tagOffsetY = gap >= 0 ? TAG_HEIGHT - 2 : -(TAG_HEIGHT + 8);
+    const distance = yPosition - currentPriceY; // positive = position is below current price
+    const absDist = Math.abs(distance);
+    if (absDist < NUDGE_THRESHOLD) {
+      // Push away from current price tag: up if position is above, down if below
+      if (distance <= 0) {
+        // Position line is above current price → nudge further up
+        axisTagOffset = -9 - (NUDGE_THRESHOLD - absDist);
+      } else {
+        // Position line is below current price → nudge further down
+        axisTagOffset = -9 + (NUDGE_THRESHOLD - absDist);
+      }
     }
   }
-
-  const axisTagColor = isLong ? AXIS_TAG.long : AXIS_TAG.short;
 
   return (
     <div
@@ -111,8 +120,8 @@ const PositionLine = memo(({
           right: '80px',
           height: '1px',
           top: '0px',
-          background: color,
-          opacity: 0.6,
+          background: lineColor,
+          opacity: 0.7,
         }}
       />
 
@@ -157,8 +166,8 @@ const PositionLine = memo(({
             alignItems: 'center',
             padding: '2px 8px',
             borderRadius: '4px',
-            backgroundColor: isLong ? 'rgba(0, 229, 255, 0.12)' : 'rgba(239, 83, 80, 0.12)',
-            border: `1px solid ${color}`,
+            backgroundColor: isLong ? 'rgba(38, 166, 154, 0.15)' : 'rgba(239, 83, 80, 0.15)',
+            border: `1px solid ${lineColor}`,
             backdropFilter: 'blur(8px)',
             whiteSpace: 'nowrap',
             userSelect: 'none',
@@ -170,7 +179,7 @@ const PositionLine = memo(({
               fontSize: '11px',
               fontWeight: 700,
               fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-              color: color,
+              color: lineColor,
               letterSpacing: '0.3px',
             }}
           >
@@ -188,7 +197,7 @@ const PositionLine = memo(({
             padding: '2px 5px',
             borderRadius: '4px',
             backgroundColor: 'rgba(0,0,0,0.45)',
-            border: `1px solid ${pnl >= 0 ? 'rgba(0, 229, 255, 0.2)' : 'rgba(239, 83, 80, 0.2)'}`,
+            border: `1px solid ${pnl >= 0 ? 'rgba(76, 175, 80, 0.25)' : 'rgba(239, 83, 80, 0.25)'}`,
             whiteSpace: 'nowrap',
             backdropFilter: 'blur(4px)',
           }}
@@ -202,9 +211,9 @@ const PositionLine = memo(({
         style={{
           position: 'absolute',
           right: 0,
-          top: `${tagOffsetY}px`,
+          top: `${axisTagOffset}px`,
           width: '78px',
-          height: `${TAG_HEIGHT}px`,
+          height: '18px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',

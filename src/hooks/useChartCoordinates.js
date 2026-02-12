@@ -20,6 +20,7 @@ const useChartCoordinates = (activeChart) => {
   const [chartWidth, setChartWidth] = useState(0);
   const [isReady, setIsReady] = useState(false);
   const [toolbarHeight, setToolbarHeight] = useState(0);
+  const [currentPrice, setCurrentPrice] = useState(null);
 
   // Refs so we never stale-close over them inside rAF
   const paneRef = useRef(null);
@@ -29,6 +30,7 @@ const useChartCoordinates = (activeChart) => {
   const lastHeightRef = useRef(0);
   const lastWidthRef = useRef(0);
   const isLogRef = useRef(false);
+  const lastCurrentPriceRef = useRef(null);
 
   // ── Initialise pane + priceScale refs ──────────────────────────────
   // The TV chart may not have panes/priceScale ready immediately after
@@ -222,6 +224,48 @@ const useChartCoordinates = (activeChart) => {
     };
   }, [activeChart]);
 
+  // ── Current price polling ─────────────────────────────────────────
+  // Polls the chart's last bar close via exportData() every ~1s.
+  // This gives us the live market price so we can nudge the position
+  // price tag away from TV's current-price tag on the Y-axis.
+  useEffect(() => {
+    if (!activeChart || !isReady) return;
+
+    let cancelled = false;
+
+    const fetchCurrentPrice = async () => {
+      if (cancelled) return;
+      try {
+        const exported = await activeChart.exportData({
+          includeSeries: true,
+          includeStudies: false,
+        });
+        if (cancelled || !exported?.data?.length || !exported?.schema) return;
+
+        const closeIdx = exported.schema.indexOf('close');
+        if (closeIdx === -1) return;
+
+        const lastBar = exported.data[exported.data.length - 1];
+        const price = lastBar?.[closeIdx];
+        if (price != null && price !== lastCurrentPriceRef.current) {
+          lastCurrentPriceRef.current = price;
+          setCurrentPrice(price);
+        }
+      } catch (_) {
+        // exportData may not be available on all CL versions — degrade gracefully
+      }
+    };
+
+    // Initial fetch + 1s interval
+    fetchCurrentPrice();
+    const intervalId = setInterval(fetchCurrentPrice, 1000);
+
+    return () => {
+      cancelled = true;
+      clearInterval(intervalId);
+    };
+  }, [activeChart, isReady]);
+
   // ── Coordinate conversion functions ────────────────────────────────
 
   const priceToY = useCallback(
@@ -279,6 +323,7 @@ const useChartCoordinates = (activeChart) => {
     chartWidth,
     toolbarHeight,
     isReady,
+    currentPrice,
   };
 };
 

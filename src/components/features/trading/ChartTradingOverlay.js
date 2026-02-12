@@ -30,7 +30,11 @@ const ChartTradingOverlay = memo(({
     chartWidth,
     toolbarHeight,
     isReady,
+    currentPrice,
   } = useChartCoordinates(activeChart);
+
+  // Compute the Y position of the current market price tag on the axis
+  const currentPriceY = currentPrice != null ? priceToY(currentPrice) : null;
 
   // When an order starts/stops dragging, toggle overlay pointer-events
   const handleDragStateChange = useCallback((dragging) => {
@@ -61,16 +65,14 @@ const ChartTradingOverlay = memo(({
       {/* Position lines */}
       {positionLines.map((pos) => {
         const y = priceToY(pos.price);
-        // Compute current price Y so the axis tag can dodge TV's price tag
-        const curPriceY = pos.currentPrice ? priceToY(pos.currentPrice) : null;
         return (
           <PositionLine
             key={pos.key}
             data={pos}
             yPosition={y}
-            currentPriceY={curPriceY}
             chartWidth={chartWidth}
             visible={isPriceVisible(pos.price)}
+            currentPriceY={currentPriceY}
           />
         );
       })}
