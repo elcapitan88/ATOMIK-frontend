@@ -3,7 +3,7 @@ import { getDisplayTicker, getContractTicker } from '@/utils/formatting/tickerUt
 import { SYMBOL_CONFIG } from '@services/datafeed/helpers';
 import axiosInstance from '@/services/axiosConfig';
 
-// ── Helpers ─────────────────────────────────────────────────────────
+// ── Helpers ────────────────────────────────────────────────────────
 
 /**
  * Normalize a symbol from position/order data to a base display ticker.
