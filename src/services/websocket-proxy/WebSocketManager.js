@@ -39,6 +39,8 @@ class WebSocketManager extends EventEmitter {
       positions: new Map(),
       orders: new Map()
     };
+    // Persistent contractId → symbol map, populated from user_data sync contracts
+    this.contractSymbolMap = new Map();
     
     // For storing connection retry metadata
     this.connectionRetries = new Map();
@@ -1157,23 +1159,31 @@ class WebSocketManager extends EventEmitter {
    * @param {Object} data - Order data
    */
   updateOrderData(brokerId, accountId, data) {
-    if (!data.orderId) return;
-    
-    const key = `${brokerId}:${accountId}:${data.orderId}`;
+    // Tradovate uses "orderId" or "id" depending on message type
+    const orderId = data.orderId || data.id;
+    if (!orderId) return;
+
+    const key = `${brokerId}:${accountId}:${orderId}`;
     const currentData = this.dataCache.orders.get(key) || {};
-    
-    // Merge with existing data
+
+    // Merge with existing data, normalize orderId
     const updatedData = {
       ...currentData,
       ...data,
+      orderId,
       brokerId,
       accountId,
       timestamp: Date.now()
     };
-    
+
+    // Resolve contractId → symbol if missing, using persistent map
+    if (!updatedData.symbol && updatedData.contractId && this.contractSymbolMap.has(updatedData.contractId)) {
+      updatedData.symbol = this.contractSymbolMap.get(updatedData.contractId);
+    }
+
     // Update cache
     this.dataCache.orders.set(key, updatedData);
-    
+
     // Emit order update event
     this.emit('orderUpdate', updatedData);
   }
@@ -1308,17 +1318,17 @@ class WebSocketManager extends EventEmitter {
   handleUserData(brokerId, accountId, data) {
     console.log('[WebSocketManager] handleUserData called:', { brokerId, accountId, data });
     
-    // Create a map of contractId to symbol from contracts data
-    const contractSymbolMap = new Map();
+    // Build and persist contractId → symbol map from contracts data
     if (data.contracts && Array.isArray(data.contracts)) {
       console.log('[WebSocketManager] Processing contracts:', data.contracts.length);
       data.contracts.forEach(contract => {
         if (contract.id && contract.name) {
-          contractSymbolMap.set(contract.id, contract.name);
+          this.contractSymbolMap.set(contract.id, contract.name);
           console.log(`[WebSocketManager] Contract mapping: ${contract.id} → ${contract.name}`);
         }
       });
     }
+    const contractSymbolMap = this.contractSymbolMap;
     
     // Process accounts
     if (data.accounts && Array.isArray(data.accounts)) {
@@ -1357,10 +1367,17 @@ class WebSocketManager extends EventEmitter {
       });
     }
     
-    // Process orders
+    // Process orders - enrich with symbol from contractId map
     if (data.orders && Array.isArray(data.orders)) {
+      console.log('[WebSocketManager] Processing orders:', data.orders.length);
       data.orders.forEach(order => {
-        this.updateOrderData(brokerId, accountId, order);
+        const enrichedOrder = { ...order };
+        // Resolve contractId to symbol if not already present
+        if (!enrichedOrder.symbol && enrichedOrder.contractId && contractSymbolMap.has(enrichedOrder.contractId)) {
+          enrichedOrder.symbol = contractSymbolMap.get(enrichedOrder.contractId);
+          console.log(`[WebSocketManager] Enriched order ${enrichedOrder.orderId} with symbol: ${enrichedOrder.symbol}`);
+        }
+        this.updateOrderData(brokerId, accountId, enrichedOrder);
       });
     }
     
