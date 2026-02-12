@@ -733,13 +733,23 @@ class WebSocketManager extends EventEmitter {
         this.handlePositionSnapshot(brokerId, accountId, message.data);
       } else if (message.type === 'positionUpdate') {
         // Handle positionUpdate messages from backend (camelCase)
-        console.log('[WebSocketManager] 🔄 DEBUGGING: Position update message:', {
+        console.log('[WebSocketManager] positionUpdate message:', {
           type: message.type,
           type_detail: message.type_detail,
           hasPosition: !!message.position,
-          position: message.position
         });
-        
+
+        // Store position data in cache (was previously missing — only emitted event)
+        if (message.position) {
+          const pos = message.position;
+          const transformed = (pos.id && !pos.positionId)
+            ? this.transformTradovatePosition(pos, null)
+            : pos;
+          if (transformed) {
+            this.updatePositionData(brokerId, accountId, transformed);
+          }
+        }
+
         // Emit the position update with the type_detail preserved
         this.emit('positionUpdate', {
           brokerId,
@@ -969,18 +979,23 @@ class WebSocketManager extends EventEmitter {
     
     switch (type) {
       case POSITION_MESSAGE_TYPES.POSITION_OPENED:
-        // New position opened
+        // New position opened — transform raw Tradovate data if needed
+        const rawOpened = (data.id && !data.positionId)
+          ? this.transformTradovatePosition(data, null)
+          : data;
         const newPosition = {
-          ...data,
+          ...rawOpened,
           brokerId,
           accountId,
           timestamp: Date.now(),
           lastUpdate: Date.now(),
           isNew: true // Flag for UI animation
         };
-        
-        this.dataCache.positions.set(positionKey, newPosition);
-        
+
+        // Recompute key with transformed data (positionId may differ from raw id)
+        const openedKey = `${brokerId}:${accountId}:${newPosition.positionId || newPosition.contractId || newPosition.symbol}`;
+        this.dataCache.positions.set(openedKey, newPosition);
+
         // Emit specific event for new positions
         this.emit('positionOpened', newPosition);
         this.emit('positionUpdate', { brokerId, accountId, type: 'opened', position: newPosition });
@@ -1081,29 +1096,29 @@ class WebSocketManager extends EventEmitter {
       case POSITION_MESSAGE_TYPES.POSITIONS_SNAPSHOT:
         // Full position snapshot - replace all positions for this account
         const accountKey = `${brokerId}:${accountId}`;
-        
+
         // Clear existing positions for this account
         for (const [key] of this.dataCache.positions.entries()) {
           if (key.startsWith(accountKey)) {
             this.dataCache.positions.delete(key);
           }
         }
-        
-        // Add all positions from snapshot
-        if (data.positions && Array.isArray(data.positions)) {
-          data.positions.forEach(position => {
-            const key = `${brokerId}:${accountId}:${position.positionId || position.contractId || position.symbol}`;
-            this.dataCache.positions.set(key, {
-              ...position,
-              brokerId,
-              accountId,
-              timestamp: Date.now(),
-              lastUpdate: Date.now()
-            });
-          });
-        }
-        
-        this.emit('positionsSnapshot', { brokerId, accountId, positions: data.positions });
+
+        // Handle both formats: data IS the array OR data.positions is the array
+        const snapshotPositions = Array.isArray(data) ? data
+          : (data.positions && Array.isArray(data.positions)) ? data.positions : [];
+
+        // Add all positions from snapshot (transform raw Tradovate if needed)
+        snapshotPositions.forEach(position => {
+          const transformed = (position.id && !position.positionId)
+            ? this.transformTradovatePosition(position, null)
+            : position;
+          if (transformed) {
+            this.updatePositionData(brokerId, accountId, transformed);
+          }
+        });
+
+        this.emit('positionsSnapshot', { brokerId, accountId, positions: this.getPositions(brokerId, accountId) });
         this.emit('positionUpdate', { brokerId, accountId, type: 'snapshot' });
         break;
         
