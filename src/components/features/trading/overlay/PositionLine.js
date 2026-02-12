@@ -127,12 +127,11 @@ const PositionLine = memo(({
           ⛨
         </ActionButton>
 
-        {/* Compact pill: qty + price */}
+        {/* Qty pill */}
         <div
           style={{
             display: 'inline-flex',
             alignItems: 'center',
-            gap: '5px',
             padding: '2px 8px',
             borderRadius: '4px',
             backgroundColor: isLong ? 'rgba(0, 229, 255, 0.12)' : 'rgba(239, 83, 80, 0.12)',
@@ -143,7 +142,6 @@ const PositionLine = memo(({
             boxShadow: '0 1px 4px rgba(0,0,0,0.3)',
           }}
         >
-          {/* Qty */}
           <span
             style={{
               fontSize: '11px',
@@ -154,20 +152,6 @@ const PositionLine = memo(({
             }}
           >
             {quantity}
-          </span>
-
-          <span style={{ opacity: 0.3, color: '#fff', fontSize: '10px' }}>|</span>
-
-          {/* Price */}
-          <span
-            style={{
-              fontSize: '11px',
-              fontWeight: 600,
-              fontFamily: 'monospace',
-              color: '#ffffffcc',
-            }}
-          >
-            {formattedPrice}
           </span>
         </div>
 
@@ -187,6 +171,36 @@ const PositionLine = memo(({
           }}
         >
           {pnlStr}
+        </span>
+      </div>
+
+      {/* Price tag on the price axis — mimics TV's native price tags */}
+      <div
+        style={{
+          position: 'absolute',
+          right: 0,
+          top: '-9px',
+          width: '78px',
+          height: '18px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: color,
+          borderRadius: '2px',
+          zIndex: 11,
+          pointerEvents: 'none',
+        }}
+      >
+        <span
+          style={{
+            fontSize: '11px',
+            fontWeight: 600,
+            fontFamily: 'monospace',
+            color: '#ffffff',
+            letterSpacing: '0.2px',
+          }}
+        >
+          {formattedPrice}
         </span>
       </div>
     </div>
