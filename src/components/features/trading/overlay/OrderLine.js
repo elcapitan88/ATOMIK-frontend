@@ -38,9 +38,7 @@ const OrderLine = memo(({
     onCancel, onModify,
   } = data;
 
-  const labelText = accountNickname
-    ? `${side} ${shortType} × ${quantity} [${accountNickname}]`
-    : `${side} ${shortType} × ${quantity}`;
+  const labelText = `${side} ${shortType} × ${quantity}`;
 
   // Compute the drag price for display
   const currentY = yPosition + dragOffsetY;

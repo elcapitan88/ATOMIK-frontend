@@ -144,7 +144,7 @@ const useChartTrading = ({
           break;
         case 'modify': {
           const mods = {};
-          const type = (details.type || '').toUpperCase();
+          const type = String(details.type || 'LIMIT').toUpperCase();
           if (type === 'STOP' || type === 'STOP_LIMIT' || type === 'STP' || type === 'STP LMT') {
             mods.stopPrice = details.newPrice;
           }
@@ -154,6 +154,9 @@ const useChartTrading = ({
           if (!mods.stopPrice && !mods.limitPrice) {
             mods.price = details.newPrice;
           }
+          // Tradovate requires orderQty on every modifyOrder call
+          mods.qty = details.quantity;
+          console.log(`[ChartTrading] Modifying order ${details.orderId} on account ${details.accountId}:`, mods);
           await callbacksRef.current.onModifyOrder?.(details.orderId, details.accountId, mods);
           break;
         }
@@ -165,6 +168,8 @@ const useChartTrading = ({
       }
     } catch (err) {
       console.error(`[ChartTrading] ${action} failed:`, err);
+      // Errors from callbacks (e.g. Dashboard.onModifyOrder) already show toasts,
+      // so we only log here. If the error originated before the callback, it's a bug.
     }
   }, [confirmState]);
 

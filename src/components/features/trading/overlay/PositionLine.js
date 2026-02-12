@@ -1,9 +1,11 @@
 import React, { memo, useState } from 'react';
+import TradingLineLabel from './TradingLineLabel';
 
 /**
  * HTML overlay position line.
  * Renders a horizontal line at the position's price with:
- *   - Qty badge + P&L
+ *   - TradingLineLabel pill (matches order line style)
+ *   - P&L badge
  *   - Close, Reverse, Protect buttons on hover
  *   - Price tag on the Y-axis
  *
@@ -27,27 +29,20 @@ const ActionButton = memo(({ onClick, bgColor, title, children, visible }) => (
       display: 'inline-flex',
       alignItems: 'center',
       justifyContent: 'center',
-      width: '18px',
-      height: '18px',
-      borderRadius: '4px',
-      border: '1px solid rgba(255,255,255,0.15)',
+      width: '20px',
+      height: '20px',
+      borderRadius: '3px',
+      border: 'none',
       cursor: 'pointer',
-      fontSize: '10px',
+      fontSize: '12px',
       fontWeight: 'bold',
       lineHeight: 1,
       padding: 0,
-      transition: 'opacity 0.15s, transform 0.1s',
+      transition: 'opacity 0.15s',
       color: '#ffffff',
       backgroundColor: bgColor,
-      opacity: visible ? 0.9 : 0,
-      transform: visible ? 'scale(1)' : 'scale(0.8)',
+      opacity: visible ? 1 : 0,
       pointerEvents: visible ? 'auto' : 'none',
-      backdropFilter: 'blur(4px)',
-    }}
-    onMouseEnter={(e) => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.transform = 'scale(1.1)'; }}
-    onMouseLeave={(e) => {
-      e.currentTarget.style.opacity = visible ? '0.9' : '0';
-      e.currentTarget.style.transform = visible ? 'scale(1)' : 'scale(0.8)';
     }}
   >
     {children}
@@ -70,7 +65,8 @@ const PositionLine = memo(({
   if (!visible || yPosition < -50 || yPosition > 5000) return null;
 
   const {
-    isLong, quantity, formattedPrice, pnl,
+    isLong, side, quantity, symbol, formattedPrice, pnl,
+    color, bodyColor,
     onClose, onReverse, onProtect,
   } = data;
 
@@ -78,20 +74,19 @@ const PositionLine = memo(({
   const axisTagColor = isLong ? LINE_COLORS.longTag : LINE_COLORS.shortTag;
 
   const pnlStr = pnl >= 0 ? `+$${pnl.toFixed(2)}` : `-$${Math.abs(pnl).toFixed(2)}`;
-  const pnlColor = pnl >= 0 ? '#4caf50' : '#ef5350'; // green / red
+  const pnlColor = pnl >= 0 ? '#4caf50' : '#ef5350';
+
+  const labelText = `${side} × ${quantity}`;
 
   // ── Smart nudge: shift axis tag away from TV's current price tag ──
   let axisTagOffset = -9; // default centered on line
   if (currentPriceY != null) {
-    const distance = yPosition - currentPriceY; // positive = position is below current price
+    const distance = yPosition - currentPriceY;
     const absDist = Math.abs(distance);
     if (absDist < NUDGE_THRESHOLD) {
-      // Push away from current price tag: up if position is above, down if below
       if (distance <= 0) {
-        // Position line is above current price → nudge further up
         axisTagOffset = -9 - (NUDGE_THRESHOLD - absDist);
       } else {
-        // Position line is below current price → nudge further down
         axisTagOffset = -9 + (NUDGE_THRESHOLD - absDist);
       }
     }
@@ -145,7 +140,7 @@ const PositionLine = memo(({
           top: '-10px',
           display: 'flex',
           alignItems: 'center',
-          gap: '3px',
+          gap: '4px',
         }}
       >
         {/* Action buttons — appear on hover */}
@@ -159,33 +154,13 @@ const PositionLine = memo(({
           ⛨
         </ActionButton>
 
-        {/* Qty pill */}
-        <div
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            padding: '2px 8px',
-            borderRadius: '4px',
-            backgroundColor: isLong ? 'rgba(38, 166, 154, 0.15)' : 'rgba(239, 83, 80, 0.15)',
-            border: `1px solid ${lineColor}`,
-            backdropFilter: 'blur(8px)',
-            whiteSpace: 'nowrap',
-            userSelect: 'none',
-            boxShadow: '0 1px 4px rgba(0,0,0,0.3)',
-          }}
-        >
-          <span
-            style={{
-              fontSize: '11px',
-              fontWeight: 700,
-              fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-              color: '#ffffff',
-              letterSpacing: '0.3px',
-            }}
-          >
-            {quantity}
-          </span>
-        </div>
+        {/* Label pill — same style as order lines */}
+        <TradingLineLabel
+          text={labelText}
+          price={`$${formattedPrice}`}
+          color={color}
+          bodyColor={bodyColor}
+        />
 
         {/* P&L badge */}
         <span
