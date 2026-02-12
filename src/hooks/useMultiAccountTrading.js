@@ -106,6 +106,10 @@ const useMultiAccountTrading = (accounts = [], strategies = []) => {
 
   // Initialize/sync configs when accounts change
   useEffect(() => {
+    // Don't clean up configs before accounts have loaded — an empty array
+    // means "still fetching", not "user deleted all accounts".
+    if (accounts.length === 0) return;
+
     setAccountConfigs((prev) => {
       const next = new Map(prev);
       let changed = false;
