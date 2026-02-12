@@ -30,6 +30,7 @@ import useMultiAccountTrading from '@/hooks/useMultiAccountTrading';
 import useAggregatedPositions from '@/hooks/useAggregatedPositions';
 import { useUnifiedStrategies } from '@/hooks/useUnifiedStrategies';
 import { useWebSocketContext } from '@/services/websocket-proxy/contexts/WebSocketContext';
+import webSocketManager from '@/services/websocket-proxy/WebSocketManager';
 
 // Lazy loaded components
 const StrategyGroups = lazy(() => import('../features/strategies/ActivateStrategies'));
@@ -368,6 +369,16 @@ const DashboardContent = () => {
                     toast({ title: 'Order modification rejected', description: `Tradovate returned: ${orderStatus}`, status: 'warning', duration: 4000 });
                 } else {
                     toast({ title: 'Order modified', status: 'success', duration: 2000 });
+                    // Optimistic update: push new price into WebSocket cache so chart + panel update immediately
+                    const pricePatch = {};
+                    if (modifications.limitPrice != null) pricePatch.price = modifications.limitPrice;
+                    if (modifications.stopPrice != null) pricePatch.stopPrice = modifications.stopPrice;
+                    if (modifications.qty != null) pricePatch.orderQty = modifications.qty;
+                    // Find the account's broker_id for the cache key
+                    const acct = dashboardData.accounts?.find(a => String(a.account_id) === String(accountId));
+                    if (acct) {
+                        webSocketManager.updateOrderData(acct.broker_id, String(accountId), { orderId, ...pricePatch });
+                    }
                 }
             } catch (err) {
                 console.error('[Dashboard] Modify order failed:', err.response?.data || err.message);
