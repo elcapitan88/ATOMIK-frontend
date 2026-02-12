@@ -150,7 +150,11 @@ const useChartTrading = ({
             'STP': 'STOP', 'STP LMT': 'STOP_LIMIT',
             'LMT': 'LIMIT', 'MKT': 'MARKET',
             'STOP': 'STOP', 'STOP_LIMIT': 'STOP_LIMIT',
+            'STOPLIMIT': 'STOP_LIMIT',  // Tradovate WebSocket format (no underscore)
             'LIMIT': 'LIMIT', 'MARKET': 'MARKET',
+            'MIT': 'LIMIT',  // Market-if-touched → treat as limit
+            'TRAILINGSTOP': 'STOP',
+            'TRAILINGSTOPLIMIT': 'STOP_LIMIT',
           };
           const normalizedType = typeMap[type] || type;
           if (normalizedType === 'STOP' || normalizedType === 'STOP_LIMIT') {

@@ -197,9 +197,16 @@ export class AtomikBrokerAdapter {
         console.log('[BrokerAdapter] modifyOrder() called:', order);
         const orderId = order.id;
         const payload = {};
+        // Tradovate requires orderQty and orderType on every modifyOrder call
         if (order.qty != null) payload.qty = order.qty;
         if (order.limitPrice != null) payload.limitPrice = order.limitPrice;
         if (order.stopPrice != null) payload.stopPrice = order.stopPrice;
+        // Map TradingView order types to our normalized format
+        const tvTypeMap = { 1: 'LIMIT', 2: 'MARKET', 3: 'STOP', 4: 'STOP_LIMIT' };
+        const orderType = order.type != null
+            ? (tvTypeMap[order.type] || String(order.type))
+            : 'LIMIT';
+        payload.orderType = orderType;
 
         try {
             await this._api('PUT',

@@ -353,9 +353,18 @@ const DashboardContent = () => {
         },
         onModifyOrder: async (orderId, accountId, modifications) => {
             try {
-                await axiosInstance.put(`/api/v1/brokers/accounts/${accountId}/orders/${orderId}`, modifications);
-                toast({ title: 'Order modified', status: 'success', duration: 2000 });
+                console.log(`[Dashboard] Modifying order ${orderId} on account ${accountId}:`, modifications);
+                const resp = await axiosInstance.put(`/api/v1/brokers/accounts/${accountId}/orders/${orderId}`, modifications);
+                console.log('[Dashboard] Modify order response:', resp.data);
+                const order = resp.data?.order;
+                const status = order?.status;
+                if (status === 'ExecutionRejected' || status === 'OnHold') {
+                    toast({ title: 'Order modification rejected', description: `Tradovate returned: ${status}`, status: 'warning', duration: 4000 });
+                } else {
+                    toast({ title: 'Order modified', status: 'success', duration: 2000 });
+                }
             } catch (err) {
+                console.error('[Dashboard] Modify order failed:', err.response?.data || err.message);
                 toast({ title: 'Failed to modify order', description: err.response?.data?.detail || err.message, status: 'error', duration: 4000 });
             }
         },
