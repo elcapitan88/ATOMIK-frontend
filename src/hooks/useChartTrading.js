@@ -67,6 +67,15 @@ export const COLORS = {
   protectBtn: '#9c27b0',
 };
 
+/**
+ * Get the dollar-per-point value for a symbol.
+ */
+function getPointValue(symbol) {
+  const base = normalizeSymbol(symbol);
+  const cfg = SYMBOL_CONFIG[base];
+  return cfg?.pointvalue || 1;
+}
+
 export { normalizeSymbol, roundToTick, getTickSize, formatPrice };
 
 // ── Hook ────────────────────────────────────────────────────────────
@@ -85,6 +94,7 @@ const useChartTrading = ({
   chartSymbol = '',
   callbacks = {},
   multiAccountTrading = null,
+  chartCurrentPrice = null,
 }) => {
   const callbacksRef = useRef(callbacks);
 
@@ -230,9 +240,15 @@ const useChartTrading = ({
         const qty = pos.quantity || Math.abs(pos.netPos || 0);
         const displaySym = normalizeSymbol(pos.symbol);
         const acctLabel = pos._accountNickname || '';
-        const pnl = pos.unrealizedPnL || 0;
         const posAccountId = pos._accountId || pos.accountId;
         const avgPrice = pos.avgPrice || 0;
+
+        // Compute P&L client-side using chart's live current price
+        // Fallback chain: chartCurrentPrice → pos.currentPrice → avgPrice
+        const livePrice = chartCurrentPrice || pos.currentPrice || pos.lastPrice || avgPrice;
+        const pointVal = getPointValue(pos.symbol);
+        const priceDiff = isLong ? (livePrice - avgPrice) : (avgPrice - livePrice);
+        const pnl = avgPrice > 0 && livePrice > 0 ? priceDiff * qty * pointVal : (pos.unrealizedPnL || 0);
 
         return {
           key,
@@ -296,7 +312,7 @@ const useChartTrading = ({
           },
         };
       });
-  }, [positions, chartSymbol, matchesChart, requestConfirmation]);
+  }, [positions, chartSymbol, chartCurrentPrice, matchesChart, requestConfirmation]);
 
   // ── Build order line data ─────────────────────────────────────────
 

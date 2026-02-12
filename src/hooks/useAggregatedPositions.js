@@ -62,14 +62,20 @@ const useAggregatedPositions = (accounts = [], getConnectionState) => {
     const handleSync = () => buildSnapshot();
 
     webSocketManager.on('positionUpdate', handlePositionUpdate);
+    webSocketManager.on('positionOpened', handlePositionUpdate);
     webSocketManager.on('orderUpdate', handleOrderUpdate);
     webSocketManager.on('userDataSynced', handleSync);
 
     // Initial snapshot
     buildSnapshot();
 
+    // Periodic polling fallback (catches missed events, e.g. new positions after order fill)
+    const pollId = setInterval(buildSnapshot, 3000);
+
     return () => {
+      clearInterval(pollId);
       webSocketManager.removeListener('positionUpdate', handlePositionUpdate);
+      webSocketManager.removeListener('positionOpened', handlePositionUpdate);
       webSocketManager.removeListener('orderUpdate', handleOrderUpdate);
       webSocketManager.removeListener('userDataSynced', handleSync);
     };

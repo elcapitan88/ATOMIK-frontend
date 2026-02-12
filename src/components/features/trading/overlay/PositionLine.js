@@ -179,7 +179,7 @@ const PositionLine = memo(({
               fontSize: '11px',
               fontWeight: 700,
               fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-              color: lineColor,
+              color: '#ffffff',
               letterSpacing: '0.3px',
             }}
           >

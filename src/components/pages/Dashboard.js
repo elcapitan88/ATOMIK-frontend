@@ -114,6 +114,28 @@ const DashboardContent = () => {
     // Chart trading state
     const [activeChart, setActiveChart] = useState(null);
     const [chartSymbol, setChartSymbol] = useState('NQ');
+    const [chartCurrentPrice, setChartCurrentPrice] = useState(null);
+
+    // Poll chart's last bar close for live P&L calculation (~1s)
+    useEffect(() => {
+        if (!activeChart) return;
+        let cancelled = false;
+        const poll = async () => {
+            if (cancelled) return;
+            try {
+                const exported = await activeChart.exportData({ includeSeries: true, includeStudies: false });
+                if (cancelled || !exported?.data?.length || !exported?.schema) return;
+                const closeIdx = exported.schema.indexOf('close');
+                if (closeIdx === -1) return;
+                const lastBar = exported.data[exported.data.length - 1];
+                const price = lastBar?.[closeIdx];
+                if (price != null) setChartCurrentPrice(price);
+            } catch (_) {}
+        };
+        poll();
+        const id = setInterval(poll, 1000);
+        return () => { cancelled = true; clearInterval(id); };
+    }, [activeChart]);
 
     // Cache reference
     const dataCache = useRef({
@@ -344,6 +366,7 @@ const DashboardContent = () => {
         chartSymbol,
         callbacks: chartCallbacks,
         multiAccountTrading,
+        chartCurrentPrice,
     });
 
     // Handle chart right-click order placement
