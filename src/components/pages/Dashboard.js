@@ -352,9 +352,9 @@ const DashboardContent = () => {
                 toast({ title: 'Failed to cancel order', description: err.response?.data?.detail || err.message, status: 'error', duration: 4000 });
             }
         },
-        onModifyOrder: async (orderId, accountId, modifications) => {
+        onModifyOrder: async (orderId, accountId, modifications, brokerId) => {
             try {
-                console.log(`[Dashboard] Modifying order ${orderId} on account ${accountId}:`, modifications);
+                console.log(`[Dashboard] Modifying order ${orderId} on account ${accountId} (broker: ${brokerId}):`, modifications);
                 const resp = await axiosInstance.put(`/api/v1/brokers/accounts/${accountId}/orders/${orderId}`, modifications);
                 console.log('[Dashboard] Modify order response:', JSON.stringify(resp.data));
                 // Validate response format — backend returns { status, order, timestamp }
@@ -370,14 +370,13 @@ const DashboardContent = () => {
                 } else {
                     toast({ title: 'Order modified', status: 'success', duration: 2000 });
                     // Optimistic update: push new price into WebSocket cache so chart + panel update immediately
-                    const pricePatch = {};
-                    if (modifications.limitPrice != null) pricePatch.price = modifications.limitPrice;
-                    if (modifications.stopPrice != null) pricePatch.stopPrice = modifications.stopPrice;
-                    if (modifications.qty != null) pricePatch.orderQty = modifications.qty;
-                    // Find the account's broker_id for the cache key
-                    const acct = dashboardData.accounts?.find(a => String(a.account_id) === String(accountId));
-                    if (acct) {
-                        webSocketManager.updateOrderData(acct.broker_id, String(accountId), { orderId, ...pricePatch });
+                    if (brokerId) {
+                        const pricePatch = {};
+                        if (modifications.limitPrice != null) pricePatch.price = modifications.limitPrice;
+                        if (modifications.stopPrice != null) pricePatch.stopPrice = modifications.stopPrice;
+                        if (modifications.qty != null) pricePatch.orderQty = modifications.qty;
+                        webSocketManager.updateOrderData(brokerId, String(accountId), { orderId, ...pricePatch });
+                        console.log(`[Dashboard] Optimistic update pushed to WS cache: broker=${brokerId}, account=${accountId}, orderId=${orderId}`, pricePatch);
                     }
                 }
             } catch (err) {

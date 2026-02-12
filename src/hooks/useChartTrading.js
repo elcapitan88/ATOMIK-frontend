@@ -169,8 +169,8 @@ const useChartTrading = ({
           // Tradovate requires orderQty and orderType on every modifyOrder call
           mods.qty = details.quantity;
           mods.orderType = normalizedType;
-          console.log(`[ChartTrading] Modifying order ${details.orderId} on account ${details.accountId}:`, mods);
-          await callbacksRef.current.onModifyOrder?.(details.orderId, details.accountId, mods);
+          console.log(`[ChartTrading] Modifying order ${details.orderId} on account ${details.accountId} (broker: ${details.brokerId}):`, mods);
+          await callbacksRef.current.onModifyOrder?.(details.orderId, details.accountId, mods, details.brokerId);
           break;
         }
         case 'bracket':
@@ -417,6 +417,7 @@ const useChartTrading = ({
             requestConfirmation('modify', {
               orderId: ord.orderId,
               accountId: ordAccountId,
+              brokerId: ord._brokerId || ord.brokerId,
               symbol: normalizeSymbol(ord.symbol),
               side: sideLabel,
               type: typeLabel,
