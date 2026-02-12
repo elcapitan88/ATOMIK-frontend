@@ -190,11 +190,11 @@ const PositionLine = memo(({
         {/* P&L badge */}
         <span
           style={{
-            fontSize: '10px',
+            fontSize: '11px',
             fontFamily: 'monospace',
             color: pnlColor,
-            fontWeight: 600,
-            padding: '2px 5px',
+            fontWeight: 700,
+            padding: '2px 6px',
             borderRadius: '4px',
             backgroundColor: 'rgba(0,0,0,0.45)',
             border: `1px solid ${pnl >= 0 ? 'rgba(76, 175, 80, 0.25)' : 'rgba(239, 83, 80, 0.25)'}`,
@@ -227,7 +227,7 @@ const PositionLine = memo(({
         <span
           style={{
             fontSize: '11px',
-            fontWeight: 600,
+            fontWeight: 700,
             fontFamily: 'monospace',
             color: '#ffffff',
             letterSpacing: '0.2px',
