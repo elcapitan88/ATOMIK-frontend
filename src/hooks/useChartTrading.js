@@ -145,17 +145,26 @@ const useChartTrading = ({
         case 'modify': {
           const mods = {};
           const type = String(details.type || 'LIMIT').toUpperCase();
-          if (type === 'STOP' || type === 'STOP_LIMIT' || type === 'STP' || type === 'STP LMT') {
+          // Normalize short-form types to standard form for the backend
+          const typeMap = {
+            'STP': 'STOP', 'STP LMT': 'STOP_LIMIT',
+            'LMT': 'LIMIT', 'MKT': 'MARKET',
+            'STOP': 'STOP', 'STOP_LIMIT': 'STOP_LIMIT',
+            'LIMIT': 'LIMIT', 'MARKET': 'MARKET',
+          };
+          const normalizedType = typeMap[type] || type;
+          if (normalizedType === 'STOP' || normalizedType === 'STOP_LIMIT') {
             mods.stopPrice = details.newPrice;
           }
-          if (type === 'LIMIT' || type === 'STOP_LIMIT' || type === 'LMT' || type === 'STP LMT') {
+          if (normalizedType === 'LIMIT' || normalizedType === 'STOP_LIMIT') {
             mods.limitPrice = details.newPrice;
           }
           if (!mods.stopPrice && !mods.limitPrice) {
             mods.price = details.newPrice;
           }
-          // Tradovate requires orderQty on every modifyOrder call
+          // Tradovate requires orderQty and orderType on every modifyOrder call
           mods.qty = details.quantity;
+          mods.orderType = normalizedType;
           console.log(`[ChartTrading] Modifying order ${details.orderId} on account ${details.accountId}:`, mods);
           await callbacksRef.current.onModifyOrder?.(details.orderId, details.accountId, mods);
           break;
