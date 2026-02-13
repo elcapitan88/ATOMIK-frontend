@@ -38,8 +38,12 @@ const useBracketPlacement = ({ chartSymbol, chartCurrentPrice, multiAccountTradi
     setSide(null);
   }, []);
 
-  const placeEntry = useCallback((price) => {
-    if (!isActive || !chartCurrentPrice) return;
+  const placeEntry = useCallback((price, marketPrice) => {
+    if (!isActive) return;
+
+    // Use marketPrice (from useChartCoordinates) as fallback for chartCurrentPrice
+    const currentMkt = chartCurrentPrice || marketPrice;
+    if (!currentMkt) return;
 
     const sym = normalizeSymbol(chartSymbol);
     const snapped = roundToTick(price, sym);
@@ -47,7 +51,7 @@ const useBracketPlacement = ({ chartSymbol, chartCurrentPrice, multiAccountTradi
     const offset = tickSize * DEFAULT_TICK_OFFSET;
 
     // entry below market = BUY, entry above market = SELL
-    const detectedSide = snapped < chartCurrentPrice ? 'BUY' : 'SELL';
+    const detectedSide = snapped < currentMkt ? 'BUY' : 'SELL';
     const isBuy = detectedSide === 'BUY';
 
     const tp = roundToTick(isBuy ? snapped + offset : snapped - offset, sym);
