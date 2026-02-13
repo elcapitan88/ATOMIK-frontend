@@ -6,12 +6,16 @@ import {
   Text,
   Badge,
   Button,
-  Select,
+  Menu,
+  MenuButton,
+  MenuList,
+  MenuItem,
   NumberInput,
   NumberInputField,
   Tooltip,
   useToast,
 } from '@chakra-ui/react';
+import { ChevronDownIcon } from '@chakra-ui/icons';
 import axiosInstance from '@/services/axiosConfig';
 
 /**
@@ -244,37 +248,89 @@ const QuickOrderBar = ({ chartSymbol, multiAccountTrading, positions = [], order
 
         {/* Center: Order Type + Price Inputs + Buy/Sell */}
         <HStack spacing={2} flex="1" justify="center">
-          <Select
-            size="xs"
-            value={orderType}
-            onChange={(e) => setOrderType(e.target.value)}
-            bg="whiteAlpha.100"
-            borderColor="whiteAlpha.200"
-            color="white"
-            w="100px"
-            _focus={{ borderColor: 'cyan.400' }}
-          >
-            <option value="MARKET" style={{ background: '#1a1a2e' }}>Market</option>
-            <option value="LIMIT" style={{ background: '#1a1a2e' }}>Limit</option>
-            <option value="STOP" style={{ background: '#1a1a2e' }}>Stop</option>
-            <option value="STOP_LIMIT" style={{ background: '#1a1a2e' }}>Stop Limit</option>
-          </Select>
+          <Menu>
+            <MenuButton
+              as={Button}
+              size="xs"
+              variant="outline"
+              bg="whiteAlpha.100"
+              borderColor="whiteAlpha.200"
+              color="white"
+              fontWeight="normal"
+              w="100px"
+              rightIcon={<ChevronDownIcon />}
+              _hover={{ bg: 'whiteAlpha.200' }}
+              _active={{ bg: 'whiteAlpha.200' }}
+            >
+              {{ MARKET: 'Market', LIMIT: 'Limit', STOP: 'Stop', STOP_LIMIT: 'Stop Limit' }[orderType]}
+            </MenuButton>
+            <MenuList
+              bg="rgba(0, 0, 0, 0.85)"
+              backdropFilter="blur(20px)"
+              borderColor="rgba(255, 255, 255, 0.1)"
+              minW="100px"
+            >
+              {[
+                { value: 'MARKET', label: 'Market' },
+                { value: 'LIMIT', label: 'Limit' },
+                { value: 'STOP', label: 'Stop' },
+                { value: 'STOP_LIMIT', label: 'Stop Limit' },
+              ].map((opt) => (
+                <MenuItem
+                  key={opt.value}
+                  fontSize="xs"
+                  bg="transparent"
+                  color={orderType === opt.value ? 'cyan.300' : 'white'}
+                  _hover={{ bg: 'whiteAlpha.200' }}
+                  onClick={() => setOrderType(opt.value)}
+                >
+                  {opt.label}
+                </MenuItem>
+              ))}
+            </MenuList>
+          </Menu>
 
-          <Select
-            size="xs"
-            value={timeInForce}
-            onChange={(e) => setTimeInForce(e.target.value)}
-            bg="whiteAlpha.100"
-            borderColor="whiteAlpha.200"
-            color="white"
-            w="80px"
-            _focus={{ borderColor: 'cyan.400' }}
-          >
-            <option value="GTC" style={{ background: '#1a1a2e' }}>GTC</option>
-            <option value="Day" style={{ background: '#1a1a2e' }}>Day</option>
-            <option value="IOC" style={{ background: '#1a1a2e' }}>IOC</option>
-            <option value="FOK" style={{ background: '#1a1a2e' }}>FOK</option>
-          </Select>
+          <Menu>
+            <MenuButton
+              as={Button}
+              size="xs"
+              variant="outline"
+              bg="whiteAlpha.100"
+              borderColor="whiteAlpha.200"
+              color="white"
+              fontWeight="normal"
+              w="80px"
+              rightIcon={<ChevronDownIcon />}
+              _hover={{ bg: 'whiteAlpha.200' }}
+              _active={{ bg: 'whiteAlpha.200' }}
+            >
+              {timeInForce}
+            </MenuButton>
+            <MenuList
+              bg="rgba(0, 0, 0, 0.85)"
+              backdropFilter="blur(20px)"
+              borderColor="rgba(255, 255, 255, 0.1)"
+              minW="80px"
+            >
+              {[
+                { value: 'GTC', label: 'GTC' },
+                { value: 'Day', label: 'Day' },
+                { value: 'IOC', label: 'IOC' },
+                { value: 'FOK', label: 'FOK' },
+              ].map((opt) => (
+                <MenuItem
+                  key={opt.value}
+                  fontSize="xs"
+                  bg="transparent"
+                  color={timeInForce === opt.value ? 'cyan.300' : 'white'}
+                  _hover={{ bg: 'whiteAlpha.200' }}
+                  onClick={() => setTimeInForce(opt.value)}
+                >
+                  {opt.label}
+                </MenuItem>
+              ))}
+            </MenuList>
+          </Menu>
 
           {needsPrice && (
             <NumberInput
