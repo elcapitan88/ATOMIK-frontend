@@ -71,12 +71,18 @@ const ChartTradingOverlay = memo(({
         userSelect: 'none',
         WebkitUserSelect: 'none',
       }}
-      onClick={isAwaitingClick ? (e) => {
+      onMouseDown={isAwaitingClick ? (e) => {
+        if (e.button !== 0) return; // left-click only
+        e.preventDefault();
+        e.stopPropagation();
         const rect = overlayRef.current?.getBoundingClientRect();
         if (!rect) return;
         const y = e.clientY - rect.top;
         const price = yToPrice(y);
-        if (price != null) bracketPlacement.placeEntry(price);
+        if (price != null && price > 0) {
+          console.log('[BracketOverlay] Click at y=%d, price=%d', y, price);
+          bracketPlacement.placeEntry(price);
+        }
       } : undefined}
       data-testid="chart-trading-overlay"
     >
