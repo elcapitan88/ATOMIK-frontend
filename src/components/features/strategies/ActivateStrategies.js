@@ -748,40 +748,33 @@ const ActivateStrategies = ({ accountConfigs, strategyBoundAccountIds }) => {
         )}
       </Box>
 
-      {/* Bottom Button — pinned like Connect Account */}
-      {panelView === 'strategies' && (
-        <Box px={4} py={3} borderTop="1px solid" borderColor="whiteAlpha.100" flexShrink={0}>
-          <Button
-            w="100%"
-            size="sm"
-            variant="outline"
-            borderColor="whiteAlpha.300"
-            color="whiteAlpha.800"
-            leftIcon={<Plus size={14} />}
-            onClick={onActivateOpen}
-            _hover={{ bg: 'whiteAlpha.100', borderColor: 'cyan.400', color: 'cyan.400' }}
-          >
-            Activate Strategy
-          </Button>
-        </Box>
-      )}
-
-      {panelView === 'webhooks' && (
-        <Box px={4} py={3} borderTop="1px solid" borderColor="whiteAlpha.100" flexShrink={0}>
-          <Button
-            w="100%"
-            size="sm"
-            variant="outline"
-            borderColor="whiteAlpha.300"
-            color="whiteAlpha.800"
-            leftIcon={<Plus size={14} />}
-            onClick={onCreateWebhookOpen}
-            _hover={{ bg: 'whiteAlpha.100', borderColor: 'cyan.400', color: 'cyan.400' }}
-          >
-            Create Strategy
-          </Button>
-        </Box>
-      )}
+      {/* Bottom Buttons — always visible, side by side */}
+      <HStack px={4} py={3} borderTop="1px solid" borderColor="whiteAlpha.100" flexShrink={0} spacing={2}>
+        <Button
+          flex={1}
+          size="sm"
+          variant="outline"
+          borderColor="whiteAlpha.300"
+          color="whiteAlpha.800"
+          leftIcon={<Plus size={14} />}
+          onClick={onCreateWebhookOpen}
+          _hover={{ bg: 'whiteAlpha.100', borderColor: 'cyan.400', color: 'cyan.400' }}
+        >
+          Create
+        </Button>
+        <Button
+          flex={1}
+          size="sm"
+          variant="outline"
+          borderColor="whiteAlpha.300"
+          color="whiteAlpha.800"
+          leftIcon={<Activity size={14} />}
+          onClick={onActivateOpen}
+          _hover={{ bg: 'whiteAlpha.100', borderColor: 'cyan.400', color: 'cyan.400' }}
+        >
+          Activate
+        </Button>
+      </HStack>
 
       <ActivateStrategyModal
         isOpen={isActivateOpen}
