@@ -122,10 +122,10 @@ const TradingPanel = ({ positions = [], orders = [], chartSymbol = '', isCollaps
   );
 
   const tabs = [
+    { key: 'accounts', label: 'Accounts', icon: Users, count: accounts.length },
     { key: 'positions', label: 'Positions', icon: Activity, count: openPositions.length },
     { key: 'orders', label: 'Orders', icon: FileText, count: workingOrders.length },
     { key: 'history', label: 'History', icon: Clock },
-    { key: 'accounts', label: 'Accounts', icon: Users, count: accounts.length },
   ];
 
   return (
