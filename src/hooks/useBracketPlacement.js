@@ -128,65 +128,33 @@ const useBracketPlacement = ({ chartSymbol, chartCurrentPrice, multiAccountTradi
 
     setIsSubmitting(true);
     const contractSymbol = getContractTicker(normalizeSymbol(chartSymbol));
-    const oppositeSide = finalSide === 'BUY' ? 'sell' : 'buy';
-    const entrySideLower = finalSide.toLowerCase();
     const tif = multiAccountTrading?.timeInForce || 'GTC';
-    const token = localStorage.getItem('access_token');
-    const headers = { Authorization: `Bearer ${token}` };
 
-    const promises = [];
-
-    for (const acct of activeAccounts) {
-      const endpoint = `/api/v1/brokers/accounts/${acct.account_id}/discretionary/orders`;
-      const qty = acct.quantity;
-
-      // Entry — LIMIT order
-      promises.push(
-        axiosInstance.post(endpoint, {
-          symbol: contractSymbol,
-          side: entrySideLower,
-          type: 'LIMIT',
-          quantity: qty,
-          price: entryPrice,
-          time_in_force: tif,
-        }, { headers }).catch(err => ({ _error: true, leg: 'ENTRY', acct: acct.account_id, err }))
-      );
-
-      // Take Profit — LIMIT order on opposite side
-      promises.push(
-        axiosInstance.post(endpoint, {
-          symbol: contractSymbol,
-          side: oppositeSide,
-          type: 'LIMIT',
-          quantity: qty,
-          price: tpPrice,
-          time_in_force: tif,
-        }, { headers }).catch(err => ({ _error: true, leg: 'TP', acct: acct.account_id, err }))
-      );
-
-      // Stop Loss — STOP order on opposite side
-      promises.push(
-        axiosInstance.post(endpoint, {
-          symbol: contractSymbol,
-          side: oppositeSide,
-          type: 'STOP',
-          quantity: qty,
-          stop_price: slPrice,
-          time_in_force: tif,
-        }, { headers }).catch(err => ({ _error: true, leg: 'SL', acct: acct.account_id, err }))
-      );
-    }
+    // One bracket-order call per account (entry + TP + SL linked via OSO/OCO)
+    const promises = activeAccounts.map((acct) => {
+      const endpoint = `/api/v1/brokers/accounts/${acct.account_id}/discretionary/bracket-order`;
+      return axiosInstance.post(endpoint, {
+        symbol: contractSymbol,
+        side: finalSide.toLowerCase(),
+        quantity: acct.quantity,
+        entry_price: entryPrice,
+        tp_price: tpPrice,
+        sl_price: slPrice,
+        entry_type: 'LIMIT',
+        time_in_force: tif,
+      }).catch(err => ({ _error: true, acct: acct.account_id, err }));
+    });
 
     try {
       const results = await Promise.all(promises);
       const failures = results.filter(r => r && r._error);
-      const successes = results.length - failures.length;
 
       if (failures.length > 0) {
-        console.warn('[BracketPlacement] Some orders failed:', failures);
+        console.warn('[BracketPlacement] Some brackets failed:', failures);
+        const succeeded = results.length - failures.length;
         toast({
           title: 'Bracket partially placed',
-          description: `${successes} of ${results.length} orders succeeded. ${failures.length} failed.`,
+          description: `${succeeded} of ${results.length} brackets succeeded. ${failures.length} failed.`,
           status: 'warning',
           duration: 5000,
           isClosable: true,
@@ -194,7 +162,7 @@ const useBracketPlacement = ({ chartSymbol, chartCurrentPrice, multiAccountTradi
       } else {
         toast({
           title: 'Bracket placed',
-          description: `${successes} orders placed across ${activeAccounts.length} account${activeAccounts.length > 1 ? 's' : ''}.`,
+          description: `Bracket order placed on ${activeAccounts.length} account${activeAccounts.length > 1 ? 's' : ''}. TP/SL are auto-linked.`,
           status: 'success',
           duration: 3000,
           isClosable: true,
