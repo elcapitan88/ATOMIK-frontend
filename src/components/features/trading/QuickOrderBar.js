@@ -34,6 +34,7 @@ const QuickOrderBar = ({ chartSymbol, multiAccountTrading, positions = [], order
   const toast = useToast();
   const [isFlattening, setIsFlattening] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
+  const [flattenMode, setFlattenMode] = useState('flattenAndCancel'); // 'flattenAndCancel' | 'flattenOnly' | 'cancelOnly'
 
   const {
     activeAccounts,
@@ -493,24 +494,44 @@ const QuickOrderBar = ({ chartSymbol, multiAccountTrading, positions = [], order
           </Tooltip>
         </HStack>
 
-        {/* Right: Combined Flatten / Cancel button */}
+        {/* Right: Flatten / Cancel — mode selector + execute button */}
         <HStack spacing={0} flexShrink={0}>
-          <Tooltip label="Flatten positions + cancel orders" fontSize="xs" hasArrow>
+          <Tooltip
+            label={{
+              flattenAndCancel: 'Flatten positions + cancel orders',
+              flattenOnly: 'Flatten positions only',
+              cancelOnly: 'Cancel working orders only',
+            }[flattenMode]}
+            fontSize="xs"
+            hasArrow
+          >
             <Button
               size="xs"
               px={2.5}
               variant="ghost"
-              color="whiteAlpha.600"
+              color={{
+                flattenAndCancel: 'red.300',
+                flattenOnly: 'whiteAlpha.600',
+                cancelOnly: 'orange.300',
+              }[flattenMode]}
               fontWeight="medium"
               fontSize="xs"
               borderRightRadius={0}
               _hover={{ bg: 'rgba(239, 83, 80, 0.15)', color: 'red.300' }}
               _active={{ bg: 'rgba(239, 83, 80, 0.25)' }}
               isLoading={isFlattening || isCancelling}
-              isDisabled={openPositions.length === 0 && workingOrders.length === 0}
-              onClick={handleFlattenAndCancel}
+              isDisabled={
+                (flattenMode === 'flattenOnly' && openPositions.length === 0) ||
+                (flattenMode === 'cancelOnly' && workingOrders.length === 0) ||
+                (flattenMode === 'flattenAndCancel' && openPositions.length === 0 && workingOrders.length === 0)
+              }
+              onClick={{
+                flattenAndCancel: handleFlattenAndCancel,
+                flattenOnly: handleFlatten,
+                cancelOnly: handleCancelAll,
+              }[flattenMode]}
             >
-              Flatten
+              {{ flattenAndCancel: 'Flatten + Cancel', flattenOnly: 'Flatten', cancelOnly: 'Cancel' }[flattenMode]}
             </Button>
           </Tooltip>
           <Menu placement="bottom-end">
@@ -527,7 +548,6 @@ const QuickOrderBar = ({ chartSymbol, multiAccountTrading, positions = [], order
               borderLeftColor="whiteAlpha.200"
               _hover={{ bg: 'rgba(239, 83, 80, 0.15)', color: 'red.300' }}
               _active={{ bg: 'rgba(239, 83, 80, 0.25)' }}
-              isDisabled={openPositions.length === 0 && workingOrders.length === 0}
             >
               <ChevronDown size={10} />
             </MenuButton>
@@ -540,32 +560,29 @@ const QuickOrderBar = ({ chartSymbol, multiAccountTrading, positions = [], order
               <MenuItem
                 fontSize="xs"
                 bg="transparent"
-                color="red.300"
+                color={flattenMode === 'flattenAndCancel' ? 'cyan.300' : 'red.300'}
                 _hover={{ bg: 'whiteAlpha.200' }}
-                isDisabled={openPositions.length === 0 && workingOrders.length === 0}
-                onClick={handleFlattenAndCancel}
+                onClick={() => setFlattenMode('flattenAndCancel')}
               >
                 Flatten + Cancel All
               </MenuItem>
               <MenuItem
                 fontSize="xs"
                 bg="transparent"
-                color="white"
+                color={flattenMode === 'flattenOnly' ? 'cyan.300' : 'white'}
                 _hover={{ bg: 'whiteAlpha.200' }}
-                isDisabled={openPositions.length === 0}
-                onClick={handleFlatten}
+                onClick={() => setFlattenMode('flattenOnly')}
               >
-                Flatten Only ({openPositions.length})
+                Flatten Only
               </MenuItem>
               <MenuItem
                 fontSize="xs"
                 bg="transparent"
-                color="orange.300"
+                color={flattenMode === 'cancelOnly' ? 'cyan.300' : 'orange.300'}
                 _hover={{ bg: 'whiteAlpha.200' }}
-                isDisabled={workingOrders.length === 0}
-                onClick={handleCancelAll}
+                onClick={() => setFlattenMode('cancelOnly')}
               >
-                Cancel Orders ({workingOrders.length})
+                Cancel Orders
               </MenuItem>
             </MenuList>
           </Menu>
