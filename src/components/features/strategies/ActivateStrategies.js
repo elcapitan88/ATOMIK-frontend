@@ -25,9 +25,12 @@ import {
 } from '@chakra-ui/react';
 import { MoreVertical, Settings, Trash2, SlidersHorizontal, Zap, Activity, Plus, Users } from 'lucide-react';
 import ActivateStrategyModal from './ActivateStrategyModal';
+import EnhancedStrategyModal from './EnhancedStrategyModal';
 import DeleteStrategy from './DeleteStrategy';
+import WebhookDetailsModal from '@/components/features/webhooks/WebhookDetailsModal';
 import { useUnifiedStrategies as useStrategies } from '@/hooks/useUnifiedStrategies';
 import { strategyCodesApi } from '@/services/api/strategies/strategyCodesApi';
+import { webhookApi } from '@/services/api/Webhooks/webhookApi';
 
 const WebhooksView = lazy(() => import('@/components/features/trading/WebhooksView'));
 
@@ -122,6 +125,21 @@ const ActivateStrategies = ({ accountConfigs, strategyBoundAccountIds }) => {
     onOpen: onDeleteOpen,
     onClose: onDeleteClose
   } = useDisclosure();
+
+  const {
+    isOpen: isCreateWebhookOpen,
+    onOpen: onCreateWebhookOpen,
+    onClose: onCreateWebhookClose
+  } = useDisclosure();
+
+  const {
+    isOpen: isWebhookDetailsOpen,
+    onOpen: onWebhookDetailsOpen,
+    onClose: onWebhookDetailsClose
+  } = useDisclosure();
+
+  const [newlyCreatedWebhook, setNewlyCreatedWebhook] = useState(null);
+  const [webhooksRefresh, setWebhooksRefresh] = useState(null);
 
   // Group strategies by type
   const groupedStrategies = (sortedStrategies || []).reduce((acc, strategy) => {
@@ -256,6 +274,72 @@ const ActivateStrategies = ({ accountConfigs, strategyBoundAccountIds }) => {
     }
   };
 
+  // Handle webhook creation from EnhancedStrategyModal
+  const handleCreateWebhook = async (webhookData) => {
+    try {
+      const createdWebhook = await webhookApi.generateWebhook(webhookData);
+
+      // If monetized strategy with pricing data, set up monetization
+      if (webhookData.usage_intent === 'monetize' && webhookData.monetizationData) {
+        try {
+          const response = await fetch(
+            `${process.env.REACT_APP_API_URL}/api/v1/marketplace/strategies/${createdWebhook.id}/setup-monetization`,
+            {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+              },
+              body: JSON.stringify({
+                pricing_options: webhookData.monetizationData.pricing_options
+              })
+            }
+          );
+
+          if (!response.ok) throw new Error('Failed to setup monetization');
+
+          createdWebhook.is_monetized = true;
+          createdWebhook.is_shared = true;
+
+          toast({
+            title: "Strategy Monetized",
+            description: "Your strategy has been published to the marketplace!",
+            status: "success",
+            duration: 5000,
+            isClosable: true,
+          });
+        } catch (error) {
+          console.error('Failed to setup monetization:', error);
+          toast({
+            title: "Monetization Setup Failed",
+            description: "Strategy created but monetization failed. Try setting up pricing later.",
+            status: "warning",
+            duration: 5000,
+            isClosable: true,
+          });
+        }
+      }
+
+      // Store newly created webhook and refresh the list
+      setNewlyCreatedWebhook(createdWebhook);
+
+      if (webhooksRefresh?.refreshData) {
+        await webhooksRefresh.refreshData();
+      }
+
+      onCreateWebhookClose();
+      onWebhookDetailsOpen();
+    } catch (error) {
+      toast({
+        title: "Error creating strategy",
+        description: error.message || "Failed to create strategy",
+        status: "error",
+        duration: 5000,
+        isClosable: true,
+      });
+    }
+  };
+
   const SortButton = ({ onSort }) => {
     return (
       <Menu>
@@ -334,7 +418,7 @@ const ActivateStrategies = ({ accountConfigs, strategyBoundAccountIds }) => {
         {/* Webhooks View */}
         {panelView === 'webhooks' && (
           <Suspense fallback={<Flex justify="center" py={6}><Spinner size="md" color="cyan.400" /></Flex>}>
-            <WebhooksView />
+            <WebhooksView onWebhooksChange={setWebhooksRefresh} />
           </Suspense>
         )}
 
@@ -682,6 +766,23 @@ const ActivateStrategies = ({ accountConfigs, strategyBoundAccountIds }) => {
         </Box>
       )}
 
+      {panelView === 'webhooks' && (
+        <Box px={4} py={3} borderTop="1px solid" borderColor="whiteAlpha.100" flexShrink={0}>
+          <Button
+            w="100%"
+            size="sm"
+            variant="outline"
+            borderColor="whiteAlpha.300"
+            color="whiteAlpha.800"
+            leftIcon={<Plus size={14} />}
+            onClick={onCreateWebhookOpen}
+            _hover={{ bg: 'whiteAlpha.100', borderColor: 'cyan.400', color: 'cyan.400' }}
+          >
+            Create Strategy
+          </Button>
+        </Box>
+      )}
+
       <ActivateStrategyModal
         isOpen={isActivateOpen}
         onClose={() => {
@@ -706,6 +807,31 @@ const ActivateStrategies = ({ accountConfigs, strategyBoundAccountIds }) => {
           : `Group: ${selectedStrategy?.group_name || 'Unnamed Group'}`}
         strategyType={selectedStrategy?.strategy_type}
       />
+
+      <EnhancedStrategyModal
+        isOpen={isCreateWebhookOpen}
+        onClose={onCreateWebhookClose}
+        onSubmit={handleCreateWebhook}
+      />
+
+      {newlyCreatedWebhook && (
+        <WebhookDetailsModal
+          isOpen={isWebhookDetailsOpen}
+          onClose={() => {
+            onWebhookDetailsClose();
+            setNewlyCreatedWebhook(null);
+            toast({
+              title: "Webhook Created Successfully",
+              description: "Your webhook URL has been generated. Please save it securely.",
+              status: "success",
+              duration: 5000,
+              isClosable: true,
+            });
+          }}
+          webhook={newlyCreatedWebhook}
+          isNewlyCreated={true}
+        />
+      )}
     </Box>
   );
 };
