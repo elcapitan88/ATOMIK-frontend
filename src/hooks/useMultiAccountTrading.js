@@ -56,6 +56,7 @@ const useMultiAccountTrading = (accounts = [], strategies = []) => {
   const [orderType, setOrderType] = useState('MARKET');
   const [limitPrice, setLimitPrice] = useState('');
   const [stopPrice, setStopPrice] = useState('');
+  const [timeInForce, setTimeInForce] = useState('GTC');
   const [skipConfirmation, setSkipConfirmation] = useState(
     () => localStorage.getItem('atomik_skip_order_confirm') === 'true'
   );
@@ -201,7 +202,7 @@ const useMultiAccountTrading = (accounts = [], strategies = []) => {
 
   // Place order to ALL active manual accounts in parallel
   const placeMultiAccountOrder = useCallback(
-    async ({ side, type, price, stopPrice: sp, symbol }) => {
+    async ({ side, type, price, stopPrice: sp, symbol, timeInForce: tif }) => {
       const accts = activeAccounts;
       if (accts.length === 0) {
         toast({
@@ -225,7 +226,7 @@ const useMultiAccountTrading = (accounts = [], strategies = []) => {
             quantity: acct.quantity,
             price: oType === 'LIMIT' || oType === 'STOP_LIMIT' ? (price || limitPrice || undefined) : undefined,
             stop_price: oType === 'STOP' || oType === 'STOP_LIMIT' ? (sp || stopPrice || undefined) : undefined,
-            time_in_force: 'GTC',
+            time_in_force: tif || timeInForce || 'GTC',
           })
           .then((res) => ({
             accountId: acct.account_id,
@@ -274,7 +275,7 @@ const useMultiAccountTrading = (accounts = [], strategies = []) => {
 
       return results;
     },
-    [activeAccounts, orderType, limitPrice, stopPrice, totalContracts, toast]
+    [activeAccounts, orderType, limitPrice, stopPrice, timeInForce, totalContracts, toast]
   );
 
   return {
@@ -300,6 +301,8 @@ const useMultiAccountTrading = (accounts = [], strategies = []) => {
     setLimitPrice,
     stopPrice,
     setStopPrice,
+    timeInForce,
+    setTimeInForce,
     skipConfirmation,
     setSkipConfirmation,
     isSubmitting,

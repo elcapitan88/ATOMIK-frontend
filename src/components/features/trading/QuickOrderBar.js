@@ -13,7 +13,6 @@ import {
   useToast,
 } from '@chakra-ui/react';
 import axiosInstance from '@/services/axiosConfig';
-import { useWebSocketContext } from '@/services/websocket-proxy/contexts/WebSocketContext';
 
 /**
  * QuickOrderBar — thin horizontal bar between chart and bottom panel.
@@ -29,7 +28,6 @@ import { useWebSocketContext } from '@/services/websocket-proxy/contexts/WebSock
  */
 const QuickOrderBar = ({ chartSymbol, multiAccountTrading, positions = [], orders = [] }) => {
   const toast = useToast();
-  const { sendMessage } = useWebSocketContext();
   const [isFlattening, setIsFlattening] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
 
@@ -43,6 +41,8 @@ const QuickOrderBar = ({ chartSymbol, multiAccountTrading, positions = [], order
     setLimitPrice,
     stopPrice,
     setStopPrice,
+    timeInForce,
+    setTimeInForce,
     placeMultiAccountOrder,
     isSubmitting,
   } = multiAccountTrading;
@@ -80,9 +80,10 @@ const QuickOrderBar = ({ chartSymbol, multiAccountTrading, positions = [], order
         price: needsPrice ? parseFloat(limitPrice) : undefined,
         stopPrice: needsStop ? parseFloat(stopPrice) : undefined,
         symbol,
+        timeInForce,
       });
     },
-    [hasActiveAccounts, orderType, limitPrice, stopPrice, symbol, placeMultiAccountOrder, needsPrice, needsStop, toast]
+    [hasActiveAccounts, orderType, limitPrice, stopPrice, timeInForce, symbol, placeMultiAccountOrder, needsPrice, needsStop, toast]
   );
 
   // Open positions count
@@ -102,7 +103,7 @@ const QuickOrderBar = ({ chartSymbol, multiAccountTrading, positions = [], order
     [orders]
   );
 
-  // Flatten — close all open positions across all accounts
+  // Flatten — close all open positions across all accounts via REST API
   const handleFlatten = useCallback(async () => {
     if (openPositions.length === 0) {
       toast({ title: 'No open positions', status: 'info', duration: 2000 });
@@ -114,26 +115,25 @@ const QuickOrderBar = ({ chartSymbol, multiAccountTrading, positions = [], order
       const results = await Promise.all(
         openPositions.map(async (pos) => {
           const accountId = pos._accountId || pos.accountId;
-          const brokerId = pos._brokerId || pos.brokerId;
-          if (!accountId || !brokerId) return { success: false, error: 'Missing account info' };
+          if (!accountId) return { success: false, error: 'Missing account info' };
 
           const closeSide = pos.side === 'LONG' ? 'SELL' : 'BUY';
           const qty = pos.quantity || Math.abs(pos.netPos || 0);
 
           try {
-            await sendMessage(brokerId, accountId, {
-              type: 'submit_order',
-              data: {
+            const res = await axiosInstance.post(
+              `/api/v1/brokers/accounts/${accountId}/discretionary/orders`,
+              {
                 symbol: pos.symbol,
                 side: closeSide,
+                type: 'MARKET',
                 quantity: qty,
-                orderType: 'MARKET',
-                accountId,
-              },
-            });
-            return { success: true };
+                time_in_force: 'IOC',
+              }
+            );
+            return { success: true, data: res.data };
           } catch (err) {
-            return { success: false, error: err.message };
+            return { success: false, error: err.response?.data?.detail || err.message };
           }
         })
       );
@@ -151,7 +151,7 @@ const QuickOrderBar = ({ chartSymbol, multiAccountTrading, positions = [], order
     } finally {
       setIsFlattening(false);
     }
-  }, [openPositions, sendMessage, toast]);
+  }, [openPositions, toast]);
 
   // Cancel all working orders
   const handleCancelAll = useCallback(async () => {
@@ -258,6 +258,22 @@ const QuickOrderBar = ({ chartSymbol, multiAccountTrading, positions = [], order
             <option value="LIMIT" style={{ background: '#1a1a2e' }}>Limit</option>
             <option value="STOP" style={{ background: '#1a1a2e' }}>Stop</option>
             <option value="STOP_LIMIT" style={{ background: '#1a1a2e' }}>Stop Limit</option>
+          </Select>
+
+          <Select
+            size="xs"
+            value={timeInForce}
+            onChange={(e) => setTimeInForce(e.target.value)}
+            bg="whiteAlpha.100"
+            borderColor="whiteAlpha.200"
+            color="white"
+            w="80px"
+            _focus={{ borderColor: 'cyan.400' }}
+          >
+            <option value="GTC" style={{ background: '#1a1a2e' }}>GTC</option>
+            <option value="Day" style={{ background: '#1a1a2e' }}>Day</option>
+            <option value="IOC" style={{ background: '#1a1a2e' }}>IOC</option>
+            <option value="FOK" style={{ background: '#1a1a2e' }}>FOK</option>
           </Select>
 
           {needsPrice && (
