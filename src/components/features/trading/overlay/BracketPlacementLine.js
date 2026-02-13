@@ -1,42 +1,40 @@
 import React, { memo, useState, useRef, useCallback, useEffect } from 'react';
+import TradingLineLabel from './TradingLineLabel';
 
 /**
  * Draggable horizontal line for bracket order placement.
  *
  * Three types:
- *   - entry: solid purple line with BUY/SELL buttons
+ *   - entry: solid side-colored line with side toggle + submit button
  *   - tp:    dashed green line (take profit)
  *   - sl:    dashed red line (stop loss)
  *
+ * Styled to match native OrderLine appearance (dark pill labels, side-based colors).
  * Drag behavior mirrors OrderLine: mousedown -> document mousemove -> mouseup.
- * Ghost line at original price during drag; price tooltip on Y-axis.
  */
 
-const TYPE_CONFIG = {
-  entry: {
-    color: '#7c3aed',
-    bgColor: 'rgba(124, 58, 237, 0.85)',
-    axisColor: '#5b21b6',
-    isDashed: false,
-  },
-  tp: {
-    color: '#4caf50',
-    bgColor: 'rgba(76, 175, 80, 0.85)',
-    axisColor: '#2e7d32',
-    isDashed: true,
-  },
-  sl: {
-    color: '#f44336',
-    bgColor: 'rgba(244, 67, 54, 0.85)',
-    axisColor: '#c62828',
-    isDashed: true,
-  },
+// TP and SL have fixed colors; entry color is dynamic based on side
+const LINE_COLORS = {
+  tp: '#4caf50',
+  sl: '#f44336',
 };
 
-const LABEL_TEXT = {
-  entry: (side) => `${side === 'BUY' ? 'BUY' : 'SELL'} LMT`,
-  tp: () => 'TP',
-  sl: () => 'SL',
+const SIDE_COLORS = {
+  BUY: '#26a69a',
+  SELL: '#ef5350',
+};
+
+const getLineColor = (type, side) => {
+  if (type === 'entry') return SIDE_COLORS[side] || SIDE_COLORS.BUY;
+  return LINE_COLORS[type] || '#888';
+};
+
+const getLabel = (type, side, totalQuantity) => {
+  const qty = totalQuantity || 1;
+  if (type === 'entry') return `${side} LMT \u00d7 ${qty}`;
+  if (type === 'tp') return `TP LMT \u00d7 ${qty}`;
+  if (type === 'sl') return `SL STP \u00d7 ${qty}`;
+  return type.toUpperCase();
 };
 
 const BracketPlacementLine = memo(({
@@ -53,6 +51,9 @@ const BracketPlacementLine = memo(({
   onDrag,
   onDragStateChange,
   onSubmit,
+  onToggleSide,
+  onCancel,
+  totalQuantity,
   overlayRef,
 }) => {
   const [hovered, setHovered] = useState(false);
@@ -62,7 +63,8 @@ const BracketPlacementLine = memo(({
   const dragStartRef = useRef(null);
   const lineRef = useRef(null);
 
-  const cfg = TYPE_CONFIG[type] || TYPE_CONFIG.entry;
+  const color = getLineColor(type, side);
+  const isDashed = type === 'tp' || type === 'sl';
 
   // Compute drag price for display
   const currentY = yPosition + dragOffsetY;
@@ -71,10 +73,10 @@ const BracketPlacementLine = memo(({
 
   // Display price
   const displayPrice = isDragging && dragFormattedPrice != null
-    ? dragFormattedPrice
-    : formatPrice(price, symbol);
+    ? `$${dragFormattedPrice}`
+    : `$${formatPrice(price, symbol)}`;
 
-  const labelText = LABEL_TEXT[type] ? LABEL_TEXT[type](side) : type.toUpperCase();
+  const labelText = getLabel(type, side, totalQuantity);
 
   // ── Drag handlers (before any conditional returns) ─────────────────
 
@@ -165,7 +167,7 @@ const BracketPlacementLine = memo(({
               right: '80px',
               height: '1px',
               top: '0px',
-              backgroundColor: cfg.color,
+              backgroundColor: color,
             }}
           />
         </div>
@@ -209,18 +211,18 @@ const BracketPlacementLine = memo(({
             right: '80px',
             height: '1px',
             top: '0px',
-            background: cfg.isDashed
+            background: isDashed
               ? undefined
-              : cfg.color,
-            backgroundImage: cfg.isDashed
-              ? `repeating-linear-gradient(to right, ${cfg.color} 0, ${cfg.color} 4px, transparent 4px, transparent 8px)`
+              : color,
+            backgroundImage: isDashed
+              ? `repeating-linear-gradient(to right, ${color} 0, ${color} 4px, transparent 4px, transparent 8px)`
               : undefined,
             opacity: isDragging ? 1 : 0.7,
-            boxShadow: isDragging ? `0 0 6px ${cfg.color}` : 'none',
+            boxShadow: isDragging ? `0 0 6px ${color}` : 'none',
           }}
         />
 
-        {/* Label + buttons — positioned right-center */}
+        {/* Label + action buttons — positioned right-center */}
         <div
           style={{
             position: 'absolute',
@@ -231,82 +233,101 @@ const BracketPlacementLine = memo(({
             gap: '4px',
           }}
         >
-          {/* Label pill */}
-          <div
+          {/* Cancel (×) button — shows on hover */}
+          <button
+            onClick={(e) => { e.stopPropagation(); e.preventDefault(); onCancel?.(); }}
+            onMouseDown={(e) => e.stopPropagation()}
+            title="Cancel bracket"
             style={{
               display: 'inline-flex',
               alignItems: 'center',
-              gap: '6px',
-              padding: '2px 8px',
-              borderRadius: '4px',
-              backgroundColor: cfg.bgColor,
-              border: `1px solid ${cfg.color}`,
-              whiteSpace: 'nowrap',
-              userSelect: 'none',
-              fontSize: '11px',
-              fontWeight: 600,
-              fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+              justifyContent: 'center',
+              width: '20px',
+              height: '20px',
+              borderRadius: '3px',
+              border: 'none',
+              cursor: 'pointer',
+              fontSize: '12px',
+              fontWeight: 'bold',
+              lineHeight: 1,
+              padding: 0,
               color: '#ffffff',
-              lineHeight: '16px',
-              boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
+              backgroundColor: 'rgba(239, 83, 80, 0.8)',
+              opacity: hovered || isDragging ? 1 : 0,
+              transition: 'opacity 0.15s',
+              pointerEvents: hovered || isDragging ? 'auto' : 'none',
             }}
           >
-            <span>{labelText}</span>
-            <span style={{ opacity: 0.5 }}>|</span>
-            <span style={{ fontFamily: 'monospace', fontSize: '11px' }}>
-              ${displayPrice}
-            </span>
-          </div>
+            ×
+          </button>
 
-          {/* BUY / SELL buttons — entry line only */}
-          {type === 'entry' && onSubmit && (
+          {/* Label pill — matches native OrderLine styling */}
+          <TradingLineLabel
+            text={labelText}
+            price={displayPrice}
+            color={color}
+            bodyColor={isDragging ? color : '#2a2e39'}
+            textColor={isDragging ? '#ffffff' : '#d1d4dc'}
+          />
+
+          {/* Entry line only: side toggle + submit button */}
+          {type === 'entry' && (
             <>
-              <button
-                onClick={(e) => { e.stopPropagation(); e.preventDefault(); onSubmit('BUY'); }}
-                onMouseDown={(e) => e.stopPropagation()}
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  height: '20px',
-                  padding: '0 8px',
-                  borderRadius: '3px',
-                  border: side === 'BUY' ? 'none' : '1px solid rgba(38, 166, 154, 0.6)',
-                  cursor: 'pointer',
-                  fontSize: '11px',
-                  fontWeight: 'bold',
-                  color: '#ffffff',
-                  backgroundColor: side === 'BUY'
-                    ? 'rgba(38, 166, 154, 0.9)'
-                    : 'rgba(38, 166, 154, 0.3)',
-                  transition: 'background-color 0.15s',
-                }}
-              >
-                BUY
-              </button>
-              <button
-                onClick={(e) => { e.stopPropagation(); e.preventDefault(); onSubmit('SELL'); }}
-                onMouseDown={(e) => e.stopPropagation()}
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  height: '20px',
-                  padding: '0 8px',
-                  borderRadius: '3px',
-                  border: side === 'SELL' ? 'none' : '1px solid rgba(239, 83, 80, 0.6)',
-                  cursor: 'pointer',
-                  fontSize: '11px',
-                  fontWeight: 'bold',
-                  color: '#ffffff',
-                  backgroundColor: side === 'SELL'
-                    ? 'rgba(239, 83, 80, 0.9)'
-                    : 'rgba(239, 83, 80, 0.3)',
-                  transition: 'background-color 0.15s',
-                }}
-              >
-                SELL
-              </button>
+              {/* Side toggle */}
+              {onToggleSide && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); e.preventDefault(); onToggleSide(); }}
+                  onMouseDown={(e) => e.stopPropagation()}
+                  title={`Switch to ${side === 'BUY' ? 'SELL' : 'BUY'}`}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    height: '20px',
+                    padding: '0 6px',
+                    borderRadius: '3px',
+                    border: 'none',
+                    cursor: 'pointer',
+                    fontSize: '10px',
+                    fontWeight: 'bold',
+                    color: '#ffffff',
+                    backgroundColor: side === 'BUY'
+                      ? 'rgba(38, 166, 154, 0.7)'
+                      : 'rgba(239, 83, 80, 0.7)',
+                    transition: 'background-color 0.15s',
+                  }}
+                >
+                  {side === 'BUY' ? 'BUY' : 'SELL'} ↕
+                </button>
+              )}
+
+              {/* Submit button */}
+              {onSubmit && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); e.preventDefault(); onSubmit(side); }}
+                  onMouseDown={(e) => e.stopPropagation()}
+                  title="Place bracket order"
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    height: '20px',
+                    padding: '0 8px',
+                    borderRadius: '3px',
+                    border: 'none',
+                    cursor: 'pointer',
+                    fontSize: '11px',
+                    fontWeight: 'bold',
+                    color: '#ffffff',
+                    backgroundColor: side === 'BUY'
+                      ? 'rgba(38, 166, 154, 0.9)'
+                      : 'rgba(239, 83, 80, 0.9)',
+                    transition: 'background-color 0.15s',
+                  }}
+                >
+                  Submit ▸
+                </button>
+              )}
             </>
           )}
         </div>
@@ -322,7 +343,7 @@ const BracketPlacementLine = memo(({
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            backgroundColor: cfg.axisColor,
+            backgroundColor: color,
             borderRadius: '2px',
             zIndex: 11,
             pointerEvents: 'none',
@@ -337,7 +358,7 @@ const BracketPlacementLine = memo(({
               letterSpacing: '0.2px',
             }}
           >
-            {displayPrice}
+            {isDragging && dragFormattedPrice != null ? dragFormattedPrice : formatPrice(price, symbol)}
           </span>
         </div>
 
@@ -350,7 +371,7 @@ const BracketPlacementLine = memo(({
               top: '-11px',
               padding: '2px 6px',
               borderRadius: '3px',
-              backgroundColor: cfg.color,
+              backgroundColor: color,
               color: '#ffffff',
               fontSize: '11px',
               fontWeight: 700,

@@ -94,6 +94,22 @@ const useBracketPlacement = ({ chartSymbol, chartCurrentPrice, multiAccountTradi
     }
   }, [chartSymbol, entryPrice]);
 
+  const toggleSide = useCallback(() => {
+    if (!isPlaced || !entryPrice) return;
+    const newSide = side === 'BUY' ? 'SELL' : 'BUY';
+
+    // Swap TP and SL prices (and offsets)
+    const currentTp = tpPrice;
+    const currentSl = slPrice;
+    setTpPrice(currentSl);
+    setSlPrice(currentTp);
+    setSide(newSide);
+
+    // Swap offsets in ref
+    const { tp: tpOff, sl: slOff } = offsetsRef.current;
+    offsetsRef.current = { tp: slOff, sl: tpOff };
+  }, [isPlaced, entryPrice, side, tpPrice, slPrice]);
+
   const submit = useCallback(async (submittedSide) => {
     const finalSide = submittedSide || side;
     if (!finalSide || entryPrice == null || tpPrice == null || slPrice == null) return;
@@ -225,6 +241,7 @@ const useBracketPlacement = ({ chartSymbol, chartCurrentPrice, multiAccountTradi
     updateEntry,
     updateTp,
     updateSl,
+    toggleSide,
     submit,
   };
 };

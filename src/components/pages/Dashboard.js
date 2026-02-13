@@ -513,6 +513,7 @@ const DashboardContent = () => {
                                             positionLines={chartTrading.positionLines}
                                             orderLines={chartTrading.orderLines}
                                             bracketPlacement={bracketPlacement}
+                                            totalQuantity={multiAccountTrading.totalContracts}
                                         />
                                     </Box>
 

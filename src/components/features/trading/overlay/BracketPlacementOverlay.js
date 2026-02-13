@@ -16,6 +16,7 @@ const BracketPlacementOverlay = memo(({
   chartWidth,
   onDragStateChange,
   overlayRef,
+  totalQuantity,
 }) => {
   if (!bracketPlacement || !bracketPlacement.isPlaced) return null;
 
@@ -38,6 +39,9 @@ const BracketPlacementOverlay = memo(({
         onDrag={(newPrice) => bracketPlacement.updateEntry(newPrice)}
         onDragStateChange={onDragStateChange}
         onSubmit={(side) => bracketPlacement.submit(side)}
+        onToggleSide={bracketPlacement.toggleSide}
+        onCancel={bracketPlacement.deactivate}
+        totalQuantity={totalQuantity}
         overlayRef={overlayRef}
       />
 
@@ -55,6 +59,8 @@ const BracketPlacementOverlay = memo(({
         side={bracketPlacement.side}
         onDrag={(newPrice) => bracketPlacement.updateTp(newPrice)}
         onDragStateChange={onDragStateChange}
+        onCancel={bracketPlacement.deactivate}
+        totalQuantity={totalQuantity}
         overlayRef={overlayRef}
       />
 
@@ -72,6 +78,8 @@ const BracketPlacementOverlay = memo(({
         side={bracketPlacement.side}
         onDrag={(newPrice) => bracketPlacement.updateSl(newPrice)}
         onDragStateChange={onDragStateChange}
+        onCancel={bracketPlacement.deactivate}
+        totalQuantity={totalQuantity}
         overlayRef={overlayRef}
       />
     </>

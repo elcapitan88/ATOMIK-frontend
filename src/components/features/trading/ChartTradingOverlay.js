@@ -20,6 +20,7 @@ const ChartTradingOverlay = memo(({
   positionLines = [],
   orderLines = [],
   bracketPlacement,
+  totalQuantity,
 }) => {
   const overlayRef = useRef(null);
   const [isDraggingOrder, setIsDraggingOrder] = useState(false);
@@ -132,6 +133,7 @@ const ChartTradingOverlay = memo(({
           chartWidth={chartWidth}
           onDragStateChange={handleBracketDragStateChange}
           overlayRef={overlayRef}
+          totalQuantity={totalQuantity}
         />
       )}
     </div>
