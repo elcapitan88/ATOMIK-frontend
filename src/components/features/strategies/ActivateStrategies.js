@@ -20,7 +20,8 @@ import {
   useToast,
   Badge,
   HStack,
-  Tooltip
+  Tooltip,
+  Portal
 } from '@chakra-ui/react';
 import { MoreVertical, Settings, Trash2, SlidersHorizontal, Zap, Activity, Plus, Users } from 'lucide-react';
 import ActivateStrategyModal from './ActivateStrategyModal';
@@ -390,10 +391,12 @@ const ActivateStrategies = () => {
                               {String(strategy.broker_account?.account_id || 'N/A')}
                             </Text>
                             <Badge
-                              colorScheme={getBrokerInfo(strategy.broker_account?.broker_id).color}
                               fontSize="9px"
                               px={1.5}
                               borderRadius="sm"
+                              bg="whiteAlpha.200"
+                              color="green.300"
+                              fontWeight="semibold"
                             >
                               {getBrokerInfo(strategy.broker_account?.broker_id).name}
                             </Badge>
@@ -413,7 +416,7 @@ const ActivateStrategies = () => {
                             isDisabled={isToggling}
                             size="sm"
                           />
-                          <Menu>
+                          <Menu strategy="fixed">
                             <MenuButton
                               as={IconButton}
                               icon={<MoreVertical size={16} color="white" />}
@@ -423,32 +426,35 @@ const ActivateStrategies = () => {
                               _active={{ bg: 'transparent' }}
                               _expanded={{ bg: 'transparent' }}
                             />
-                            <MenuList
-                              bg="rgba(0, 0, 0, 0.85)"
-                              backdropFilter="blur(20px)"
-                              borderColor="rgba(255, 255, 255, 0.1)"
-                              boxShadow="0 4px 20px rgba(0, 0, 0, 0.4)"
-                              borderRadius="xl"
-                            >
-                              <MenuItem
-                                onClick={() => handleUpdateStrategy(strategy)}
-                                _hover={{ bg: "whiteAlpha.200" }}
-                                bg="transparent"
-                                color="white"
-                                icon={<Settings size={14} />}
+                            <Portal>
+                              <MenuList
+                                bg="rgba(0, 0, 0, 0.85)"
+                                backdropFilter="blur(20px)"
+                                borderColor="rgba(255, 255, 255, 0.1)"
+                                boxShadow="0 4px 20px rgba(0, 0, 0, 0.4)"
+                                borderRadius="xl"
+                                zIndex={1400}
                               >
-                                Update Strategy
-                              </MenuItem>
-                              <MenuItem
-                                onClick={() => handleDeleteClick(strategy)}
-                                _hover={{ bg: "whiteAlpha.200" }}
-                                bg="transparent"
-                                color="red.400"
-                                icon={<Trash2 size={14} />}
-                              >
-                                Delete
-                              </MenuItem>
-                            </MenuList>
+                                <MenuItem
+                                  onClick={() => handleUpdateStrategy(strategy)}
+                                  _hover={{ bg: "whiteAlpha.200" }}
+                                  bg="transparent"
+                                  color="white"
+                                  icon={<Settings size={14} />}
+                                >
+                                  Update Strategy
+                                </MenuItem>
+                                <MenuItem
+                                  onClick={() => handleDeleteClick(strategy)}
+                                  _hover={{ bg: "whiteAlpha.200" }}
+                                  bg="transparent"
+                                  color="red.400"
+                                  icon={<Trash2 size={14} />}
+                                >
+                                  Delete
+                                </MenuItem>
+                              </MenuList>
+                            </Portal>
                           </Menu>
                         </HStack>
                       </Flex>
@@ -539,10 +545,12 @@ const ActivateStrategies = () => {
                               {String(strategy.leader_broker_account?.account_id || 'N/A')}
                             </Text>
                             <Badge
-                              colorScheme={getBrokerInfo(strategy.leader_broker_account?.broker_id).color}
                               fontSize="9px"
                               px={1.5}
                               borderRadius="sm"
+                              bg="whiteAlpha.200"
+                              color="green.300"
+                              fontWeight="semibold"
                             >
                               {getBrokerInfo(strategy.leader_broker_account?.broker_id).name}
                             </Badge>
@@ -563,7 +571,7 @@ const ActivateStrategies = () => {
                             isDisabled={isToggling}
                             size="sm"
                           />
-                          <Menu>
+                          <Menu strategy="fixed">
                             <MenuButton
                               as={IconButton}
                               icon={<MoreVertical size={16} color="white" />}
@@ -573,32 +581,35 @@ const ActivateStrategies = () => {
                               _active={{ bg: 'transparent' }}
                               _expanded={{ bg: 'transparent' }}
                             />
-                            <MenuList
-                              bg="rgba(0, 0, 0, 0.85)"
-                              backdropFilter="blur(20px)"
-                              borderColor="rgba(255, 255, 255, 0.1)"
-                              boxShadow="0 4px 20px rgba(0, 0, 0, 0.4)"
-                              borderRadius="xl"
-                            >
-                              <MenuItem
-                                onClick={() => handleUpdateStrategy(strategy)}
-                                _hover={{ bg: "whiteAlpha.200" }}
-                                bg="transparent"
-                                color="white"
-                                icon={<Settings size={14} />}
+                            <Portal>
+                              <MenuList
+                                bg="rgba(0, 0, 0, 0.85)"
+                                backdropFilter="blur(20px)"
+                                borderColor="rgba(255, 255, 255, 0.1)"
+                                boxShadow="0 4px 20px rgba(0, 0, 0, 0.4)"
+                                borderRadius="xl"
+                                zIndex={1400}
                               >
-                                Update Strategy
-                              </MenuItem>
-                              <MenuItem
-                                onClick={() => handleDeleteClick(strategy)}
-                                _hover={{ bg: "whiteAlpha.200" }}
-                                bg="transparent"
-                                color="red.400"
-                                icon={<Trash2 size={14} />}
-                              >
-                                Delete
-                              </MenuItem>
-                            </MenuList>
+                                <MenuItem
+                                  onClick={() => handleUpdateStrategy(strategy)}
+                                  _hover={{ bg: "whiteAlpha.200" }}
+                                  bg="transparent"
+                                  color="white"
+                                  icon={<Settings size={14} />}
+                                >
+                                  Update Strategy
+                                </MenuItem>
+                                <MenuItem
+                                  onClick={() => handleDeleteClick(strategy)}
+                                  _hover={{ bg: "whiteAlpha.200" }}
+                                  bg="transparent"
+                                  color="red.400"
+                                  icon={<Trash2 size={14} />}
+                                >
+                                  Delete
+                                </MenuItem>
+                              </MenuList>
+                            </Portal>
                           </Menu>
                         </HStack>
                       </Flex>
