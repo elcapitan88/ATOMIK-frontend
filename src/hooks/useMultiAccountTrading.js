@@ -158,14 +158,23 @@ const useMultiAccountTrading = (accounts = [], strategies = []) => {
   // Toggle account active state (only for manual accounts)
   const toggleAccount = useCallback((accountId) => {
     const id = String(accountId);
-    if (strategyBoundAccountIds.has(id)) return; // Can't toggle AUTO accounts
+    if (strategyBoundAccountIds.has(id)) {
+      toast({
+        title: "Account Has Active Strategy",
+        description: "Deactivate auto strategies on this account before enabling manual trading.",
+        status: "warning",
+        duration: 5000,
+        isClosable: true,
+      });
+      return;
+    }
     setAccountConfigs((prev) => {
       const next = new Map(prev);
       const cfg = next.get(id) || { quantity: 1, isActive: false };
       next.set(id, { ...cfg, isActive: !cfg.isActive });
       return next;
     });
-  }, [strategyBoundAccountIds]);
+  }, [strategyBoundAccountIds, toast]);
 
   // Set account quantity
   const setAccountQuantity = useCallback((accountId, quantity) => {

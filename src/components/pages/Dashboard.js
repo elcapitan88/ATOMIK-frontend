@@ -585,6 +585,8 @@ const DashboardContent = () => {
                                                 <StrategyGroups
                                                     strategies={dashboardData.strategies}
                                                     accounts={dashboardData.accounts}
+                                                    accountConfigs={multiAccountTrading.accountConfigs}
+                                                    strategyBoundAccountIds={multiAccountTrading.strategyBoundAccountIds}
                                                 />
                                             </Suspense>
                                         </ErrorBoundary>

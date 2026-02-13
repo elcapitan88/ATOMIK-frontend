@@ -39,7 +39,7 @@ const getBrokerInfo = (brokerId) => {
   return { name: 'Tradovate', color: 'green' };
 };
 
-const ActivateStrategies = () => {
+const ActivateStrategies = ({ accountConfigs, strategyBoundAccountIds }) => {
   // React Query hooks
   const {
     strategies,
@@ -160,8 +160,47 @@ const ActivateStrategies = () => {
     }
   };
 
+  // Get all account IDs associated with a strategy
+  const getStrategyAccountIds = (strategy) => {
+    const ids = [];
+    if (strategy.strategy_type === 'single') {
+      const aid = strategy.broker_account?.account_id || strategy.account_id;
+      if (aid) ids.push(String(aid));
+    } else if (strategy.strategy_type === 'multiple') {
+      const leaderId = strategy.leader_broker_account?.account_id || strategy.leader_account_id;
+      if (leaderId) ids.push(String(leaderId));
+      (strategy.follower_accounts || []).forEach(f => {
+        if (f.account_id) ids.push(String(f.account_id));
+      });
+    }
+    return ids;
+  };
+
   // Handle strategy toggle
   const handleToggleStrategy = async (strategyId) => {
+    // Find the strategy being toggled
+    const strategy = strategies.find(s => s.id === strategyId);
+
+    // If turning ON (currently inactive), check for manual mode conflicts
+    if (strategy && !strategy.is_active && accountConfigs) {
+      const accountIds = getStrategyAccountIds(strategy);
+      const manuallyActive = accountIds.filter(id => {
+        const cfg = accountConfigs.get(id);
+        return cfg?.isActive;
+      });
+
+      if (manuallyActive.length > 0) {
+        toast({
+          title: "Account in Manual Mode",
+          description: `Account ${manuallyActive[0]} is active for manual trading. Deactivate it first to avoid conflicts with open positions.`,
+          status: "warning",
+          duration: 5000,
+          isClosable: true,
+        });
+        return;
+      }
+    }
+
     try {
       await toggleStrategy(strategyId);
       toast({
