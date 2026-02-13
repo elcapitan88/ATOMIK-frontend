@@ -1,0 +1,228 @@
+import { useState, useCallback, useEffect, useRef } from 'react';
+import { useToast } from '@chakra-ui/react';
+import axiosInstance from '@/services/axiosConfig';
+import { roundToTick, getTickSize, normalizeSymbol } from '@/hooks/useChartTrading';
+import { getContractTicker } from '@/utils/formatting/tickerUtils';
+
+const DEFAULT_TICK_OFFSET = 20;
+
+const useBracketPlacement = ({ chartSymbol, chartCurrentPrice, multiAccountTrading }) => {
+  const [isActive, setIsActive] = useState(false);
+  const [isPlaced, setIsPlaced] = useState(false);
+  const [entryPrice, setEntryPrice] = useState(null);
+  const [tpPrice, setTpPrice] = useState(null);
+  const [slPrice, setSlPrice] = useState(null);
+  const [side, setSide] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const toast = useToast();
+
+  // Track offsets so dragging entry preserves TP/SL distance
+  const offsetsRef = useRef({ tp: 0, sl: 0 });
+
+  const activate = useCallback(() => {
+    setIsActive(true);
+    setIsPlaced(false);
+    setEntryPrice(null);
+    setTpPrice(null);
+    setSlPrice(null);
+    setSide(null);
+  }, []);
+
+  const deactivate = useCallback(() => {
+    setIsActive(false);
+    setIsPlaced(false);
+    setEntryPrice(null);
+    setTpPrice(null);
+    setSlPrice(null);
+    setSide(null);
+  }, []);
+
+  const placeEntry = useCallback((price) => {
+    if (!isActive || !chartCurrentPrice) return;
+
+    const sym = normalizeSymbol(chartSymbol);
+    const snapped = roundToTick(price, sym);
+    const tickSize = getTickSize(sym);
+    const offset = tickSize * DEFAULT_TICK_OFFSET;
+
+    // entry below market = BUY, entry above market = SELL
+    const detectedSide = snapped < chartCurrentPrice ? 'BUY' : 'SELL';
+    const isBuy = detectedSide === 'BUY';
+
+    const tp = roundToTick(isBuy ? snapped + offset : snapped - offset, sym);
+    const sl = roundToTick(isBuy ? snapped - offset : snapped + offset, sym);
+
+    offsetsRef.current = { tp: tp - snapped, sl: sl - snapped };
+
+    setEntryPrice(snapped);
+    setTpPrice(tp);
+    setSlPrice(sl);
+    setSide(detectedSide);
+    setIsPlaced(true);
+  }, [isActive, chartCurrentPrice, chartSymbol]);
+
+  const updateEntry = useCallback((price) => {
+    const sym = normalizeSymbol(chartSymbol);
+    const snapped = roundToTick(price, sym);
+    const { tp: tpOff, sl: slOff } = offsetsRef.current;
+
+    setEntryPrice(snapped);
+    setTpPrice(roundToTick(snapped + tpOff, sym));
+    setSlPrice(roundToTick(snapped + slOff, sym));
+  }, [chartSymbol]);
+
+  const updateTp = useCallback((price) => {
+    const sym = normalizeSymbol(chartSymbol);
+    const snapped = roundToTick(price, sym);
+    setTpPrice(snapped);
+    if (entryPrice != null) {
+      offsetsRef.current.tp = snapped - entryPrice;
+    }
+  }, [chartSymbol, entryPrice]);
+
+  const updateSl = useCallback((price) => {
+    const sym = normalizeSymbol(chartSymbol);
+    const snapped = roundToTick(price, sym);
+    setSlPrice(snapped);
+    if (entryPrice != null) {
+      offsetsRef.current.sl = snapped - entryPrice;
+    }
+  }, [chartSymbol, entryPrice]);
+
+  const submit = useCallback(async (submittedSide) => {
+    const finalSide = submittedSide || side;
+    if (!finalSide || entryPrice == null || tpPrice == null || slPrice == null) return;
+
+    const activeAccounts = multiAccountTrading?.activeAccounts || [];
+    if (activeAccounts.length === 0) {
+      toast({
+        title: 'No active accounts',
+        description: 'Enable at least one account to place bracket orders.',
+        status: 'warning',
+        duration: 3000,
+        isClosable: true,
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+    const contractSymbol = getContractTicker(normalizeSymbol(chartSymbol));
+    const oppositeSide = finalSide === 'BUY' ? 'sell' : 'buy';
+    const entrySideLower = finalSide.toLowerCase();
+    const tif = multiAccountTrading?.timeInForce || 'GTC';
+    const token = localStorage.getItem('access_token');
+    const headers = { Authorization: `Bearer ${token}` };
+
+    const promises = [];
+
+    for (const acct of activeAccounts) {
+      const endpoint = `/api/v1/brokers/accounts/${acct.account_id}/discretionary/orders`;
+      const qty = acct.quantity;
+
+      // Entry — LIMIT order
+      promises.push(
+        axiosInstance.post(endpoint, {
+          symbol: contractSymbol,
+          side: entrySideLower,
+          type: 'LIMIT',
+          quantity: qty,
+          price: entryPrice,
+          time_in_force: tif,
+        }, { headers }).catch(err => ({ _error: true, leg: 'ENTRY', acct: acct.account_id, err }))
+      );
+
+      // Take Profit — LIMIT order on opposite side
+      promises.push(
+        axiosInstance.post(endpoint, {
+          symbol: contractSymbol,
+          side: oppositeSide,
+          type: 'LIMIT',
+          quantity: qty,
+          price: tpPrice,
+          time_in_force: tif,
+        }, { headers }).catch(err => ({ _error: true, leg: 'TP', acct: acct.account_id, err }))
+      );
+
+      // Stop Loss — STOP order on opposite side
+      promises.push(
+        axiosInstance.post(endpoint, {
+          symbol: contractSymbol,
+          side: oppositeSide,
+          type: 'STOP',
+          quantity: qty,
+          stop_price: slPrice,
+          time_in_force: tif,
+        }, { headers }).catch(err => ({ _error: true, leg: 'SL', acct: acct.account_id, err }))
+      );
+    }
+
+    try {
+      const results = await Promise.all(promises);
+      const failures = results.filter(r => r && r._error);
+      const successes = results.length - failures.length;
+
+      if (failures.length > 0) {
+        console.warn('[BracketPlacement] Some orders failed:', failures);
+        toast({
+          title: 'Bracket partially placed',
+          description: `${successes} of ${results.length} orders succeeded. ${failures.length} failed.`,
+          status: 'warning',
+          duration: 5000,
+          isClosable: true,
+        });
+      } else {
+        toast({
+          title: 'Bracket placed',
+          description: `${successes} orders placed across ${activeAccounts.length} account${activeAccounts.length > 1 ? 's' : ''}.`,
+          status: 'success',
+          duration: 3000,
+          isClosable: true,
+        });
+      }
+
+      deactivate();
+    } catch (err) {
+      console.error('[BracketPlacement] Submission error:', err);
+      toast({
+        title: 'Bracket order failed',
+        description: err?.response?.data?.detail || err.message || 'Unknown error',
+        status: 'error',
+        duration: 5000,
+        isClosable: true,
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  }, [side, entryPrice, tpPrice, slPrice, chartSymbol, multiAccountTrading, toast, deactivate]);
+
+  // Escape key to cancel bracket mode
+  useEffect(() => {
+    if (!isActive) return;
+    const handler = (e) => {
+      if (e.key === 'Escape') deactivate();
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [isActive, deactivate]);
+
+  return {
+    isActive,
+    isPlaced,
+    entryPrice,
+    tpPrice,
+    slPrice,
+    side,
+    isSubmitting,
+    symbol: normalizeSymbol(chartSymbol),
+    activate,
+    deactivate,
+    placeEntry,
+    updateEntry,
+    updateTp,
+    updateSl,
+    submit,
+  };
+};
+
+export default useBracketPlacement;

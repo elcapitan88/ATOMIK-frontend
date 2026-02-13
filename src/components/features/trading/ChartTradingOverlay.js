@@ -2,6 +2,7 @@ import React, { memo, useState, useCallback, useRef } from 'react';
 import useChartCoordinates from '@/hooks/useChartCoordinates';
 import PositionLine from './overlay/PositionLine';
 import OrderLine from './overlay/OrderLine';
+import BracketPlacementOverlay from './overlay/BracketPlacementOverlay';
 import { roundToTick, formatPrice } from '@/hooks/useChartTrading';
 
 /**
@@ -18,9 +19,11 @@ const ChartTradingOverlay = memo(({
   activeChart,
   positionLines = [],
   orderLines = [],
+  bracketPlacement,
 }) => {
   const overlayRef = useRef(null);
   const [isDraggingOrder, setIsDraggingOrder] = useState(false);
+  const [isDraggingBracket, setIsDraggingBracket] = useState(false);
 
   const {
     priceToY,
@@ -41,6 +44,13 @@ const ChartTradingOverlay = memo(({
     setIsDraggingOrder(dragging);
   }, []);
 
+  const handleBracketDragStateChange = useCallback((dragging) => {
+    setIsDraggingBracket(dragging);
+  }, []);
+
+  const isAwaitingClick = bracketPlacement?.isActive && !bracketPlacement?.isPlaced;
+  const hasBracketLines = bracketPlacement?.isPlaced;
+
   // Don't render until coordinate system is ready
   if (!isReady || !paneHeight) return null;
 
@@ -53,13 +63,21 @@ const ChartTradingOverlay = memo(({
         left: 0,
         right: 0,
         height: `${paneHeight}px`,
-        pointerEvents: isDraggingOrder ? 'auto' : 'none',
+        pointerEvents: (isDraggingOrder || isDraggingBracket || isAwaitingClick) ? 'auto' : 'none',
+        cursor: isAwaitingClick ? 'crosshair' : undefined,
         overflow: 'hidden',
         zIndex: 10,
         // Prevent any text selection during drag
         userSelect: 'none',
         WebkitUserSelect: 'none',
       }}
+      onClick={isAwaitingClick ? (e) => {
+        const rect = overlayRef.current?.getBoundingClientRect();
+        if (!rect) return;
+        const y = e.clientY - rect.top;
+        const price = yToPrice(y);
+        if (price != null) bracketPlacement.placeEntry(price);
+      } : undefined}
       data-testid="chart-trading-overlay"
     >
       {/* Position lines */}
@@ -95,6 +113,19 @@ const ChartTradingOverlay = memo(({
           />
         );
       })}
+
+      {/* Bracket placement lines */}
+      {bracketPlacement?.isPlaced && (
+        <BracketPlacementOverlay
+          bracketPlacement={bracketPlacement}
+          priceToY={priceToY}
+          yToPrice={yToPrice}
+          isPriceVisible={isPriceVisible}
+          chartWidth={chartWidth}
+          onDragStateChange={handleBracketDragStateChange}
+          overlayRef={overlayRef}
+        />
+      )}
     </div>
   );
 });

@@ -28,6 +28,7 @@ import ChartTradingOverlay from '../features/trading/ChartTradingOverlay';
 import logger from '@/utils/logger';
 import useMultiAccountTrading from '@/hooks/useMultiAccountTrading';
 import useAggregatedPositions from '@/hooks/useAggregatedPositions';
+import useBracketPlacement from '@/hooks/useBracketPlacement';
 import { useUnifiedStrategies } from '@/hooks/useUnifiedStrategies';
 import { useWebSocketContext } from '@/services/websocket-proxy/contexts/WebSocketContext';
 import webSocketManager from '@/services/websocket-proxy/WebSocketManager';
@@ -160,6 +161,13 @@ const DashboardContent = () => {
     const { strategies: activatedStrategies } = useUnifiedStrategies();
     const multiAccountTrading = useMultiAccountTrading(dashboardData.accounts, activatedStrategies);
     const { positions: aggregatedPositions, orders: aggregatedOrders } = useAggregatedPositions(dashboardData.accounts, wsGetConnectionState);
+
+    // Bracket placement hook
+    const bracketPlacement = useBracketPlacement({
+        chartSymbol,
+        chartCurrentPrice,
+        multiAccountTrading,
+    });
 
     // Skip confirmation preference (persisted in localStorage)
     const [skipOrderConfirmation, setSkipOrderConfirmation] = useState(
@@ -504,6 +512,7 @@ const DashboardContent = () => {
                                             activeChart={activeChart}
                                             positionLines={chartTrading.positionLines}
                                             orderLines={chartTrading.orderLines}
+                                            bracketPlacement={bracketPlacement}
                                         />
                                     </Box>
 
@@ -516,6 +525,7 @@ const DashboardContent = () => {
                                                     multiAccountTrading={multiAccountTrading}
                                                     positions={aggregatedPositions}
                                                     orders={aggregatedOrders}
+                                                    bracketPlacement={bracketPlacement}
                                                 />
                                             </Suspense>
                                         </ErrorBoundary>

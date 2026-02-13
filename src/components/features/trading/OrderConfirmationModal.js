@@ -54,6 +54,12 @@ const ACTION_CONFIG = {
     confirmLabel: 'Add Brackets',
     confirmColor: 'green',
   },
+  bracketPlace: {
+    label: 'Place Bracket Order',
+    badgeColor: 'purple',
+    confirmLabel: 'Place Bracket',
+    confirmColor: 'purple',
+  },
 };
 
 function formatPrice(value) {
@@ -304,6 +310,43 @@ function BracketDetails({ details }) {
   );
 }
 
+function BracketPlaceDetails({ details }) {
+  if (!details) return null;
+  const { entryPrice, tpPrice, slPrice, accountCount } = details;
+  return (
+    <>
+      {entryPrice != null && (
+        <DetailRow label="Entry Price">
+          <Text fontSize="sm" color="purple.300" fontWeight="semibold">
+            {formatPrice(entryPrice)}
+          </Text>
+        </DetailRow>
+      )}
+      {tpPrice != null && (
+        <DetailRow label="Take Profit">
+          <Text fontSize="sm" color="green.300" fontWeight="semibold">
+            {formatPrice(tpPrice)}
+          </Text>
+        </DetailRow>
+      )}
+      {slPrice != null && (
+        <DetailRow label="Stop Loss">
+          <Text fontSize="sm" color="red.300" fontWeight="semibold">
+            {formatPrice(slPrice)}
+          </Text>
+        </DetailRow>
+      )}
+      {accountCount != null && (
+        <DetailRow label="Accounts">
+          <Text fontSize="sm" color="whiteAlpha.800">
+            {accountCount} account{accountCount !== 1 ? 's' : ''}
+          </Text>
+        </DetailRow>
+      )}
+    </>
+  );
+}
+
 const ACTION_DETAIL_COMPONENTS = {
   place: PlaceDetails,
   modify: ModifyDetails,
@@ -311,6 +354,7 @@ const ACTION_DETAIL_COMPONENTS = {
   close: CloseDetails,
   reverse: ReverseDetails,
   bracket: BracketDetails,
+  bracketPlace: BracketPlaceDetails,
 };
 
 function OrderConfirmationModal({

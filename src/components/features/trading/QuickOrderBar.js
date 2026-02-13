@@ -30,7 +30,7 @@ import axiosInstance from '@/services/axiosConfig';
  *   positions          - aggregated positions from useAggregatedPositions
  *   orders             - aggregated orders from useAggregatedPositions
  */
-const QuickOrderBar = ({ chartSymbol, multiAccountTrading, positions = [], orders = [] }) => {
+const QuickOrderBar = ({ chartSymbol, multiAccountTrading, positions = [], orders = [], bracketPlacement }) => {
   const toast = useToast();
   const [isFlattening, setIsFlattening] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
@@ -375,6 +375,24 @@ const QuickOrderBar = ({ chartSymbol, multiAccountTrading, positions = [], order
               />
             </NumberInput>
           )}
+
+          <Tooltip label={bracketPlacement?.isActive ? "Cancel bracket mode (Esc)" : "Place bracket order on chart"} fontSize="xs" hasArrow>
+            <Button
+              size="xs"
+              px={3}
+              bg={bracketPlacement?.isActive ? 'rgba(124, 58, 237, 0.8)' : 'transparent'}
+              color={bracketPlacement?.isActive ? 'white' : 'whiteAlpha.600'}
+              borderWidth="1px"
+              borderColor={bracketPlacement?.isActive ? 'purple.400' : 'whiteAlpha.200'}
+              fontWeight="medium"
+              fontSize="xs"
+              _hover={{ bg: bracketPlacement?.isActive ? 'rgba(124, 58, 237, 1)' : 'whiteAlpha.200', color: 'white' }}
+              _active={{ bg: 'rgba(124, 58, 237, 0.6)' }}
+              onClick={() => bracketPlacement?.isActive ? bracketPlacement.deactivate() : bracketPlacement?.activate()}
+            >
+              Bracket
+            </Button>
+          </Tooltip>
 
           <Tooltip label="Keyboard: B" fontSize="xs" hasArrow>
             <Button
