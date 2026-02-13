@@ -542,6 +542,8 @@ const DashboardContent = () => {
                                                     chartSymbol={chartSymbol}
                                                     isCollapsed={isTradingPanelCollapsed}
                                                     onToggleCollapse={() => setIsTradingPanelCollapsed(prev => !prev)}
+                                                    multiAccountTrading={multiAccountTrading}
+                                                    accounts={dashboardData.accounts}
                                                 />
                                             </Suspense>
                                         </ErrorBoundary>

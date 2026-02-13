@@ -20,13 +20,14 @@ import {
   IconButton,
   useToast,
 } from '@chakra-ui/react';
-import { Activity, Clock, FileText, MoreVertical, TrendingUp, TrendingDown, ChevronDown, ChevronUp } from 'lucide-react';
+import { Activity, Clock, FileText, MoreVertical, TrendingUp, TrendingDown, ChevronDown, ChevronUp, Users } from 'lucide-react';
 import HistoricalTradesView from './HistoricalTradesView';
+import AccountsTab from './AccountsTab';
 import axiosInstance from '@/services/axiosConfig';
 import { useWebSocketContext } from '@/services/websocket-proxy/contexts/WebSocketContext';
 
 /**
- * TradingPanel — bottom panel with 3 tabs: Positions, Orders, History
+ * TradingPanel — bottom panel with 4 tabs: Positions, Orders, History, Accounts
  *
  * Shows aggregated data from ALL accounts (both auto and manual).
  *
@@ -35,10 +36,10 @@ import { useWebSocketContext } from '@/services/websocket-proxy/contexts/WebSock
  *   orders         - aggregated orders from useAggregatedPositions
  *   chartSymbol    - current chart symbol for highlighting
  */
-const TradingPanel = ({ positions = [], orders = [], chartSymbol = '', isCollapsed = false, onToggleCollapse }) => {
+const TradingPanel = ({ positions = [], orders = [], chartSymbol = '', isCollapsed = false, onToggleCollapse, multiAccountTrading, accounts = [] }) => {
   const [activeTab, setActiveTab] = useState('positions');
   const toast = useToast();
-  const { sendMessage } = useWebSocketContext();
+  const { sendMessage, getConnectionState, getAccountData } = useWebSocketContext();
 
   // Filter to open positions only
   const openPositions = useMemo(
@@ -124,6 +125,7 @@ const TradingPanel = ({ positions = [], orders = [], chartSymbol = '', isCollaps
     { key: 'positions', label: 'Positions', icon: Activity, count: openPositions.length },
     { key: 'orders', label: 'Orders', icon: FileText, count: workingOrders.length },
     { key: 'history', label: 'History', icon: Clock },
+    { key: 'accounts', label: 'Accounts', icon: Users, count: accounts.length },
   ];
 
   return (
@@ -194,6 +196,18 @@ const TradingPanel = ({ positions = [], orders = [], chartSymbol = '', isCollaps
           />
         )}
         {activeTab === 'history' && <HistoricalTradesView />}
+        {activeTab === 'accounts' && multiAccountTrading && (
+          <AccountsTab
+            accounts={accounts}
+            accountConfigs={multiAccountTrading.accountConfigs}
+            getAccountMode={multiAccountTrading.getAccountMode}
+            getAccountStrategies={multiAccountTrading.getAccountStrategies}
+            toggleAccount={multiAccountTrading.toggleAccount}
+            setAccountQuantity={multiAccountTrading.setAccountQuantity}
+            getConnectionState={getConnectionState}
+            getAccountData={getAccountData}
+          />
+        )}
       </Box>}
     </Box>
   );
