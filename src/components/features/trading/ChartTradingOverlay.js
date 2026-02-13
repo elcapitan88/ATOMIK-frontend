@@ -80,8 +80,10 @@ const ChartTradingOverlay = memo(({
         const y = e.clientY - rect.top;
         const price = yToPrice(y);
         if (price != null && price > 0) {
-          console.log('[BracketOverlay] Click at y=%d, price=%d, currentPrice=%d', y, price, currentPrice);
-          bracketPlacement.placeEntry(price, currentPrice);
+          // Use currentPrice, or approximate market price from chart midpoint
+          const marketPrice = currentPrice ?? yToPrice(paneHeight / 2);
+          console.log('[BracketOverlay] Click at y=%d, price=%d, marketPrice=%d', y, price, marketPrice);
+          bracketPlacement.placeEntry(price, marketPrice);
         }
       } : undefined}
       data-testid="chart-trading-overlay"
