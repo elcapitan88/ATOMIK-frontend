@@ -15,7 +15,7 @@ import {
   Tooltip,
   useToast,
 } from '@chakra-ui/react';
-import { ChevronDownIcon } from '@chakra-ui/icons';
+import { ChevronDown } from 'lucide-react';
 import axiosInstance from '@/services/axiosConfig';
 
 /**
@@ -258,7 +258,7 @@ const QuickOrderBar = ({ chartSymbol, multiAccountTrading, positions = [], order
               color="white"
               fontWeight="normal"
               w="100px"
-              rightIcon={<ChevronDownIcon />}
+              rightIcon={<ChevronDown size={12} />}
               _hover={{ bg: 'whiteAlpha.200' }}
               _active={{ bg: 'whiteAlpha.200' }}
             >
@@ -300,7 +300,7 @@ const QuickOrderBar = ({ chartSymbol, multiAccountTrading, positions = [], order
               color="white"
               fontWeight="normal"
               w="80px"
-              rightIcon={<ChevronDownIcon />}
+              rightIcon={<ChevronDown size={12} />}
               _hover={{ bg: 'whiteAlpha.200' }}
               _active={{ bg: 'whiteAlpha.200' }}
             >
