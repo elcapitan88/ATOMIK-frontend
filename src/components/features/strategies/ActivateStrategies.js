@@ -18,9 +18,11 @@ import {
   Text,
   useDisclosure,
   useToast,
-  Badge
+  Badge,
+  HStack,
+  Tooltip
 } from '@chakra-ui/react';
-import { MoreVertical, Settings, Trash2, SlidersHorizontal, Zap, Activity, Plus } from 'lucide-react';
+import { MoreVertical, Settings, Trash2, SlidersHorizontal, Zap, Activity, Plus, Users } from 'lucide-react';
 import ActivateStrategyModal from './ActivateStrategyModal';
 import DeleteStrategy from './DeleteStrategy';
 import { useUnifiedStrategies as useStrategies } from '@/hooks/useUnifiedStrategies';
@@ -323,45 +325,93 @@ const ActivateStrategies = () => {
                   Single Account Strategies ({groupedStrategies.single.length})
                 </Text>
                 <VStack align="stretch" spacing={1}>
-                  {groupedStrategies.single.map(strategy => (
-                    <Box 
+                  {groupedStrategies.single.map(strategy => {
+                    const strategyName = strategy.name || strategy.webhook?.name || 'Unnamed Strategy';
+                    const execType = strategy.execution_type === 'engine' ? 'engine' : 'webhook';
+                    return (
+                    <Box
                       key={strategy.id}
-                      bg="whiteAlpha.100" 
+                      bg="whiteAlpha.100"
                       borderRadius="lg"
-                      p={2}
+                      p={3}
+                      pl={4}
                       transition="all 0.3s"
                       _hover={{ bg: "whiteAlpha.200" }}
+                      position="relative"
+                      overflow="hidden"
                     >
+                      {/* Left accent bar — green if active, gray if not */}
+                      <Box
+                        position="absolute"
+                        left={0}
+                        top={0}
+                        bottom={0}
+                        w="3px"
+                        bg={strategy.is_active ? 'green.400' : 'whiteAlpha.300'}
+                        transition="background 0.3s"
+                      />
+
                       <Flex justifyContent="space-between" alignItems="center" gap={2}>
-                        <Flex flex={1} flexDirection="column" gap={1}>
-                          <Flex alignItems="center" gap={2}>
-                            <Text fontWeight="bold">
-                              {strategy.ticker || 'Unknown Ticker'}
+                        <Flex flex={1} flexDirection="column" gap={1.5} minW={0}>
+                          {/* Row 1: Ticker + Strategy Name (truncated) + Type badge */}
+                          <HStack spacing={2} minW={0}>
+                            <Text fontWeight="bold" fontSize="sm" flexShrink={0}>
+                              {strategy.ticker || 'N/A'}
                             </Text>
-                            <Text fontSize="xs" color="whiteAlpha.700">
-                              {strategy.name || strategy.webhook?.name || 'Unnamed Strategy'}
+                            <Tooltip label={strategyName} placement="top" hasArrow openDelay={500}>
+                              <Text
+                                fontSize="xs"
+                                color="whiteAlpha.600"
+                                isTruncated
+                                flex={1}
+                                minW={0}
+                              >
+                                {strategyName}
+                              </Text>
+                            </Tooltip>
+                            <Badge
+                              fontSize="9px"
+                              px={1.5}
+                              py={0.5}
+                              borderRadius="md"
+                              bg={execType === 'engine' ? 'purple.900' : 'whiteAlpha.100'}
+                              color={execType === 'engine' ? 'purple.200' : 'whiteAlpha.500'}
+                              fontWeight="medium"
+                              textTransform="lowercase"
+                              flexShrink={0}
+                            >
+                              {execType}
+                            </Badge>
+                          </HStack>
+
+                          {/* Row 2: Account + Broker badge + Qty — separate elements */}
+                          <HStack spacing={2} fontSize="xs">
+                            <Text color="whiteAlpha.500" flexShrink={0}>
+                              {String(strategy.broker_account?.account_id || 'N/A')}
                             </Text>
-                            <Text fontSize="xs" color="whiteAlpha.500">
-                              ({strategy.execution_type === 'engine' ? 'engine' : strategy.webhook?.source_type?.toLowerCase() || 'webhook'})
-                            </Text>
-                          </Flex>
-                          <Text fontSize="xs" color="whiteAlpha.700">
-                            Account: {String(strategy.broker_account?.account_id || 'N/A')} 
-                            <Badge ml={1} colorScheme={getBrokerInfo(strategy.broker_account?.broker_id).color} size="sm">
+                            <Badge
+                              colorScheme={getBrokerInfo(strategy.broker_account?.broker_id).color}
+                              fontSize="9px"
+                              px={1.5}
+                              borderRadius="sm"
+                            >
                               {getBrokerInfo(strategy.broker_account?.broker_id).name}
-                            </Badge> • 
-                            Qty: {strategy.quantity || 0}
-                          </Text>
+                            </Badge>
+                            <Text color="whiteAlpha.400">|</Text>
+                            <Text color="whiteAlpha.600" fontWeight="medium">
+                              Qty: {strategy.quantity || 0}
+                            </Text>
+                          </HStack>
                         </Flex>
-  
-                        <Flex gap={0.5} alignItems="center">
+
+                        {/* Right side: Toggle + Menu */}
+                        <HStack spacing={1} flexShrink={0}>
                           <Switch
                             colorScheme="green"
                             isChecked={strategy.is_active}
                             onChange={() => handleToggleStrategy(strategy.id)}
                             isDisabled={isToggling}
                             size="sm"
-                            mx={1}
                           />
                           <Menu>
                             <MenuButton
@@ -373,11 +423,11 @@ const ActivateStrategies = () => {
                               _active={{ bg: 'transparent' }}
                               _expanded={{ bg: 'transparent' }}
                             />
-                            <MenuList 
-                              bg="rgba(255, 255, 255, 0.1)"
-                              backdropFilter="blur(10px)"
-                              borderColor="rgba(255, 255, 255, 0.18)"
-                              boxShadow="0 8px 32px 0 rgba(0, 198, 224, 0.37)"
+                            <MenuList
+                              bg="rgba(0, 0, 0, 0.85)"
+                              backdropFilter="blur(20px)"
+                              borderColor="rgba(255, 255, 255, 0.1)"
+                              boxShadow="0 4px 20px rgba(0, 0, 0, 0.4)"
                               borderRadius="xl"
                             >
                               <MenuItem
@@ -400,10 +450,11 @@ const ActivateStrategies = () => {
                               </MenuItem>
                             </MenuList>
                           </Menu>
-                        </Flex>
+                        </HStack>
                       </Flex>
                     </Box>
-                  ))}
+                    );
+                  })}
                 </VStack>
               </Box>
             )}
@@ -418,46 +469,99 @@ const ActivateStrategies = () => {
                   Group Strategies ({groupedStrategies.group.length})
                 </Text>
                 <VStack align="stretch" spacing={1}>
-                  {groupedStrategies.group.map(strategy => (
-                    <Box 
+                  {groupedStrategies.group.map(strategy => {
+                    const strategyName = strategy.name || strategy.webhook?.name || 'Unnamed Strategy';
+                    const execType = strategy.execution_type === 'engine' ? 'engine' : 'webhook';
+                    const followerCount = strategy.follower_accounts?.length || 0;
+                    return (
+                    <Box
                       key={strategy.id}
-                      bg="whiteAlpha.100" 
+                      bg="whiteAlpha.100"
                       borderRadius="lg"
-                      p={2}
+                      p={3}
+                      pl={4}
                       transition="all 0.3s"
                       _hover={{ bg: "whiteAlpha.200" }}
+                      position="relative"
+                      overflow="hidden"
                     >
+                      {/* Left accent bar — green if active, gray if not */}
+                      <Box
+                        position="absolute"
+                        left={0}
+                        top={0}
+                        bottom={0}
+                        w="3px"
+                        bg={strategy.is_active ? 'green.400' : 'whiteAlpha.300'}
+                        transition="background 0.3s"
+                      />
+
                       <Flex justifyContent="space-between" alignItems="center" gap={2}>
-                        <Flex flex={1} flexDirection="column" gap={1}>
-                          <Flex alignItems="center" gap={2}>
-                            <Text fontWeight="bold">
+                        <Flex flex={1} flexDirection="column" gap={1.5} minW={0}>
+                          {/* Row 1: Group name + Strategy Name (truncated) + Type badge */}
+                          <HStack spacing={2} minW={0}>
+                            <Text fontWeight="bold" fontSize="sm" flexShrink={0}>
                               {strategy.group_name || 'Unnamed Group'}
                             </Text>
-                            <Text fontSize="xs" color="whiteAlpha.700">
-                              {strategy.name || strategy.webhook?.name || 'Unnamed Strategy'}
+                            <Tooltip label={strategyName} placement="top" hasArrow openDelay={500}>
+                              <Text
+                                fontSize="xs"
+                                color="whiteAlpha.600"
+                                isTruncated
+                                flex={1}
+                                minW={0}
+                              >
+                                {strategyName}
+                              </Text>
+                            </Tooltip>
+                            <Badge
+                              fontSize="9px"
+                              px={1.5}
+                              py={0.5}
+                              borderRadius="md"
+                              bg={execType === 'engine' ? 'purple.900' : 'whiteAlpha.100'}
+                              color={execType === 'engine' ? 'purple.200' : 'whiteAlpha.500'}
+                              fontWeight="medium"
+                              textTransform="lowercase"
+                              flexShrink={0}
+                            >
+                              {execType}
+                            </Badge>
+                          </HStack>
+
+                          {/* Row 2: Ticker + Leader account + Broker badge + Followers */}
+                          <HStack spacing={2} fontSize="xs">
+                            <Text color="whiteAlpha.600" fontWeight="medium" flexShrink={0}>
+                              {strategy.ticker || 'N/A'}
                             </Text>
-                            <Text fontSize="xs" color="whiteAlpha.500">
-                              ({strategy.execution_type === 'engine' ? 'engine' : strategy.webhook?.source_type?.toLowerCase() || 'webhook'})
+                            <Text color="whiteAlpha.400">|</Text>
+                            <Text color="whiteAlpha.500" flexShrink={0}>
+                              {String(strategy.leader_broker_account?.account_id || 'N/A')}
                             </Text>
-                          </Flex>
-                          <Text fontSize="xs" color="whiteAlpha.700">
-                            Leader: {String(strategy.leader_broker_account?.account_id || 'N/A')} 
-                            <Badge ml={1} colorScheme={getBrokerInfo(strategy.leader_broker_account?.broker_id).color} size="sm">
+                            <Badge
+                              colorScheme={getBrokerInfo(strategy.leader_broker_account?.broker_id).color}
+                              fontSize="9px"
+                              px={1.5}
+                              borderRadius="sm"
+                            >
                               {getBrokerInfo(strategy.leader_broker_account?.broker_id).name}
-                            </Badge> • 
-                            Followers: {strategy.follower_accounts?.length || 0} • 
-                            Ticker: {strategy.ticker || 'N/A'}
-                          </Text>
+                            </Badge>
+                            <Text color="whiteAlpha.400">|</Text>
+                            <HStack spacing={1} color="whiteAlpha.500">
+                              <Users size={11} />
+                              <Text>{followerCount}</Text>
+                            </HStack>
+                          </HStack>
                         </Flex>
-  
-                        <Flex gap={0.5} alignItems="center">
+
+                        {/* Right side: Toggle + Menu */}
+                        <HStack spacing={1} flexShrink={0}>
                           <Switch
                             colorScheme="green"
                             isChecked={strategy.is_active}
                             onChange={() => handleToggleStrategy(strategy.id)}
                             isDisabled={isToggling}
                             size="sm"
-                            mx={1}
                           />
                           <Menu>
                             <MenuButton
@@ -469,11 +573,11 @@ const ActivateStrategies = () => {
                               _active={{ bg: 'transparent' }}
                               _expanded={{ bg: 'transparent' }}
                             />
-                            <MenuList 
-                              bg="rgba(255, 255, 255, 0.1)"
-                              backdropFilter="blur(10px)"
-                              borderColor="rgba(255, 255, 255, 0.18)"
-                              boxShadow="0 8px 32px 0 rgba(0, 198, 224, 0.37)"
+                            <MenuList
+                              bg="rgba(0, 0, 0, 0.85)"
+                              backdropFilter="blur(20px)"
+                              borderColor="rgba(255, 255, 255, 0.1)"
+                              boxShadow="0 4px 20px rgba(0, 0, 0, 0.4)"
                               borderRadius="xl"
                             >
                               <MenuItem
@@ -496,10 +600,11 @@ const ActivateStrategies = () => {
                               </MenuItem>
                             </MenuList>
                           </Menu>
-                        </Flex>
+                        </HStack>
                       </Flex>
                     </Box>
-                  ))}
+                    );
+                  })}
                 </VStack>
               </Box>
             )}
