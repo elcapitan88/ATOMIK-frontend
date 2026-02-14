@@ -26,7 +26,7 @@ const ParticleBackground = () => {
 
     // Create particles with depth layers for 3D effect
     const createParticles = () => {
-      const numberOfParticles = Math.floor((canvas.width * canvas.height) / 20000);
+      const numberOfParticles = Math.floor((canvas.width * canvas.height) / 10000);
       particlesRef.current = [];
 
       for (let i = 0; i < numberOfParticles; i++) {
@@ -37,13 +37,13 @@ const ParticleBackground = () => {
           x: Math.random() * canvas.width,
           y: Math.random() * canvas.height,
           depth,
-          // Closer particles are larger (0.5 → 2.2)
-          radius: 0.5 + depth * 1.7,
+          // Closer particles are larger (0.6 → 2.8)
+          radius: 0.6 + depth * 2.2,
           // Closer particles move faster (parallax)
           speedX: (Math.random() * 0.5 - 0.25) * (0.3 + depth * 0.7),
           speedY: (Math.random() * 0.5 - 0.25) * (0.3 + depth * 0.7),
-          // Closer particles are brighter (0.04 → 0.14)
-          opacity: 0.04 + depth * 0.10,
+          // Closer particles are brighter (0.10 → 0.30)
+          opacity: 0.10 + depth * 0.20,
         });
       }
     };
@@ -84,12 +84,12 @@ const ParticleBackground = () => {
 
           // Connection range scales with average depth (closer = longer reach)
           const avgDepth = (particle.depth + other.depth) / 2;
-          const maxDist = 60 + avgDepth * 80;
+          const maxDist = 70 + avgDepth * 90;
 
           if (distance < maxDist) {
-            const lineOpacity = (1 - distance / maxDist) * (0.06 + avgDepth * 0.12);
+            const lineOpacity = (1 - distance / maxDist) * (0.10 + avgDepth * 0.18);
             ctx.strokeStyle = `rgba(0, 198, 224, ${lineOpacity})`;
-            ctx.lineWidth = 0.3 + avgDepth * 0.7;
+            ctx.lineWidth = 0.4 + avgDepth * 0.8;
             ctx.beginPath();
             ctx.moveTo(particle.x, particle.y);
             ctx.lineTo(other.x, other.y);
