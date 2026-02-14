@@ -14,6 +14,7 @@ import { Plus } from 'lucide-react';
 
 import accountManager from '@/services/account/AccountManager';
 import { useWebSocketContext } from '@/services/websocket-proxy/contexts/WebSocketContext';
+import webSocketManager from '@/services/websocket-proxy/WebSocketManager';
 import ibStatusService from '@/services/brokers/interactivebrokers/IBStatusService';
 import axiosInstance from '@/services/axiosConfig';
 import logger from '@/utils/logger';
@@ -138,6 +139,19 @@ const TradingAccountsPanel = ({ multiAccountTrading, aggregatedPositions = [], s
       );
     });
     return () => sub.unsubscribe();
+  }, []);
+
+  // ─── Account Data Updates (balance, P&L) ────────────────────────
+  // Force re-render when WebSocket pushes account/cash balance updates
+  const [, setAccountDataTick] = useState(0);
+  useEffect(() => {
+    const handler = () => setAccountDataTick((t) => t + 1);
+    webSocketManager.on('accountUpdate', handler);
+    webSocketManager.on('userDataSynced', handler);
+    return () => {
+      webSocketManager.removeListener('accountUpdate', handler);
+      webSocketManager.removeListener('userDataSynced', handler);
+    };
   }, []);
 
   // ─── WebSocket Auto-Connect ───────────────────────────────────────

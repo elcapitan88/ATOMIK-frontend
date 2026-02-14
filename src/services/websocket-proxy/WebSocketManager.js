@@ -704,6 +704,12 @@ class WebSocketManager extends EventEmitter {
         this.updateMarketData(brokerId, accountId, message.data);
       } else if (message.type === 'account_update' && message.data) {
         this.updateAccountData(brokerId, accountId, message.data);
+      } else if (message.type === 'cash_balance_update') {
+        // Cash balance update from broker — merge into account data
+        this.updateAccountData(brokerId, accountId, {
+          balance: message.amount || 0,
+          cashBalanceTimestamp: message.timestamp,
+        });
       } else if (message.type === 'position_update' && message.data) {
         if (envConfig.debugConfig.websocket.enabled) {
           console.log('[WebSocketManager] Processing position_update message:', message.data);
@@ -1335,6 +1341,19 @@ class WebSocketManager extends EventEmitter {
       console.log('[WebSocketManager] Processing accounts:', data.accounts.length);
       data.accounts.forEach(account => {
         this.updateAccountData(brokerId, accountId, account);
+      });
+    }
+
+    // Process cash balances — merge into account data so balance is available immediately
+    if (data.cash_balances && Array.isArray(data.cash_balances)) {
+      console.log('[WebSocketManager] Processing cash balances:', data.cash_balances.length);
+      data.cash_balances.forEach(cb => {
+        if (cb.accountId) {
+          this.updateAccountData(brokerId, accountId, {
+            balance: cb.amount || 0,
+            cashBalanceTimestamp: cb.timestamp,
+          });
+        }
       });
     }
     
