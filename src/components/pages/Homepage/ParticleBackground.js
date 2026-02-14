@@ -37,13 +37,13 @@ const ParticleBackground = () => {
           x: Math.random() * canvas.width,
           y: Math.random() * canvas.height,
           depth,
-          // Closer particles are larger (0.3 → 2.0)
-          radius: 0.3 + depth * 1.7,
+          // Closer particles are larger (0.5 → 2.2)
+          radius: 0.5 + depth * 1.7,
           // Closer particles move faster (parallax)
-          speedX: (Math.random() * 0.5 - 0.25) * (0.2 + depth * 0.8),
-          speedY: (Math.random() * 0.5 - 0.25) * (0.2 + depth * 0.8),
-          // Closer particles are brighter
-          opacity: 0.02 + depth * 0.06,
+          speedX: (Math.random() * 0.5 - 0.25) * (0.3 + depth * 0.7),
+          speedY: (Math.random() * 0.5 - 0.25) * (0.3 + depth * 0.7),
+          // Closer particles are brighter (0.04 → 0.14)
+          opacity: 0.04 + depth * 0.10,
         });
       }
     };
@@ -87,7 +87,7 @@ const ParticleBackground = () => {
           const maxDist = 60 + avgDepth * 80;
 
           if (distance < maxDist) {
-            const lineOpacity = (1 - distance / maxDist) * (0.03 + avgDepth * 0.08);
+            const lineOpacity = (1 - distance / maxDist) * (0.06 + avgDepth * 0.12);
             ctx.strokeStyle = `rgba(0, 198, 224, ${lineOpacity})`;
             ctx.lineWidth = 0.3 + avgDepth * 0.7;
             ctx.beginPath();
