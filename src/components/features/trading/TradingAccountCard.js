@@ -5,6 +5,7 @@ import {
   HStack,
   VStack,
   Text,
+  Badge,
   NumberInput,
   NumberInputField,
   NumberInputStepper,
@@ -19,11 +20,32 @@ import {
 import { MoreVertical, Edit, Trash2, Power, RefreshCw } from 'lucide-react';
 import AccountStatusIndicator from '@/components/common/AccountStatusIndicator';
 
+const formatBrokerName = (brokerId) => {
+  const names = {
+    tradovate: 'Tradovate',
+    interactivebrokers: 'IBKR',
+    binance: 'Binance',
+    polymarket: 'Polymarket',
+  };
+  return names[brokerId] || brokerId;
+};
+
+const formatCurrency = (value) =>
+  (value || 0).toLocaleString(undefined, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+
+const pnlColor = (value) => ((value || 0) >= 0 ? 'green.400' : 'red.400');
+const pnlPrefix = (value) => ((value || 0) >= 0 ? '+$' : '-$');
+const pnlDisplay = (value) => `${pnlPrefix(value)}${formatCurrency(Math.abs(value || 0))}`;
+
 /**
  * Compact account card that adapts to MANUAL or AUTO mode.
  *
- * MANUAL: click card to activate, qty input (cyan accent)
- * AUTO: strategy name + live position/P&L (purple accent, read-only)
+ * Row 1: Status + Name + Broker + Mode badge + Actions
+ * Row 2: Balance | Open P&L | Day P&L (always visible)
+ * Row 3: Mode-specific (MANUAL: qty + status, AUTO: strategy + positions)
  */
 const TradingAccountCard = ({
   account,
@@ -48,6 +70,8 @@ const TradingAccountCard = ({
 
   // Real-time or fallback values
   const balance = realtimeData?.balance ?? account.balance ?? 0;
+  const openPnL = realtimeData?.openPnL ?? account.openPnL ?? 0;
+  const dayPnL = realtimeData?.realizedPnL ?? account.realizedPnL ?? 0;
 
   // For AUTO mode: show first strategy name + position summary
   const primaryStrategy = strategies?.[0];
@@ -70,7 +94,7 @@ const TradingAccountCard = ({
     : 'rgba(255, 255, 255, 0.02)';
 
   const accentStripeColor = isAuto
-    ? isActive // shouldn't happen, but guard
+    ? isActive
       ? 'rgba(159, 122, 234, 0.8)'
       : hasActiveStrategy
       ? 'rgba(159, 122, 234, 0.6)'
@@ -136,45 +160,88 @@ const TradingAccountCard = ({
         transition="all 0.2s ease"
       />
 
-      {/* Row 1: Status + Name + Broker + Actions */}
-      <Flex align="center" justify="space-between" mb={isAuto ? 1 : 2}>
+      {/* Row 1: Status + Name + Broker + Mode badge + Actions */}
+      <Flex align="center" justify="space-between" mb={2}>
         <HStack spacing={2} flex="1" minW={0}>
           <AccountStatusIndicator
             tokenValid={!account.is_token_expired}
             wsStatus={connectionStatus}
             account={account}
           />
-          <VStack spacing={0} align="flex-start" minW={0}>
-            <Text fontWeight="bold" fontSize="sm" lineHeight="1.2" noOfLines={1}>
-              {account.nickname || account.name || account.account_id}
-            </Text>
-            <HStack spacing={1}>
-              <Text fontSize="xs" color="whiteAlpha.600" lineHeight="1.2">
-                {account.broker_id}
-              </Text>
-              <Text fontSize="xs" color="whiteAlpha.400">
-                &bull;
-              </Text>
-              <Text fontSize="xs" color="whiteAlpha.600" lineHeight="1.2">
-                ${balance.toLocaleString(undefined, { maximumFractionDigits: 0 })}
-              </Text>
-            </HStack>
-          </VStack>
+          <Text fontWeight="bold" fontSize="sm" lineHeight="1.2" noOfLines={1}>
+            {account.nickname || account.name || account.account_id}
+          </Text>
+          <Text fontSize="xs" color="whiteAlpha.500" flexShrink={0}>
+            {formatBrokerName(account.broker_id)}
+          </Text>
+          <Badge
+            fontSize="8px"
+            px={1.5}
+            py={0.5}
+            borderRadius="sm"
+            variant="subtle"
+            colorScheme={isAuto ? 'purple' : 'cyan'}
+            textTransform="uppercase"
+            letterSpacing="wider"
+            flexShrink={0}
+          >
+            {isAuto ? 'AUTO' : 'MANUAL'}
+          </Badge>
         </HStack>
 
-        <HStack spacing={1}>
-          <AccountOptionsMenu
-            account={account}
-            isIB={isIB}
-            onEditName={onEditName}
-            onDelete={onDelete}
-            onPowerToggle={onPowerToggle}
-            onRestart={onRestart}
-          />
-        </HStack>
+        <AccountOptionsMenu
+          account={account}
+          isIB={isIB}
+          onEditName={onEditName}
+          onDelete={onDelete}
+          onPowerToggle={onPowerToggle}
+          onRestart={onRestart}
+        />
       </Flex>
 
-      {/* Row 2: Mode-specific content */}
+      {/* Row 2: Financial metrics — always visible */}
+      <Flex
+        justify="space-between"
+        align="center"
+        mb={2}
+        py={1.5}
+        px={2}
+        bg="whiteAlpha.50"
+        borderRadius="md"
+      >
+        <VStack spacing={0} align="center" flex="1">
+          <Text fontSize="9px" color="whiteAlpha.500" textTransform="uppercase" letterSpacing="wider">
+            Balance
+          </Text>
+          <Text fontSize="xs" fontWeight="semibold" color="white">
+            ${formatCurrency(balance)}
+          </Text>
+        </VStack>
+
+        <Box w="1px" h="24px" bg="whiteAlpha.100" />
+
+        <VStack spacing={0} align="center" flex="1">
+          <Text fontSize="9px" color="whiteAlpha.500" textTransform="uppercase" letterSpacing="wider">
+            Open P&L
+          </Text>
+          <Text fontSize="xs" fontWeight="semibold" color={pnlColor(openPnL)}>
+            {pnlDisplay(openPnL)}
+          </Text>
+        </VStack>
+
+        <Box w="1px" h="24px" bg="whiteAlpha.100" />
+
+        <VStack spacing={0} align="center" flex="1">
+          <Text fontSize="9px" color="whiteAlpha.500" textTransform="uppercase" letterSpacing="wider">
+            Day P&L
+          </Text>
+          <Text fontSize="xs" fontWeight="semibold" color={pnlColor(dayPnL)}>
+            {pnlDisplay(dayPnL)}
+          </Text>
+        </VStack>
+      </Flex>
+
+      {/* Row 3: Mode-specific content */}
       {isAuto ? (
         <AutoModeContent
           strategies={strategies}
@@ -193,7 +260,7 @@ const TradingAccountCard = ({
   );
 };
 
-/** MANUAL mode: qty input (no toggle — card click handles activation) */
+/** MANUAL mode: qty input + active/idle status */
 const ManualModeContent = memo(({ isActive, quantity, onQuantityChange, accountId }) => (
   <Flex align="center" justify="space-between">
     <HStack spacing={2} onClick={(e) => e.stopPropagation()}>
@@ -226,14 +293,20 @@ const ManualModeContent = memo(({ isActive, quantity, onQuantityChange, accountI
       </NumberInput>
     </HStack>
 
-    <Text
-      fontSize="xs"
-      fontWeight="medium"
+    <Badge
+      fontSize="10px"
+      px={2}
+      py={0.5}
+      borderRadius="full"
+      variant={isActive ? 'solid' : 'outline'}
+      bg={isActive ? 'rgba(0, 198, 224, 0.15)' : 'transparent'}
       color={isActive ? 'cyan.300' : 'whiteAlpha.400'}
+      borderColor={isActive ? 'rgba(0, 198, 224, 0.3)' : 'whiteAlpha.200'}
+      borderWidth="1px"
       letterSpacing="wide"
     >
       {isActive ? 'ACTIVE' : 'IDLE'}
-    </Text>
+    </Badge>
   </Flex>
 ));
 ManualModeContent.displayName = 'ManualModeContent';
