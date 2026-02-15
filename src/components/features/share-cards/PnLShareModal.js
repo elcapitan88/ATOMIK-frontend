@@ -28,9 +28,11 @@ import {
   Smartphone,
   Eye,
   EyeOff,
+  Maximize2,
 } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import PnLShareCard from './PnLShareCard';
+import PnLFullScreenView from './PnLFullScreenView';
 import useShareCard from '@/hooks/useShareCard';
 
 const PERIODS = [
@@ -68,6 +70,7 @@ const PnLShareModal = ({ isOpen, onClose }) => {
   const [selectedPeriod, setSelectedPeriod] = useState(1);
   const [privacyMode, setPrivacyMode] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  const [showFullScreen, setShowFullScreen] = useState(false);
 
   // Fetch data when modal opens or period changes
   useEffect(() => {
@@ -324,6 +327,20 @@ const PnLShareModal = ({ isOpen, onClose }) => {
 
             {/* Action Buttons */}
             <HStack spacing={3} w="full" justify="center" pt={1}>
+              <Tooltip label="Immersive fullscreen with live particles" placement="top" hasArrow>
+                <Button
+                  leftIcon={<Maximize2 size={16} />}
+                  variant="outline"
+                  borderColor="cyan.700"
+                  color="#00C6E0"
+                  _hover={{ bg: 'rgba(0, 198, 224, 0.1)', borderColor: '#00C6E0' }}
+                  onClick={() => setShowFullScreen(true)}
+                  isDisabled={!cardData || isLoading}
+                  size="md"
+                >
+                  View
+                </Button>
+              </Tooltip>
               <Button
                 leftIcon={<Download size={16} />}
                 bg="#00C6E0"
@@ -365,6 +382,15 @@ const PnLShareModal = ({ isOpen, onClose }) => {
           </VStack>
         </ModalBody>
       </ModalContent>
+
+      {/* Fullscreen View with live particle background */}
+      <PnLFullScreenView
+        isOpen={showFullScreen}
+        onClose={() => setShowFullScreen(false)}
+        cardData={cardData}
+        format={selectedFormat}
+        privacyMode={privacyMode}
+      />
     </Modal>
   );
 };

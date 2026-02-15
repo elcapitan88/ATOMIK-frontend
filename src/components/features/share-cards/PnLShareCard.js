@@ -90,7 +90,7 @@ const StatBlock = ({ label, value, color = '#FFFFFF', fontSize, labelSize }) => 
   </div>
 );
 
-const PnLShareCard = forwardRef(({ data, format = 'square', privacyMode = false }, ref) => {
+const PnLShareCard = forwardRef(({ data, format = 'square', privacyMode = false, transparentBg = false }, ref) => {
   const cfg = FORMAT_CONFIG[format];
   if (!data || !cfg) return null;
 
@@ -129,17 +129,23 @@ const PnLShareCard = forwardRef(({ data, format = 'square', privacyMode = false 
     overflow: 'hidden',
     fontFamily: "'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif",
     color: '#FFFFFF',
-    backgroundImage: `url(${cfg.bgImage})`,
-    backgroundSize: 'cover',
-    backgroundPosition: 'center',
+    ...(transparentBg
+      ? { backgroundColor: 'transparent' }
+      : {
+          backgroundImage: `url(${cfg.bgImage})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+        }),
   };
+
+  const overlayBg = transparentBg ? 'rgba(0, 0, 0, 0.2)' : 'rgba(0, 0, 0, 0.4)';
 
   // Landscape uses side-by-side layout
   if (format === 'landscape') {
     return (
       <div ref={ref} style={containerStyle}>
         {/* Dark overlay for text readability */}
-        <div style={{ position: 'absolute', inset: 0, background: 'rgba(0, 0, 0, 0.4)' }} />
+        <div style={{ position: 'absolute', inset: 0, background: overlayBg }} />
 
         <div
           style={{
@@ -323,7 +329,7 @@ const PnLShareCard = forwardRef(({ data, format = 'square', privacyMode = false 
   return (
     <div ref={ref} style={containerStyle}>
       {/* Dark overlay */}
-      <div style={{ position: 'absolute', inset: 0, background: 'rgba(0, 0, 0, 0.4)' }} />
+      <div style={{ position: 'absolute', inset: 0, background: overlayBg }} />
 
       <div
         style={{
