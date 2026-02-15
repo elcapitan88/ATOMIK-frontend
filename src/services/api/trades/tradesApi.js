@@ -129,6 +129,21 @@ export class TradesApi {
       throw new Error('Failed to fetch trade strategies');
     }
   }
+
+  /**
+   * Get share card data for PnL visualization
+   * @param {number} days_back - Period: 1=daily, 7=weekly, 30=monthly
+   * @returns {Promise<Object>} Share card data object
+   */
+  static async getShareCardData(days_back = 1) {
+    try {
+      const response = await axiosInstance.get(`/api/v1/trades/share-card/data?days_back=${days_back}`);
+      return response.data;
+    } catch (error) {
+      logger.error('Error fetching share card data:', error);
+      throw new Error('Failed to fetch share card data');
+    }
+  }
 }
 
 // Export individual functions for convenience
@@ -139,7 +154,8 @@ export const {
   closeTrade,
   getPerformanceSummary,
   getTradedSymbols,
-  getTradeStrategies
+  getTradeStrategies,
+  getShareCardData
 } = TradesApi;
 
 export default TradesApi;

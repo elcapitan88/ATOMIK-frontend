@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback, memo } from 'react';
+import React, { useState, useMemo, useCallback, memo, Suspense, lazy } from 'react';
 import {
   Box,
   Flex,
@@ -19,12 +19,16 @@ import {
   MenuItem,
   IconButton,
   useToast,
+  useDisclosure,
+  Tooltip,
 } from '@chakra-ui/react';
-import { Activity, Clock, FileText, MoreVertical, TrendingUp, TrendingDown, ChevronDown, ChevronUp, Users } from 'lucide-react';
+import { Activity, Clock, FileText, MoreVertical, TrendingUp, TrendingDown, ChevronDown, ChevronUp, Users, Share2 } from 'lucide-react';
 import HistoricalTradesView from './HistoricalTradesView';
 import AccountsTab from './AccountsTab';
 import axiosInstance from '@/services/axiosConfig';
 import { useWebSocketContext } from '@/services/websocket-proxy/contexts/WebSocketContext';
+
+const PnLShareModal = lazy(() => import('../share-cards/PnLShareModal'));
 
 /**
  * TradingPanel — bottom panel with 4 tabs: Positions, Orders, History, Accounts
@@ -40,6 +44,7 @@ const TradingPanel = ({ positions = [], orders = [], chartSymbol = '', isCollaps
   const [activeTab, setActiveTab] = useState('positions');
   const toast = useToast();
   const { sendMessage, getConnectionState, getAccountData } = useWebSocketContext();
+  const { isOpen: isShareOpen, onOpen: onShareOpen, onClose: onShareClose } = useDisclosure();
 
   // Filter to open positions only
   const openPositions = useMemo(
@@ -164,9 +169,20 @@ const TradingPanel = ({ positions = [], orders = [], chartSymbol = '', isCollaps
           ))}
         </ButtonGroup>
 
-        {onToggleCollapse && (
-          <>
-            <Box flex="1" />
+        <Box flex="1" />
+        <HStack spacing={1}>
+          <Tooltip label="Share P&L Card" placement="top" hasArrow>
+            <IconButton
+              icon={<Share2 size={14} />}
+              size="xs"
+              variant="ghost"
+              color="whiteAlpha.500"
+              _hover={{ color: 'cyan.400', bg: 'whiteAlpha.100' }}
+              onClick={onShareOpen}
+              aria-label="Share P&L"
+            />
+          </Tooltip>
+          {onToggleCollapse && (
             <IconButton
               icon={isCollapsed ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
               size="xs"
@@ -176,8 +192,8 @@ const TradingPanel = ({ positions = [], orders = [], chartSymbol = '', isCollaps
               onClick={onToggleCollapse}
               aria-label={isCollapsed ? 'Expand panel' : 'Collapse panel'}
             />
-          </>
-        )}
+          )}
+        </HStack>
       </Flex>
 
       {/* Tab Content — hidden when collapsed */}
@@ -209,6 +225,11 @@ const TradingPanel = ({ positions = [], orders = [], chartSymbol = '', isCollaps
           />
         )}
       </Box>}
+
+      {/* PnL Share Card Modal */}
+      <Suspense fallback={null}>
+        {isShareOpen && <PnLShareModal isOpen={isShareOpen} onClose={onShareClose} />}
+      </Suspense>
     </Box>
   );
 };
