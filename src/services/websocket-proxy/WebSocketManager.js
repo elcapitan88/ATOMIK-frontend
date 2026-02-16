@@ -711,6 +711,21 @@ class WebSocketManager extends EventEmitter {
           balance: message.amount || 0,
           cashBalanceTimestamp: message.timestamp,
         });
+      } else if (message.type === 'day_pnl_update') {
+        // Authoritative daily realized PnL from Tradovate's cashBalance snapshot
+        const realizedPnl = Number(message.realizedPnl || 0);
+        console.log('[WebSocketManager] day_pnl_update from server:', {
+          accountId: message.accountId,
+          realizedPnl,
+          snapshot: message.snapshot,
+        });
+        if (realizedPnl !== 0 || this.dataCache.dayPnL.has(`${brokerId}:${message.accountId}`)) {
+          const acctKey = `${brokerId}:${message.accountId}`;
+          this.dataCache.dayPnL.set(acctKey, realizedPnl);
+          this.updateAccountData(brokerId, message.accountId, { dayRealizedPnL: realizedPnl });
+          this._persistDayPnL();
+          console.log(`[WebSocketManager] Day PnL updated from server for ${acctKey}: $${realizedPnl.toFixed(2)}`);
+        }
       } else if (message.type === 'position_update' && message.data) {
         if (envConfig.debugConfig.websocket.enabled) {
           console.log('[WebSocketManager] Processing position_update message:', message.data);
