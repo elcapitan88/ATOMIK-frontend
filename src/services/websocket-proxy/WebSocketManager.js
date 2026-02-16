@@ -760,13 +760,25 @@ class WebSocketManager extends EventEmitter {
           if (transformed) {
             // For 'closed' events, remove position from cache instead of storing
             if (message.type_detail === 'closed' && (transformed.netPos === 0 || transformed.quantity === 0)) {
-              // Accumulate day PnL from raw position data (finalPnL is dropped by transform)
-              const finalPnL = Number(pos.finalPnL || pos.realizedPnL || pos.pnl || 0);
+              // Look up cached position BEFORE deleting — its unrealizedPnL is our best PnL source
+              // because Tradovate doesn't send realizedPnL in position WebSocket updates
+              const closeKey = `${brokerId}:${accountId}:${transformed.positionId || transformed.contractId || transformed.symbol}`;
+              const cachedPosition = this.dataCache.positions.get(closeKey);
+
+              // Accumulate day PnL: prefer proxy's finalPnL, fall back to cached unrealized PnL
+              const finalPnL = Number(
+                pos.finalPnL || pos.realizedPnL || pos.pnl ||
+                cachedPosition?.unrealizedPnL || transformed.unrealizedPnL || 0
+              );
+              console.log('[WebSocketManager] Position closed - Day PnL extraction:', {
+                finalPnL,
+                proxyFinalPnL: pos.finalPnL,
+                cachedUnrealizedPnL: cachedPosition?.unrealizedPnL,
+                transformedPnL: transformed.unrealizedPnL,
+              });
               if (finalPnL !== 0) {
                 this._accumulateDayPnL(brokerId, accountId, finalPnL);
               }
-
-              const closeKey = `${brokerId}:${accountId}:${transformed.positionId || transformed.contractId || transformed.symbol}`;
               console.log('[WebSocketManager] 🗑️ Removing closed position from cache:', closeKey);
               this.dataCache.positions.delete(closeKey);
               this.emit('positionClosed', { brokerId, accountId, position: transformed });
