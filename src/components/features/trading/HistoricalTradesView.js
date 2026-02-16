@@ -89,8 +89,7 @@ const HistoricalTradesView = () => {
     historicalTrades, 
     tradedSymbols, 
     tradeStrategies,
-    performanceData,
-    isLoading, 
+    isLoading,
     isRefreshing,
     error, 
     pagination,
@@ -193,41 +192,6 @@ const HistoricalTradesView = () => {
       direction: prevSort.key === key && prevSort.direction === 'desc' ? 'asc' : 'desc'
     }));
   };
-
-  // Calculate total PnL for today's trades
-  const todaysPnL = useMemo(() => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    
-    return filteredTrades
-      .filter(trade => new Date(trade.close_time) >= today)
-      .reduce((sum, trade) => sum + Number(trade.realized_pnl || 0), 0);
-  }, [filteredTrades]);
-
-  // Calculate stats - use performance data from API when available
-  const stats = useMemo(() => {
-    if (performanceData) {
-      return {
-        totalTrades: performanceData.total_trades,
-        winningTrades: performanceData.winning_trades,
-        losingTrades: performanceData.losing_trades,
-        totalPnL: performanceData.total_pnl,
-        winRate: performanceData.win_rate,
-        avgWin: performanceData.average_win,
-        avgLoss: performanceData.average_loss,
-        profitFactor: performanceData.profit_factor
-      };
-    }
-    
-    // Fallback to client-side calculation if no performance data
-    return {
-      totalTrades: filteredTrades.length,
-      winningTrades: filteredTrades.filter(t => Number(t.realized_pnl || 0) > 0).length,
-      losingTrades: filteredTrades.filter(t => Number(t.realized_pnl || 0) < 0).length,
-      totalPnL: filteredTrades.reduce((sum, trade) => sum + Number(trade.realized_pnl || 0), 0),
-      winRate: filteredTrades.length > 0 ? (filteredTrades.filter(t => Number(t.realized_pnl || 0) > 0).length / filteredTrades.length * 100) : 0
-    };
-  }, [filteredTrades]);
 
   return (
     <Box height="100%" overflow="hidden" display="flex" flexDirection="column">
@@ -575,10 +539,9 @@ const HistoricalTradesView = () => {
         )}
       </Box>
 
-      {/* Footer with Stats and Pagination */}
-      <VStack spacing={2} mt={2}>
-        {/* Stats Row */}
-        <Flex 
+      {/* Pagination */}
+      {pagination.total > pagination.per_page && (
+        <Flex
           w="100%"
           px={4}
           py={2}
@@ -586,87 +549,43 @@ const HistoricalTradesView = () => {
           borderColor="rgba(255, 255, 255, 0.1)"
           justifyContent="space-between"
           alignItems="center"
+          flexShrink={0}
         >
-          <HStack spacing={4} color="rgba(255, 255, 255, 0.6)" fontSize="sm">
-            <HStack>
-              <Text>Total Trades:</Text>
-              <Text color="white" fontWeight="medium">{stats.totalTrades}</Text>
-            </HStack>
-            <HStack>
-              <Text>Win/Loss:</Text>
-              <Text color="white" fontWeight="medium">
-                {stats.winningTrades}/{stats.losingTrades}
-              </Text>
-            </HStack>
-            {stats.winRate !== undefined && (
-              <HStack>
-                <Text>Win Rate:</Text>
-                <Text color="white" fontWeight="medium">
-                  {stats.winRate.toFixed(1)}%
-                </Text>
-              </HStack>
-            )}
-          </HStack>
-          
-          <HStack>
-            <Text fontSize="sm" color="rgba(255, 255, 255, 0.6)">Total P&L:</Text>
-            <Text 
-              fontSize="sm" 
-              fontWeight="bold"
-              color={stats.totalPnL >= 0 ? 'green.400' : 'red.400'}
+          <Text fontSize="sm" color="rgba(255, 255, 255, 0.6)">
+            Showing {((pagination.page - 1) * pagination.per_page) + 1} to{' '}
+            {Math.min(pagination.page * pagination.per_page, pagination.total)} of{' '}
+            {pagination.total} trades
+          </Text>
+
+          <HStack spacing={2}>
+            <Button
+              size="sm"
+              variant="ghost"
+              isDisabled={!pagination.has_prev}
+              onClick={() => loadPage(pagination.page - 1)}
+              color="white"
+              _hover={{ bg: 'rgba(255, 255, 255, 0.1)' }}
             >
-              {formatCurrency(stats.totalPnL)}
+              Previous
+            </Button>
+
+            <Text fontSize="sm" color="white" px={3}>
+              Page {pagination.page} of {Math.ceil(pagination.total / pagination.per_page)}
             </Text>
+
+            <Button
+              size="sm"
+              variant="ghost"
+              isDisabled={!pagination.has_next}
+              onClick={() => loadPage(pagination.page + 1)}
+              color="white"
+              _hover={{ bg: 'rgba(255, 255, 255, 0.1)' }}
+            >
+              Next
+            </Button>
           </HStack>
         </Flex>
-
-        {/* Pagination Row */}
-        {pagination.total > pagination.per_page && (
-          <Flex 
-            w="100%"
-            px={4}
-            py={2}
-            borderTop="1px solid"
-            borderColor="rgba(255, 255, 255, 0.1)"
-            justifyContent="space-between"
-            alignItems="center"
-          >
-            <Text fontSize="sm" color="rgba(255, 255, 255, 0.6)">
-              Showing {((pagination.page - 1) * pagination.per_page) + 1} to{' '}
-              {Math.min(pagination.page * pagination.per_page, pagination.total)} of{' '}
-              {pagination.total} trades
-            </Text>
-            
-            <HStack spacing={2}>
-              <Button
-                size="sm"
-                variant="ghost"
-                isDisabled={!pagination.has_prev}
-                onClick={() => loadPage(pagination.page - 1)}
-                color="white"
-                _hover={{ bg: 'rgba(255, 255, 255, 0.1)' }}
-              >
-                Previous
-              </Button>
-              
-              <Text fontSize="sm" color="white" px={3}>
-                Page {pagination.page} of {Math.ceil(pagination.total / pagination.per_page)}
-              </Text>
-              
-              <Button
-                size="sm"
-                variant="ghost"
-                isDisabled={!pagination.has_next}
-                onClick={() => loadPage(pagination.page + 1)}
-                color="white"
-                _hover={{ bg: 'rgba(255, 255, 255, 0.1)' }}
-              >
-                Next
-              </Button>
-            </HStack>
-          </Flex>
-        )}
-      </VStack>
+      )}
     </Box>
   );
 };

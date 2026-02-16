@@ -69,6 +69,26 @@ const TradingPanel = ({ positions = [], orders = [], chartSymbol = '', isCollaps
     [orders]
   );
 
+  // Compute totals across all accounts for the footer
+  const totals = useMemo(() => {
+    let totalBalance = 0;
+    let totalOpenPnL = 0;
+    let totalDayPnL = 0;
+    const openPnLMap = {};
+    (positions || []).forEach(p => {
+      const key = p._accountId || p.accountId;
+      if (key) openPnLMap[key] = (openPnLMap[key] || 0) + (p.unrealizedPnL || 0);
+    });
+    accounts.forEach(account => {
+      const accountId = String(account.account_id);
+      const rtData = getAccountData(account.broker_id, accountId);
+      totalBalance += rtData?.balance ?? account.balance ?? 0;
+      totalOpenPnL += openPnLMap[accountId] || 0;
+      totalDayPnL += rtData?.dayRealizedPnL ?? 0;
+    });
+    return { totalBalance, totalOpenPnL, totalDayPnL };
+  }, [accounts, positions, getAccountData]);
+
   // Close position handler
   const handleClosePosition = useCallback(
     async (pos) => {
@@ -226,6 +246,39 @@ const TradingPanel = ({ positions = [], orders = [], chartSymbol = '', isCollaps
           />
         )}
       </Box>}
+
+      {/* Pinned totals footer — visible on all tabs */}
+      {!isCollapsed && accounts.length > 0 && (
+        <HStack
+          px={4}
+          py={2}
+          borderTop="1px solid"
+          borderColor="whiteAlpha.200"
+          bg="whiteAlpha.50"
+          justify="center"
+          spacing={8}
+          flexShrink={0}
+        >
+          <HStack spacing={2}>
+            <Text fontSize="xs" color="whiteAlpha.500" fontWeight="semibold">Total Value</Text>
+            <Text fontSize="xs" fontWeight="bold" color="white">
+              ${totals.totalBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </Text>
+          </HStack>
+          <HStack spacing={2}>
+            <Text fontSize="xs" color="whiteAlpha.500" fontWeight="semibold">Open P&L</Text>
+            <Text fontSize="xs" fontWeight="bold" color={totals.totalOpenPnL >= 0 ? 'green.400' : 'red.400'}>
+              {totals.totalOpenPnL >= 0 ? '+' : ''}${totals.totalOpenPnL.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </Text>
+          </HStack>
+          <HStack spacing={2}>
+            <Text fontSize="xs" color="whiteAlpha.500" fontWeight="semibold">Day P&L</Text>
+            <Text fontSize="xs" fontWeight="bold" color={totals.totalDayPnL >= 0 ? 'green.400' : 'red.400'}>
+              {totals.totalDayPnL >= 0 ? '+' : ''}${totals.totalDayPnL.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </Text>
+          </HStack>
+        </HStack>
+      )}
 
       {/* PnL Share Card Modal */}
       <Suspense fallback={null}>
