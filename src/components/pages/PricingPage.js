@@ -120,6 +120,7 @@ const pricingData = {
       { text: "Group strategies", available: true },
       { text: "Webhook sharing", available: true },
       { text: "Subscribe to marketplace strategies", available: true },
+      { text: "Manual / Discretionary trading", available: true, bold: true },
       { text: "Copy trading", available: true },
       { text: "Trade history & analytics", available: true },
       { text: "Community support", available: true },
@@ -141,6 +142,7 @@ const pricingData = {
       { text: "10 active webhooks", available: true },
       { text: "10 active strategies", available: true },
       { text: "All Starter features", available: true },
+      { text: "Manual / Discretionary trading", available: true, bold: true },
       { text: "Copy trading", available: true },
       { text: "Sell strategies on marketplace", available: true },
       { text: "Advanced position management", available: true },
@@ -163,6 +165,7 @@ const pricingData = {
       { text: "Unlimited connected accounts", available: true },
       { text: "Unlimited webhooks & strategies", available: true },
       { text: "All Trader features", available: true },
+      { text: "Manual / Discretionary trading", available: true, bold: true },
       { text: "Copy trading", available: true },
       { text: "Advanced trade execution rules", available: true },
       { text: "Funded and Live Account Functionality", available: true },
@@ -352,6 +355,7 @@ const PriceCard = ({ tier, billingInterval, onClick, isPopular }) => {
                 <Text
                   fontSize="xs"
                   color={feature.available ? 'white' : 'whiteAlpha.500'}
+                  fontWeight={feature.bold ? 'bold' : 'normal'}
                 >
                   {feature.text}
                 </Text>
@@ -1040,7 +1044,7 @@ const PricingPage = () => {
         right="10%"
         width="40%"
         height="40%"
-        bgGradient="radial(circle, rgba(153,50,204,0.1) 0%, rgba(0,0,0,0) 70%)"
+        bgGradient="radial(circle, rgba(0,198,224,0.08) 0%, rgba(0,0,0,0) 70%)"
         filter="blur(60px)"
         zIndex={0}
       />
