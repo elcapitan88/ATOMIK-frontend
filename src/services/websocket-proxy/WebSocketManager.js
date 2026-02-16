@@ -37,7 +37,8 @@ class WebSocketManager extends EventEmitter {
       marketData: new Map(),
       accountData: new Map(),
       positions: new Map(),
-      orders: new Map()
+      orders: new Map(),
+      dayPnL: new Map()  // key: "brokerId:accountId", value: accumulated realized PnL for today
     };
     // Persistent contractId → symbol map, populated from user_data sync contracts
     this.contractSymbolMap = new Map();
@@ -761,6 +762,12 @@ class WebSocketManager extends EventEmitter {
           if (transformed) {
             // For 'closed' events, remove position from cache instead of storing
             if (message.type_detail === 'closed' && (transformed.netPos === 0 || transformed.quantity === 0)) {
+              // Accumulate day PnL from raw position data (finalPnL is dropped by transform)
+              const finalPnL = Number(pos.finalPnL || pos.realizedPnL || pos.pnl || 0);
+              if (finalPnL !== 0) {
+                this._accumulateDayPnL(brokerId, accountId, finalPnL);
+              }
+
               const closeKey = `${brokerId}:${accountId}:${transformed.positionId || transformed.contractId || transformed.symbol}`;
               console.log('[WebSocketManager] 🗑️ Removing closed position from cache:', closeKey);
               this.dataCache.positions.delete(closeKey);
@@ -1357,6 +1364,9 @@ class WebSocketManager extends EventEmitter {
       });
     }
     
+    // Restore persisted day PnL from localStorage (survives page refreshes)
+    this._restoreDayPnLForAccount(brokerId, accountId);
+
     // Process positions
     if (data.positions && Array.isArray(data.positions)) {
       console.log('[WebSocketManager] Processing positions:', data.positions.length);
@@ -1459,6 +1469,87 @@ class WebSocketManager extends EventEmitter {
     return positions;
   }
   
+  // ── Day PnL tracking ─────────────────────────────────────────────────
+
+  /**
+   * Get today's date as YYYY-MM-DD string (local time)
+   */
+  _getTradingDay() {
+    return new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD
+  }
+
+  /**
+   * Get the localStorage key for today's day PnL
+   */
+  _getDayPnLStorageKey() {
+    return `atomik:dayPnL:${this._getTradingDay()}`;
+  }
+
+  /**
+   * Persist the dayPnL Map to localStorage, keyed by today's date.
+   * Also cleans up stale entries from previous days.
+   */
+  _persistDayPnL() {
+    try {
+      const key = this._getDayPnLStorageKey();
+      const obj = {};
+      for (const [acctKey, value] of this.dataCache.dayPnL.entries()) {
+        obj[acctKey] = value;
+      }
+      localStorage.setItem(key, JSON.stringify(obj));
+
+      // Clean up old day PnL keys (keep only today)
+      const today = this._getTradingDay();
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && k.startsWith('atomik:dayPnL:') && k !== `atomik:dayPnL:${today}`) {
+          localStorage.removeItem(k);
+        }
+      }
+    } catch (e) {
+      console.warn('[WebSocketManager] Failed to persist dayPnL:', e);
+    }
+  }
+
+  /**
+   * Restore today's day PnL from localStorage for a specific account.
+   * Merges into accountData so it flows through getAccountData().
+   */
+  _restoreDayPnLForAccount(brokerId, accountId) {
+    try {
+      const stored = localStorage.getItem(this._getDayPnLStorageKey());
+      if (!stored) return;
+
+      const obj = JSON.parse(stored);
+      const acctKey = `${brokerId}:${accountId}`;
+      const value = obj[acctKey];
+
+      if (value !== undefined && value !== 0) {
+        this.dataCache.dayPnL.set(acctKey, value);
+        this.updateAccountData(brokerId, accountId, { dayRealizedPnL: value });
+        console.log(`[WebSocketManager] Restored dayPnL for ${acctKey}: $${value.toFixed(2)}`);
+      }
+    } catch (e) {
+      console.warn('[WebSocketManager] Failed to restore dayPnL:', e);
+    }
+  }
+
+  /**
+   * Accumulate realized PnL for a closed position into today's running total.
+   * Updates accountData and persists to localStorage.
+   */
+  _accumulateDayPnL(brokerId, accountId, pnl) {
+    const acctKey = `${brokerId}:${accountId}`;
+    const current = this.dataCache.dayPnL.get(acctKey) || 0;
+    const updated = current + pnl;
+
+    this.dataCache.dayPnL.set(acctKey, updated);
+    this.updateAccountData(brokerId, accountId, { dayRealizedPnL: updated });
+    this._persistDayPnL();
+
+    console.log(`[WebSocketManager] Day PnL for ${acctKey}: $${current.toFixed(2)} + $${pnl.toFixed(2)} = $${updated.toFixed(2)}`);
+  }
+
   /**
    * Get all positions
    * @returns {Array} - All positions

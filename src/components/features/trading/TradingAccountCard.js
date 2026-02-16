@@ -66,8 +66,11 @@ const TradingAccountCard = ({
   const isIB = account.broker_id === 'interactivebrokers';
 
   const balance = realtimeData?.balance ?? account.balance ?? 0;
-  const openPnL = realtimeData?.openPnL ?? account.openPnL ?? 0;
-  const dayPnL = realtimeData?.realizedPnL ?? account.realizedPnL ?? 0;
+  const openPnL = useMemo(
+    () => (positions || []).reduce((sum, p) => sum + (p.unrealizedPnL || 0), 0),
+    [positions]
+  );
+  const dayPnL = realtimeData?.dayRealizedPnL ?? 0;
 
   const primaryStrategy = strategies?.[0];
   const hasActiveStrategy = strategies?.length > 0;
