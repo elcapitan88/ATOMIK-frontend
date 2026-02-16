@@ -1,4 +1,4 @@
-import { memo } from 'react';
+import { memo, useMemo } from 'react';
 import {
   Box,
   Flex,
@@ -39,6 +39,7 @@ const getStatusLabel = (state) => {
 
 const AccountsTab = memo(({
   accounts = [],
+  positions = [],
   accountConfigs,
   getAccountMode,
   getAccountStrategies,
@@ -47,6 +48,18 @@ const AccountsTab = memo(({
   getConnectionState,
   getAccountData,
 }) => {
+  // Build a per-account open PnL map from positions
+  const accountOpenPnL = useMemo(() => {
+    const map = {};
+    (positions || []).forEach(p => {
+      const key = p._accountId || p.accountId;
+      if (key) {
+        map[key] = (map[key] || 0) + (p.unrealizedPnL || 0);
+      }
+    });
+    return map;
+  }, [positions]);
+
   if (accounts.length === 0) {
     return (
       <Flex justify="center" align="center" h="100%" minH="80px">
@@ -79,8 +92,8 @@ const AccountsTab = memo(({
           const connState = getConnectionState(account.broker_id, accountId);
           const rtData = getAccountData(account.broker_id, accountId);
           const balance = rtData?.balance ?? account.balance ?? 0;
-          const openPnL = rtData?.openPnL ?? account.openPnL ?? 0;
-          const todaysPnL = rtData?.todaysPnL ?? account.todaysPnL ?? 0;
+          const openPnL = accountOpenPnL[accountId] || 0;
+          const todaysPnL = rtData?.dayRealizedPnL ?? 0;
           const strategies = getAccountStrategies(accountId);
 
           return (

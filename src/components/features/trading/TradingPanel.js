@@ -215,6 +215,7 @@ const TradingPanel = ({ positions = [], orders = [], chartSymbol = '', isCollaps
         {activeTab === 'accounts' && multiAccountTrading && (
           <AccountsTab
             accounts={accounts}
+            positions={positions}
             accountConfigs={multiAccountTrading.accountConfigs}
             getAccountMode={multiAccountTrading.getAccountMode}
             getAccountStrategies={multiAccountTrading.getAccountStrategies}
