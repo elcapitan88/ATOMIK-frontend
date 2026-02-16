@@ -716,20 +716,18 @@ class WebSocketManager extends EventEmitter {
           console.log('[WebSocketManager] Processing position_update message:', message.data);
         }
         this.updatePositionData(brokerId, accountId, message.data);
+      } else if (message.type === 'position_price_update' && message.data) {
+        // Handle real-time position price updates — MUST be checked before isPositionUpdateEvent
+        // which would also match this type and route to handlePositionEvent instead
+        this.handlePositionPriceUpdate(brokerId, accountId, message.data);
       } else if (isPositionUpdateEvent(message.type) && message.data) {
-        // Handle new position event types
+        // Handle new position event types (opened, closed, pnl_update, etc.)
         if (envConfig.debugConfig.websocket.enabled) {
           console.log('[WebSocketManager] Processing position event:', message.type, message.data);
         }
         this.handlePositionEvent(brokerId, accountId, message);
       } else if (message.type === 'order_update' && message.data) {
         this.updateOrderData(brokerId, accountId, message.data);
-      } else if (message.type === 'position_price_update' && message.data) {
-        // Handle real-time position price updates
-        if (envConfig.debugConfig.websocket.enabled) {
-          console.log('[WebSocketManager] Processing position_price_update message:', message.data);
-        }
-        this.handlePositionPriceUpdate(brokerId, accountId, message.data);
       } else if (message.type === 'user_data' && message.data) {
         // Handle initial sync data
         console.log('[WebSocketManager] About to call handleUserData with data:', !!message.data);
@@ -1241,34 +1239,38 @@ class WebSocketManager extends EventEmitter {
   handlePositionPriceUpdate(brokerId, accountId, data) {
     console.log('[WebSocketManager] handlePositionPriceUpdate:', { brokerId, accountId, data });
     
-    const positionKey = `${brokerId}:${accountId}:${data.positionId || data.contractId}`;
-    const position = this.dataCache.positions.get(positionKey);
-    
+    // Try primary key lookup (positionId first, then contractId)
+    let positionKey = `${brokerId}:${accountId}:${data.positionId || data.contractId}`;
+    let position = this.dataCache.positions.get(positionKey);
+
+    // Secondary lookup: scan cache for matching contractId if primary key missed
+    if (!position && data.contractId) {
+      const prefix = `${brokerId}:${accountId}:`;
+      for (const [key, pos] of this.dataCache.positions.entries()) {
+        if (key.startsWith(prefix) && String(pos.contractId) === String(data.contractId)) {
+          position = pos;
+          positionKey = key;
+          break;
+        }
+      }
+    }
+
     if (position) {
       // Update position with new price data
       const previousPrice = position.currentPrice;
       const previousPnL = position.unrealizedPnL;
-      
+
       const updatedPosition = {
         ...position,
         currentPrice: data.currentPrice,
         unrealizedPnL: data.unrealizedPnL,
         lastPriceUpdate: Date.now()
       };
-      
+
       // Update cache
       this.dataCache.positions.set(positionKey, updatedPosition);
-      
+
       // Emit price update event
-      if (envConfig.debugConfig.websocket.enabled) {
-        console.log('[WebSocketManager] Emitting positionUpdate event (price update):', {
-          brokerId,
-          accountId,
-          type: 'priceUpdate',
-          position: updatedPosition,
-          previousValues: { price: previousPrice, pnl: previousPnL }
-        });
-      }
       this.emit('positionUpdate', {
         brokerId,
         accountId,
