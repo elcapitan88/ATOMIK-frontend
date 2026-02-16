@@ -1006,7 +1006,6 @@ class WebSocketManager extends EventEmitter {
    */
   handlePositionEvent(brokerId, accountId, message) {
     const { type, data } = message;
-    console.log('[WebSocketManager] handlePositionEvent:', { brokerId, accountId, type, data });
     
     // Create position key
     const positionKey = `${brokerId}:${accountId}:${data.positionId || data.contractId || data.symbol}`;
@@ -1237,7 +1236,6 @@ class WebSocketManager extends EventEmitter {
    * @param {Object} data - Price update data
    */
   handlePositionPriceUpdate(brokerId, accountId, data) {
-    console.log('[WebSocketManager] handlePositionPriceUpdate:', { brokerId, accountId, data });
     
     // Try primary key lookup (positionId first, then contractId)
     let positionKey = `${brokerId}:${accountId}:${data.positionId || data.contractId}`;
