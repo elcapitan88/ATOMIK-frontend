@@ -7,6 +7,7 @@ import {
   Table,
   Thead,
   Tbody,
+  Tfoot,
   Tr,
   Th,
   Td,
@@ -59,6 +60,21 @@ const AccountsTab = memo(({
     });
     return map;
   }, [positions]);
+
+  // Compute totals across all accounts
+  const totals = useMemo(() => {
+    let totalBalance = 0;
+    let totalOpenPnL = 0;
+    let totalDayPnL = 0;
+    accounts.forEach(account => {
+      const accountId = String(account.account_id);
+      const rtData = getAccountData(account.broker_id, accountId);
+      totalBalance += rtData?.balance ?? account.balance ?? 0;
+      totalOpenPnL += accountOpenPnL[accountId] || 0;
+      totalDayPnL += rtData?.dayRealizedPnL ?? 0;
+    });
+    return { totalBalance, totalOpenPnL, totalDayPnL };
+  }, [accounts, accountOpenPnL, getAccountData]);
 
   if (accounts.length === 0) {
     return (
@@ -171,6 +187,39 @@ const AccountsTab = memo(({
           );
         })}
       </Tbody>
+      <Tfoot>
+        <Tr borderTop="1px solid" borderColor="whiteAlpha.200">
+          <Td py={2} colSpan={3}>
+            <Text fontSize="xs" fontWeight="semibold" color="whiteAlpha.500">
+              TOTAL
+            </Text>
+          </Td>
+          <Td py={2} isNumeric>
+            <Text fontSize="xs" fontWeight="bold" color="white">
+              ${totals.totalBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </Text>
+          </Td>
+          <Td py={2} isNumeric>
+            <Text
+              fontSize="xs"
+              fontWeight="bold"
+              color={totals.totalOpenPnL >= 0 ? 'green.400' : 'red.400'}
+            >
+              {totals.totalOpenPnL >= 0 ? '+' : ''}${totals.totalOpenPnL.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </Text>
+          </Td>
+          <Td py={2} isNumeric>
+            <Text
+              fontSize="xs"
+              fontWeight="bold"
+              color={totals.totalDayPnL >= 0 ? 'green.400' : 'red.400'}
+            >
+              {totals.totalDayPnL >= 0 ? '+' : ''}${totals.totalDayPnL.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </Text>
+          </Td>
+          <Td py={2} colSpan={2} />
+        </Tr>
+      </Tfoot>
     </Table>
   );
 });
