@@ -176,45 +176,6 @@ const PnLShareModal = ({ isOpen, onClose }) => {
     }
   }, [captureCard, toast, handleDownload]);
 
-  // Share to X (Twitter) — copy image to clipboard, then open tweet composer
-  const handleShareToX = useCallback(async () => {
-    if (!cardData) return;
-    setIsExporting(true);
-
-    try {
-      // Copy image to clipboard so user can paste into tweet
-      const canvas = await captureCard();
-      if (canvas) {
-        const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
-        if (blob) {
-          await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
-        }
-      }
-    } catch {
-      // Clipboard failed — fall back to download
-      await handleDownload();
-    }
-
-    setIsExporting(false);
-
-    const pnlSign = cardData.total_pnl >= 0 ? '+' : '-';
-    const tweetText = encodeURIComponent(
-      `${pnlSign}$${Math.abs(cardData.total_pnl).toFixed(2)} ${cardData.period_label.toLowerCase()} P&L\n` +
-        `${cardData.total_trades} trades | ${cardData.win_rate.toFixed(0)}% win rate\n\n` +
-        `Powered by @atomiktrades\n` +
-        `atomiktrading.io`
-    );
-    window.open(`https://twitter.com/intent/tweet?text=${tweetText}`, '_blank');
-
-    toast({
-      title: 'Image copied to clipboard!',
-      description: 'Paste (Ctrl+V) into the tweet to attach your card.',
-      status: 'info',
-      duration: 6000,
-      isClosable: true,
-    });
-  }, [cardData, captureCard, handleDownload, toast]);
-
   return (
     <Modal isOpen={isOpen} onClose={onClose} size="2xl" scrollBehavior="inside">
       <ModalOverlay bg="blackAlpha.400" backdropFilter="blur(10px)" />
@@ -392,18 +353,6 @@ const PnLShareModal = ({ isOpen, onClose }) => {
                 size="md"
               >
                 Copy
-              </Button>
-              <Button
-                leftIcon={<Share2 size={16} />}
-                variant="outline"
-                borderColor="whiteAlpha.300"
-                color="white"
-                _hover={{ bg: 'whiteAlpha.100' }}
-                onClick={handleShareToX}
-                isDisabled={!cardData || isLoading}
-                size="md"
-              >
-                Share to X
               </Button>
             </HStack>
           </VStack>
