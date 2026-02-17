@@ -132,17 +132,40 @@ const PnLFullScreenView = ({ isOpen, onClose, cardData, format = 'square', priva
   }, [captureCard, toast, handleDownload]);
 
   const handleShareToX = useCallback(async () => {
-    await handleDownload();
     if (!cardData) return;
+    setIsExporting(true);
+
+    try {
+      const canvas = await captureCard();
+      if (canvas) {
+        const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
+        if (blob) {
+          await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+        }
+      }
+    } catch {
+      await handleDownload();
+    }
+
+    setIsExporting(false);
+
     const pnlSign = cardData.total_pnl >= 0 ? '+' : '-';
     const tweetText = encodeURIComponent(
       `${pnlSign}$${Math.abs(cardData.total_pnl).toFixed(2)} ${cardData.period_label.toLowerCase()} P&L\n` +
         `${cardData.total_trades} trades | ${cardData.win_rate.toFixed(0)}% win rate\n\n` +
-        `Powered by @AtomikTrading\n` +
+        `Powered by @atomiktrades\n` +
         `atomiktrading.io`
     );
     window.open(`https://twitter.com/intent/tweet?text=${tweetText}`, '_blank');
-  }, [cardData, handleDownload]);
+
+    toast({
+      title: 'Image copied to clipboard!',
+      description: 'Paste (Ctrl+V) into the tweet to attach your card.',
+      status: 'info',
+      duration: 6000,
+      isClosable: true,
+    });
+  }, [cardData, captureCard, handleDownload, toast]);
 
   if (!isOpen || !cardData) return null;
 
