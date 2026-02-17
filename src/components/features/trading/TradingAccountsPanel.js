@@ -27,19 +27,21 @@ import IBLoginModal from '@/components/common/Modal/IBLoginModal';
 import AccountNicknameModal from '@/components/common/Modal/AccountNicknameModal';
 
 import TradingAccountCard from './TradingAccountCard';
+import CopyTradingModal from './CopyTradingModal';
 
 /**
  * TradingAccountsPanel
  *
  * Right-sidebar panel that replaces Management + OrderControl account selection.
- * Shows all connected accounts as compact cards in MANUAL or AUTO mode.
+ * Shows all connected accounts as compact cards in MANUAL, AUTO, LEADER, or FOLLOWING mode.
  *
  * Props:
  *   multiAccountTrading - return value from useMultiAccountTrading hook
  *   aggregatedPositions - positions array from useAggregatedPositions hook
  *   strategies          - activated strategies array
+ *   copyTrading         - return value from useCopyTrading hook
  */
-const TradingAccountsPanel = ({ multiAccountTrading, aggregatedPositions = [], strategies = [] }) => {
+const TradingAccountsPanel = ({ multiAccountTrading, aggregatedPositions = [], strategies = [], copyTrading }) => {
   const toast = useToast();
   const {
     connect: wsConnect,
@@ -76,7 +78,16 @@ const TradingAccountsPanel = ({ multiAccountTrading, aggregatedPositions = [], s
     setAccountQuantity,
     getAccountMode,
     getAccountStrategies,
+    strategyBoundAccountIds,
+    copyLeaderAccountIds,
+    copyFollowerAccountIds,
+    getCopyInfo,
   } = multiAccountTrading;
+
+  // Copy trading modal state
+  const [copyLeaderAccount, setCopyLeaderAccount] = useState(null);
+  const [editingCopyGroup, setEditingCopyGroup] = useState(null);
+  const { isOpen: isCopyModalOpen, onOpen: onCopyModalOpen, onClose: onCopyModalClose } = useDisclosure();
 
   // ─── Account Fetching (RxJS) ──────────────────────────────────────
   const fetchAccounts = useCallback(async (showLoading = true) => {
@@ -328,15 +339,63 @@ const TradingAccountsPanel = ({ multiAccountTrading, aggregatedPositions = [], s
     [openNicknameModal]
   );
 
+  // ─── Copy Trading Handlers ─────────────────────────────────────────
+  const handleCopyMyTrades = useCallback(
+    (account) => {
+      setCopyLeaderAccount(account);
+      setEditingCopyGroup(null);
+      onCopyModalOpen();
+    },
+    [onCopyModalOpen]
+  );
+
+  const handleEditCopySettings = useCallback(
+    (account) => {
+      const group = copyTrading?.getGroupForAccount(account.account_id);
+      if (group) {
+        setCopyLeaderAccount(account);
+        setEditingCopyGroup(group);
+        onCopyModalOpen();
+      }
+    },
+    [copyTrading, onCopyModalOpen]
+  );
+
+  const handleStopCopying = useCallback(
+    (account) => {
+      const info = getCopyInfo?.(account.account_id);
+      if (info?.groupId && copyTrading) {
+        copyTrading.deleteGroup.mutate(info.groupId);
+      }
+    },
+    [getCopyInfo, copyTrading]
+  );
+
+  const handlePauseCopying = useCallback(
+    (account) => {
+      const info = getCopyInfo?.(account.account_id);
+      if (info?.groupId && info?.followerId && copyTrading) {
+        copyTrading.updateFollower.mutate({
+          groupId: info.groupId,
+          followerId: info.followerId,
+          data: { is_active: false },
+        });
+      }
+    },
+    [getCopyInfo, copyTrading]
+  );
+
   // ─── Render ────────────────────────────────────────────────────────
 
-  // Group accounts: manual first, then auto
+  // Sort: leaders > followers > manual > auto
+  const MODE_SORT_ORDER = { 'copy-leader': 0, 'copy-follower': 1, manual: 2, auto: 3 };
   const sortedAccounts = useMemo(() => {
     return [...accounts].sort((a, b) => {
       const modeA = getAccountMode(a.account_id);
       const modeB = getAccountMode(b.account_id);
-      if (modeA === 'manual' && modeB === 'auto') return -1;
-      if (modeA === 'auto' && modeB === 'manual') return 1;
+      const orderA = MODE_SORT_ORDER[modeA] ?? 4;
+      const orderB = MODE_SORT_ORDER[modeB] ?? 4;
+      if (orderA !== orderB) return orderA - orderB;
       return (a.nickname || a.name || '').localeCompare(b.nickname || b.name || '');
     });
   }, [accounts, getAccountMode]);
@@ -365,7 +424,7 @@ const TradingAccountsPanel = ({ multiAccountTrading, aggregatedPositions = [], s
         </VStack>
 
         {/* Legend */}
-        <HStack spacing={3}>
+        <HStack spacing={2} flexWrap="wrap">
           <HStack spacing={1.5}>
             <Box w="8px" h="3px" borderRadius="full" bg="cyan.400" />
             <Text fontSize="9px" color="whiteAlpha.500" textTransform="uppercase" letterSpacing="wider">
@@ -376,6 +435,18 @@ const TradingAccountsPanel = ({ multiAccountTrading, aggregatedPositions = [], s
             <Box w="8px" h="3px" borderRadius="full" bg="purple.400" />
             <Text fontSize="9px" color="whiteAlpha.500" textTransform="uppercase" letterSpacing="wider">
               Auto
+            </Text>
+          </HStack>
+          <HStack spacing={1.5}>
+            <Box w="8px" h="3px" borderRadius="full" bg="green.400" />
+            <Text fontSize="9px" color="whiteAlpha.500" textTransform="uppercase" letterSpacing="wider">
+              Leader
+            </Text>
+          </HStack>
+          <HStack spacing={1.5}>
+            <Box w="8px" h="3px" borderRadius="full" bg="yellow.400" />
+            <Text fontSize="9px" color="whiteAlpha.500" textTransform="uppercase" letterSpacing="wider">
+              Following
             </Text>
           </HStack>
         </HStack>
@@ -408,13 +479,14 @@ const TradingAccountsPanel = ({ multiAccountTrading, aggregatedPositions = [], s
               const accountPositions = aggregatedPositions.filter(
                 (p) => String(p._accountId) === aid
               );
+              const accountCopyInfo = getCopyInfo?.(aid) || null;
 
               return (
                 <TradingAccountCard
                   key={account.account_id}
                   account={account}
                   mode={mode}
-                  isActive={cfg.isActive}
+                  isActive={mode === 'copy-leader' ? true : cfg.isActive}
                   quantity={cfg.quantity}
                   connectionStatus={connState}
                   strategies={accountStrategies}
@@ -426,6 +498,11 @@ const TradingAccountsPanel = ({ multiAccountTrading, aggregatedPositions = [], s
                   onDelete={openDelete}
                   onPowerToggle={handlePowerToggle}
                   onRestart={handleRestart}
+                  copyInfo={accountCopyInfo}
+                  onCopyMyTrades={handleCopyMyTrades}
+                  onEditCopySettings={handleEditCopySettings}
+                  onStopCopying={handleStopCopying}
+                  onPauseCopying={handlePauseCopying}
                 />
               );
             })}
@@ -480,6 +557,20 @@ const TradingAccountsPanel = ({ multiAccountTrading, aggregatedPositions = [], s
           onClose={closeNicknameModal}
           account={editingAccount}
           onSave={handleUpdateNickname}
+        />
+      )}
+      {/* Copy Trading Modal */}
+      {copyTrading && (
+        <CopyTradingModal
+          isOpen={isCopyModalOpen}
+          onClose={onCopyModalClose}
+          leaderAccount={copyLeaderAccount}
+          accounts={accounts}
+          strategyBoundAccountIds={strategyBoundAccountIds || new Set()}
+          copyFollowerAccountIds={copyFollowerAccountIds || new Set()}
+          copyLeaderAccountIds={copyLeaderAccountIds || new Set()}
+          copyTrading={copyTrading}
+          existingGroup={editingCopyGroup}
         />
       )}
     </Box>

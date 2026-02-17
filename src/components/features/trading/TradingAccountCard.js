@@ -14,9 +14,10 @@ import {
   MenuButton,
   MenuList,
   MenuItem,
+  MenuDivider,
   IconButton,
 } from '@chakra-ui/react';
-import { MoreVertical, Edit, Trash2, Power, RefreshCw } from 'lucide-react';
+import { MoreVertical, Edit, Trash2, Power, RefreshCw, Copy, Pause, Play, Settings, X } from 'lucide-react';
 import AccountStatusIndicator from '@/components/common/AccountStatusIndicator';
 
 const formatBrokerName = (brokerId) => {
@@ -40,11 +41,70 @@ const pnlText = (v) => {
   return `${prefix}$${fmtCur(Math.abs(val))}`;
 };
 
+// Badge config per mode
+const MODE_BADGE = {
+  manual: { label: 'MANUAL', colorScheme: 'cyan' },
+  auto: { label: 'AUTO', colorScheme: 'purple' },
+  'copy-leader': { label: 'LEADER', colorScheme: 'green' },
+  'copy-follower': { label: 'FOLLOWING', colorScheme: 'yellow' },
+};
+
+// Visual style config per mode
+const getModeStyles = (mode, isActive, hasActiveStrategy) => {
+  switch (mode) {
+    case 'auto':
+      return {
+        borderColor: 'rgba(159, 122, 234, 0.25)',
+        bgColor: 'rgba(255, 255, 255, 0.02)',
+        accentStripe: hasActiveStrategy ? 'rgba(159, 122, 234, 0.6)' : 'rgba(159, 122, 234, 0.3)',
+        hoverBg: 'rgba(159, 122, 234, 0.06)',
+        boxShadow: 'none',
+        opacity: 1,
+        cursor: 'default',
+        clickable: false,
+      };
+    case 'copy-leader':
+      return {
+        borderColor: 'rgba(72, 187, 120, 0.4)',
+        bgColor: 'rgba(72, 187, 120, 0.06)',
+        accentStripe: 'rgba(72, 187, 120, 0.7)',
+        hoverBg: 'rgba(72, 187, 120, 0.09)',
+        boxShadow: '0 0 12px rgba(72, 187, 120, 0.15)',
+        opacity: 1,
+        cursor: 'default',
+        clickable: false,
+      };
+    case 'copy-follower':
+      return {
+        borderColor: 'rgba(236, 201, 75, 0.3)',
+        bgColor: 'rgba(236, 201, 75, 0.04)',
+        accentStripe: 'rgba(236, 201, 75, 0.5)',
+        hoverBg: 'rgba(236, 201, 75, 0.06)',
+        boxShadow: 'none',
+        opacity: 0.85,
+        cursor: 'default',
+        clickable: false,
+      };
+    default: // manual
+      return {
+        borderColor: isActive ? 'rgba(0, 198, 224, 0.4)' : 'rgba(255, 255, 255, 0.06)',
+        bgColor: isActive ? 'rgba(0, 198, 224, 0.06)' : 'rgba(255, 255, 255, 0.02)',
+        accentStripe: isActive ? 'rgba(0, 198, 224, 0.9)' : 'rgba(255, 255, 255, 0.12)',
+        hoverBg: isActive ? 'rgba(0, 198, 224, 0.09)' : 'rgba(255, 255, 255, 0.06)',
+        boxShadow: isActive ? '0 0 12px rgba(0, 198, 224, 0.15)' : 'none',
+        opacity: isActive ? 1 : 0.7,
+        cursor: 'pointer',
+        clickable: true,
+      };
+  }
+};
+
 /**
- * Compact 2-row account card.
- *
- * Row 1: Status dot + Name + Broker + Mode badge + Menu
- * Row 2: $bal · open P&L · day P&L · (Manual: Qty + ACTIVE | Auto: strategy name)
+ * Compact 2-row account card with 4-mode rendering:
+ *   MANUAL:    cyan badge, qty input, toggle on/off
+ *   AUTO:      purple badge, strategy name (read-only)
+ *   LEADER:    green badge, qty input, "Copying to N accts"
+ *   FOLLOWING: yellow badge, "LeaderName (Nx)" (read-only)
  */
 const TradingAccountCard = ({
   account,
@@ -61,8 +121,17 @@ const TradingAccountCard = ({
   onDelete,
   onPowerToggle,
   onRestart,
+  // Copy trading props
+  copyInfo,
+  onCopyMyTrades,
+  onEditCopySettings,
+  onStopCopying,
+  onPauseCopying,
 }) => {
   const isAuto = mode === 'auto';
+  const isLeader = mode === 'copy-leader';
+  const isFollower = mode === 'copy-follower';
+  const isManual = mode === 'manual';
   const isIB = account.broker_id === 'interactivebrokers';
 
   const balance = realtimeData?.balance ?? account.balance ?? 0;
@@ -75,69 +144,41 @@ const TradingAccountCard = ({
   const primaryStrategy = strategies?.[0];
   const hasActiveStrategy = strategies?.length > 0;
 
-  // Visual states
-  const borderColor = isAuto
-    ? 'rgba(159, 122, 234, 0.25)'
-    : isActive
-    ? 'rgba(0, 198, 224, 0.4)'
-    : 'rgba(255, 255, 255, 0.06)';
-
-  const bgColor = isActive && !isAuto
-    ? 'rgba(0, 198, 224, 0.06)'
-    : 'rgba(255, 255, 255, 0.02)';
-
-  const accentStripeColor = isAuto
-    ? hasActiveStrategy
-      ? 'rgba(159, 122, 234, 0.6)'
-      : 'rgba(159, 122, 234, 0.3)'
-    : isActive
-    ? 'rgba(0, 198, 224, 0.9)'
-    : 'rgba(255, 255, 255, 0.12)';
-
-  const hoverBg = isAuto
-    ? 'rgba(159, 122, 234, 0.06)'
-    : isActive
-    ? 'rgba(0, 198, 224, 0.09)'
-    : 'rgba(255, 255, 255, 0.06)';
-
-  const cardOpacity = !isAuto && !isActive ? 0.7 : 1;
+  const styles = getModeStyles(mode, isActive, hasActiveStrategy);
+  const badgeConfig = MODE_BADGE[mode] || MODE_BADGE.manual;
 
   return (
     <Box
       position="relative"
-      bg={bgColor}
+      bg={styles.bgColor}
       border="1px solid"
-      borderColor={borderColor}
+      borderColor={styles.borderColor}
       borderRadius="lg"
       pl={5}
       pr={2}
       py={2}
       transition="all 0.2s ease"
-      opacity={cardOpacity}
-      cursor={isAuto ? 'default' : 'pointer'}
-      onClick={isAuto ? undefined : onToggle}
+      opacity={styles.opacity}
+      cursor={styles.cursor}
+      onClick={styles.clickable ? onToggle : undefined}
       _hover={
-        isAuto
-          ? { bg: hoverBg }
-          : {
-              bg: hoverBg,
+        styles.clickable
+          ? {
+              bg: styles.hoverBg,
               opacity: 1,
               borderColor: isActive
                 ? 'rgba(0, 198, 224, 0.5)'
                 : 'rgba(255, 255, 255, 0.15)',
               transform: 'translateY(-1px)',
             }
+          : { bg: styles.hoverBg }
       }
       _active={
-        isAuto
-          ? {}
-          : { transform: 'translateY(0px)', transition: 'transform 0.05s' }
+        styles.clickable
+          ? { transform: 'translateY(0px)', transition: 'transform 0.05s' }
+          : {}
       }
-      boxShadow={
-        isActive && !isAuto
-          ? '0 0 12px rgba(0, 198, 224, 0.15)'
-          : 'none'
-      }
+      boxShadow={styles.boxShadow}
     >
       {/* Left accent stripe */}
       <Box
@@ -147,7 +188,7 @@ const TradingAccountCard = ({
         bottom="6px"
         w="3px"
         borderRadius="full"
-        bg={accentStripeColor}
+        bg={styles.accentStripe}
         transition="all 0.2s ease"
       />
 
@@ -171,26 +212,31 @@ const TradingAccountCard = ({
             py={0.5}
             borderRadius="sm"
             variant="subtle"
-            colorScheme={isAuto ? 'purple' : 'cyan'}
+            colorScheme={badgeConfig.colorScheme}
             textTransform="uppercase"
             letterSpacing="wider"
             flexShrink={0}
           >
-            {isAuto ? 'AUTO' : 'MANUAL'}
+            {badgeConfig.label}
           </Badge>
         </HStack>
 
         <AccountOptionsMenu
           account={account}
+          mode={mode}
           isIB={isIB}
           onEditName={onEditName}
           onDelete={onDelete}
           onPowerToggle={onPowerToggle}
           onRestart={onRestart}
+          onCopyMyTrades={onCopyMyTrades}
+          onEditCopySettings={onEditCopySettings}
+          onStopCopying={onStopCopying}
+          onPauseCopying={onPauseCopying}
         />
       </Flex>
 
-      {/* Row 2: Metrics + mode-specific controls, all inline */}
+      {/* Row 2: Metrics + mode-specific controls */}
       <Flex align="center" justify="space-between" flexWrap="nowrap">
         {/* Financial metrics */}
         <HStack spacing={2} flexShrink={0}>
@@ -227,7 +273,51 @@ const TradingAccountCard = ({
               </Text>
             )}
           </HStack>
+        ) : isLeader ? (
+          <HStack spacing={2} flexShrink={0} onClick={(e) => e.stopPropagation()}>
+            <HStack spacing={1}>
+              <Text fontSize="xs" color="whiteAlpha.600">
+                Qty
+              </Text>
+              <NumberInput
+                size="xs"
+                value={quantity}
+                min={1}
+                max={999}
+                w="52px"
+                onChange={(_, val) => onQuantityChange(account.account_id, val)}
+              >
+                <NumberInputField
+                  bg="whiteAlpha.100"
+                  borderColor="whiteAlpha.200"
+                  color="white"
+                  textAlign="center"
+                  px={1}
+                  _focus={{
+                    borderColor: 'rgba(72, 187, 120, 0.6)',
+                    boxShadow: '0 0 0 1px rgba(72, 187, 120, 0.6)',
+                  }}
+                />
+                <NumberInputStepper>
+                  <NumberIncrementStepper borderColor="whiteAlpha.200" color="whiteAlpha.600" />
+                  <NumberDecrementStepper borderColor="whiteAlpha.200" color="whiteAlpha.600" />
+                </NumberInputStepper>
+              </NumberInput>
+            </HStack>
+            <Text fontSize="xs" color="green.300" fontWeight="medium" whiteSpace="nowrap">
+              {copyInfo?.followerCount
+                ? `Copying to ${copyInfo.followerCount} acct${copyInfo.followerCount !== 1 ? 's' : ''}`
+                : 'Leader'}
+            </Text>
+          </HStack>
+        ) : isFollower ? (
+          <HStack spacing={1} minW={0} justify="flex-end">
+            <Text fontSize="xs" color="yellow.300" fontWeight="medium" noOfLines={1}>
+              &larr; {copyInfo?.leaderName || 'Leader'} ({copyInfo?.ratio || 1}x)
+            </Text>
+          </HStack>
         ) : (
+          // Manual mode
           <HStack spacing={2} flexShrink={0} onClick={(e) => e.stopPropagation()}>
             <HStack spacing={1}>
               <Text fontSize="xs" color="whiteAlpha.600">
@@ -278,13 +368,29 @@ const TradingAccountCard = ({
   );
 };
 
-/** Shared options menu (edit, delete, IB power/restart) */
+/** Shared options menu with mode-aware items */
 const AccountOptionsMenu = memo(
-  ({ account, isIB, onEditName, onDelete, onPowerToggle, onRestart }) => {
+  ({
+    account,
+    mode,
+    isIB,
+    onEditName,
+    onDelete,
+    onPowerToggle,
+    onRestart,
+    onCopyMyTrades,
+    onEditCopySettings,
+    onStopCopying,
+    onPauseCopying,
+  }) => {
     const getPowerLabel = () => {
       const status = account.digital_ocean_status || account.status;
       return status === 'running' ? 'Power Off' : 'Power On';
     };
+
+    const isManual = mode === 'manual';
+    const isLeader = mode === 'copy-leader';
+    const isFollower = mode === 'copy-follower';
 
     return (
       <Menu>
@@ -302,8 +408,9 @@ const AccountOptionsMenu = memo(
           bg="rgba(30, 30, 30, 0.95)"
           backdropFilter="blur(10px)"
           borderColor="whiteAlpha.200"
-          minW="140px"
+          minW="160px"
         >
+          {/* Common: Edit Name */}
           <MenuItem
             fontSize="sm"
             icon={<Edit size={14} />}
@@ -314,8 +421,73 @@ const AccountOptionsMenu = memo(
           >
             Edit Name
           </MenuItem>
+
+          {/* Manual mode: Copy My Trades option */}
+          {isManual && onCopyMyTrades && (
+            <MenuItem
+              fontSize="sm"
+              icon={<Copy size={14} />}
+              onClick={(e) => { e.stopPropagation(); onCopyMyTrades(account); }}
+              _hover={{ bg: 'whiteAlpha.100' }}
+              bg="transparent"
+              color="green.300"
+            >
+              Copy My Trades
+            </MenuItem>
+          )}
+
+          {/* Leader mode options */}
+          {isLeader && (
+            <>
+              <MenuDivider borderColor="whiteAlpha.100" />
+              {onEditCopySettings && (
+                <MenuItem
+                  fontSize="sm"
+                  icon={<Settings size={14} />}
+                  onClick={(e) => { e.stopPropagation(); onEditCopySettings(account); }}
+                  _hover={{ bg: 'whiteAlpha.100' }}
+                  bg="transparent"
+                  color="white"
+                >
+                  Edit Copy Settings
+                </MenuItem>
+              )}
+              {onStopCopying && (
+                <MenuItem
+                  fontSize="sm"
+                  icon={<X size={14} />}
+                  onClick={(e) => { e.stopPropagation(); onStopCopying(account); }}
+                  _hover={{ bg: 'whiteAlpha.100' }}
+                  bg="transparent"
+                  color="red.300"
+                >
+                  Stop Copying
+                </MenuItem>
+              )}
+            </>
+          )}
+
+          {/* Follower mode options */}
+          {isFollower && onPauseCopying && (
+            <>
+              <MenuDivider borderColor="whiteAlpha.100" />
+              <MenuItem
+                fontSize="sm"
+                icon={<Pause size={14} />}
+                onClick={(e) => { e.stopPropagation(); onPauseCopying(account); }}
+                _hover={{ bg: 'whiteAlpha.100' }}
+                bg="transparent"
+                color="yellow.300"
+              >
+                Pause Copying
+              </MenuItem>
+            </>
+          )}
+
+          {/* IB-specific options */}
           {isIB && (
             <>
+              <MenuDivider borderColor="whiteAlpha.100" />
               <MenuItem
                 fontSize="sm"
                 icon={<Power size={14} />}
@@ -338,6 +510,9 @@ const AccountOptionsMenu = memo(
               </MenuItem>
             </>
           )}
+
+          {/* Common: Delete */}
+          <MenuDivider borderColor="whiteAlpha.100" />
           <MenuItem
             fontSize="sm"
             icon={<Trash2 size={14} />}

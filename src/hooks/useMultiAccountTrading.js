@@ -44,8 +44,9 @@ const persistConfigs = (configs) => {
  *
  * @param {Array} accounts - All connected broker accounts
  * @param {Array} strategies - All activated strategies (to determine auto vs manual mode)
+ * @param {Object} copyTradingData - Copy trading state from useCopyTrading hook
  */
-const useMultiAccountTrading = (accounts = [], strategies = []) => {
+const useMultiAccountTrading = (accounts = [], strategies = [], copyTradingData = {}) => {
   const toast = useToast();
   const { getAccountData, getConnectionState } = useWebSocketContext();
 
@@ -100,10 +101,21 @@ const useMultiAccountTrading = (accounts = [], strategies = []) => {
     });
   }, [strategies]);
 
-  // Get account mode
+  // Destructure copy trading data
+  const {
+    copyLeaderAccountIds = new Set(),
+    copyFollowerAccountIds = new Set(),
+    getCopyInfo: getCopyInfoFn,
+  } = copyTradingData;
+
+  // Get account mode: AUTO > COPY-LEADER > COPY-FOLLOWER > MANUAL
   const getAccountMode = useCallback((accountId) => {
-    return strategyBoundAccountIds.has(String(accountId)) ? 'auto' : 'manual';
-  }, [strategyBoundAccountIds]);
+    const id = String(accountId);
+    if (strategyBoundAccountIds.has(id)) return 'auto';
+    if (copyLeaderAccountIds.has(id)) return 'copy-leader';
+    if (copyFollowerAccountIds.has(id)) return 'copy-follower';
+    return 'manual';
+  }, [strategyBoundAccountIds, copyLeaderAccountIds, copyFollowerAccountIds]);
 
   // Initialize/sync configs when accounts change
   useEffect(() => {
@@ -133,9 +145,9 @@ const useMultiAccountTrading = (accounts = [], strategies = []) => {
         }
       }
 
-      // Deactivate strategy-bound accounts
+      // Deactivate strategy-bound and copy-follower accounts
       for (const [id, cfg] of next) {
-        if (strategyBoundAccountIds.has(id) && cfg.isActive) {
+        if ((strategyBoundAccountIds.has(id) || copyFollowerAccountIds.has(id)) && cfg.isActive) {
           next.set(id, { ...cfg, isActive: false });
           changed = true;
         }
@@ -143,7 +155,7 @@ const useMultiAccountTrading = (accounts = [], strategies = []) => {
 
       return changed ? next : prev;
     });
-  }, [accounts, strategyBoundAccountIds]);
+  }, [accounts, strategyBoundAccountIds, copyFollowerAccountIds]);
 
   // Persist on change
   useEffect(() => {
@@ -155,7 +167,7 @@ const useMultiAccountTrading = (accounts = [], strategies = []) => {
     localStorage.setItem('atomik_skip_order_confirm', String(skipConfirmation));
   }, [skipConfirmation]);
 
-  // Toggle account active state (only for manual accounts)
+  // Toggle account active state (only for manual and copy-leader accounts)
   const toggleAccount = useCallback((accountId) => {
     const id = String(accountId);
     if (strategyBoundAccountIds.has(id)) {
@@ -168,13 +180,23 @@ const useMultiAccountTrading = (accounts = [], strategies = []) => {
       });
       return;
     }
+    if (copyFollowerAccountIds.has(id)) {
+      toast({
+        title: "Account Is Following a Leader",
+        description: "Stop copy trading on this account before enabling manual trading.",
+        status: "warning",
+        duration: 5000,
+        isClosable: true,
+      });
+      return;
+    }
     setAccountConfigs((prev) => {
       const next = new Map(prev);
       const cfg = next.get(id) || { quantity: 1, isActive: false };
       next.set(id, { ...cfg, isActive: !cfg.isActive });
       return next;
     });
-  }, [strategyBoundAccountIds, toast]);
+  }, [strategyBoundAccountIds, copyFollowerAccountIds, toast]);
 
   // Set account quantity
   const setAccountQuantity = useCallback((accountId, quantity) => {
@@ -188,19 +210,30 @@ const useMultiAccountTrading = (accounts = [], strategies = []) => {
     });
   }, []);
 
-  // Derived: active manual accounts with their configs
+  // Derived: active accounts (manual toggled on + copy-leaders always active)
   const activeAccounts = useMemo(() => {
     const result = [];
     for (const [accountId, config] of accountConfigs) {
+      const mode = getAccountMode(accountId);
+      // Exclude strategy-bound and copy-follower accounts
+      if (mode === 'auto' || mode === 'copy-follower') continue;
+      // Copy-leaders are always "active" for order dispatch
+      if (mode === 'copy-leader') {
+        const account = accounts.find((a) => String(a.account_id) === accountId);
+        if (account) {
+          result.push({ ...account, quantity: config.quantity, isActive: true });
+        }
+        continue;
+      }
+      // Manual accounts: only if toggled on
       if (!config.isActive) continue;
-      if (strategyBoundAccountIds.has(accountId)) continue;
       const account = accounts.find((a) => String(a.account_id) === accountId);
       if (account) {
         result.push({ ...account, quantity: config.quantity, isActive: true });
       }
     }
     return result;
-  }, [accountConfigs, accounts, strategyBoundAccountIds]);
+  }, [accountConfigs, accounts, getAccountMode]);
 
   const totalContracts = useMemo(
     () => activeAccounts.reduce((sum, a) => sum + a.quantity, 0),
@@ -302,6 +335,9 @@ const useMultiAccountTrading = (accounts = [], strategies = []) => {
     getAccountMode,
     getAccountStrategies,
     strategyBoundAccountIds,
+    copyLeaderAccountIds,
+    copyFollowerAccountIds,
+    getCopyInfo: getCopyInfoFn,
 
     // Order params
     orderType,

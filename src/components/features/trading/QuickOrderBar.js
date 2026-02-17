@@ -30,7 +30,7 @@ import axiosInstance from '@/services/axiosConfig';
  *   positions          - aggregated positions from useAggregatedPositions
  *   orders             - aggregated orders from useAggregatedPositions
  */
-const QuickOrderBar = ({ chartSymbol, multiAccountTrading, positions = [], orders = [], bracketPlacement }) => {
+const QuickOrderBar = ({ chartSymbol, multiAccountTrading, positions = [], orders = [], bracketPlacement, getCopyInfo }) => {
   const toast = useToast();
   const [isFlattening, setIsFlattening] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
@@ -306,7 +306,18 @@ const QuickOrderBar = ({ chartSymbol, multiAccountTrading, positions = [], order
 
           <Text fontSize="xs" color="whiteAlpha.500" display={{ base: 'none', sm: 'block' }}>
             {hasActiveAccounts
-              ? `${totalContracts} ct${totalContracts !== 1 ? 's' : ''} / ${activeCount} acct${activeCount !== 1 ? 's' : ''}`
+              ? (() => {
+                  // Check if any active account is a copy leader
+                  const leaderAcct = activeAccounts.find(
+                    (a) => getCopyInfo?.(a.account_id)?.mode === 'copy-leader'
+                  );
+                  if (leaderAcct) {
+                    const info = getCopyInfo(leaderAcct.account_id);
+                    const leaderName = leaderAcct.nickname || leaderAcct.name || leaderAcct.account_id;
+                    return `${totalContracts} ct${totalContracts !== 1 ? 's' : ''} on ${leaderName} → copying to ${info.followerCount || 0} acct${(info.followerCount || 0) !== 1 ? 's' : ''}`;
+                  }
+                  return `${totalContracts} ct${totalContracts !== 1 ? 's' : ''} / ${activeCount} acct${activeCount !== 1 ? 's' : ''}`;
+                })()
               : 'No accounts active'}
           </Text>
         </HStack>

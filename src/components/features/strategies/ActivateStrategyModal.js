@@ -726,7 +726,7 @@ const ActivateStrategyModal = ({
                       const broker = getBrokerInfo(account.broker_id);
                       return (
                         <option key={account.account_id} value={account.account_id} style={{ background: '#1a1a1a' }}>
-                          {account.display_name} ({broker.name})
+                          {account.nickname || account.name} ({broker.name})
                         </option>
                       );
                     })}
@@ -850,7 +850,7 @@ const ActivateStrategyModal = ({
                       const broker = getBrokerInfo(account.broker_id);
                       return (
                         <option key={account.account_id} value={account.account_id} style={{ background: '#1a1a1a' }}>
-                          {account.display_name} ({broker.name})
+                          {account.nickname || account.name} ({broker.name})
                         </option>
                       );
                     })}
@@ -938,7 +938,7 @@ const ActivateStrategyModal = ({
                                 const broker = getBrokerInfo(account.broker_id);
                                 return (
                                   <option key={account.account_id} value={account.account_id} style={{ background: '#1a1a1a' }}>
-                                    {account.display_name} ({broker.name})
+                                    {account.nickname || account.name} ({broker.name})
                                   </option>
                                 );
                               })}

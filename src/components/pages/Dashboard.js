@@ -30,6 +30,7 @@ import useMultiAccountTrading from '@/hooks/useMultiAccountTrading';
 import useAggregatedPositions from '@/hooks/useAggregatedPositions';
 import useBracketPlacement from '@/hooks/useBracketPlacement';
 import { useUnifiedStrategies } from '@/hooks/useUnifiedStrategies';
+import useCopyTrading from '@/hooks/useCopyTrading';
 import { useWebSocketContext } from '@/services/websocket-proxy/contexts/WebSocketContext';
 import webSocketManager from '@/services/websocket-proxy/WebSocketManager';
 
@@ -159,7 +160,13 @@ const DashboardContent = () => {
     // Multi-account trading hooks
     const { getConnectionState: wsGetConnectionState } = useWebSocketContext();
     const { strategies: activatedStrategies } = useUnifiedStrategies();
-    const multiAccountTrading = useMultiAccountTrading(dashboardData.accounts, activatedStrategies);
+    const copyTrading = useCopyTrading();
+    const copyTradingData = {
+      copyLeaderAccountIds: copyTrading.copyLeaderAccountIds,
+      copyFollowerAccountIds: copyTrading.copyFollowerAccountIds,
+      getCopyInfo: copyTrading.getCopyInfo,
+    };
+    const multiAccountTrading = useMultiAccountTrading(dashboardData.accounts, activatedStrategies, copyTradingData);
     const { positions: aggregatedPositions, orders: aggregatedOrders } = useAggregatedPositions(dashboardData.accounts, wsGetConnectionState);
 
     // Bracket placement hook
@@ -527,6 +534,7 @@ const DashboardContent = () => {
                                                     positions={aggregatedPositions}
                                                     orders={aggregatedOrders}
                                                     bracketPlacement={bracketPlacement}
+                                                    getCopyInfo={copyTrading.getCopyInfo}
                                                 />
                                             </Suspense>
                                         </ErrorBoundary>
@@ -544,6 +552,7 @@ const DashboardContent = () => {
                                                     onToggleCollapse={() => setIsTradingPanelCollapsed(prev => !prev)}
                                                     multiAccountTrading={multiAccountTrading}
                                                     accounts={dashboardData.accounts}
+                                                    getCopyInfo={copyTrading.getCopyInfo}
                                                 />
                                             </Suspense>
                                         </ErrorBoundary>
@@ -575,6 +584,7 @@ const DashboardContent = () => {
                                                     multiAccountTrading={multiAccountTrading}
                                                     aggregatedPositions={aggregatedPositions}
                                                     strategies={activatedStrategies}
+                                                    copyTrading={copyTrading}
                                                 />
                                             </Suspense>
                                         </ErrorBoundary>

@@ -40,7 +40,7 @@ const PnLShareModal = lazy(() => import('../share-cards/PnLShareModal'));
  *   orders         - aggregated orders from useAggregatedPositions
  *   chartSymbol    - current chart symbol for highlighting
  */
-const TradingPanel = ({ positions = [], orders = [], chartSymbol = '', isCollapsed = false, onToggleCollapse, multiAccountTrading, accounts = [] }) => {
+const TradingPanel = ({ positions = [], orders = [], chartSymbol = '', isCollapsed = false, onToggleCollapse, multiAccountTrading, accounts = [], getCopyInfo }) => {
   const [activeTab, setActiveTab] = useState('positions');
   const toast = useToast();
   const { sendMessage, getConnectionState, getAccountData } = useWebSocketContext();
@@ -243,6 +243,7 @@ const TradingPanel = ({ positions = [], orders = [], chartSymbol = '', isCollaps
             setAccountQuantity={multiAccountTrading.setAccountQuantity}
             getConnectionState={getConnectionState}
             getAccountData={getAccountData}
+            getCopyInfo={getCopyInfo}
           />
         )}
       </Box>}

@@ -47,6 +47,7 @@ const AccountsTab = memo(({
   setAccountQuantity,
   getConnectionState,
   getAccountData,
+  getCopyInfo,
 }) => {
   // Build a per-account open PnL map from positions
   const accountOpenPnL = useMemo(() => {
@@ -138,10 +139,18 @@ const AccountsTab = memo(({
               <Td py={1.5}>
                 <Badge
                   fontSize="9px"
-                  colorScheme={mode === 'manual' ? 'cyan' : 'purple'}
+                  colorScheme={
+                    mode === 'copy-leader' ? 'green'
+                    : mode === 'copy-follower' ? 'yellow'
+                    : mode === 'auto' ? 'purple'
+                    : 'cyan'
+                  }
                   variant="subtle"
                 >
-                  {mode === 'manual' ? 'MANUAL' : 'AUTO'}
+                  {mode === 'copy-leader' ? 'LEADER'
+                    : mode === 'copy-follower' ? 'FOLLOWING'
+                    : mode === 'auto' ? 'AUTO'
+                    : 'MANUAL'}
                 </Badge>
               </Td>
               <Td py={1.5}>
@@ -149,16 +158,27 @@ const AccountsTab = memo(({
                   <Switch
                     size="sm"
                     colorScheme="cyan"
-                    isChecked={cfg.isActive && mode === 'manual'}
-                    isDisabled={mode === 'auto'}
+                    isChecked={cfg.isActive}
                     onClick={(e) => e.stopPropagation()}
                     onChange={() => toggleAccount(accountId)}
                   />
-                ) : (
+                ) : mode === 'auto' ? (
                   <Text fontSize="xs" color="purple.300" noOfLines={1}>
                     {strategies?.[0]?.name || 'Strategy'}
                   </Text>
-                )}
+                ) : mode === 'copy-leader' ? (
+                  <Text fontSize="xs" color="green.300" noOfLines={1}>
+                    {getCopyInfo?.(accountId)?.followerCount
+                      ? `${getCopyInfo(accountId).followerCount} follower${getCopyInfo(accountId).followerCount !== 1 ? 's' : ''}`
+                      : 'Leader'}
+                  </Text>
+                ) : mode === 'copy-follower' ? (
+                  <Text fontSize="xs" color="yellow.300" noOfLines={1}>
+                    {getCopyInfo?.(accountId)?.ratio
+                      ? `${getCopyInfo(accountId).ratio}x`
+                      : 'Following'}
+                  </Text>
+                ) : null}
               </Td>
             </Tr>
           );
