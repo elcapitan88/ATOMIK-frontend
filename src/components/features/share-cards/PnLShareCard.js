@@ -1,6 +1,5 @@
 import React, { forwardRef } from 'react';
 import QRCode from 'react-qr-code';
-import EquitySparkline from './EquitySparkline';
 
 /**
  * PnL Share Card — pixel-exact card component for image capture.
@@ -21,10 +20,9 @@ const FORMAT_CONFIG = {
     height: 1080,
     bgImage: '/images/bg-square.png',
     heroFontSize: 72,
+    balanceFontSize: 44,
     statFontSize: 28,
     labelFontSize: 16,
-    sparklineW: 920,
-    sparklineH: 140,
     padding: 48,
     statsGap: 16,
     sectionGap: 32,
@@ -36,10 +34,9 @@ const FORMAT_CONFIG = {
     height: 675,
     bgImage: '/images/bg-landscape.png',
     heroFontSize: 60,
+    balanceFontSize: 36,
     statFontSize: 24,
     labelFontSize: 14,
-    sparklineW: 520,
-    sparklineH: 160,
     padding: 40,
     statsGap: 12,
     sectionGap: 24,
@@ -51,10 +48,9 @@ const FORMAT_CONFIG = {
     height: 1920,
     bgImage: '/images/bg-story.png',
     heroFontSize: 84,
+    balanceFontSize: 52,
     statFontSize: 32,
     labelFontSize: 18,
-    sparklineW: 920,
-    sparklineH: 200,
     padding: 56,
     statsGap: 20,
     sectionGap: 48,
@@ -170,6 +166,78 @@ const CardFooter = ({ username, cfg }) => (
   </div>
 );
 
+/** Glowing PnL hero number */
+const PnLHero = ({ label, value, color, fontSize, labelSize, sectionGap }) => {
+  const glowShadow = [
+    `0 0 10px ${color}99`,
+    `0 0 30px ${color}66`,
+    `0 0 60px ${color}33`,
+    `0 0 100px ${color}1A`,
+  ].join(', ');
+
+  return (
+    <div style={{ textAlign: 'center', marginBottom: sectionGap * 0.8 }}>
+      <div
+        style={{
+          fontSize: labelSize,
+          textTransform: 'uppercase',
+          letterSpacing: 2.5,
+          color: 'rgba(255,255,255,0.5)',
+          marginBottom: 12,
+          fontWeight: 500,
+        }}
+      >
+        {label}
+      </div>
+      <div
+        style={{
+          fontSize: fontSize,
+          fontWeight: 800,
+          color: color,
+          lineHeight: 1.1,
+          textShadow: glowShadow,
+        }}
+      >
+        {value}
+      </div>
+    </div>
+  );
+};
+
+/** Prominent total balance section */
+const TotalBalanceSection = ({ balance, accountCount, privacyMode, cfg }) => {
+  const balanceValue = privacyMode
+    ? '$***'
+    : `$${formatCurrency(balance)}`;
+
+  return (
+    <div style={{ textAlign: 'center', marginBottom: cfg.sectionGap }}>
+      <div
+        style={{
+          fontSize: cfg.labelFontSize - 1,
+          textTransform: 'uppercase',
+          letterSpacing: 2,
+          color: 'rgba(255,255,255,0.4)',
+          marginBottom: 10,
+          fontWeight: 500,
+        }}
+      >
+        Total Balance &middot; {accountCount} {accountCount === 1 ? 'Account' : 'Accounts'}
+      </div>
+      <div
+        style={{
+          fontSize: cfg.balanceFontSize,
+          fontWeight: 700,
+          color: '#FFFFFF',
+          lineHeight: 1.2,
+        }}
+      >
+        {balanceValue}
+      </div>
+    </div>
+  );
+};
+
 const PnLShareCard = forwardRef(({ data, format = 'square', privacyMode = false, transparentBg = false, username = '' }, ref) => {
   const cfg = FORMAT_CONFIG[format];
   if (!data || !cfg) return null;
@@ -222,6 +290,13 @@ const PnLShareCard = forwardRef(({ data, format = 'square', privacyMode = false,
 
   // Landscape uses side-by-side layout
   if (format === 'landscape') {
+    const glowShadow = [
+      `0 0 10px ${pnlColor}99`,
+      `0 0 30px ${pnlColor}66`,
+      `0 0 60px ${pnlColor}33`,
+      `0 0 100px ${pnlColor}1A`,
+    ].join(', ');
+
     return (
       <div ref={ref} style={containerStyle}>
         {/* Dark overlay for text readability */}
@@ -269,7 +344,7 @@ const PnLShareCard = forwardRef(({ data, format = 'square', privacyMode = false,
 
           {/* Main content: left + right */}
           <div style={{ display: 'flex', flex: 1, gap: 32 }}>
-            {/* Left side: Hero PnL + Sparkline */}
+            {/* Left side: Hero PnL + Total Balance */}
             <div
               style={{
                 flex: '1 1 50%',
@@ -295,32 +370,38 @@ const PnLShareCard = forwardRef(({ data, format = 'square', privacyMode = false,
                   fontWeight: 800,
                   color: pnlColor,
                   lineHeight: 1.1,
-                  marginBottom: 24,
+                  marginBottom: 28,
+                  textShadow: glowShadow,
                 }}
               >
                 {heroValue}
               </div>
+              {/* Total Balance */}
               <div
                 style={{
-                  fontSize: cfg.labelFontSize - 2,
-                  color: 'rgba(255,255,255,0.35)',
-                  marginBottom: 8,
+                  fontSize: cfg.labelFontSize - 1,
                   textTransform: 'uppercase',
-                  letterSpacing: 1,
+                  letterSpacing: 2,
+                  color: 'rgba(255,255,255,0.4)',
+                  marginBottom: 8,
+                  fontWeight: 500,
                 }}
               >
-                Equity Curve
+                Total Balance &middot; {data.account_count} {data.account_count === 1 ? 'Account' : 'Accounts'}
               </div>
-              <EquitySparkline
-                data={data.equity_curve}
-                width={cfg.sparklineW}
-                height={cfg.sparklineH}
-                isPositive={isPositive}
-                strokeWidth={2.5}
-              />
+              <div
+                style={{
+                  fontSize: cfg.balanceFontSize,
+                  fontWeight: 700,
+                  color: '#FFFFFF',
+                  lineHeight: 1.2,
+                }}
+              >
+                {privacyMode ? '$***' : `$${formatCurrency(data.total_balance || 0)}`}
+              </div>
             </div>
 
-            {/* Right side: Stats */}
+            {/* Right side: Stats 2x2 */}
             <div
               style={{
                 flex: '1 1 45%',
@@ -339,24 +420,9 @@ const PnLShareCard = forwardRef(({ data, format = 'square', privacyMode = false,
                   labelSize={cfg.labelFontSize - 2}
                 />
                 <StatBlock
-                  label="Trades"
-                  value={data.total_trades}
-                  fontSize={cfg.statFontSize}
-                  labelSize={cfg.labelFontSize - 2}
-                />
-              </div>
-              <div style={{ display: 'flex', gap: cfg.statsGap }}>
-                <StatBlock
                   label="Profit Factor"
                   value={data.profit_factor > 99 ? '99+' : data.profit_factor.toFixed(1)}
                   color="#00C6E0"
-                  fontSize={cfg.statFontSize}
-                  labelSize={cfg.labelFontSize - 2}
-                />
-                <StatBlock
-                  label="Streak"
-                  value={streakLabel}
-                  color={streakColor}
                   fontSize={cfg.statFontSize}
                   labelSize={cfg.labelFontSize - 2}
                 />
@@ -370,8 +436,9 @@ const PnLShareCard = forwardRef(({ data, format = 'square', privacyMode = false,
                   labelSize={cfg.labelFontSize - 2}
                 />
                 <StatBlock
-                  label="Accounts"
-                  value={data.account_count}
+                  label="Streak"
+                  value={streakLabel}
+                  color={streakColor}
                   fontSize={cfg.statFontSize}
                   labelSize={cfg.labelFontSize - 2}
                 />
@@ -437,33 +504,25 @@ const PnLShareCard = forwardRef(({ data, format = 'square', privacyMode = false,
         {/* Spacer for story format */}
         {format === 'story' && <div style={{ flex: '0.3' }} />}
 
-        {/* Hero PnL */}
-        <div style={{ textAlign: 'center', marginBottom: cfg.sectionGap * 1.2 }}>
-          <div
-            style={{
-              fontSize: cfg.labelFontSize,
-              textTransform: 'uppercase',
-              letterSpacing: 2.5,
-              color: 'rgba(255,255,255,0.5)',
-              marginBottom: 12,
-              fontWeight: 500,
-            }}
-          >
-            {data.period_label} P&L
-          </div>
-          <div
-            style={{
-              fontSize: cfg.heroFontSize,
-              fontWeight: 800,
-              color: pnlColor,
-              lineHeight: 1.1,
-            }}
-          >
-            {heroValue}
-          </div>
-        </div>
+        {/* Hero PnL with glow */}
+        <PnLHero
+          label={`${data.period_label} P&L`}
+          value={heroValue}
+          color={pnlColor}
+          fontSize={cfg.heroFontSize}
+          labelSize={cfg.labelFontSize}
+          sectionGap={cfg.sectionGap}
+        />
 
-        {/* Stats Grid 2x3 */}
+        {/* Total Balance — prominent standalone section */}
+        <TotalBalanceSection
+          balance={data.total_balance || 0}
+          accountCount={data.account_count}
+          privacyMode={privacyMode}
+          cfg={cfg}
+        />
+
+        {/* Stats Grid 2x2 */}
         <div
           style={{
             display: 'flex',
@@ -477,12 +536,6 @@ const PnLShareCard = forwardRef(({ data, format = 'square', privacyMode = false,
               label="Win Rate"
               value={`${data.win_rate.toFixed(0)}%`}
               color="#00C6E0"
-              fontSize={cfg.statFontSize}
-              labelSize={cfg.labelFontSize - 2}
-            />
-            <StatBlock
-              label="Trades"
-              value={data.total_trades}
               fontSize={cfg.statFontSize}
               labelSize={cfg.labelFontSize - 2}
             />
@@ -509,40 +562,11 @@ const PnLShareCard = forwardRef(({ data, format = 'square', privacyMode = false,
               fontSize={cfg.statFontSize}
               labelSize={cfg.labelFontSize - 2}
             />
-            <StatBlock
-              label="Accounts"
-              value={data.account_count}
-              fontSize={cfg.statFontSize}
-              labelSize={cfg.labelFontSize - 2}
-            />
           </div>
         </div>
 
         {/* Spacer for story format */}
-        {format === 'story' && <div style={{ flex: '0.2' }} />}
-
-        {/* Equity Curve */}
-        <div style={{ marginBottom: cfg.sectionGap }}>
-          <div
-            style={{
-              fontSize: cfg.labelFontSize - 2,
-              color: 'rgba(255,255,255,0.35)',
-              marginBottom: 10,
-              textTransform: 'uppercase',
-              letterSpacing: 1.5,
-              fontWeight: 500,
-            }}
-          >
-            Equity Curve
-          </div>
-          <EquitySparkline
-            data={data.equity_curve}
-            width={cfg.sparklineW}
-            height={cfg.sparklineH}
-            isPositive={isPositive}
-            strokeWidth={3}
-          />
-        </div>
+        {format === 'story' && <div style={{ flex: '0.3' }} />}
 
         {/* Flex spacer pushes footer to bottom */}
         <div style={{ flex: 1 }} />
