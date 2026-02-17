@@ -64,6 +64,7 @@ const PREVIEW_HEIGHTS = {
 const PnLShareModal = ({ isOpen, onClose }) => {
   const toast = useToast();
   const cardRef = useRef(null);
+  const exportCardRef = useRef(null);
   const { cardData, isLoading, error, fetchCardData } = useShareCard();
 
   const [selectedFormat, setSelectedFormat] = useState('square');
@@ -79,18 +80,18 @@ const PnLShareModal = ({ isOpen, onClose }) => {
     }
   }, [isOpen, selectedPeriod, fetchCardData]);
 
-  // Capture the card DOM element as a canvas
+  // Capture the hidden full-size card (not the scaled preview)
   const captureCard = useCallback(async () => {
-    if (!cardRef.current) return null;
+    if (!exportCardRef.current) return null;
 
-    const canvas = await html2canvas(cardRef.current, {
+    const canvas = await html2canvas(exportCardRef.current, {
       scale: 2,
       useCORS: true,
       allowTaint: false,
       backgroundColor: null,
       logging: false,
-      width: cardRef.current.offsetWidth,
-      height: cardRef.current.offsetHeight,
+      width: exportCardRef.current.offsetWidth,
+      height: exportCardRef.current.offsetHeight,
     });
 
     return canvas;
@@ -382,6 +383,24 @@ const PnLShareModal = ({ isOpen, onClose }) => {
           </VStack>
         </ModalBody>
       </ModalContent>
+
+      {/* Hidden full-size card for export (not affected by preview scaling) */}
+      {cardData && (
+        <Box
+          position="fixed"
+          left="-9999px"
+          top="-9999px"
+          pointerEvents="none"
+          aria-hidden="true"
+        >
+          <PnLShareCard
+            ref={exportCardRef}
+            data={cardData}
+            format={selectedFormat}
+            privacyMode={privacyMode}
+          />
+        </Box>
+      )}
 
       {/* Fullscreen View with live particle background */}
       <PnLFullScreenView
