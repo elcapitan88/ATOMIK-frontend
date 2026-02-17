@@ -1,4 +1,5 @@
 import React, { forwardRef } from 'react';
+import QRCode from 'react-qr-code';
 import EquitySparkline from './EquitySparkline';
 
 /**
@@ -11,6 +12,7 @@ import EquitySparkline from './EquitySparkline';
  *   data        - ShareCardDataResponse from backend
  *   format      - 'square' | 'landscape' | 'story'
  *   privacyMode - hide dollar amounts
+ *   username    - user's display name / handle
  */
 
 const FORMAT_CONFIG = {
@@ -26,6 +28,8 @@ const FORMAT_CONFIG = {
     padding: 48,
     statsGap: 16,
     sectionGap: 32,
+    logoHeight: 52,
+    qrSize: 72,
   },
   landscape: {
     width: 1200,
@@ -39,6 +43,8 @@ const FORMAT_CONFIG = {
     padding: 40,
     statsGap: 12,
     sectionGap: 24,
+    logoHeight: 44,
+    qrSize: 56,
   },
   story: {
     width: 1080,
@@ -52,6 +58,8 @@ const FORMAT_CONFIG = {
     padding: 56,
     statsGap: 20,
     sectionGap: 48,
+    logoHeight: 60,
+    qrSize: 88,
   },
 };
 
@@ -90,7 +98,79 @@ const StatBlock = ({ label, value, color = '#FFFFFF', fontSize, labelSize }) => 
   </div>
 );
 
-const PnLShareCard = forwardRef(({ data, format = 'square', privacyMode = false, transparentBg = false }, ref) => {
+/** Shared footer: username on left, QR + branding on right */
+const CardFooter = ({ username, cfg }) => (
+  <div
+    style={{
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingTop: 16,
+      borderTop: '1px solid rgba(255,255,255,0.08)',
+    }}
+  >
+    {/* Username */}
+    <div
+      style={{
+        fontSize: cfg.labelFontSize,
+        color: 'rgba(255,255,255,0.6)',
+        fontWeight: 600,
+        letterSpacing: 0.5,
+      }}
+    >
+      {username ? `@${username}` : ''}
+    </div>
+
+    {/* QR + branding */}
+    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'flex-end',
+          gap: 2,
+        }}
+      >
+        <img
+          src="/logos/atomik-logo.svg"
+          alt="Atomik"
+          style={{ height: cfg.logoHeight * 0.55 }}
+          crossOrigin="anonymous"
+        />
+        <span
+          style={{
+            fontSize: cfg.labelFontSize - 3,
+            color: 'rgba(255,255,255,0.35)',
+            letterSpacing: 1,
+            fontWeight: 500,
+          }}
+        >
+          atomiktrading.io
+        </span>
+      </div>
+      <div
+        style={{
+          background: '#FFFFFF',
+          borderRadius: 6,
+          padding: 4,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <QRCode
+          value="https://atomiktrading.io"
+          size={cfg.qrSize}
+          level="M"
+          bgColor="#FFFFFF"
+          fgColor="#000000"
+        />
+      </div>
+    </div>
+  </div>
+);
+
+const PnLShareCard = forwardRef(({ data, format = 'square', privacyMode = false, transparentBg = false, username = '' }, ref) => {
   const cfg = FORMAT_CONFIG[format];
   if (!data || !cfg) return null;
 
@@ -169,7 +249,7 @@ const PnLShareCard = forwardRef(({ data, format = 'square', privacyMode = false,
             <img
               src="/logos/atomik-logo.svg"
               alt="Atomik"
-              style={{ height: 32 }}
+              style={{ height: cfg.logoHeight }}
               crossOrigin="anonymous"
             />
             <div
@@ -299,26 +379,8 @@ const PnLShareCard = forwardRef(({ data, format = 'square', privacyMode = false,
           </div>
 
           {/* Footer */}
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'center',
-              alignItems: 'center',
-              paddingTop: 12,
-              borderTop: '1px solid rgba(255,255,255,0.08)',
-              marginTop: 16,
-            }}
-          >
-            <span
-              style={{
-                fontSize: cfg.labelFontSize - 2,
-                color: 'rgba(255,255,255,0.35)',
-                letterSpacing: 1.5,
-                fontWeight: 500,
-              }}
-            >
-              atomiktrading.io
-            </span>
+          <div style={{ marginTop: 16 }}>
+            <CardFooter username={username} cfg={cfg} />
           </div>
         </div>
       </div>
@@ -353,7 +415,7 @@ const PnLShareCard = forwardRef(({ data, format = 'square', privacyMode = false,
           <img
             src="/logos/atomik-logo.svg"
             alt="Atomik"
-            style={{ height: format === 'story' ? 44 : 36 }}
+            style={{ height: cfg.logoHeight }}
             crossOrigin="anonymous"
           />
           <div
@@ -484,26 +546,7 @@ const PnLShareCard = forwardRef(({ data, format = 'square', privacyMode = false,
         <div style={{ flex: 1 }} />
 
         {/* Footer */}
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            paddingTop: 16,
-            borderTop: '1px solid rgba(255,255,255,0.08)',
-          }}
-        >
-          <span
-            style={{
-              fontSize: cfg.labelFontSize,
-              color: 'rgba(255,255,255,0.35)',
-              letterSpacing: 2,
-              fontWeight: 500,
-            }}
-          >
-            atomiktrading.io
-          </span>
-        </div>
+        <CardFooter username={username} cfg={cfg} />
       </div>
     </div>
   );

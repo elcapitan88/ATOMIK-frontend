@@ -34,6 +34,7 @@ import html2canvas from 'html2canvas';
 import PnLShareCard from './PnLShareCard';
 import PnLFullScreenView from './PnLFullScreenView';
 import useShareCard from '@/hooks/useShareCard';
+import { useAuth } from '@/contexts/AuthContext';
 
 const PERIODS = [
   { label: 'Today', value: 1 },
@@ -63,6 +64,8 @@ const PREVIEW_HEIGHTS = {
 
 const PnLShareModal = ({ isOpen, onClose }) => {
   const toast = useToast();
+  const { user } = useAuth();
+  const username = user?.username || user?.email?.split('@')[0] || '';
   const cardRef = useRef(null);
   const exportCardRef = useRef(null);
   const { cardData, isLoading, error, fetchCardData } = useShareCard();
@@ -337,6 +340,7 @@ const PnLShareModal = ({ isOpen, onClose }) => {
                     data={cardData}
                     format={selectedFormat}
                     privacyMode={privacyMode}
+                    username={username}
                   />
                 </Box>
               ) : (
@@ -420,6 +424,7 @@ const PnLShareModal = ({ isOpen, onClose }) => {
             data={cardData}
             format={selectedFormat}
             privacyMode={privacyMode}
+            username={username}
           />
         </Box>
       )}
@@ -431,6 +436,7 @@ const PnLShareModal = ({ isOpen, onClose }) => {
         cardData={cardData}
         format={selectedFormat}
         privacyMode={privacyMode}
+        username={username}
       />
     </Modal>
   );

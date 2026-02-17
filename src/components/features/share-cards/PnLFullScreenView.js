@@ -27,7 +27,7 @@ const FORMAT_DIMS = {
  * For image export, a hidden copy of the card with the static PNG background
  * is captured instead (html2canvas cannot capture animated canvas).
  */
-const PnLFullScreenView = ({ isOpen, onClose, cardData, format = 'square', privacyMode = false }) => {
+const PnLFullScreenView = ({ isOpen, onClose, cardData, format = 'square', privacyMode = false, username = '' }) => {
   const toast = useToast();
   const exportCardRef = useRef(null);
   const [scale, setScale] = useState(0.5);
@@ -222,6 +222,7 @@ const PnLFullScreenView = ({ isOpen, onClose, cardData, format = 'square', priva
           format={format}
           privacyMode={privacyMode}
           transparentBg
+          username={username}
         />
       </Box>
 
@@ -296,6 +297,7 @@ const PnLFullScreenView = ({ isOpen, onClose, cardData, format = 'square', priva
           data={cardData}
           format={format}
           privacyMode={privacyMode}
+          username={username}
         />
       </Box>
     </Box>
