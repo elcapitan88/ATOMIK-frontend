@@ -28,7 +28,7 @@ const FORMAT_CONFIG = {
     padding: 48,
     statsGap: 16,
     sectionGap: 32,
-    logoHeight: 52,
+    logoHeight: 80,
     qrSize: 72,
   },
   landscape: {
@@ -43,7 +43,7 @@ const FORMAT_CONFIG = {
     padding: 40,
     statsGap: 12,
     sectionGap: 24,
-    logoHeight: 44,
+    logoHeight: 64,
     qrSize: 56,
   },
   story: {
@@ -58,7 +58,7 @@ const FORMAT_CONFIG = {
     padding: 56,
     statsGap: 20,
     sectionGap: 48,
-    logoHeight: 60,
+    logoHeight: 96,
     qrSize: 88,
   },
 };
@@ -237,13 +237,14 @@ const PnLShareCard = forwardRef(({ data, format = 'square', privacyMode = false,
             padding: cfg.padding,
           }}
         >
-          {/* Header */}
+          {/* Header — centered logo + period badge */}
           <div
             style={{
               display: 'flex',
-              justifyContent: 'space-between',
+              flexDirection: 'column',
               alignItems: 'center',
               marginBottom: cfg.sectionGap,
+              gap: 10,
             }}
           >
             <img
@@ -403,13 +404,14 @@ const PnLShareCard = forwardRef(({ data, format = 'square', privacyMode = false,
           padding: cfg.padding,
         }}
       >
-        {/* Header */}
+        {/* Header — centered logo + period badge */}
         <div
           style={{
             display: 'flex',
-            justifyContent: 'space-between',
+            flexDirection: 'column',
             alignItems: 'center',
             marginBottom: cfg.sectionGap,
+            gap: 12,
           }}
         >
           <img
