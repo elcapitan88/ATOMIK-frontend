@@ -92,6 +92,14 @@ const FAQ = () => {
       answer: "Absolutely! Atomik is designed to work seamlessly with prop trading firms and funded accounts. Many of our users successfully automate their strategies on TopStep, Apex, and other prop firm platforms while following all their rules and guidelines."
     },
     {
+      question: "Can I trade multiple accounts at the same time?",
+      answer: "Yes. Atomik's trade mirroring feature lets you broadcast a single webhook or TradingView alert to every account you have connected. When your signal fires, all selected accounts execute the same trade simultaneously. This is especially useful for prop traders running multiple funded accounts — you manage one strategy and every account follows it automatically. There is no per-account fee and no extra setup. Just connect your accounts, assign them to receive your signal, and you are done."
+    },
+    {
+      question: "Is trade mirroring the same as copy trading?",
+      answer: "Not quite. Traditional copy trading means following someone else's trades — you subscribe to another trader and replicate their positions. Trade mirroring on Atomik is different: you are broadcasting your own signal to your own accounts. You control the strategy, you own every account, and you decide exactly which accounts receive each signal. Think of it as a personal trade broadcaster rather than a social feature."
+    },
+    {
       question: "Do I need TradingView to use Atomik?",
       answer: "While TradingView is our most popular integration, you can also use other signal sources. TradingView is recommended because it offers powerful charting, thousands of indicators, and makes it easy to create automated alerts for any trading strategy."
     },
@@ -167,6 +175,22 @@ const FAQ = () => {
                   "acceptedAnswer": {
                     "@type": "Answer",
                     "text": "Absolutely! Atomik is designed to work seamlessly with prop trading firms and funded accounts. Many of our users successfully automate their strategies on TopStep, Apex, and other prop firm platforms while following all their rules and guidelines."
+                  }
+                },
+                {
+                  "@type": "Question",
+                  "name": "Can I trade multiple accounts at the same time?",
+                  "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Yes. Atomik's trade mirroring feature lets you broadcast a single webhook or TradingView alert to every account you have connected. When your signal fires, all selected accounts execute the same trade simultaneously. This is especially useful for prop traders running multiple funded accounts."
+                  }
+                },
+                {
+                  "@type": "Question",
+                  "name": "Is trade mirroring the same as copy trading?",
+                  "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Not quite. Traditional copy trading means following someone else's trades. Trade mirroring on Atomik is different: you are broadcasting your own signal to your own accounts. You control the strategy, you own every account, and you decide exactly which accounts receive each signal."
                   }
                 },
                 {

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Box, Container, SimpleGrid, Heading, Text, VStack, Icon } from '@chakra-ui/react';
-import { Shield, Zap, Webhook, LineChart, Users, Layers } from 'lucide-react';
+import { Shield, Zap, Webhook, LineChart, Radio, Layers } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const MotionBox = motion(Box);
@@ -58,13 +58,13 @@ const Features = () => {
     },
     {
       icon: LineChart,
-      title: 'Copy Trading Analytics',
-      description: 'Track your automated trading performance in real-time. See which strategies work best for copy trading and optimization.',
+      title: 'Real-Time Performance Tracking',
+      description: 'Monitor every automated trade across all your accounts in real time. See which strategies perform best and optimize with live analytics.',
     },
     {
-      icon: Users,
-      title: 'Multi-Account Automation',
-      description: 'Automate trading across multiple accounts simultaneously. Ideal for prop traders managing funded accounts.',
+      icon: Radio,
+      title: 'Trade Mirroring',
+      description: 'Broadcast one signal to every account you own. Built for prop traders managing multiple funded accounts — one webhook, all accounts, simultaneous execution.',
     },
     {
       icon: Layers,

@@ -11,6 +11,7 @@ import Footer from './Footer';
 const Statistics = lazy(() => import('./Statistics'));
 const Features = lazy(() => import('./Features'));
 const HowToUse = lazy(() => import('./HowToUse'));
+const TradeMirroring = lazy(() => import('./TradeMirroring'));
 const FAQ = lazy(() => import('./FAQ'));
 const TrustSecurity = lazy(() => import('./TrustSecurity'));
 const IntegrationPartners = lazy(() => import('./IntegrationPartners'));
@@ -523,6 +524,7 @@ const Homepage = () => {
           <LazyComponent component={Statistics} id="statistics-section" />
           <LazyComponent component={Features} id="features-section" />
           <LazyComponent component={HowToUse} id="how-to-use-section" />
+          <LazyComponent component={TradeMirroring} id="trade-mirroring-section" />
           <LazyComponent component={FAQ} id="faq-section" />
           <LazyComponent component={TrustSecurity} id="trust-security-section" />
           <LazyComponent component={IntegrationPartners} id="integration-partners-section" />
