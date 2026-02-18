@@ -151,6 +151,7 @@ const QuickOrderBar = ({ chartSymbol, multiAccountTrading, positions = [], order
                 type: 'MARKET',
                 quantity: qty,
                 time_in_force: 'IOC',
+                force_close: true,
               }
             );
             return { success: true, data: res.data };
@@ -197,7 +198,7 @@ const QuickOrderBar = ({ chartSymbol, multiAccountTrading, positions = [], order
                 try {
                   await axiosInstance.post(
                     `/api/v1/brokers/accounts/${accountId}/discretionary/orders`,
-                    { symbol: pos.symbol, side: closeSide, type: 'MARKET', quantity: qty, time_in_force: 'IOC' }
+                    { symbol: pos.symbol, side: closeSide, type: 'MARKET', quantity: qty, time_in_force: 'IOC', force_close: true }
                   );
                   return { success: true };
                 } catch (err) {
