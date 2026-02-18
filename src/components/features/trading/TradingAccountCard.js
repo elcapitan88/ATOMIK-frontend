@@ -405,9 +405,10 @@ const AccountOptionsMenu = memo(
           onClick={(e) => e.stopPropagation()}
         />
         <MenuList
-          bg="rgba(30, 30, 30, 0.95)"
-          backdropFilter="blur(10px)"
+          bg="#1a1a1a"
           borderColor="whiteAlpha.200"
+          boxShadow="0 4px 20px rgba(0, 0, 0, 0.6)"
+          zIndex={20}
           minW="160px"
         >
           {/* Common: Edit Name */}
