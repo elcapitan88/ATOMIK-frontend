@@ -150,10 +150,8 @@ const CopyTradingModal = ({
       }
 
       // Update group settings if changed
-      if (Object.keys(groupUpdates).length > 0) {
-        copyTrading.updateGroup
-          ? copyTrading.updateGroup.mutate({ groupId: existingGroup.id, data: groupUpdates })
-          : null;
+      if (Object.keys(groupUpdates).length > 0 && copyTrading.updateGroup) {
+        copyTrading.updateGroup.mutate({ groupId: existingGroup.id, data: groupUpdates });
       }
 
       // Update each follower's ratio/active state
