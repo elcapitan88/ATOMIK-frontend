@@ -83,7 +83,7 @@ const CopyTradingModal = ({
     const map = {};
     if (existingGroup) {
       existingGroup.followers.forEach((f) => {
-        map[String(f.follower_account_id)] = { checked: f.is_active, ratio: f.ratio };
+        map[String(f.follower_account_id)] = { checked: f.is_active, ratio: f.ratio, followerId: f.id };
       });
     }
     return map;
@@ -139,6 +139,42 @@ const CopyTradingModal = ({
   const selectedCount = Object.values(selectedFollowers).filter((f) => f.checked).length;
 
   const handleSubmit = () => {
+    if (isEditing && existingGroup) {
+      // Update existing group: patch group settings + update each follower's ratio
+      const groupUpdates = {};
+      if (copyBrackets !== existingGroup.copy_brackets) groupUpdates.copy_brackets = copyBrackets;
+      if (followerProtection !== existingGroup.follower_protection) groupUpdates.follower_protection = followerProtection;
+      const newSymbols = allowedSymbols.length > 0 ? allowedSymbols : null;
+      if (JSON.stringify(newSymbols) !== JSON.stringify(existingGroup.allowed_symbols)) {
+        groupUpdates.allowed_symbols = newSymbols;
+      }
+
+      // Update group settings if changed
+      if (Object.keys(groupUpdates).length > 0) {
+        copyTrading.updateGroup
+          ? copyTrading.updateGroup.mutate({ groupId: existingGroup.id, data: groupUpdates })
+          : null;
+      }
+
+      // Update each follower's ratio/active state
+      Object.entries(selectedFollowers).forEach(([, val]) => {
+        if (val.followerId) {
+          const origFollower = existingGroup.followers.find((f) => f.id === val.followerId);
+          if (origFollower && (origFollower.ratio !== val.ratio || origFollower.is_active !== val.checked)) {
+            copyTrading.updateFollower.mutate({
+              groupId: existingGroup.id,
+              followerId: val.followerId,
+              data: { ratio: val.ratio, is_active: val.checked },
+            });
+          }
+        }
+      });
+
+      onClose();
+      return;
+    }
+
+    // Create new group
     const followers = Object.entries(selectedFollowers)
       .filter(([, val]) => val.checked)
       .map(([accountId, val]) => ({

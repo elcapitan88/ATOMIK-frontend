@@ -195,6 +195,27 @@ export function useCopyTrading() {
     },
   });
 
+  const updateGroupMutation = useMutation({
+    mutationFn: ({ groupId, data }) => copyTradingApi.updateGroup(groupId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries(COPY_TRADING_KEYS.all);
+      toast({
+        title: 'Copy Group Updated',
+        status: 'success',
+        duration: 3000,
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: 'Failed to Update Group',
+        description: error.response?.data?.detail || error.message,
+        status: 'error',
+        duration: 5000,
+        isClosable: true,
+      });
+    },
+  });
+
   const updateFollowerMutation = useMutation({
     mutationFn: ({ groupId, followerId, data }) =>
       copyTradingApi.updateFollower(groupId, followerId, data),
@@ -239,6 +260,7 @@ export function useCopyTrading() {
     deleteGroup,
     pauseGroup,
     activateGroup,
+    updateGroup: updateGroupMutation,
     updateFollower: updateFollowerMutation,
   };
 }
