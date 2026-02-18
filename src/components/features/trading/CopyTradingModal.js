@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   Modal,
   ModalOverlay,
@@ -102,6 +102,21 @@ const CopyTradingModal = ({
   );
 
   const isEditing = !!existingGroup;
+
+  // Re-sync state when modal opens (useState initializers only run once on mount)
+  useEffect(() => {
+    if (!isOpen) return;
+    const map = {};
+    if (existingGroup) {
+      existingGroup.followers.forEach((f) => {
+        map[String(f.follower_account_id)] = { checked: f.is_active, ratio: f.ratio, followerId: f.id };
+      });
+    }
+    setSelectedFollowers(map);
+    setFollowerProtection(existingGroup?.follower_protection ?? true);
+    setCopyBrackets(existingGroup?.copy_brackets ?? false);
+    setAllowedSymbols(existingGroup?.allowed_symbols || []);
+  }, [isOpen, existingGroup]);
 
   const handleCheckFollower = (accountId, checked) => {
     setSelectedFollowers((prev) => ({
