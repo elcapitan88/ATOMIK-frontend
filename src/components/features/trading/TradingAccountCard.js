@@ -16,6 +16,7 @@ import {
   MenuItem,
   MenuDivider,
   IconButton,
+  Portal,
 } from '@chakra-ui/react';
 import { MoreVertical, Edit, Trash2, Power, RefreshCw, Copy, Pause, Play, Settings, X } from 'lucide-react';
 import AccountStatusIndicator from '@/components/common/AccountStatusIndicator';
@@ -404,6 +405,7 @@ const AccountOptionsMenu = memo(
           aria-label="Account options"
           onClick={(e) => e.stopPropagation()}
         />
+        <Portal>
         <MenuList
           bg="#1a1a1a"
           borderColor="whiteAlpha.200"
@@ -525,6 +527,7 @@ const AccountOptionsMenu = memo(
             Delete
           </MenuItem>
         </MenuList>
+        </Portal>
       </Menu>
     );
   }
