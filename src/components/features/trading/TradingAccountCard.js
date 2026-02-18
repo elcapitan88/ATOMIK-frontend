@@ -408,7 +408,7 @@ const AccountOptionsMenu = memo(
           bg="#1a1a1a"
           borderColor="whiteAlpha.200"
           boxShadow="0 4px 20px rgba(0, 0, 0, 0.6)"
-          zIndex={20}
+          zIndex="popover"
           minW="160px"
         >
           {/* Common: Edit Name */}

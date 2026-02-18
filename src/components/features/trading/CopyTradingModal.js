@@ -260,10 +260,8 @@ const CopyTradingModal = ({
                           isDisabled={isDisabled}
                           colorScheme="green"
                           size="md"
-                          onChange={(e) => {
-                            e.stopPropagation();
-                            if (!isDisabled) handleCheckFollower(aid, e.target.checked);
-                          }}
+                          pointerEvents="none"
+                          readOnly
                         />
                         <Box minW={0}>
                           <Text fontSize="sm" fontWeight="medium" noOfLines={1}>
