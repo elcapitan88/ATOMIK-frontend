@@ -93,9 +93,6 @@ const CopyTradingModal = ({
   const [followerProtection, setFollowerProtection] = useState(
     existingGroup?.follower_protection ?? true
   );
-  const [copyBrackets, setCopyBrackets] = useState(
-    existingGroup?.copy_brackets ?? false
-  );
   const [symbolInput, setSymbolInput] = useState('');
   const [allowedSymbols, setAllowedSymbols] = useState(
     existingGroup?.allowed_symbols || []
@@ -114,7 +111,6 @@ const CopyTradingModal = ({
     }
     setSelectedFollowers(map);
     setFollowerProtection(existingGroup?.follower_protection ?? true);
-    setCopyBrackets(existingGroup?.copy_brackets ?? false);
     setAllowedSymbols(existingGroup?.allowed_symbols || []);
   }, [isOpen, existingGroup]);
 
@@ -157,7 +153,6 @@ const CopyTradingModal = ({
     if (isEditing && existingGroup) {
       // Update existing group: patch group settings + update each follower's ratio
       const groupUpdates = {};
-      if (copyBrackets !== existingGroup.copy_brackets) groupUpdates.copy_brackets = copyBrackets;
       if (followerProtection !== existingGroup.follower_protection) groupUpdates.follower_protection = followerProtection;
       const newSymbols = allowedSymbols.length > 0 ? allowedSymbols : null;
       if (JSON.stringify(newSymbols) !== JSON.stringify(existingGroup.allowed_symbols)) {
@@ -202,7 +197,6 @@ const CopyTradingModal = ({
     const payload = {
       leader_account_id: String(leaderAccount.account_id),
       name: `${leaderName} Copy Group`,
-      copy_brackets: copyBrackets,
       follower_protection: followerProtection,
       allowed_symbols: allowedSymbols.length > 0 ? allowedSymbols : null,
       followers,
@@ -418,23 +412,6 @@ const CopyTradingModal = ({
                       colorScheme="green"
                       isChecked={followerProtection}
                       onChange={(e) => setFollowerProtection(e.target.checked)}
-                    />
-                  </Flex>
-
-                  <Flex align="center" justify="space-between">
-                    <VStack spacing={0} align="flex-start">
-                      <Text fontSize="sm" color="whiteAlpha.800">
-                        Copy Bracket Orders
-                      </Text>
-                      <Text fontSize="xs" color="whiteAlpha.500">
-                        Copy TP/SL orders to followers
-                      </Text>
-                    </VStack>
-                    <Switch
-                      size="sm"
-                      colorScheme="green"
-                      isChecked={copyBrackets}
-                      onChange={(e) => setCopyBrackets(e.target.checked)}
                     />
                   </Flex>
 
