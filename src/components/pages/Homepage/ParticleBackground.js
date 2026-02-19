@@ -24,18 +24,26 @@ const ParticleBackground = () => {
     // Handle window resize
     window.addEventListener('resize', resizeCanvas);
 
-    // Create particles
+    // Create particles with depth layers for 3D effect
     const createParticles = () => {
-      const numberOfParticles = Math.floor((canvas.width * canvas.height) / 25000);
+      const numberOfParticles = Math.floor((canvas.width * canvas.height) / 10000);
       particlesRef.current = [];
 
       for (let i = 0; i < numberOfParticles; i++) {
+        // depth: 0 = far background, 1 = close foreground
+        const depth = Math.random();
+
         particlesRef.current.push({
           x: Math.random() * canvas.width,
           y: Math.random() * canvas.height,
-          radius: Math.random() * 1 + 0.5,
-          speedX: Math.random() * 0.5 - 0.25,
-          speedY: Math.random() * 0.5 - 0.25
+          depth,
+          // Closer particles are larger (0.6 → 2.8)
+          radius: 0.6 + depth * 2.2,
+          // Closer particles move faster (parallax)
+          speedX: (Math.random() * 0.5 - 0.25) * (0.3 + depth * 0.7),
+          speedY: (Math.random() * 0.5 - 0.25) * (0.3 + depth * 0.7),
+          // Closer particles are brighter (0.10 → 0.30)
+          opacity: 0.10 + depth * 0.20,
         });
       }
     };
@@ -45,8 +53,6 @@ const ParticleBackground = () => {
     // Animation function
     const animate = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.fillStyle = 'rgba(0, 198, 224, 0.05)';
-      ctx.strokeStyle = 'rgba(0, 198, 224, 0.1)';
 
       particlesRef.current.forEach((particle, index) => {
         // Move particles
@@ -59,24 +65,35 @@ const ParticleBackground = () => {
         if (particle.y < 0) particle.y = canvas.height;
         if (particle.y > canvas.height) particle.y = 0;
 
-        // Draw particle
+        // Draw particle — opacity varies by depth
+        ctx.fillStyle = `rgba(0, 198, 224, ${particle.opacity})`;
         ctx.beginPath();
         ctx.arc(particle.x, particle.y, particle.radius, 0, Math.PI * 2);
         ctx.fill();
 
-        // Draw connections
-        particlesRef.current.forEach((otherParticle, otherIndex) => {
-          if (index !== otherIndex) {
-            const dx = particle.x - otherParticle.x;
-            const dy = particle.y - otherParticle.y;
-            const distance = Math.sqrt(dx * dx + dy * dy);
+        // Draw connections — only between particles at similar depths
+        particlesRef.current.forEach((other, otherIndex) => {
+          if (index >= otherIndex) return;
 
-            if (distance < 100) {
-              ctx.beginPath();
-              ctx.moveTo(particle.x, particle.y);
-              ctx.lineTo(otherParticle.x, otherParticle.y);
-              ctx.stroke();
-            }
+          // Only connect particles within 0.3 depth of each other
+          if (Math.abs(particle.depth - other.depth) > 0.3) return;
+
+          const dx = particle.x - other.x;
+          const dy = particle.y - other.y;
+          const distance = Math.sqrt(dx * dx + dy * dy);
+
+          // Connection range scales with average depth (closer = longer reach)
+          const avgDepth = (particle.depth + other.depth) / 2;
+          const maxDist = 70 + avgDepth * 90;
+
+          if (distance < maxDist) {
+            const lineOpacity = (1 - distance / maxDist) * (0.10 + avgDepth * 0.18);
+            ctx.strokeStyle = `rgba(0, 198, 224, ${lineOpacity})`;
+            ctx.lineWidth = 0.4 + avgDepth * 0.8;
+            ctx.beginPath();
+            ctx.moveTo(particle.x, particle.y);
+            ctx.lineTo(other.x, other.y);
+            ctx.stroke();
           }
         });
       });

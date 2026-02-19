@@ -47,7 +47,7 @@ const getBrokerInfo = (brokerId) => {
 
 // Helper function to determine if a webhook is an engine strategy
 const isEngineStrategy = (webhookId) => {
-  return webhookId && !isNaN(parseInt(webhookId));
+  return webhookId && /^\d+$/.test(webhookId.toString());
 };
 
 const ActivateStrategyModal = ({
@@ -208,7 +208,7 @@ const ActivateStrategyModal = ({
           setAccounts(accountsResponse.data || []);
 
           // Fetch user's own webhooks
-          const ownWebhooksResponse = await axiosInstance.get('/api/v1/webhooks');
+          const ownWebhooksResponse = await axiosInstance.get('/api/v1/webhooks/list');
           const ownWebhooks = ownWebhooksResponse.data || [];
 
           // Fetch subscribed marketplace webhooks
@@ -221,10 +221,28 @@ const ActivateStrategyModal = ({
             // Continue without subscribed webhooks - not a critical error
           }
 
-          // Merge own and subscribed webhooks (remove duplicates by token)
+          // Fetch purchased webhooks
+          let purchasedWebhooks = [];
+          try {
+            const { marketplaceApi } = await import('@/services/api/marketplace/marketplaceApi');
+            const purchasedResponse = await marketplaceApi.getUserPurchases();
+            if (purchasedResponse?.purchases) {
+              purchasedWebhooks = purchasedResponse.purchases
+                .filter(p => p.webhook_token && p.webhook_name)
+                .map(p => ({
+                  token: p.webhook_token,
+                  name: p.webhook_name,
+                  isPurchased: true
+                }));
+            }
+          } catch (error) {
+            console.log('Error fetching purchased strategies:', error.message);
+          }
+
+          // Merge own, subscribed, and purchased webhooks (remove duplicates by token)
           const webhookMap = new Map();
-          [...ownWebhooks, ...subscribedWebhooks].forEach(webhook => {
-            if (!webhookMap.has(webhook.token)) {
+          [...ownWebhooks, ...subscribedWebhooks, ...purchasedWebhooks].forEach(webhook => {
+            if (webhook && webhook.token && !webhookMap.has(webhook.token)) {
               webhookMap.set(webhook.token, webhook);
             }
           });
@@ -233,6 +251,7 @@ const ActivateStrategyModal = ({
           console.log('Loaded webhooks:', {
             own: ownWebhooks.length,
             subscribed: subscribedWebhooks.length,
+            purchased: purchasedWebhooks.length,
             total: allWebhooks.length
           });
 
@@ -560,17 +579,27 @@ const ActivateStrategyModal = ({
       size="xl"
       closeOnOverlayClick={!isCreating}
     >
-      <ModalOverlay bg="blackAlpha.300" backdropFilter="blur(5px)" />
+      <ModalOverlay bg="blackAlpha.400" />
       <ModalContent
-        bg="rgba(255, 255, 255, 0.1)"
+        bg="rgba(0, 0, 0, 0.4)"
         backdropFilter="blur(10px)"
-        boxShadow="0 8px 32px 0 rgba(0, 198, 224, 0.37)"
-        border="1px solid rgba(255, 255, 255, 0.18)"
+        boxShadow="0 4px 20px rgba(0, 0, 0, 0.2)"
+        border="1px solid rgba(255, 255, 255, 0.1)"
         borderRadius="xl"
         color="white"
         p={4}
+        overflow="hidden"
       >
-        <ModalHeader borderBottom="1px solid rgba(255, 255, 255, 0.18)" pb={4}>
+        <ModalHeader
+          borderBottom="1px solid rgba(255, 255, 255, 0.05)"
+          bg="rgba(0, 0, 0, 0.3)"
+          mx={-4}
+          mt={-4}
+          px={4}
+          pt={4}
+          pb={4}
+          borderTopRadius="xl"
+        >
           <VStack spacing={2} align="start">
             <Text fontSize="lg" fontWeight="bold">
               {strategy ? 'Update Strategy' : 'Activate Strategy'}
@@ -1085,18 +1114,15 @@ const ActivateStrategyModal = ({
 
             <Button
               width="full"
-              bg="linear-gradient(135deg, rgba(0, 198, 224, 0.8), rgba(0, 140, 255, 0.8))"
-              color="white"
-              size="lg"
+              size="md"
+              variant="outline"
+              borderColor="whiteAlpha.300"
+              color="whiteAlpha.800"
+              leftIcon={<Plus size={14} />}
               onClick={handleSubmit}
               isLoading={isCreating || isUpdating}
               loadingText={strategy ? "Updating..." : "Activating..."}
-              _hover={{
-                bg: "linear-gradient(135deg, rgba(0, 198, 224, 1), rgba(0, 140, 255, 1))",
-                transform: 'translateY(-2px)',
-                boxShadow: 'lg'
-              }}
-              _active={{ transform: 'translateY(0)' }}
+              _hover={{ bg: 'whiteAlpha.100', borderColor: 'cyan.400', color: 'cyan.400' }}
               borderRadius="lg"
             >
               {strategy ? 'Update Strategy' : 'Activate Strategy'}

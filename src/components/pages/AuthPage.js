@@ -383,16 +383,21 @@ const AuthPage = () => {
                               type="submit"
                               w="100%"
                               mt={1}
-                              bgGradient="linear(135deg, #00C6E0 0%, #0099B8 100%)"
-                              color="white"
+                              bg="rgba(0, 198, 224, 0.1)"
+                              color="#00C6E0"
+                              border="1px solid"
+                              borderColor="rgba(0, 198, 224, 0.3)"
                               fontWeight="600"
                               size="md"
                               _hover={{
+                                bg: 'rgba(0, 198, 224, 0.18)',
+                                borderColor: 'rgba(0, 198, 224, 0.5)',
                                 transform: 'translateY(-2px)',
-                                boxShadow: '0 8px 25px rgba(0, 198, 224, 0.35)',
+                                boxShadow: '0 8px 25px rgba(0, 198, 224, 0.15)',
                               }}
                               _active={{
                                 transform: 'translateY(0)',
+                                bg: 'rgba(0, 198, 224, 0.25)',
                               }}
                               transition="all 0.2s ease"
                               isLoading={isLoading}
@@ -445,16 +450,21 @@ const AuthPage = () => {
 
                         <Button
                           w="100%"
-                          bgGradient="linear(135deg, #00C6E0 0%, #0099B8 100%)"
-                          color="white"
+                          bg="rgba(0, 198, 224, 0.1)"
+                          color="#00C6E0"
+                          border="1px solid"
+                          borderColor="rgba(0, 198, 224, 0.3)"
                           fontWeight="600"
                           size="md"
                           _hover={{
+                            bg: 'rgba(0, 198, 224, 0.18)',
+                            borderColor: 'rgba(0, 198, 224, 0.5)',
                             transform: 'translateY(-2px)',
-                            boxShadow: '0 8px 25px rgba(0, 198, 224, 0.35)',
+                            boxShadow: '0 8px 25px rgba(0, 198, 224, 0.15)',
                           }}
                           _active={{
                             transform: 'translateY(0)',
+                            bg: 'rgba(0, 198, 224, 0.25)',
                           }}
                           transition="all 0.2s ease"
                           rightIcon={<ArrowRight size={16} />}

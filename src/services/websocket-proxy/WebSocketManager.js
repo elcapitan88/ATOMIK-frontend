@@ -37,8 +37,11 @@ class WebSocketManager extends EventEmitter {
       marketData: new Map(),
       accountData: new Map(),
       positions: new Map(),
-      orders: new Map()
+      orders: new Map(),
+      dayPnL: new Map()  // key: "brokerId:accountId", value: accumulated realized PnL for today
     };
+    // Persistent contractId → symbol map, populated from user_data sync contracts
+    this.contractSymbolMap = new Map();
     
     // For storing connection retry metadata
     this.connectionRetries = new Map();
@@ -107,12 +110,13 @@ class WebSocketManager extends EventEmitter {
     }
     
     // Determine the base URL based on environment
+    // REACT_APP_WS_PROXY_URL takes priority in any environment (allows dev → prod Tradesocket)
     let baseUrl;
-    if (process.env.NODE_ENV === 'production') {
-        // In production, use the Railway WebSocket URL
-        baseUrl = process.env.REACT_APP_WS_PROXY_URL || 'wss://websocket-proxy-production.up.railway.app';
+    if (process.env.REACT_APP_WS_PROXY_URL) {
+        baseUrl = process.env.REACT_APP_WS_PROXY_URL;
+    } else if (process.env.NODE_ENV === 'production') {
+        baseUrl = 'wss://tradesocket-production.up.railway.app';
     } else {
-        // In development, use localhost
         baseUrl = 'ws://localhost:8001';
     }
     
@@ -701,25 +705,37 @@ class WebSocketManager extends EventEmitter {
         this.updateMarketData(brokerId, accountId, message.data);
       } else if (message.type === 'account_update' && message.data) {
         this.updateAccountData(brokerId, accountId, message.data);
+      } else if (message.type === 'cash_balance_update') {
+        // Cash balance update from broker — merge into account data
+        this.updateAccountData(brokerId, accountId, {
+          balance: message.amount || 0,
+          cashBalanceTimestamp: message.timestamp,
+        });
+      } else if (message.type === 'day_pnl_update') {
+        // Authoritative daily realized PnL from Tradovate's cashBalance snapshot
+        const realizedPnl = Number(message.realizedPnl ?? 0);
+        const acctKey = `${brokerId}:${message.accountId}`;
+        console.log(`[WebSocketManager] day_pnl_update for ${acctKey}: realized=$${realizedPnl.toFixed(2)}`);
+        this.dataCache.dayPnL.set(acctKey, realizedPnl);
+        this.updateAccountData(brokerId, message.accountId, { dayRealizedPnL: realizedPnl });
+        this._persistDayPnL();
       } else if (message.type === 'position_update' && message.data) {
         if (envConfig.debugConfig.websocket.enabled) {
           console.log('[WebSocketManager] Processing position_update message:', message.data);
         }
         this.updatePositionData(brokerId, accountId, message.data);
+      } else if (message.type === 'position_price_update' && message.data) {
+        // Handle real-time position price updates — MUST be checked before isPositionUpdateEvent
+        // which would also match this type and route to handlePositionEvent instead
+        this.handlePositionPriceUpdate(brokerId, accountId, message.data);
       } else if (isPositionUpdateEvent(message.type) && message.data) {
-        // Handle new position event types
+        // Handle new position event types (opened, closed, pnl_update, etc.)
         if (envConfig.debugConfig.websocket.enabled) {
           console.log('[WebSocketManager] Processing position event:', message.type, message.data);
         }
         this.handlePositionEvent(brokerId, accountId, message);
       } else if (message.type === 'order_update' && message.data) {
         this.updateOrderData(brokerId, accountId, message.data);
-      } else if (message.type === 'position_price_update' && message.data) {
-        // Handle real-time position price updates
-        if (envConfig.debugConfig.websocket.enabled) {
-          console.log('[WebSocketManager] Processing position_price_update message:', message.data);
-        }
-        this.handlePositionPriceUpdate(brokerId, accountId, message.data);
       } else if (message.type === 'user_data' && message.data) {
         // Handle initial sync data
         console.log('[WebSocketManager] About to call handleUserData with data:', !!message.data);
@@ -731,22 +747,71 @@ class WebSocketManager extends EventEmitter {
         console.log('[WebSocketManager] positions_snapshot received:', message.data);
         this.handlePositionSnapshot(brokerId, accountId, message.data);
       } else if (message.type === 'positionUpdate') {
-        // Handle positionUpdate messages from backend (camelCase)
-        console.log('[WebSocketManager] 🔄 DEBUGGING: Position update message:', {
-          type: message.type,
-          type_detail: message.type_detail,
+        // Handle positionUpdate messages from WebSocket Proxy (camelCase)
+        // This fires for: opened (0→>0), modified (qty change), closed (→0)
+        console.log('[WebSocketManager] ⚡ positionUpdate:', message.type_detail, {
           hasPosition: !!message.position,
-          position: message.position
+          posId: message.position?.id || message.position?.positionId,
+          symbol: message.position?.symbol,
+          netPos: message.position?.netPos,
+          qty: message.position?.quantity,
         });
-        
+
+        // Store position data in cache
+        if (message.position) {
+          const pos = message.position;
+          const needsTransform = pos.id && !pos.positionId;
+          const transformed = needsTransform
+            ? this.transformTradovatePosition(pos, pos.contractInfo || null)
+            : pos;
+
+          if (transformed) {
+            // For 'closed' events, remove position from cache instead of storing
+            if (message.type_detail === 'closed' && (transformed.netPos === 0 || transformed.quantity === 0)) {
+              // Look up cached position BEFORE deleting — its unrealizedPnL is our best PnL source
+              // because Tradovate doesn't send realizedPnL in position WebSocket updates
+              const closeKey = `${brokerId}:${accountId}:${transformed.positionId || transformed.contractId || transformed.symbol}`;
+              const cachedPosition = this.dataCache.positions.get(closeKey);
+
+              // Accumulate day PnL: prefer proxy's finalPnL, fall back to cached unrealized PnL
+              const finalPnL = Number(
+                pos.finalPnL || pos.realizedPnL || pos.pnl ||
+                cachedPosition?.unrealizedPnL || transformed.unrealizedPnL || 0
+              );
+              console.log('[WebSocketManager] Position closed - Day PnL extraction:', {
+                finalPnL,
+                proxyFinalPnL: pos.finalPnL,
+                cachedUnrealizedPnL: cachedPosition?.unrealizedPnL,
+                transformedPnL: transformed.unrealizedPnL,
+              });
+              if (finalPnL !== 0) {
+                this._accumulateDayPnL(brokerId, accountId, finalPnL);
+              }
+              console.log('[WebSocketManager] 🗑️ Removing closed position from cache:', closeKey);
+              this.dataCache.positions.delete(closeKey);
+              this.emit('positionClosed', { brokerId, accountId, position: transformed });
+              this.emit('positionUpdate', { brokerId, accountId, type: 'closed', position: transformed });
+            } else {
+              const storeKey = `${brokerId}:${accountId}:${transformed.positionId || transformed.contractId || transformed.symbol}`;
+              console.log('[WebSocketManager] 💾 Storing position in cache:', storeKey, {
+                symbol: transformed.symbol,
+                side: transformed.side,
+                qty: transformed.quantity || Math.abs(transformed.netPos || 0),
+              });
+              this.updatePositionData(brokerId, accountId, transformed);
+            }
+          }
+        }
+
         // Emit the position update with the type_detail preserved
-        this.emit('positionUpdate', {
-          brokerId,
-          accountId,
-          type: message.type_detail || 'update',
-          position: message.position,
-          type_detail: message.type_detail
-        });
+        // (updatePositionData already emits positionUpdate, but this gives extra detail)
+        if (message.type_detail === 'opened') {
+          this.emit('positionOpened', {
+            brokerId,
+            accountId,
+            position: message.position,
+          });
+        }
       }
     }
   }
@@ -961,25 +1026,29 @@ class WebSocketManager extends EventEmitter {
    */
   handlePositionEvent(brokerId, accountId, message) {
     const { type, data } = message;
-    console.log('[WebSocketManager] handlePositionEvent:', { brokerId, accountId, type, data });
     
     // Create position key
     const positionKey = `${brokerId}:${accountId}:${data.positionId || data.contractId || data.symbol}`;
     
     switch (type) {
       case POSITION_MESSAGE_TYPES.POSITION_OPENED:
-        // New position opened
+        // New position opened — transform raw Tradovate data if needed
+        const rawOpened = (data.id && !data.positionId)
+          ? this.transformTradovatePosition(data, null)
+          : data;
         const newPosition = {
-          ...data,
+          ...rawOpened,
           brokerId,
           accountId,
           timestamp: Date.now(),
           lastUpdate: Date.now(),
           isNew: true // Flag for UI animation
         };
-        
-        this.dataCache.positions.set(positionKey, newPosition);
-        
+
+        // Recompute key with transformed data (positionId may differ from raw id)
+        const openedKey = `${brokerId}:${accountId}:${newPosition.positionId || newPosition.contractId || newPosition.symbol}`;
+        this.dataCache.positions.set(openedKey, newPosition);
+
         // Emit specific event for new positions
         this.emit('positionOpened', newPosition);
         this.emit('positionUpdate', { brokerId, accountId, type: 'opened', position: newPosition });
@@ -1080,29 +1149,29 @@ class WebSocketManager extends EventEmitter {
       case POSITION_MESSAGE_TYPES.POSITIONS_SNAPSHOT:
         // Full position snapshot - replace all positions for this account
         const accountKey = `${brokerId}:${accountId}`;
-        
+
         // Clear existing positions for this account
         for (const [key] of this.dataCache.positions.entries()) {
           if (key.startsWith(accountKey)) {
             this.dataCache.positions.delete(key);
           }
         }
-        
-        // Add all positions from snapshot
-        if (data.positions && Array.isArray(data.positions)) {
-          data.positions.forEach(position => {
-            const key = `${brokerId}:${accountId}:${position.positionId || position.contractId || position.symbol}`;
-            this.dataCache.positions.set(key, {
-              ...position,
-              brokerId,
-              accountId,
-              timestamp: Date.now(),
-              lastUpdate: Date.now()
-            });
-          });
-        }
-        
-        this.emit('positionsSnapshot', { brokerId, accountId, positions: data.positions });
+
+        // Handle both formats: data IS the array OR data.positions is the array
+        const snapshotPositions = Array.isArray(data) ? data
+          : (data.positions && Array.isArray(data.positions)) ? data.positions : [];
+
+        // Add all positions from snapshot (transform raw Tradovate if needed)
+        snapshotPositions.forEach(position => {
+          const transformed = (position.id && !position.positionId)
+            ? this.transformTradovatePosition(position, null)
+            : position;
+          if (transformed) {
+            this.updatePositionData(brokerId, accountId, transformed);
+          }
+        });
+
+        this.emit('positionsSnapshot', { brokerId, accountId, positions: this.getPositions(brokerId, accountId) });
         this.emit('positionUpdate', { brokerId, accountId, type: 'snapshot' });
         break;
         
@@ -1120,23 +1189,31 @@ class WebSocketManager extends EventEmitter {
    * @param {Object} data - Order data
    */
   updateOrderData(brokerId, accountId, data) {
-    if (!data.orderId) return;
-    
-    const key = `${brokerId}:${accountId}:${data.orderId}`;
+    // Tradovate uses "orderId" or "id" depending on message type
+    const orderId = data.orderId || data.id;
+    if (!orderId) return;
+
+    const key = `${brokerId}:${accountId}:${orderId}`;
     const currentData = this.dataCache.orders.get(key) || {};
-    
-    // Merge with existing data
+
+    // Merge with existing data, normalize orderId
     const updatedData = {
       ...currentData,
       ...data,
+      orderId,
       brokerId,
       accountId,
       timestamp: Date.now()
     };
-    
+
+    // Resolve contractId → symbol if missing, using persistent map
+    if (!updatedData.symbol && updatedData.contractId && this.contractSymbolMap.has(updatedData.contractId)) {
+      updatedData.symbol = this.contractSymbolMap.get(updatedData.contractId);
+    }
+
     // Update cache
     this.dataCache.orders.set(key, updatedData);
-    
+
     // Emit order update event
     this.emit('orderUpdate', updatedData);
   }
@@ -1150,21 +1227,24 @@ class WebSocketManager extends EventEmitter {
   transformTradovatePosition(rawPosition, contractInfo) {
     const netPos = Number(rawPosition.netPos || 0);
     const quantity = Math.abs(netPos);
-    
+
+    // Symbol resolution: contractInfo.name > rawPosition.symbol > fallback
+    const symbol = contractInfo?.name || rawPosition.symbol || `Contract-${rawPosition.contractId}`;
+
     return {
       positionId: String(rawPosition.id),
       accountId: rawPosition.accountId,
-      symbol: contractInfo?.name || rawPosition.symbol || `Contract-${rawPosition.contractId}`,
+      symbol,
       side: netPos > 0 ? 'LONG' : netPos < 0 ? 'SHORT' : 'FLAT',
       quantity: quantity,
       avgPrice: rawPosition.netPrice || rawPosition.avgPrice || 0,
       currentPrice: rawPosition.currentPrice || rawPosition.netPrice || rawPosition.avgPrice || 0,
       unrealizedPnL: rawPosition.unrealizedPnL || 0,
+      lastPriceUpdate: rawPosition.currentPrice ? Date.now() : null,
       timeEntered: rawPosition.timestamp || rawPosition.timeEntered,
       contractId: rawPosition.contractId,
-      netPos: netPos, // Keep original netPos for reference
+      netPos: netPos,
       netPrice: rawPosition.netPrice,
-      // Keep original fields for debugging
       _original: rawPosition
     };
   }
@@ -1176,36 +1256,39 @@ class WebSocketManager extends EventEmitter {
    * @param {Object} data - Price update data
    */
   handlePositionPriceUpdate(brokerId, accountId, data) {
-    console.log('[WebSocketManager] handlePositionPriceUpdate:', { brokerId, accountId, data });
     
-    const positionKey = `${brokerId}:${accountId}:${data.positionId || data.contractId}`;
-    const position = this.dataCache.positions.get(positionKey);
-    
+    // Try primary key lookup (positionId first, then contractId)
+    let positionKey = `${brokerId}:${accountId}:${data.positionId || data.contractId}`;
+    let position = this.dataCache.positions.get(positionKey);
+
+    // Secondary lookup: scan cache for matching contractId if primary key missed
+    if (!position && data.contractId) {
+      const prefix = `${brokerId}:${accountId}:`;
+      for (const [key, pos] of this.dataCache.positions.entries()) {
+        if (key.startsWith(prefix) && String(pos.contractId) === String(data.contractId)) {
+          position = pos;
+          positionKey = key;
+          break;
+        }
+      }
+    }
+
     if (position) {
       // Update position with new price data
       const previousPrice = position.currentPrice;
       const previousPnL = position.unrealizedPnL;
-      
+
       const updatedPosition = {
         ...position,
         currentPrice: data.currentPrice,
         unrealizedPnL: data.unrealizedPnL,
         lastPriceUpdate: Date.now()
       };
-      
+
       // Update cache
       this.dataCache.positions.set(positionKey, updatedPosition);
-      
+
       // Emit price update event
-      if (envConfig.debugConfig.websocket.enabled) {
-        console.log('[WebSocketManager] Emitting positionUpdate event (price update):', {
-          brokerId,
-          accountId,
-          type: 'priceUpdate',
-          position: updatedPosition,
-          previousValues: { price: previousPrice, pnl: previousPnL }
-        });
-      }
       this.emit('positionUpdate', {
         brokerId,
         accountId,
@@ -1268,17 +1351,17 @@ class WebSocketManager extends EventEmitter {
   handleUserData(brokerId, accountId, data) {
     console.log('[WebSocketManager] handleUserData called:', { brokerId, accountId, data });
     
-    // Create a map of contractId to symbol from contracts data
-    const contractSymbolMap = new Map();
+    // Build and persist contractId → symbol map from contracts data
     if (data.contracts && Array.isArray(data.contracts)) {
       console.log('[WebSocketManager] Processing contracts:', data.contracts.length);
       data.contracts.forEach(contract => {
         if (contract.id && contract.name) {
-          contractSymbolMap.set(contract.id, contract.name);
+          this.contractSymbolMap.set(contract.id, contract.name);
           console.log(`[WebSocketManager] Contract mapping: ${contract.id} → ${contract.name}`);
         }
       });
     }
+    const contractSymbolMap = this.contractSymbolMap;
     
     // Process accounts
     if (data.accounts && Array.isArray(data.accounts)) {
@@ -1287,7 +1370,23 @@ class WebSocketManager extends EventEmitter {
         this.updateAccountData(brokerId, accountId, account);
       });
     }
+
+    // Process cash balances — merge into account data so balance is available immediately
+    if (data.cash_balances && Array.isArray(data.cash_balances)) {
+      console.log('[WebSocketManager] Processing cash balances:', data.cash_balances.length);
+      data.cash_balances.forEach(cb => {
+        if (cb.accountId) {
+          this.updateAccountData(brokerId, accountId, {
+            balance: cb.amount || 0,
+            cashBalanceTimestamp: cb.timestamp,
+          });
+        }
+      });
+    }
     
+    // Restore persisted day PnL from localStorage (survives page refreshes)
+    this._restoreDayPnLForAccount(brokerId, accountId);
+
     // Process positions
     if (data.positions && Array.isArray(data.positions)) {
       console.log('[WebSocketManager] Processing positions:', data.positions.length);
@@ -1317,10 +1416,17 @@ class WebSocketManager extends EventEmitter {
       });
     }
     
-    // Process orders
+    // Process orders - enrich with symbol from contractId map
     if (data.orders && Array.isArray(data.orders)) {
+      console.log('[WebSocketManager] Processing orders:', data.orders.length);
       data.orders.forEach(order => {
-        this.updateOrderData(brokerId, accountId, order);
+        const enrichedOrder = { ...order };
+        // Resolve contractId to symbol if not already present
+        if (!enrichedOrder.symbol && enrichedOrder.contractId && contractSymbolMap.has(enrichedOrder.contractId)) {
+          enrichedOrder.symbol = contractSymbolMap.get(enrichedOrder.contractId);
+          console.log(`[WebSocketManager] Enriched order ${enrichedOrder.orderId} with symbol: ${enrichedOrder.symbol}`);
+        }
+        this.updateOrderData(brokerId, accountId, enrichedOrder);
       });
     }
     
@@ -1383,6 +1489,87 @@ class WebSocketManager extends EventEmitter {
     return positions;
   }
   
+  // ── Day PnL tracking ─────────────────────────────────────────────────
+
+  /**
+   * Get today's date as YYYY-MM-DD string (local time)
+   */
+  _getTradingDay() {
+    return new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD
+  }
+
+  /**
+   * Get the localStorage key for today's day PnL
+   */
+  _getDayPnLStorageKey() {
+    return `atomik:dayPnL:${this._getTradingDay()}`;
+  }
+
+  /**
+   * Persist the dayPnL Map to localStorage, keyed by today's date.
+   * Also cleans up stale entries from previous days.
+   */
+  _persistDayPnL() {
+    try {
+      const key = this._getDayPnLStorageKey();
+      const obj = {};
+      for (const [acctKey, value] of this.dataCache.dayPnL.entries()) {
+        obj[acctKey] = value;
+      }
+      localStorage.setItem(key, JSON.stringify(obj));
+
+      // Clean up old day PnL keys (keep only today)
+      const today = this._getTradingDay();
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && k.startsWith('atomik:dayPnL:') && k !== `atomik:dayPnL:${today}`) {
+          localStorage.removeItem(k);
+        }
+      }
+    } catch (e) {
+      console.warn('[WebSocketManager] Failed to persist dayPnL:', e);
+    }
+  }
+
+  /**
+   * Restore today's day PnL from localStorage for a specific account.
+   * Merges into accountData so it flows through getAccountData().
+   */
+  _restoreDayPnLForAccount(brokerId, accountId) {
+    try {
+      const stored = localStorage.getItem(this._getDayPnLStorageKey());
+      if (!stored) return;
+
+      const obj = JSON.parse(stored);
+      const acctKey = `${brokerId}:${accountId}`;
+      const value = obj[acctKey];
+
+      if (value !== undefined && value !== 0) {
+        this.dataCache.dayPnL.set(acctKey, value);
+        this.updateAccountData(brokerId, accountId, { dayRealizedPnL: value });
+        console.log(`[WebSocketManager] Restored dayPnL for ${acctKey}: $${value.toFixed(2)}`);
+      }
+    } catch (e) {
+      console.warn('[WebSocketManager] Failed to restore dayPnL:', e);
+    }
+  }
+
+  /**
+   * Accumulate realized PnL for a closed position into today's running total.
+   * Updates accountData and persists to localStorage.
+   */
+  _accumulateDayPnL(brokerId, accountId, pnl) {
+    const acctKey = `${brokerId}:${accountId}`;
+    const current = this.dataCache.dayPnL.get(acctKey) || 0;
+    const updated = current + pnl;
+
+    this.dataCache.dayPnL.set(acctKey, updated);
+    this.updateAccountData(brokerId, accountId, { dayRealizedPnL: updated });
+    this._persistDayPnL();
+
+    console.log(`[WebSocketManager] Day PnL for ${acctKey}: $${current.toFixed(2)} + $${pnl.toFixed(2)} = $${updated.toFixed(2)}`);
+  }
+
   /**
    * Get all positions
    * @returns {Array} - All positions
