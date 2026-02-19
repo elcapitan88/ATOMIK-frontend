@@ -201,12 +201,12 @@ export class AtomikBrokerAdapter {
         if (order.qty != null) payload.qty = order.qty;
         if (order.limitPrice != null) payload.limitPrice = order.limitPrice;
         if (order.stopPrice != null) payload.stopPrice = order.stopPrice;
-        // Map TradingView order types to our normalized format
-        const tvTypeMap = { 1: 'LIMIT', 2: 'MARKET', 3: 'STOP', 4: 'STOP_LIMIT' };
-        const orderType = order.type != null
-            ? (tvTypeMap[order.type] || String(order.type))
+        // Use the canonical tvOrderTypeToBackend mapping (Market=1, Limit=2, Stop=3, StopLimit=4)
+        payload.orderType = order.type != null
+            ? tvOrderTypeToBackend(order.type)
             : 'LIMIT';
-        payload.orderType = orderType;
+        // Chart-originated modifications are not automated
+        payload.isAutomated = false;
 
         try {
             await this._api('PUT',
