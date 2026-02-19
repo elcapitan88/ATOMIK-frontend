@@ -47,7 +47,7 @@ const getBrokerInfo = (brokerId) => {
 
 // Helper function to determine if a webhook is an engine strategy
 const isEngineStrategy = (webhookId) => {
-  return webhookId && !isNaN(parseInt(webhookId));
+  return webhookId && /^\d+$/.test(webhookId.toString());
 };
 
 const ActivateStrategyModal = ({
@@ -221,10 +221,28 @@ const ActivateStrategyModal = ({
             // Continue without subscribed webhooks - not a critical error
           }
 
-          // Merge own and subscribed webhooks (remove duplicates by token)
+          // Fetch purchased webhooks
+          let purchasedWebhooks = [];
+          try {
+            const { marketplaceApi } = await import('@/services/api/marketplace/marketplaceApi');
+            const purchasedResponse = await marketplaceApi.getUserPurchases();
+            if (purchasedResponse?.purchases) {
+              purchasedWebhooks = purchasedResponse.purchases
+                .filter(p => p.webhook_token && p.webhook_name)
+                .map(p => ({
+                  token: p.webhook_token,
+                  name: p.webhook_name,
+                  isPurchased: true
+                }));
+            }
+          } catch (error) {
+            console.log('Error fetching purchased strategies:', error.message);
+          }
+
+          // Merge own, subscribed, and purchased webhooks (remove duplicates by token)
           const webhookMap = new Map();
-          [...ownWebhooks, ...subscribedWebhooks].forEach(webhook => {
-            if (!webhookMap.has(webhook.token)) {
+          [...ownWebhooks, ...subscribedWebhooks, ...purchasedWebhooks].forEach(webhook => {
+            if (webhook && webhook.token && !webhookMap.has(webhook.token)) {
               webhookMap.set(webhook.token, webhook);
             }
           });
@@ -233,6 +251,7 @@ const ActivateStrategyModal = ({
           console.log('Loaded webhooks:', {
             own: ownWebhooks.length,
             subscribed: subscribedWebhooks.length,
+            purchased: purchasedWebhooks.length,
             total: allWebhooks.length
           });
 

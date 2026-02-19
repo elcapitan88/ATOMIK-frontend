@@ -1,7 +1,9 @@
 import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@chakra-ui/react';
+import { useQueryClient } from '@tanstack/react-query';
 import axiosInstance from '@/services/axiosConfig';
+import unifiedStrategiesApi from '@/services/api/strategies/unifiedStrategiesApi';
 import logger from '@/utils/logger';
 
 const AuthContext = createContext(null);
@@ -21,6 +23,7 @@ export const AuthProvider = ({ children }) => {
   // Hooks
   const navigate = useNavigate();
   const toast = useToast();
+  const queryClient = useQueryClient();
 
   // Initialize auth state
   useEffect(() => {
@@ -143,7 +146,12 @@ export const AuthProvider = ({ children }) => {
       // Set auth data
       localStorage.setItem('access_token', access_token);
       axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${access_token}`;
-      
+
+      // Clear any stale strategy caches from previous sessions
+      unifiedStrategiesApi.clearCache();
+      queryClient.removeQueries({ queryKey: ['strategies'] });
+      queryClient.removeQueries({ queryKey: ['unified-strategies'] });
+
       // Normalize user data fields
       const userData = { ...user };
       if (userData.full_name && !userData.fullName) {
@@ -238,7 +246,12 @@ export const AuthProvider = ({ children }) => {
     
     setUser(null);
     setIsAuthenticated(false);
-    
+
+    // Clear strategy caches to prevent stale data on next login
+    unifiedStrategiesApi.clearCache();
+    queryClient.removeQueries({ queryKey: ['strategies'] });
+    queryClient.removeQueries({ queryKey: ['unified-strategies'] });
+
     // Clear any pending registration if explicitly logging out
     if (shouldNavigate) {
       localStorage.removeItem('pendingRegistration');
@@ -246,8 +259,8 @@ export const AuthProvider = ({ children }) => {
       navigate('/auth');
     }
     
-    logger.info('User logged out');
-  }, [navigate]);
+    logger.info('User logged out - caches cleared');
+  }, [navigate, queryClient]);
 
   // Check pending registration
   const checkPendingRegistration = useCallback(() => {
