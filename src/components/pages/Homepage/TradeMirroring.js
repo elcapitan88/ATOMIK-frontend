@@ -138,7 +138,7 @@ const benefits = [
     icon: Radio,
     title: 'One Signal, All Accounts',
     description:
-      'Send a single TradingView alert or webhook and every connected account executes the same trade. No duplicating signals, no manual work.',
+      'Place a trade on one account and every connected account executes the same order. No repeating yourself, no switching between platforms.',
   },
   {
     icon: MonitorSmartphone,
@@ -220,7 +220,7 @@ const TradeMirroring = () => {
               transition={{ duration: 0.5, delay: 0.1 }}
             >
               <Text color="whiteAlpha.800" fontSize="lg">
-                Broadcast a single webhook to all of your connected accounts
+                Place a trade once and every connected account executes it
                 simultaneously. Built for prop traders managing multiple funded
                 accounts.
               </Text>
@@ -307,7 +307,7 @@ const TradeMirroring = () => {
                         Your Signal
                       </Text>
                       <Text color="whiteAlpha.600" fontSize="sm">
-                        TradingView Webhook
+                        Manual Order
                       </Text>
                       <Badge
                         px={3}
@@ -411,7 +411,7 @@ const TradeMirroring = () => {
                       Your Signal
                     </Text>
                     <Text color="whiteAlpha.600" fontSize="sm">
-                      TradingView Webhook
+                      Manual Order
                     </Text>
                     <Badge
                       px={3}

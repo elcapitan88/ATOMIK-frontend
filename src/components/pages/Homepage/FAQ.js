@@ -1,113 +1,162 @@
 import React, { useState } from 'react';
-import { Box, Container, Heading, Text, VStack, Collapse, useDisclosure, Icon } from '@chakra-ui/react';
-import { ChevronDown, ChevronUp } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { Box, Container, Heading, Text, VStack, Icon } from '@chakra-ui/react';
+import { ChevronDown } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Helmet } from 'react-helmet-async';
 
 const MotionBox = motion(Box);
 
-const FAQItem = ({ question, answer, isOpen, onToggle }) => (
+const faqs = [
+  {
+    question: "What is automated trading for beginners?",
+    answer: "Automated trading for beginners is a way to execute trades automatically based on pre-set rules or signals, without needing to manually place each trade. With Atomik, you simply connect your TradingView alerts to your broker, and trades happen automatically when your conditions are met. No programming or coding experience required."
+  },
+  {
+    question: "How do I automate my trading without programming?",
+    answer: "Atomik makes it simple - no coding needed! Just connect your broker account, set up TradingView alerts with our webhook URL, and configure your trading parameters through our user-friendly interface. Our platform handles all the technical complexity, so you can focus on your trading strategy."
+  },
+  {
+    question: "Can I connect TradingView alerts to my broker automatically?",
+    answer: "Yes! This is exactly what Atomik specializes in. We provide webhook URLs that you paste into your TradingView alerts. When your alert triggers, it automatically sends a trade signal to your connected broker. Works with any TradingView strategy or indicator."
+  },
+  {
+    question: "Is automated trading legal and safe?",
+    answer: "Yes, automated trading is completely legal and widely used by professional traders. Atomik uses encrypted connections and secure API authentication to protect your data. We never store your broker login credentials - we use secure API connections that you can revoke at any time."
+  },
+  {
+    question: "How much does trading automation cost?",
+    answer: "Atomik offers transparent, flat-rate pricing with no per-trade fees. You can automate unlimited trades for one monthly price. We offer a 7-day free trial so you can test the platform risk-free. No hidden costs or surprise charges."
+  },
+  {
+    question: "What brokers does Atomik support?",
+    answer: "Atomik works with brokers including Tradovate, NinjaTrader, and others. We also support prop trading firms like Apex and other funded account providers. We're continuously adding new broker integrations. Contact us for specific requests."
+  },
+  {
+    question: "Can I use Atomik with my prop firm account?",
+    answer: "Absolutely! Atomik is designed to work seamlessly with prop trading firms and funded accounts. Many of our users automate their strategies on Apex and other prop firm platforms while following their rules and guidelines."
+  },
+  {
+    question: "Can I trade multiple accounts at the same time?",
+    answer: "Yes. Atomik's trade mirroring feature lets you place a trade once and have every connected account execute it simultaneously. This is especially useful for prop traders running multiple funded accounts — you manage one strategy and every account follows it automatically. There is no per-account fee and no extra setup. Just connect your accounts, group them together, and every trade you place is mirrored across all of them."
+  },
+  {
+    question: "Is trade mirroring the same as copy trading?",
+    answer: "Not quite. Traditional copy trading means following someone else's trades — you subscribe to another trader and replicate their positions. Trade mirroring on Atomik is different: you are broadcasting your own signal to your own accounts. You control the strategy, you own every account, and you decide exactly which accounts receive each signal. Think of it as a personal trade broadcaster rather than a social feature."
+  },
+  {
+    question: "Do I need TradingView to use Atomik?",
+    answer: "While TradingView is our most popular integration, you can also use other signal sources. TradingView is recommended because it offers powerful charting, thousands of indicators, and makes it easy to create automated alerts for any trading strategy."
+  },
+  {
+    question: "How does Atomik Trading work?",
+    answer: "Atomik acts as a bridge between your trading signals and your broker. When you receive a signal (from TradingView alerts or other sources), Atomik automatically places the trade on your broker account according to your pre-configured settings. You maintain full control over position sizing, risk management, and which signals to trade."
+  }
+];
+
+const FAQItem = ({ question, answer, isOpen, onToggle, index }) => (
   <MotionBox
-    initial={{ opacity: 0, y: 20 }}
-    animate={{ opacity: 1, y: 0 }}
-    transition={{ duration: 0.5 }}
-    bg="rgba(255, 255, 255, 0.1)"
-    backdropFilter="blur(10px)"
-    borderRadius="xl"
-    border="1px solid rgba(255, 255, 255, 0.18)"
-    overflow="hidden"
-    _hover={{
-      borderColor: "rgba(0, 198, 224, 0.3)",
-      boxShadow: "0 8px 32px 0 rgba(0, 198, 224, 0.1)"
-    }}
-    transition="all 0.3s"
+    initial={{ opacity: 0, y: 15 }}
+    whileInView={{ opacity: 1, y: 0 }}
+    viewport={{ once: true }}
+    transition={{ duration: 0.4, delay: index * 0.06 }}
   >
     <Box
-      p={6}
-      cursor="pointer"
-      onClick={onToggle}
-      display="flex"
-      alignItems="center"
-      justifyContent="space-between"
-      _hover={{ bg: "rgba(255, 255, 255, 0.05)" }}
-      transition="all 0.3s"
+      borderBottom="1px solid rgba(255, 255, 255, 0.06)"
+      position="relative"
+      _before={{
+        content: '""',
+        position: 'absolute',
+        left: 0,
+        top: 0,
+        bottom: 0,
+        w: '2px',
+        bg: isOpen ? 'rgba(0, 198, 224, 1)' : 'transparent',
+        borderRadius: 'full',
+        transition: 'all 0.3s',
+        boxShadow: isOpen ? '0 0 8px rgba(0, 198, 224, 0.4)' : 'none',
+      }}
     >
-      <Heading as="h3" size="md" color="white" pr={4}>
-        {question}
-      </Heading>
-      <Icon 
-        as={isOpen ? ChevronUp : ChevronDown} 
-        color="rgba(0, 198, 224, 1)" 
-        boxSize={5}
-        transition="all 0.3s"
-      />
-    </Box>
-    <Collapse in={isOpen}>
-      <Box px={6} pb={6}>
-        <Text color="whiteAlpha.800" fontSize="md" lineHeight="tall">
-          {answer}
+      {/* Question row */}
+      <Box
+        as="button"
+        w="full"
+        py={5}
+        pl={5}
+        pr={4}
+        display="flex"
+        alignItems="center"
+        justifyContent="space-between"
+        cursor="pointer"
+        onClick={onToggle}
+        bg={isOpen ? 'rgba(0, 198, 224, 0.03)' : 'transparent'}
+        transition="background 0.3s"
+        textAlign="left"
+        _hover={{
+          bg: 'rgba(255, 255, 255, 0.02)',
+        }}
+      >
+        <Text
+          color={isOpen ? 'white' : 'whiteAlpha.800'}
+          fontSize={{ base: "sm", md: "md" }}
+          fontWeight={isOpen ? '600' : '500'}
+          pr={4}
+          transition="color 0.3s, font-weight 0.3s"
+        >
+          {question}
         </Text>
+        <Box
+          flexShrink={0}
+          w="28px"
+          h="28px"
+          borderRadius="full"
+          bg={isOpen ? 'rgba(0, 198, 224, 0.1)' : 'rgba(255, 255, 255, 0.04)'}
+          display="flex"
+          alignItems="center"
+          justifyContent="center"
+          transition="all 0.3s"
+        >
+          <Icon
+            as={ChevronDown}
+            color={isOpen ? 'rgba(0, 198, 224, 1)' : 'whiteAlpha.400'}
+            boxSize={4}
+            transition="transform 0.3s ease, color 0.3s"
+            transform={isOpen ? 'rotate(180deg)' : 'rotate(0deg)'}
+          />
+        </Box>
       </Box>
-    </Collapse>
+
+      {/* Answer panel */}
+      <AnimatePresence initial={false}>
+        {isOpen && (
+          <MotionBox
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ height: { duration: 0.3 }, opacity: { duration: 0.25, delay: 0.05 } }}
+            overflow="hidden"
+          >
+            <Box pl={5} pr={6} pb={5}>
+              <Text
+                color="whiteAlpha.700"
+                fontSize={{ base: "sm", md: "md" }}
+                lineHeight="1.8"
+              >
+                {answer}
+              </Text>
+            </Box>
+          </MotionBox>
+        )}
+      </AnimatePresence>
+    </Box>
   </MotionBox>
 );
 
 const FAQ = () => {
-  const [openItems, setOpenItems] = useState({});
+  const [openIndex, setOpenIndex] = useState(null);
 
   const toggleItem = (index) => {
-    setOpenItems(prev => ({
-      ...prev,
-      [index]: !prev[index]
-    }));
+    setOpenIndex(prev => prev === index ? null : index);
   };
-
-  const faqs = [
-    {
-      question: "What is automated trading for beginners?",
-      answer: "Automated trading for beginners is a way to execute trades automatically based on pre-set rules or signals, without needing to manually place each trade. With Atomik, you simply connect your TradingView alerts to your broker, and trades happen automatically when your conditions are met. No programming or coding experience required."
-    },
-    {
-      question: "How do I automate my trading without programming?",
-      answer: "Atomik makes it simple - no coding needed! Just connect your broker account, set up TradingView alerts with our webhook URL, and configure your trading parameters through our user-friendly interface. Our platform handles all the technical complexity, so you can focus on your trading strategy."
-    },
-    {
-      question: "Can I connect TradingView alerts to my broker automatically?",
-      answer: "Yes! This is exactly what Atomik specializes in. We provide webhook URLs that you paste into your TradingView alerts. When your alert triggers, it automatically sends a trade signal to your connected broker. Works with any TradingView strategy or indicator."
-    },
-    {
-      question: "Is automated trading legal and safe?",
-      answer: "Yes, automated trading is completely legal and widely used by professional traders. Atomik uses bank-grade security and enterprise encryption to protect your data. We never store your broker login credentials - we use secure API connections that you can revoke at any time."
-    },
-    {
-      question: "How much does trading automation cost?",
-      answer: "Atomik offers transparent, flat-rate pricing with no per-trade fees. You can automate unlimited trades for one monthly price. We offer a 7-day free trial so you can test the platform risk-free. No hidden costs or surprise charges."
-    },
-    {
-      question: "What brokers does Atomik support?",
-      answer: "Atomik works with major brokers including Interactive Brokers, Tradovate, and many others. We also support prop trading firms like TopStep, Apex, and other funded account providers. If your broker has API access, we can likely integrate with it."
-    },
-    {
-      question: "Can I use Atomik with my prop firm account?",
-      answer: "Absolutely! Atomik is designed to work seamlessly with prop trading firms and funded accounts. Many of our users successfully automate their strategies on TopStep, Apex, and other prop firm platforms while following all their rules and guidelines."
-    },
-    {
-      question: "Can I trade multiple accounts at the same time?",
-      answer: "Yes. Atomik's trade mirroring feature lets you broadcast a single webhook or TradingView alert to every account you have connected. When your signal fires, all selected accounts execute the same trade simultaneously. This is especially useful for prop traders running multiple funded accounts — you manage one strategy and every account follows it automatically. There is no per-account fee and no extra setup. Just connect your accounts, assign them to receive your signal, and you are done."
-    },
-    {
-      question: "Is trade mirroring the same as copy trading?",
-      answer: "Not quite. Traditional copy trading means following someone else's trades — you subscribe to another trader and replicate their positions. Trade mirroring on Atomik is different: you are broadcasting your own signal to your own accounts. You control the strategy, you own every account, and you decide exactly which accounts receive each signal. Think of it as a personal trade broadcaster rather than a social feature."
-    },
-    {
-      question: "Do I need TradingView to use Atomik?",
-      answer: "While TradingView is our most popular integration, you can also use other signal sources. TradingView is recommended because it offers powerful charting, thousands of indicators, and makes it easy to create automated alerts for any trading strategy."
-    },
-    {
-      question: "How does Atomik Trading work?",
-      answer: "Atomik acts as a bridge between your trading signals and your broker. When you receive a signal (from TradingView alerts or other sources), Atomik automatically places the trade on your broker account according to your pre-configured settings. You maintain full control over position sizing, risk management, and which signals to trade."
-    }
-  ];
 
   return (
     <>
@@ -130,7 +179,7 @@ const FAQ = () => {
                   }
                 },
                 {
-                  "@type": "Question", 
+                  "@type": "Question",
                   "name": "How do I automate my trading without programming?",
                   "acceptedAnswer": {
                     "@type": "Answer",
@@ -139,7 +188,7 @@ const FAQ = () => {
                 },
                 {
                   "@type": "Question",
-                  "name": "Can I connect TradingView alerts to my broker automatically?", 
+                  "name": "Can I connect TradingView alerts to my broker automatically?",
                   "acceptedAnswer": {
                     "@type": "Answer",
                     "text": "Yes! This is exactly what Atomik specializes in. We provide webhook URLs that you paste into your TradingView alerts. When your alert triggers, it automatically sends a trade signal to your connected broker. Works with any TradingView strategy or indicator."
@@ -149,8 +198,8 @@ const FAQ = () => {
                   "@type": "Question",
                   "name": "Is automated trading legal and safe?",
                   "acceptedAnswer": {
-                    "@type": "Answer", 
-                    "text": "Yes, automated trading is completely legal and widely used by professional traders. Atomik uses bank-grade security and enterprise encryption to protect your data. We never store your broker login credentials - we use secure API connections that you can revoke at any time."
+                    "@type": "Answer",
+                    "text": "Yes, automated trading is completely legal and widely used by professional traders. Atomik uses encrypted connections and secure API authentication to protect your data. We never store your broker login credentials - we use secure API connections that you can revoke at any time."
                   }
                 },
                 {
@@ -166,7 +215,7 @@ const FAQ = () => {
                   "name": "What brokers does Atomik support?",
                   "acceptedAnswer": {
                     "@type": "Answer",
-                    "text": "Atomik works with major brokers including Interactive Brokers, Tradovate, and many others. We also support prop trading firms like TopStep, Apex, and other funded account providers. If your broker has API access, we can likely integrate with it."
+                    "text": "Atomik works with brokers including Tradovate, NinjaTrader, and others. We also support prop trading firms like Apex and other funded account providers. We're continuously adding new broker integrations. Contact us for specific requests."
                   }
                 },
                 {
@@ -174,7 +223,7 @@ const FAQ = () => {
                   "name": "Can I use Atomik with my prop firm account?",
                   "acceptedAnswer": {
                     "@type": "Answer",
-                    "text": "Absolutely! Atomik is designed to work seamlessly with prop trading firms and funded accounts. Many of our users successfully automate their strategies on TopStep, Apex, and other prop firm platforms while following all their rules and guidelines."
+                    "text": "Absolutely! Atomik is designed to work seamlessly with prop trading firms and funded accounts. Many of our users automate their strategies on Apex and other prop firm platforms while following their rules and guidelines."
                   }
                 },
                 {
@@ -182,7 +231,7 @@ const FAQ = () => {
                   "name": "Can I trade multiple accounts at the same time?",
                   "acceptedAnswer": {
                     "@type": "Answer",
-                    "text": "Yes. Atomik's trade mirroring feature lets you broadcast a single webhook or TradingView alert to every account you have connected. When your signal fires, all selected accounts execute the same trade simultaneously. This is especially useful for prop traders running multiple funded accounts."
+                    "text": "Yes. Atomik's trade mirroring feature lets you place a trade once and have every connected account execute it simultaneously. This is especially useful for prop traders running multiple funded accounts."
                   }
                 },
                 {
@@ -214,68 +263,79 @@ const FAQ = () => {
           `}
         </script>
       </Helmet>
-      
+
       <Box
         as="section"
         id="faq"
-        py={20}
+        py={{ base: 16, md: 24 }}
         bg="black"
         position="relative"
         overflow="hidden"
         aria-label="Frequently Asked Questions about automated trading"
       >
-      {/* Background Elements */}
-      <Box
-        position="absolute"
-        top="20%"
-        right="10%"
-        width="30%"
-        height="30%"
-        bgGradient="radial(circle, rgba(0,198,224,0.1) 0%, rgba(0,0,0,0) 70%)"
-        filter="blur(60px)"
-        pointerEvents="none"
-      />
+        {/* Background */}
+        <Box
+          position="absolute"
+          inset="0"
+          bg="linear-gradient(180deg, transparent 0%, rgba(0,198,224,0.02) 50%, transparent 100%)"
+          pointerEvents="none"
+        />
 
-      <Container maxW="4xl" px={{ base: 4, md: 8 }}>
-        <VStack spacing={12}>
-          {/* Section Title */}
-          <VStack spacing={4} textAlign="center" maxW="800px">
-            <Heading
-              as="h2"
-              size="2xl"
-              color="white"
-              fontWeight="bold"
+        <Container maxW="3xl" px={{ base: 4, md: 8 }}>
+          <VStack spacing={{ base: 10, md: 14 }}>
+            {/* Header */}
+            <MotionBox
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
             >
-              Frequently Asked Questions About
-              <Text
-                as="span"
-                bgGradient="linear(to-r, rgba(0,198,224,1), rgba(0,198,224,0.6))"
-                bgClip="text"
-                px={2}
-              >
-                Automated Trading
-              </Text>
-            </Heading>
-            <Text color="whiteAlpha.800" fontSize="lg">
-              Everything beginners need to know about getting started with trading automation
-            </Text>
-          </VStack>
+              <VStack spacing={4} textAlign="center" maxW="600px">
+                <Heading
+                  as="h2"
+                  size={{ base: "xl", md: "2xl" }}
+                  color="white"
+                  fontWeight="bold"
+                  fontFamily="'Satoshi', sans-serif"
+                >
+                  Common
+                  <Text
+                    as="span"
+                    bgGradient="linear(to-r, rgba(0,198,224,1), rgba(0,198,224,0.6))"
+                    bgClip="text"
+                    px={2}
+                  >
+                    Questions
+                  </Text>
+                </Heading>
+                <Text color="whiteAlpha.600" fontSize={{ base: "md", md: "lg" }}>
+                  Everything you need to know about getting started
+                </Text>
+              </VStack>
+            </MotionBox>
 
-          {/* FAQ Items */}
-          <VStack spacing={4} w="full">
-            {faqs.map((faq, index) => (
-              <FAQItem
-                key={index}
-                question={faq.question}
-                answer={faq.answer}
-                isOpen={openItems[index]}
-                onToggle={() => toggleItem(index)}
-              />
-            ))}
+            {/* FAQ List */}
+            <Box
+              w="full"
+              bg="rgba(255, 255, 255, 0.02)"
+              borderRadius="2xl"
+              border="1px solid rgba(255, 255, 255, 0.06)"
+              overflow="hidden"
+            >
+              {faqs.map((faq, index) => (
+                <FAQItem
+                  key={index}
+                  question={faq.question}
+                  answer={faq.answer}
+                  isOpen={openIndex === index}
+                  onToggle={() => toggleItem(index)}
+                  index={index}
+                />
+              ))}
+            </Box>
           </VStack>
-        </VStack>
-      </Container>
-    </Box>
+        </Container>
+      </Box>
     </>
   );
 };
