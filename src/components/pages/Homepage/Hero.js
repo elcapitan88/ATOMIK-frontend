@@ -111,7 +111,7 @@ const scenes = [
 
 // ─── Data Pipe — Railway-style glow conduit with flowing dots ──────────
 // Each pipe connects directly from a card to the hub (or hub to card)
-const DataPipe = ({ delay = 0, dotCount = 3 }) => {
+const DataPipe = ({ delay = 0, dotCount = 2 }) => {
   const pipeRef = useRef(null);
   const [pipeWidth, setPipeWidth] = useState(120);
 
@@ -127,10 +127,10 @@ const DataPipe = ({ delay = 0, dotCount = 3 }) => {
     return () => window.removeEventListener('resize', measure);
   }, []);
 
-  const dotDuration = 2.8;
+  const dotDuration = 4.5;
 
   return (
-    <Box ref={pipeRef} position="relative" flex="1" minW="40px" h="20px" alignSelf="center">
+    <Box ref={pipeRef} position="relative" flex="1" minW="60px" h="20px" alignSelf="center">
       {/* Glow conduit — soft blurred aura like Railway */}
       <Box
         position="absolute"
@@ -187,8 +187,8 @@ const DataPipe = ({ delay = 0, dotCount = 3 }) => {
 };
 
 // ─── Vertical Pipe (mobile) ───────────────────────────────────────────
-const VerticalPipe = ({ delay = 0, height = 40, dotCount = 2 }) => {
-  const dotDuration = 2;
+const VerticalPipe = ({ delay = 0, height = 40, dotCount = 1 }) => {
+  const dotDuration = 3.5;
   return (
     <Box position="relative" w="20px" h={`${height}px`} mx="auto">
       <Box
@@ -250,8 +250,8 @@ const FlowCard = ({ icon, name, label, badge, checkmark, delay = 0, side = 'left
     animate={{ opacity: 1, x: 0 }}
     exit={{ opacity: 0, x: side === 'left' ? -10 : 10 }}
     transition={{ duration: 0.4, delay }}
-    px={4}
-    py={3}
+    px={5}
+    py={4}
     bg={side === 'right' ? 'rgba(255,255,255,0.07)' : 'rgba(255,255,255,0.05)'}
     backdropFilter="blur(8px)"
     borderRadius="xl"
@@ -262,39 +262,39 @@ const FlowCard = ({ icon, name, label, badge, checkmark, delay = 0, side = 'left
     }
     boxShadow={side === 'right' ? '0 4px 20px rgba(0,198,224,0.06)' : 'none'}
     flexShrink={0}
-    w={side === 'right' ? '180px' : '170px'}
+    w={side === 'right' ? '220px' : '210px'}
   >
     <HStack spacing={3}>
       <Box
-        p={1.5}
+        p={2}
         bg={side === 'right' ? 'rgba(0,198,224,0.12)' : 'rgba(0,198,224,0.08)'}
         borderRadius="lg"
         color={side === 'right' ? '#00C6E0' : 'rgba(0,198,224,0.8)'}
         flexShrink={0}
       >
-        <Icon as={icon} boxSize={4} />
+        <Icon as={icon} boxSize={5} />
       </Box>
       <Box flex="1" minW="0">
         <Text
           color={side === 'right' ? 'white' : 'whiteAlpha.800'}
-          fontSize="xs"
+          fontSize="sm"
           fontWeight="600"
           noOfLines={1}
         >
           {name}
         </Text>
-        <Text color={side === 'right' ? 'whiteAlpha.600' : 'whiteAlpha.400'} fontSize="2xs" noOfLines={1}>
+        <Text color={side === 'right' ? 'whiteAlpha.600' : 'whiteAlpha.400'} fontSize="xs" noOfLines={1}>
           {label}
         </Text>
       </Box>
       {badge && (
         <Badge
-          px={1.5}
+          px={2}
           py={0.5}
           borderRadius="md"
           bg="rgba(72,187,120,0.12)"
           color="green.300"
-          fontSize="2xs"
+          fontSize="xs"
           fontWeight="600"
           flexShrink={0}
         >
@@ -308,7 +308,7 @@ const FlowCard = ({ icon, name, label, badge, checkmark, delay = 0, side = 'left
           transition={{ duration: 0.3, delay: delay + 0.8 }}
           flexShrink={0}
         >
-          <Icon as={CheckCircle2} color="green.400" boxSize={4} />
+          <Icon as={CheckCircle2} color="green.400" boxSize={5} />
         </MotionBox>
       )}
     </HStack>
@@ -317,27 +317,27 @@ const FlowCard = ({ icon, name, label, badge, checkmark, delay = 0, side = 'left
 
 // ─── Atomik Hub — Logo only, prominent ────────────────────────────────
 const AtomikHub = () => (
-  <Flex align="center" justify="center" flexShrink={0} position="relative" mx={2}>
+  <Flex align="center" justify="center" flexShrink={0} position="relative">
     {/* Radial glow */}
     <Box
       position="absolute"
-      w="130px"
-      h="130px"
+      w="180px"
+      h="180px"
       borderRadius="full"
       bgGradient="radial(circle, rgba(0,198,224,0.15) 0%, rgba(0,198,224,0.05) 35%, transparent 70%)"
-      filter="blur(6px)"
+      filter="blur(8px)"
       pointerEvents="none"
     />
     <Image
       src="/logos/atomik-logo.svg"
       alt="Atomik"
-      w="90px"
-      h="90px"
-      filter="drop-shadow(0 0 16px rgba(0,198,224,0.5)) drop-shadow(0 0 40px rgba(0,198,224,0.15))"
+      w="120px"
+      h="120px"
+      filter="drop-shadow(0 0 20px rgba(0,198,224,0.5)) drop-shadow(0 0 50px rgba(0,198,224,0.15))"
       position="relative"
       zIndex={1}
       fallback={
-        <Icon as={Zap} boxSize={12} color="#00C6E0" filter="drop-shadow(0 0 16px rgba(0,198,224,0.5))" />
+        <Icon as={Zap} boxSize={16} color="#00C6E0" filter="drop-shadow(0 0 20px rgba(0,198,224,0.5))" />
       }
     />
   </Flex>
@@ -360,7 +360,7 @@ const DesktopDiagram = ({ scene }) => {
     >
       {/* ── Left side: input cards + their pipes ── */}
       <VStack
-        spacing={3}
+        spacing={6}
         align="stretch"
         flexShrink={0}
         // 3D: further away — smaller, slightly receded
@@ -377,7 +377,7 @@ const DesktopDiagram = ({ scene }) => {
               delay={i * 0.12}
               side="left"
             />
-            <DataPipe delay={0.2 + i * 0.5} dotCount={3} />
+            <DataPipe delay={0.3 + i * 1.2} dotCount={2} />
           </HStack>
         ))}
       </VStack>
@@ -387,7 +387,7 @@ const DesktopDiagram = ({ scene }) => {
 
       {/* ── Right side: pipes + output cards ── */}
       <VStack
-        spacing={3}
+        spacing={6}
         align="stretch"
         flexShrink={0}
         // 3D: closer — larger, brighter
@@ -395,7 +395,7 @@ const DesktopDiagram = ({ scene }) => {
       >
         {scene.outputs.map((output, i) => (
           <HStack key={`${scene.key}-out-${i}`} spacing={0}>
-            <DataPipe delay={0.5 + i * 0.4} dotCount={3} />
+            <DataPipe delay={0.8 + i * 1.0} dotCount={2} />
             <FlowCard
               icon={Wallet}
               name={output.name}
