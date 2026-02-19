@@ -13,7 +13,6 @@ const Features = lazy(() => import('./Features'));
 const Testimonials = lazy(() => import('./Testimonials'));
 const TrustSecurity = lazy(() => import('./TrustSecurity'));
 const IntegrationPartners = lazy(() => import('./IntegrationPartners'));
-const TradeMirroring = lazy(() => import('./TradeMirroring'));
 const PricingCTA = lazy(() => import('./PricingCTA'));
 const FAQ = lazy(() => import('./FAQ'));
 
@@ -313,7 +312,6 @@ const Homepage = () => {
           <Hero />
           <LazyComponent component={HowToUse} id="how-to-use-section" />
           <LazyComponent component={Features} id="features-section" />
-          <LazyComponent component={TradeMirroring} id="trade-mirroring-section" />
           <LazyComponent component={Testimonials} id="testimonials-section" />
           <LazyComponent component={TrustSecurity} id="trust-security-section" />
           <LazyComponent component={IntegrationPartners} id="integration-partners-section" />
