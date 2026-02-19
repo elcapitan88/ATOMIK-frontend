@@ -37,6 +37,14 @@ const getStatusLabel = (state) => {
   return 'Connecting';
 };
 
+// Badge config per mode — grey bg, mode-colored text
+const MODE_BADGE = {
+  manual: { label: 'MANUAL', color: 'cyan.300' },
+  auto: { label: 'AUTO', color: 'purple.300' },
+  'copy-leader': { label: 'LEADER', color: 'green.300' },
+  'copy-follower': { label: 'FOLLOWING', color: 'yellow.300' },
+};
+
 const AccountsTab = memo(({
   accounts = [],
   positions = [],
@@ -60,6 +68,29 @@ const AccountsTab = memo(({
     });
     return map;
   }, [positions]);
+
+  // Sort: group copy accounts by group ID (leader then followers), then manual, then auto
+  const sortedAccounts = useMemo(() => {
+    return [...accounts].sort((a, b) => {
+      const modeA = getAccountMode(a.account_id);
+      const modeB = getAccountMode(b.account_id);
+      const isCopyA = modeA === 'copy-leader' || modeA === 'copy-follower';
+      const isCopyB = modeB === 'copy-leader' || modeB === 'copy-follower';
+      if (isCopyA && !isCopyB) return -1;
+      if (!isCopyA && isCopyB) return 1;
+      if (isCopyA && isCopyB) {
+        const groupA = getCopyInfo?.(a.account_id)?.groupId ?? 0;
+        const groupB = getCopyInfo?.(b.account_id)?.groupId ?? 0;
+        if (groupA !== groupB) return groupA - groupB;
+        if (modeA === 'copy-leader' && modeB !== 'copy-leader') return -1;
+        if (modeA !== 'copy-leader' && modeB === 'copy-leader') return 1;
+        return (a.nickname || a.name || '').localeCompare(b.nickname || b.name || '');
+      }
+      const ORDER = { manual: 0, auto: 1 };
+      return (ORDER[modeA] ?? 2) - (ORDER[modeB] ?? 2)
+        || (a.nickname || a.name || '').localeCompare(b.nickname || b.name || '');
+    });
+  }, [accounts, getAccountMode, getCopyInfo]);
 
   if (accounts.length === 0) {
     return (
@@ -89,7 +120,7 @@ const AccountsTab = memo(({
         </Tr>
       </Thead>
       <Tbody>
-        {accounts.map((account, i) => {
+        {sortedAccounts.map((account, i) => {
           const accountId = String(account.account_id);
           const mode = getAccountMode(accountId);
           const cfg = accountConfigs?.get(accountId) || { quantity: 1, isActive: false };
@@ -139,18 +170,10 @@ const AccountsTab = memo(({
               <Td py={1.5}>
                 <Badge
                   fontSize="9px"
-                  colorScheme={
-                    mode === 'copy-leader' ? 'green'
-                    : mode === 'copy-follower' ? 'yellow'
-                    : mode === 'auto' ? 'purple'
-                    : 'cyan'
-                  }
-                  variant="subtle"
+                  bg="whiteAlpha.200"
+                  color={(MODE_BADGE[mode] || MODE_BADGE.manual).color}
                 >
-                  {mode === 'copy-leader' ? 'LEADER'
-                    : mode === 'copy-follower' ? 'FOLLOWING'
-                    : mode === 'auto' ? 'AUTO'
-                    : 'MANUAL'}
+                  {(MODE_BADGE[mode] || MODE_BADGE.manual).label}
                 </Badge>
               </Td>
               <Td py={1.5}>
