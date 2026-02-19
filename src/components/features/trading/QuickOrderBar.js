@@ -91,21 +91,29 @@ const QuickOrderBar = ({ chartSymbol, multiAccountTrading, positions = [], order
     [hasActiveAccounts, orderType, limitPrice, stopPrice, timeInForce, symbol, placeMultiAccountOrder, needsPrice, needsStop, toast]
   );
 
-  // Open positions count
+  // Helper: check if an account is a copy-follower (managed by copy cascade)
+  const isCopyFollower = useCallback(
+    (accountId) => getCopyInfo?.(accountId)?.mode === 'copy-follower',
+    [getCopyInfo]
+  );
+
+  // Open positions — exclude copy-follower accounts (copy cascade handles them)
   const openPositions = useMemo(
     () => positions.filter(
       (p) => p && !p.isClosed && p.side !== 'FLAT' && (p.quantity > 0 || Math.abs(p.netPos || 0) > 0)
+        && !isCopyFollower(p._accountId || p.accountId)
     ),
-    [positions]
+    [positions, isCopyFollower]
   );
 
-  // Working orders count
+  // Working orders — exclude copy-follower accounts
   const workingOrders = useMemo(
     () => orders.filter((o) => {
       if (!o || !o.orderId) return false;
+      if (isCopyFollower(o._accountId || o.accountId)) return false;
       return o.ordStatus === 'Working' || o.status === 'Working' || o.ordStatus === 6;
     }),
-    [orders]
+    [orders, isCopyFollower]
   );
 
   // Cancel all working orders for given accounts (helper)
