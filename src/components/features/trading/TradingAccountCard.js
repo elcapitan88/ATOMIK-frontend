@@ -42,12 +42,12 @@ const pnlText = (v) => {
   return `${prefix}$${fmtCur(Math.abs(val))}`;
 };
 
-// Badge config per mode
+// Badge config per mode — grey bg, mode-colored text
 const MODE_BADGE = {
-  manual: { label: 'MANUAL', colorScheme: 'cyan' },
-  auto: { label: 'AUTO', colorScheme: 'purple' },
-  'copy-leader': { label: 'LEADER', colorScheme: 'green' },
-  'copy-follower': { label: 'FOLLOWING', colorScheme: 'yellow' },
+  manual: { label: 'MANUAL', color: 'cyan.300' },
+  auto: { label: 'AUTO', color: 'purple.300' },
+  'copy-leader': { label: 'LEADER', color: 'green.300' },
+  'copy-follower': { label: 'FOLLOWING', color: 'yellow.300' },
 };
 
 // Visual style config per mode
@@ -212,8 +212,8 @@ const TradingAccountCard = ({
             px={1.5}
             py={0.5}
             borderRadius="sm"
-            variant="subtle"
-            colorScheme={badgeConfig.colorScheme}
+            bg="whiteAlpha.200"
+            color={badgeConfig.color}
             textTransform="uppercase"
             letterSpacing="wider"
             flexShrink={0}

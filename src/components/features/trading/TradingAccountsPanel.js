@@ -387,18 +387,37 @@ const TradingAccountsPanel = ({ multiAccountTrading, aggregatedPositions = [], s
 
   // ─── Render ────────────────────────────────────────────────────────
 
-  // Sort: leaders > followers > manual > auto
-  const MODE_SORT_ORDER = { 'copy-leader': 0, 'copy-follower': 1, manual: 2, auto: 3 };
+  // Sort: group copy accounts by group ID (leader then followers), then manual, then auto
   const sortedAccounts = useMemo(() => {
     return [...accounts].sort((a, b) => {
       const modeA = getAccountMode(a.account_id);
       const modeB = getAccountMode(b.account_id);
-      const orderA = MODE_SORT_ORDER[modeA] ?? 4;
-      const orderB = MODE_SORT_ORDER[modeB] ?? 4;
+      const isCopyA = modeA === 'copy-leader' || modeA === 'copy-follower';
+      const isCopyB = modeB === 'copy-leader' || modeB === 'copy-follower';
+
+      // Copy accounts come first, then manual (2), then auto (3)
+      if (isCopyA && !isCopyB) return -1;
+      if (!isCopyA && isCopyB) return 1;
+
+      // Both are copy accounts — group by copy group ID, leader first within each group
+      if (isCopyA && isCopyB) {
+        const groupA = getCopyInfo?.(a.account_id)?.groupId ?? 0;
+        const groupB = getCopyInfo?.(b.account_id)?.groupId ?? 0;
+        if (groupA !== groupB) return groupA - groupB;
+        // Same group: leader before follower
+        if (modeA === 'copy-leader' && modeB !== 'copy-leader') return -1;
+        if (modeA !== 'copy-leader' && modeB === 'copy-leader') return 1;
+        return (a.nickname || a.name || '').localeCompare(b.nickname || b.name || '');
+      }
+
+      // Both are non-copy: manual before auto
+      const ORDER = { manual: 0, auto: 1 };
+      const orderA = ORDER[modeA] ?? 2;
+      const orderB = ORDER[modeB] ?? 2;
       if (orderA !== orderB) return orderA - orderB;
       return (a.nickname || a.name || '').localeCompare(b.nickname || b.name || '');
     });
-  }, [accounts, getAccountMode]);
+  }, [accounts, getAccountMode, getCopyInfo]);
 
   return (
     <Box h="100%" display="flex" flexDirection="column">
