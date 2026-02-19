@@ -133,7 +133,7 @@ const TVAdvancedChart = ({
                         console.warn('Could not subscribe to symbol changes:', e);
                     }
 
-                    // Right-click context menu for trading
+                    // Right-click context menu for multi-account trading
                     try {
                         w.onContextMenu((unixTime, price) => {
                             const p = price.toFixed(2);
@@ -141,7 +141,7 @@ const TVAdvancedChart = ({
                             const mode = selectionModeRef.current;
                             const group = groupInfoRef.current;
                             const hasAccount = hasAccountRef.current;
-                            const label = mode === 'group' && group
+                            const label = (mode === 'group' || mode === 'multi') && group
                                 ? `(${group.groupName})`
                                 : `(${qty} ct)`;
 

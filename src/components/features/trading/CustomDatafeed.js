@@ -77,7 +77,6 @@ class CustomDatafeed {
       has_intraday: true,
       has_daily: true,
       has_weekly_and_monthly: true,
-      has_empty_bars: false,
       supported_resolutions: SUPPORTED_RESOLUTIONS,
       volume_precision: 0,
       data_status: 'streaming',

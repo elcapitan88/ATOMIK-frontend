@@ -8,34 +8,38 @@ import {
     useToast,
     Alert,
     AlertIcon,
-    Button,
-    useBreakpointValue
+    Button
 } from '@chakra-ui/react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { ChatProvider, useChat } from '@/contexts/ChatContext';
 import axiosInstance from '@/services/axiosConfig';
 import useFeatureFlags from '@/hooks/useFeatureFlags';
-import AdminService from '@/services/api/admin';
 import Menu from '../layout/Sidebar/Menu';
-import TradingViewWidget from '../features/trading/TradingViewWidget';
+import TradingViewWidget from '../features/trading/TVAdvancedChart';
 import MemberChatMenu from '../chat/MemberChatMenu';
 import MemberChatComponent from '../chat/MemberChat';
 import MaintenanceBanner from '@/components/common/MaintenanceBanner';
 import PaymentStatusWarning from '@/components/subscription/PaymentStatusWarning';
 import ARIAAssistant from '@/components/ARIA/ARIAAssistant';
 import useChartTrading from '@/hooks/useChartTrading';
-import useWebSocketPositions from '@/services/websocket-proxy/hooks/useWebSocketPositions';
-import useWebSocketOrders from '@/services/websocket-proxy/hooks/useWebSocketOrders';
-import { getContractTicker } from '@/utils/formatting/tickerUtils';
+import OrderConfirmationModal from '../features/trading/OrderConfirmationModal';
+import ChartTradingOverlay from '../features/trading/ChartTradingOverlay';
 import logger from '@/utils/logger';
+import useMultiAccountTrading from '@/hooks/useMultiAccountTrading';
+import useAggregatedPositions from '@/hooks/useAggregatedPositions';
+import useBracketPlacement from '@/hooks/useBracketPlacement';
+import { useUnifiedStrategies } from '@/hooks/useUnifiedStrategies';
+import useCopyTrading from '@/hooks/useCopyTrading';
+import { useWebSocketContext } from '@/services/websocket-proxy/contexts/WebSocketContext';
+import webSocketManager from '@/services/websocket-proxy/WebSocketManager';
 
 // Lazy loaded components
-const Management = lazy(() => import('../features/trading/Management'));
-const OrderControl = lazy(() => import('../features/trading/OrderControl'));
 const StrategyGroups = lazy(() => import('../features/strategies/ActivateStrategies'));
-const TradesTable = lazy(() => import('../features/trading/TradesTable'));
 const MarketplacePage = lazy(() => import('./MarketplacePage'));
+const TradingAccountsPanel = lazy(() => import('../features/trading/TradingAccountsPanel'));
+const QuickOrderBar = lazy(() => import('../features/trading/QuickOrderBar'));
+const TradingPanel = lazy(() => import('../features/trading/TradingPanel'));
 
 // Loading Spinner Component
 const LoadingSpinner = () => (
@@ -113,36 +117,31 @@ const DashboardContent = () => {
     // Chart trading state
     const [activeChart, setActiveChart] = useState(null);
     const [chartSymbol, setChartSymbol] = useState('NQ');
-    const [activeAccount, setActiveAccount] = useState(null);
-    const [orderControlState, setOrderControlState] = useState({
-        quantity: 1,
-        orderType: 'MARKET',
-        selectionMode: 'single',
-        groupInfo: null,
-        selectedAccounts: [],
-        selectedTicker: '',
-    });
+    const [chartCurrentPrice, setChartCurrentPrice] = useState(null);
 
-    // Auto-set activeAccount when OrderControl accounts change
+    // Trading panel collapse state
+    const [isTradingPanelCollapsed, setIsTradingPanelCollapsed] = useState(false);
+
+    // Poll chart's last bar close for live P&L calculation (~1s)
     useEffect(() => {
-        if (orderControlState.selectedAccounts.length > 0 && !activeAccount) {
-            // Find the full account info from dashboardData
-            const acctId = orderControlState.selectedAccounts[0];
-            const fullAcct = dashboardData.accounts?.find(a => a.account_id === acctId);
-            if (fullAcct) {
-                setActiveAccount({
-                    accountId: fullAcct.account_id,
-                    brokerId: fullAcct.broker_id,
-                    nickname: fullAcct.nickname || fullAcct.name,
-                });
-            } else {
-                // Fallback — set with just the ID so chart menu works
-                setActiveAccount({ accountId: acctId });
-            }
-        } else if (orderControlState.selectedAccounts.length === 0) {
-            setActiveAccount(null);
-        }
-    }, [orderControlState.selectedAccounts, dashboardData.accounts]);
+        if (!activeChart) return;
+        let cancelled = false;
+        const poll = async () => {
+            if (cancelled) return;
+            try {
+                const exported = await activeChart.exportData({ includeSeries: true, includeStudies: false });
+                if (cancelled || !exported?.data?.length || !exported?.schema) return;
+                const closeIdx = exported.schema.indexOf('close');
+                if (closeIdx === -1) return;
+                const lastBar = exported.data[exported.data.length - 1];
+                const price = lastBar?.[closeIdx];
+                if (price != null) setChartCurrentPrice(price);
+            } catch (_) {}
+        };
+        poll();
+        const id = setInterval(poll, 1000);
+        return () => { cancelled = true; clearInterval(id); };
+    }, [activeChart]);
 
     // Cache reference
     const dataCache = useRef({
@@ -158,8 +157,34 @@ const DashboardContent = () => {
     const toast = useToast();
     const { hasMemberChat, hasAriaAssistant } = useFeatureFlags();
 
-    // Responsive breakpoints
-    const isMobile = useBreakpointValue({ base: true, md: false });
+    // Multi-account trading hooks
+    const { getConnectionState: wsGetConnectionState } = useWebSocketContext();
+    const { strategies: activatedStrategies } = useUnifiedStrategies();
+    const copyTrading = useCopyTrading();
+    const copyTradingData = {
+      copyLeaderAccountIds: copyTrading.copyLeaderAccountIds,
+      copyFollowerAccountIds: copyTrading.copyFollowerAccountIds,
+      getCopyInfo: copyTrading.getCopyInfo,
+    };
+    const multiAccountTrading = useMultiAccountTrading(dashboardData.accounts, activatedStrategies, copyTradingData);
+    const { positions: aggregatedPositions, orders: aggregatedOrders } = useAggregatedPositions(dashboardData.accounts, wsGetConnectionState);
+
+    // Bracket placement hook
+    const bracketPlacement = useBracketPlacement({
+        chartSymbol,
+        chartCurrentPrice,
+        multiAccountTrading,
+    });
+
+    // Skip confirmation preference (persisted in localStorage)
+    const [skipOrderConfirmation, setSkipOrderConfirmation] = useState(
+        () => localStorage.getItem('atomik_skip_order_confirm') === 'true'
+    );
+    const handleToggleSkip = useCallback((val) => {
+        const next = typeof val === 'boolean' ? val : !skipOrderConfirmation;
+        setSkipOrderConfirmation(next);
+        localStorage.setItem('atomik_skip_order_confirm', String(next));
+    }, [skipOrderConfirmation]);
 
     // Set up API request interception for caching
     useEffect(() => {
@@ -316,29 +341,6 @@ const DashboardContent = () => {
     }, [isAuthenticated, navigate]);
 
 
-    const handleAccountSelect = useCallback((accountInfo) => {
-        // Support both old format (just accountId string) and new format (object)
-        if (typeof accountInfo === 'string') {
-            setDashboardData(prev => ({ ...prev, activeAccountId: accountInfo }));
-            return;
-        }
-        setActiveAccount(accountInfo);
-        setDashboardData(prev => ({
-            ...prev,
-            activeAccountId: accountInfo.accountId
-        }));
-    }, []);
-
-    // WebSocket hooks for active account positions & orders
-    const { positions } = useWebSocketPositions(
-        activeAccount?.brokerId,
-        activeAccount?.accountId
-    );
-    const { orders, cancelOrder: wsCancelOrder } = useWebSocketOrders(
-        activeAccount?.brokerId,
-        activeAccount?.accountId
-    );
-
     // Chart line callbacks
     const chartCallbacks = useMemo(() => ({
         onClosePosition: async (positionId, accountId) => {
@@ -365,34 +367,61 @@ const DashboardContent = () => {
                 toast({ title: 'Failed to cancel order', description: err.response?.data?.detail || err.message, status: 'error', duration: 4000 });
             }
         },
-        onModifyOrder: async (orderId, accountId, modifications) => {
+        onModifyOrder: async (orderId, accountId, modifications, brokerId) => {
             try {
-                await axiosInstance.put(`/api/v1/brokers/accounts/${accountId}/orders/${orderId}`, modifications);
-                toast({ title: 'Order modified', status: 'success', duration: 2000 });
+                console.log(`[Dashboard] Modifying order ${orderId} on account ${accountId} (broker: ${brokerId}):`, modifications);
+                const resp = await axiosInstance.put(`/api/v1/brokers/accounts/${accountId}/orders/${orderId}`, modifications);
+                console.log('[Dashboard] Modify order response:', JSON.stringify(resp.data));
+                // Validate response format — backend returns { status, order, timestamp }
+                if (resp.data?.status !== 'success' || !resp.data?.order) {
+                    console.error('[Dashboard] Unexpected modify response format:', resp.data);
+                    toast({ title: 'Order modify failed', description: 'Unexpected response from server', status: 'error', duration: 4000 });
+                    return;
+                }
+                const order = resp.data.order;
+                const orderStatus = order?.status;
+                if (orderStatus === 'ExecutionRejected' || orderStatus === 'OnHold') {
+                    toast({ title: 'Order modification rejected', description: `Tradovate returned: ${orderStatus}`, status: 'warning', duration: 4000 });
+                } else {
+                    toast({ title: 'Order modified', status: 'success', duration: 2000 });
+                    // Optimistic update: push new price into WebSocket cache so chart + panel update immediately
+                    if (brokerId) {
+                        const pricePatch = {};
+                        if (modifications.limitPrice != null) pricePatch.price = modifications.limitPrice;
+                        if (modifications.stopPrice != null) pricePatch.stopPrice = modifications.stopPrice;
+                        if (modifications.qty != null) pricePatch.orderQty = modifications.qty;
+                        webSocketManager.updateOrderData(brokerId, String(accountId), { orderId, ...pricePatch });
+                        console.log(`[Dashboard] Optimistic update pushed to WS cache: broker=${brokerId}, account=${accountId}, orderId=${orderId}`, pricePatch);
+                    }
+                }
             } catch (err) {
+                console.error('[Dashboard] Modify order failed:', err.response?.data || err.message);
                 toast({ title: 'Failed to modify order', description: err.response?.data?.detail || err.message, status: 'error', duration: 4000 });
             }
         },
     }), [toast]);
 
-    // Position/order lines on chart
-    useChartTrading({
+    // Position/order lines on chart — use aggregated data from all accounts
+    const chartTrading = useChartTrading({
         activeChart,
-        positions: activeAccount ? positions : [],
-        orders: activeAccount ? orders : [],
+        positions: aggregatedPositions,
+        orders: aggregatedOrders,
         chartSymbol,
         callbacks: chartCallbacks,
+        multiAccountTrading,
+        chartCurrentPrice,
     });
 
     // Handle chart right-click order placement
+    // Dispatches to all active manual accounts via multi-account trading
     const handleChartOrder = useCallback(async (order) => {
         try {
-            const { selectedAccounts } = orderControlState;
+            const { activeAccounts, placeMultiAccountOrder } = multiAccountTrading;
 
-            if (!selectedAccounts || selectedAccounts.length === 0) {
+            if (activeAccounts.length === 0) {
                 toast({
-                    title: 'No Account Selected',
-                    description: 'Select an account in Order Control before placing trades from the chart.',
+                    title: 'No Active Accounts',
+                    description: 'Toggle at least one account ON in the Accounts panel.',
                     status: 'warning',
                     duration: 4000,
                     isClosable: true,
@@ -400,29 +429,14 @@ const DashboardContent = () => {
                 return;
             }
 
-            const symbol = getContractTicker(chartSymbol || orderControlState.selectedTicker);
-
-            if (order.isGroupOrder && order.groupInfo?.id) {
-                await axiosInstance.post(`/api/v1/strategies/${order.groupInfo.id}/execute`, {
-                    action: order.side.toUpperCase(),
-                    order_type: order.type,
-                    price: (order.type === 'LIMIT' || order.type === 'STOP_LIMIT') ? order.price : undefined,
-                    stop_price: (order.type === 'STOP' || order.type === 'STOP_LIMIT') ? order.price : undefined,
-                    time_in_force: 'GTC',
-                });
-            } else if (selectedAccounts[0]) {
-                await axiosInstance.post(`/api/v1/brokers/accounts/${selectedAccounts[0]}/discretionary/orders`, {
-                    symbol,
-                    side: order.side,
-                    type: order.type,
-                    quantity: order.quantity,
-                    price: (order.type === 'LIMIT' || order.type === 'STOP_LIMIT') ? order.price : undefined,
-                    stop_price: (order.type === 'STOP' || order.type === 'STOP_LIMIT') ? order.price : undefined,
-                    time_in_force: 'GTC',
-                });
-            }
-
-            toast({ title: `${order.side.toUpperCase()} ${order.type} placed`, status: 'success', duration: 2000 });
+            const symbol = chartSymbol || 'NQ';
+            await placeMultiAccountOrder({
+                side: order.side,
+                type: order.type,
+                price: (order.type === 'LIMIT' || order.type === 'STOP_LIMIT') ? order.price : undefined,
+                stopPrice: (order.type === 'STOP' || order.type === 'STOP_LIMIT') ? order.price : undefined,
+                symbol,
+            });
         } catch (err) {
             toast({
                 title: 'Order failed',
@@ -431,7 +445,7 @@ const DashboardContent = () => {
                 duration: 4000,
             });
         }
-    }, [orderControlState, chartSymbol, toast]);
+    }, [multiAccountTrading, chartSymbol, toast]);
 
     // Loading state - wait for both auth and dashboard data
     if (isLoading || authLoading || !user) {
@@ -477,13 +491,15 @@ const DashboardContent = () => {
                                 >
                                     {/* Chart container */}
                                     <Box
-                                        h={{ base: "300px", md: "50%" }}
-                                        maxH={{ base: "none", md: "50%" }}
-                                        flex={{ base: "0 0 auto", md: "0 0 50%" }}
+                                        position="relative"
+                                        h={isTradingPanelCollapsed ? "auto" : { base: "300px", md: "50%" }}
+                                        maxH={isTradingPanelCollapsed ? "none" : { base: "none", md: "50%" }}
+                                        flex={isTradingPanelCollapsed ? "1" : { base: "0 0 auto", md: "0 0 50%" }}
                                         bg="whiteAlpha.100"
                                         borderRadius="xl"
                                         overflow="hidden"
                                         mb={{ base: 4, md: 0 }}
+                                        transition="flex 0.2s ease"
                                     >
                                         <ErrorBoundary>
                                             <Suspense fallback={<LoadingSpinner />}>
@@ -491,57 +507,56 @@ const DashboardContent = () => {
                                                     onWidgetReady={(w, c) => setActiveChart(c)}
                                                     onSymbolChanged={setChartSymbol}
                                                     onChartOrder={handleChartOrder}
-                                                    activeAccount={activeAccount}
-                                                    currentQuantity={orderControlState.quantity}
-                                                    selectionMode={orderControlState.selectionMode}
-                                                    groupInfo={orderControlState.groupInfo}
+                                                    activeAccount={multiAccountTrading.activeCount > 0 ? { accountId: 'multi' } : null}
+                                                    currentQuantity={multiAccountTrading.totalContracts}
+                                                    selectionMode={multiAccountTrading.activeCount > 0 ? 'multi' : 'single'}
+                                                    groupInfo={multiAccountTrading.activeCount > 0 ? { groupName: `${multiAccountTrading.totalContracts} cts / ${multiAccountTrading.activeCount} acct${multiAccountTrading.activeCount !== 1 ? 's' : ''}` } : null}
+                                                />
+                                            </Suspense>
+                                        </ErrorBoundary>
+                                        {/* Trading lines overlay (positions + orders on chart) */}
+                                        <ChartTradingOverlay
+                                            activeChart={activeChart}
+                                            positionLines={chartTrading.positionLines}
+                                            orderLines={chartTrading.orderLines}
+                                            bracketPlacement={bracketPlacement}
+                                            totalQuantity={multiAccountTrading.totalContracts}
+                                        />
+                                    </Box>
+
+                                    {/* Quick Order Bar */}
+                                    <Box mt={2} borderRadius="lg" overflow="hidden">
+                                        <ErrorBoundary>
+                                            <Suspense fallback={null}>
+                                                <QuickOrderBar
+                                                    chartSymbol={chartSymbol}
+                                                    multiAccountTrading={multiAccountTrading}
+                                                    positions={aggregatedPositions}
+                                                    orders={aggregatedOrders}
+                                                    bracketPlacement={bracketPlacement}
+                                                    getCopyInfo={copyTrading.getCopyInfo}
                                                 />
                                             </Suspense>
                                         </ErrorBoundary>
                                     </Box>
 
-                                    {/* Bottom section */}
-                                    <Flex
-                                        mt={4}
-                                        gap={4}
-                                        flex="1"
-                                        minH="0"
-                                        direction={{ base: "column", xl: "row" }}
-                                    >
-                                        {/* TradesTable container */}
-                                        <Box
-                                            flex="1"
-                                            borderRadius="xl"
-                                            overflow="hidden"
-                                            mb={{ base: 4, xl: 0 }}
-                                        >
-                                            <ErrorBoundary>
-                                                <Suspense fallback={<LoadingSpinner />}>
-                                                    <TradesTable
-                                                        accounts={dashboardData.accounts}
-                                                        activeAccountId={dashboardData.activeAccountId}
-                                                    />
-                                                </Suspense>
-                                            </ErrorBoundary>
-                                        </Box>
-
-                                        {/* OrderControl container */}
-                                        <Box
-                                            flex={{ base: "1", xl: "0 0 400px" }}
-                                            bg="whiteAlpha.100"
-                                            borderRadius="xl"
-                                        >
-                                            <ErrorBoundary>
-                                                <Suspense fallback={<LoadingSpinner />}>
-                                                    <OrderControl
-                                                        accounts={dashboardData.accounts}
-                                                        activeAccountId={dashboardData.activeAccountId}
-                                                        onStateChange={setOrderControlState}
-                                                    />
-                                                </Suspense>
-                                            </ErrorBoundary>
-                                        </Box>
-                                    </Flex>
+                                    {/* Bottom section — TradingPanel (Positions, Orders, History) */}
+                                    <Box mt={2} flex={isTradingPanelCollapsed ? "0 0 auto" : "1"} minH="0">
+                                        <ErrorBoundary>
+                                            <Suspense fallback={<LoadingSpinner />}>
+                                                <TradingPanel
+                                                    positions={aggregatedPositions}
+                                                    orders={aggregatedOrders}
+                                                    chartSymbol={chartSymbol}
+                                                    isCollapsed={isTradingPanelCollapsed}
+                                                    onToggleCollapse={() => setIsTradingPanelCollapsed(prev => !prev)}
+                                                    multiAccountTrading={multiAccountTrading}
+                                                    accounts={dashboardData.accounts}
+                                                    getCopyInfo={copyTrading.getCopyInfo}
+                                                />
+                                            </Suspense>
+                                        </ErrorBoundary>
+                                    </Box>
                                 </Flex>
 
                                 {/* Right Column */}
@@ -554,13 +569,22 @@ const DashboardContent = () => {
                                     flexShrink={0.3}
                                     minW={{ base: "auto", lg: "280px" }}
                                 >
-                                    {/* Management Section */}
-                                    <Box flex="0 0 auto">
+                                    {/* Trading Accounts Panel (replaces Management) */}
+                                    <Box
+                                        flex="1"
+                                        bg="whiteAlpha.50"
+                                        borderRadius="xl"
+                                        overflow="hidden"
+                                        minH="200px"
+                                        maxH={{ base: "400px", lg: "50%" }}
+                                    >
                                         <ErrorBoundary>
                                             <Suspense fallback={<LoadingSpinner />}>
-                                                <Management
-                                                    accounts={dashboardData.accounts}
-                                                    onAccountSelect={handleAccountSelect}
+                                                <TradingAccountsPanel
+                                                    multiAccountTrading={multiAccountTrading}
+                                                    aggregatedPositions={aggregatedPositions}
+                                                    strategies={activatedStrategies}
+                                                    copyTrading={copyTrading}
                                                 />
                                             </Suspense>
                                         </ErrorBoundary>
@@ -573,6 +597,8 @@ const DashboardContent = () => {
                                                 <StrategyGroups
                                                     strategies={dashboardData.strategies}
                                                     accounts={dashboardData.accounts}
+                                                    accountConfigs={multiAccountTrading.accountConfigs}
+                                                    strategyBoundAccountIds={multiAccountTrading.strategyBoundAccountIds}
                                                 />
                                             </Suspense>
                                         </ErrorBoundary>
@@ -698,6 +724,17 @@ const DashboardContent = () => {
 
                 {/* ARIA Assistant - Floating Chat (Only for Admin and Beta Testers) */}
                 {hasAriaAssistant && <ARIAAssistant />}
+
+                {/* Chart Trading Confirmation Modal */}
+                <OrderConfirmationModal
+                    isOpen={!!chartTrading.confirmState}
+                    action={chartTrading.confirmState?.action}
+                    details={chartTrading.confirmState?.details}
+                    onConfirm={chartTrading.handleConfirm}
+                    onCancel={chartTrading.handleCancel}
+                    skipConfirmation={skipOrderConfirmation}
+                    onToggleSkip={handleToggleSkip}
+                />
             </Flex>
         </>
     );
