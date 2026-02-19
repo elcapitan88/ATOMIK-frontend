@@ -1,3 +1,4 @@
+// TradingAccountCard — compact account card with mode-aware rendering
 import React, { memo, useMemo } from 'react';
 import {
   Box,
