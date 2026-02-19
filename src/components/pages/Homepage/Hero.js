@@ -135,106 +135,161 @@ const scenes = [
   },
 ];
 
-// ─── Scanning Pulse Beam ───────────────────────────────────────────────
-// A glowing beam of light that travels along a dark track line
-const ScanningBeam = ({ delay = 0 }) => {
-  const lineRef = useRef(null);
-  const [lineWidth, setLineWidth] = useState(200);
+// ─── Data Pipe — Railway-style network flow ────────────────────────────
+// Soft blurred glow conduit with tiny bright dots flowing through
+const DataPipe = ({ delay = 0, dotCount = 4 }) => {
+  const pipeRef = useRef(null);
+  const [pipeWidth, setPipeWidth] = useState(200);
 
   useEffect(() => {
-    if (lineRef.current) {
-      const w = lineRef.current.offsetWidth;
-      if (w > 0) setLineWidth(w);
-    }
+    const measure = () => {
+      if (pipeRef.current) {
+        const w = pipeRef.current.offsetWidth;
+        if (w > 0) setPipeWidth(w);
+      }
+    };
+    measure();
+    // Re-measure on resize for accurate dot travel distance
+    window.addEventListener('resize', measure);
+    return () => window.removeEventListener('resize', measure);
   }, []);
+
+  // Stagger dots with slight variation so they feel organic
+  const dotDuration = 3.5;
+  const dotSpacing = dotDuration / dotCount;
 
   return (
     <Box
-      ref={lineRef}
+      ref={pipeRef}
       position="relative"
       flex="1"
-      minW="60px"
-      h="20px"
+      minW="50px"
+      h="24px"
       alignSelf="center"
-      overflow="hidden"
     >
-      {/* Dark track line */}
+      {/* Pipe glow — soft blurred conduit (Railway-style) */}
+      <Box
+        position="absolute"
+        top="50%"
+        left="-2px"
+        right="-2px"
+        h="14px"
+        transform="translateY(-50%)"
+        borderRadius="full"
+        bg="rgba(0,198,224,0.06)"
+        filter="blur(6px)"
+        pointerEvents="none"
+      />
+      {/* Pipe core — thin visible track */}
       <Box
         position="absolute"
         top="50%"
         left="0"
         right="0"
         h="1px"
-        bg="whiteAlpha.100"
         transform="translateY(-50%)"
+        bg="rgba(0,198,224,0.12)"
       />
-      {/* Glowing beam that travels along the track */}
-      <MotionBox
-        position="absolute"
-        top="50%"
-        left="0"
-        w="60px"
-        h="3px"
-        transform="translateY(-50%)"
-        bgGradient="linear(to-r, transparent, rgba(0,198,224,0.6), #00C6E0, rgba(0,198,224,0.6), transparent)"
-        filter="blur(1.5px)"
-        sx={{
-          boxShadow: '0 0 12px rgba(0,198,224,0.5), 0 0 4px rgba(0,198,224,0.8)',
-        }}
-        animate={{
-          x: [-60, lineWidth + 10],
-        }}
-        transition={{
-          duration: 2,
-          delay,
-          repeat: Infinity,
-          ease: 'linear',
-        }}
-      />
+
+      {/* Data dots — tiny bright circles flowing through the pipe */}
+      <Box position="absolute" inset="0" overflow="hidden">
+        {Array.from({ length: dotCount }).map((_, i) => (
+          <MotionBox
+            key={i}
+            position="absolute"
+            top="50%"
+            left="0"
+            w="3px"
+            h="3px"
+            borderRadius="full"
+            bg="#00C6E0"
+            transform="translateY(-50%)"
+            opacity={0.9}
+            sx={{
+              boxShadow:
+                '0 0 4px rgba(0,198,224,0.9), 0 0 8px rgba(0,198,224,0.6)',
+            }}
+            animate={{
+              x: [-4, pipeWidth + 4],
+            }}
+            transition={{
+              duration: dotDuration + (i % 2 === 0 ? 0 : 0.3),
+              delay: delay + i * dotSpacing,
+              repeat: Infinity,
+              ease: 'linear',
+            }}
+          />
+        ))}
+      </Box>
     </Box>
   );
 };
 
-// ─── Vertical Scanning Beam (mobile) ──────────────────────────────────
-const VerticalBeam = ({ delay = 0, height = 40 }) => (
-  <Box position="relative" w="20px" h={`${height}px`} overflow="hidden" mx="auto">
-    {/* Dark track */}
-    <Box
-      position="absolute"
-      top="0"
-      bottom="0"
-      left="50%"
-      w="1px"
-      bg="whiteAlpha.100"
-      transform="translateX(-50%)"
-    />
-    {/* Glowing beam */}
-    <MotionBox
-      position="absolute"
-      left="50%"
-      top="0"
-      w="3px"
-      h="30px"
-      transform="translateX(-50%)"
-      bgGradient="linear(to-b, transparent, rgba(0,198,224,0.6), #00C6E0, rgba(0,198,224,0.6), transparent)"
-      filter="blur(1.5px)"
-      sx={{
-        boxShadow: '0 0 12px rgba(0,198,224,0.5), 0 0 4px rgba(0,198,224,0.8)',
-      }}
-      animate={{
-        y: [-30, height + 10],
-      }}
-      transition={{
-        duration: 1.5,
-        delay,
-        repeat: Infinity,
-        ease: 'linear',
-      }}
-    />
-  </Box>
-);
+// ─── Vertical Data Pipe (mobile) — same Railway style ─────────────────
+const VerticalPipe = ({ delay = 0, height = 50, dotCount = 3 }) => {
+  const dotDuration = 2.5;
+  const dotSpacing = dotDuration / dotCount;
 
-// ─── Input Card ────────────────────────────────────────────────────────
+  return (
+    <Box position="relative" w="24px" h={`${height}px`} mx="auto">
+      {/* Pipe glow */}
+      <Box
+        position="absolute"
+        left="50%"
+        top="-2px"
+        bottom="-2px"
+        w="14px"
+        transform="translateX(-50%)"
+        borderRadius="full"
+        bg="rgba(0,198,224,0.06)"
+        filter="blur(6px)"
+        pointerEvents="none"
+      />
+      {/* Pipe core */}
+      <Box
+        position="absolute"
+        left="50%"
+        top="0"
+        bottom="0"
+        w="1px"
+        transform="translateX(-50%)"
+        bg="rgba(0,198,224,0.12)"
+      />
+      {/* Data dots */}
+      <Box position="absolute" inset="0" overflow="hidden">
+        {Array.from({ length: dotCount }).map((_, i) => (
+          <MotionBox
+            key={i}
+            position="absolute"
+            left="50%"
+            top="0"
+            w="3px"
+            h="3px"
+            borderRadius="full"
+            bg="#00C6E0"
+            transform="translateX(-50%)"
+            opacity={0.9}
+            sx={{
+              boxShadow:
+                '0 0 4px rgba(0,198,224,0.9), 0 0 8px rgba(0,198,224,0.6)',
+            }}
+            animate={{
+              y: [-4, height + 4],
+            }}
+            transition={{
+              duration: dotDuration + (i % 2 === 0 ? 0 : 0.2),
+              delay: delay + i * dotSpacing,
+              repeat: Infinity,
+              ease: 'linear',
+            }}
+          />
+        ))}
+      </Box>
+    </Box>
+  );
+};
+
+// ─── Input Card (3D depth: appears further away) ──────────────────────
 const InputCard = ({ icon, name, label, badge, delay = 0 }) => (
   <MotionBox
     initial={{ opacity: 0, x: -25 }}
@@ -243,32 +298,30 @@ const InputCard = ({ icon, name, label, badge, delay = 0 }) => (
     transition={{ duration: 0.4, delay }}
     px={4}
     py={3}
-    bg="rgba(255,255,255,0.06)"
+    bg="rgba(255,255,255,0.05)"
     backdropFilter="blur(8px)"
     borderRadius="xl"
-    border="1px solid rgba(255,255,255,0.1)"
+    border="1px solid rgba(255,255,255,0.08)"
     w="full"
-    _hover={{
-      bg: 'rgba(255,255,255,0.08)',
-      borderColor: 'rgba(0,198,224,0.2)',
-    }}
-    transition2="all 0.3s"
+    // 3D depth — further away: smaller, slightly muted
+    transform="scale(0.92)"
+    opacity={0.85}
   >
     <HStack spacing={3}>
       <Box
         p={2}
-        bg="rgba(0,198,224,0.1)"
+        bg="rgba(0,198,224,0.08)"
         borderRadius="lg"
-        color="#00C6E0"
+        color="rgba(0,198,224,0.8)"
         flexShrink={0}
       >
         <Icon as={icon} boxSize={4} />
       </Box>
       <Box flex="1" minW="0">
-        <Text color="white" fontSize="sm" fontWeight="600" noOfLines={1}>
+        <Text color="whiteAlpha.800" fontSize="sm" fontWeight="600" noOfLines={1}>
           {name}
         </Text>
-        <Text color="whiteAlpha.500" fontSize="xs" noOfLines={1}>
+        <Text color="whiteAlpha.400" fontSize="xs" noOfLines={1}>
           {label}
         </Text>
       </Box>
@@ -277,7 +330,7 @@ const InputCard = ({ icon, name, label, badge, delay = 0 }) => (
           px={2}
           py={0.5}
           borderRadius="md"
-          bg="rgba(72,187,120,0.15)"
+          bg="rgba(72,187,120,0.12)"
           color="green.300"
           fontSize="2xs"
           fontWeight="600"
@@ -290,37 +343,40 @@ const InputCard = ({ icon, name, label, badge, delay = 0 }) => (
   </MotionBox>
 );
 
-// ─── Output Card ───────────────────────────────────────────────────────
+// ─── Output Card (3D depth: appears closer) ───────────────────────────
 const OutputCard = ({ name, label, delay = 0 }) => (
   <MotionBox
     initial={{ opacity: 0, x: 25 }}
     animate={{ opacity: 1, x: 0 }}
     exit={{ opacity: 0, x: 15 }}
     transition={{ duration: 0.4, delay }}
-    px={4}
-    py={3}
-    bg="rgba(255,255,255,0.06)"
-    backdropFilter="blur(8px)"
+    px={5}
+    py={4}
+    bg="rgba(255,255,255,0.08)"
+    backdropFilter="blur(12px)"
     borderRadius="xl"
-    border="1px solid rgba(255,255,255,0.1)"
+    border="1px solid rgba(0,198,224,0.15)"
     w="full"
+    // 3D depth — closer: larger, brighter, subtle cyan border glow
+    transform="scale(1.04)"
+    boxShadow="0 4px 20px rgba(0,198,224,0.08)"
   >
     <HStack justify="space-between">
       <HStack spacing={3}>
         <Box
           p={2}
-          bg="rgba(0,198,224,0.1)"
+          bg="rgba(0,198,224,0.12)"
           borderRadius="lg"
           color="#00C6E0"
           flexShrink={0}
         >
-          <Icon as={Wallet} boxSize={4} />
+          <Icon as={Wallet} boxSize={5} />
         </Box>
         <Box minW="0">
-          <Text color="white" fontSize="sm" fontWeight="600" noOfLines={1}>
+          <Text color="white" fontSize="sm" fontWeight="700" noOfLines={1}>
             {name}
           </Text>
-          <Text color="whiteAlpha.500" fontSize="xs" noOfLines={1}>
+          <Text color="whiteAlpha.600" fontSize="xs" noOfLines={1}>
             {label}
           </Text>
         </Box>
@@ -330,78 +386,70 @@ const OutputCard = ({ name, label, delay = 0 }) => (
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.3, delay: delay + 0.6 }}
       >
-        <Icon as={CheckCircle2} color="green.400" boxSize={4} />
+        <Icon as={CheckCircle2} color="green.400" boxSize={5} />
       </MotionBox>
     </HStack>
   </MotionBox>
 );
 
-// ─── Atomik Hub (Center) ───────────────────────────────────────────────
+// ─── Atomik Hub — Just the logo, big and prominent ─────────────────────
 const AtomikHub = () => (
   <Flex
-    direction="column"
     align="center"
     justify="center"
     flexShrink={0}
-    mx={{ base: 0, lg: 4 }}
+    mx={{ base: 0, lg: 3 }}
     my={{ base: 2, lg: 0 }}
+    position="relative"
   >
-    <Box position="relative">
-      {/* Outer glow ring */}
-      <MotionBox
-        position="absolute"
-        inset="-12px"
-        borderRadius="full"
-        border="1px solid rgba(0,198,224,0.15)"
-        animate={{
-          boxShadow: [
-            '0 0 20px rgba(0,198,224,0.08), inset 0 0 20px rgba(0,198,224,0.04)',
-            '0 0 40px rgba(0,198,224,0.2), inset 0 0 25px rgba(0,198,224,0.08)',
-            '0 0 20px rgba(0,198,224,0.08), inset 0 0 20px rgba(0,198,224,0.04)',
-          ],
-        }}
-        transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
-      />
-      {/* Hub circle */}
-      <Flex
-        w="72px"
-        h="72px"
-        borderRadius="full"
-        bg="rgba(0,198,224,0.08)"
-        border="2px solid rgba(0,198,224,0.3)"
-        align="center"
-        justify="center"
-        position="relative"
-        zIndex={1}
-      >
-        <Image
-          src="/logos/atomik-logo.svg"
-          alt="Atomik"
-          w="40px"
-          h="40px"
-          filter="drop-shadow(0 0 10px rgba(0,198,224,0.5))"
-          fallback={<Icon as={Zap} boxSize={7} color="#00C6E0" />}
+    {/* Radial glow behind logo */}
+    <Box
+      position="absolute"
+      w="140px"
+      h="140px"
+      borderRadius="full"
+      bgGradient="radial(circle, rgba(0,198,224,0.12) 0%, rgba(0,198,224,0.04) 40%, transparent 70%)"
+      filter="blur(8px)"
+      pointerEvents="none"
+    />
+    {/* The logo itself */}
+    <Image
+      src="/logos/atomik-logo.svg"
+      alt="Atomik"
+      w={{ base: '80px', lg: '100px' }}
+      h={{ base: '80px', lg: '100px' }}
+      filter="drop-shadow(0 0 20px rgba(0,198,224,0.4)) drop-shadow(0 0 40px rgba(0,198,224,0.15))"
+      position="relative"
+      zIndex={1}
+      fallback={
+        <Icon
+          as={Zap}
+          boxSize={{ base: 12, lg: 14 }}
+          color="#00C6E0"
+          filter="drop-shadow(0 0 20px rgba(0,198,224,0.4))"
         />
-      </Flex>
-    </Box>
-    <Text
-      color="rgba(0,198,224,0.6)"
-      fontSize="2xs"
-      fontWeight="700"
-      letterSpacing="0.12em"
-      textTransform="uppercase"
-      mt={2}
-    >
-      ATOMIK
-    </Text>
+      }
+    />
   </Flex>
 );
 
-// ─── Desktop Diagram (full-width, no container box) ────────────────────
+// ─── Desktop Diagram — 3D perspective depth ────────────────────────────
 const DesktopDiagram = ({ scene }) => (
-  <Flex align="center" gap={0} w="full" py={4}>
-    {/* Input cards */}
-    <VStack spacing={3} flex="0 0 200px" align="stretch">
+  <Flex
+    align="center"
+    gap={0}
+    w="full"
+    py={6}
+    // 3D perspective container — creates the depth illusion
+    style={{ perspective: '800px' }}
+  >
+    {/* Input cards — further away */}
+    <VStack
+      spacing={3}
+      flex="0 0 190px"
+      align="stretch"
+      style={{ transformStyle: 'preserve-3d', transform: 'translateZ(-30px)' }}
+    >
       {scene.inputs.map((input, i) => (
         <InputCard
           key={`${scene.key}-in-${i}`}
@@ -411,25 +459,30 @@ const DesktopDiagram = ({ scene }) => (
       ))}
     </VStack>
 
-    {/* Beams: inputs → hub (staggered) */}
-    <VStack spacing={3} flex="1" minW="60px" justify="center">
+    {/* Pipes: inputs → hub */}
+    <VStack spacing={3} flex="1" minW="50px" justify="center">
       {Array.from({ length: Math.max(scene.inputs.length, 1) }).map((_, i) => (
-        <ScanningBeam key={`in-beam-${i}`} delay={i * 0.4} />
+        <DataPipe key={`in-pipe-${i}`} delay={i * 0.6} dotCount={4} />
       ))}
     </VStack>
 
-    {/* Hub */}
+    {/* Hub — center, full presence */}
     <AtomikHub />
 
-    {/* Beams: hub → outputs (staggered) */}
-    <VStack spacing={3} flex="1" minW="60px" justify="center">
+    {/* Pipes: hub → outputs */}
+    <VStack spacing={3} flex="1" minW="50px" justify="center">
       {Array.from({ length: Math.max(scene.outputs.length, 1) }).map((_, i) => (
-        <ScanningBeam key={`out-beam-${i}`} delay={0.3 + i * 0.35} />
+        <DataPipe key={`out-pipe-${i}`} delay={0.4 + i * 0.5} dotCount={4} />
       ))}
     </VStack>
 
-    {/* Output cards */}
-    <VStack spacing={3} flex="0 0 200px" align="stretch">
+    {/* Output cards — closer to viewer */}
+    <VStack
+      spacing={3}
+      flex="0 0 210px"
+      align="stretch"
+      style={{ transformStyle: 'preserve-3d', transform: 'translateZ(20px)' }}
+    >
       {scene.outputs.map((output, i) => (
         <OutputCard
           key={`${scene.key}-out-${i}`}
@@ -445,33 +498,22 @@ const DesktopDiagram = ({ scene }) => (
 const MobileDiagram = ({ scene }) => (
   <VStack spacing={0} align="center" w="full">
     {/* Input cards */}
-    <VStack spacing={2} w="full" maxW="300px">
+    <VStack spacing={2} w="full" maxW="280px" opacity={0.85} transform="scale(0.93)">
       {scene.inputs.map((input, i) => (
-        <InputCard
-          key={`${scene.key}-in-${i}`}
-          {...input}
-          delay={i * 0.1}
-        />
+        <InputCard key={`${scene.key}-in-${i}`} {...input} delay={i * 0.1} />
       ))}
     </VStack>
 
-    {/* Vertical beam down */}
-    <VerticalBeam delay={0.2} height={50} />
+    <VerticalPipe delay={0.2} height={50} dotCount={2} />
 
-    {/* Hub */}
     <AtomikHub />
 
-    {/* Vertical beam down */}
-    <VerticalBeam delay={0.5} height={50} />
+    <VerticalPipe delay={0.5} height={50} dotCount={2} />
 
     {/* Output cards */}
     <VStack spacing={2} w="full" maxW="300px">
       {scene.outputs.map((output, i) => (
-        <OutputCard
-          key={`${scene.key}-out-${i}`}
-          {...output}
-          delay={0.1 + i * 0.1}
-        />
+        <OutputCard key={`${scene.key}-out-${i}`} {...output} delay={0.1 + i * 0.1} />
       ))}
     </VStack>
   </VStack>
@@ -528,7 +570,14 @@ const SceneTabs = ({ activeIndex, onChange }) => (
 const ProgressDots = ({ activeIndex, total, sceneKey }) => (
   <HStack spacing={2} justify="center" mt={6}>
     {Array.from({ length: total }).map((_, i) => (
-      <Box key={i} position="relative" w="24px" h="3px" borderRadius="full" bg="whiteAlpha.200">
+      <Box
+        key={i}
+        position="relative"
+        w="24px"
+        h="3px"
+        borderRadius="full"
+        bg="whiteAlpha.200"
+      >
         {i === activeIndex && (
           <MotionBox
             key={sceneKey + '-dot'}
@@ -630,10 +679,9 @@ const Hero = () => {
           align="stretch"
           py={{ base: 20, md: 16 }}
         >
-          {/* ── Top Row: Text + Diagram side by side on desktop ── */}
           <Stack
             direction={{ base: 'column', lg: 'row' }}
-            spacing={{ base: 8, lg: 16 }}
+            spacing={{ base: 8, lg: 12 }}
             align="center"
             justify="space-between"
           >
@@ -642,8 +690,8 @@ const Hero = () => {
               spacing={6}
               align={{ base: 'center', lg: 'flex-start' }}
               textAlign={{ base: 'center', lg: 'left' }}
-              maxW={{ base: 'full', lg: '42%' }}
-              flex={{ base: 'none', lg: '0 0 42%' }}
+              maxW={{ base: 'full', lg: '40%' }}
+              flex={{ base: 'none', lg: '0 0 40%' }}
               zIndex={10}
             >
               {/* Scene Tabs */}
@@ -843,7 +891,7 @@ const Hero = () => {
               </MotionBox>
             </VStack>
 
-            {/* Right: Animated Hub Diagram — no container box */}
+            {/* Right: Animated Hub Diagram — fills remaining space */}
             <MotionBox
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -882,7 +930,7 @@ const Hero = () => {
                 </AnimatePresence>
               </Box>
 
-              {/* Progress dots under diagram */}
+              {/* Progress dots */}
               <ProgressDots
                 activeIndex={activeScene}
                 total={scenes.length}
