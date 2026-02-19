@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   Box,
   Container,
@@ -22,7 +22,6 @@ import {
   Store,
   Wallet,
   CheckCircle2,
-  ArrowRight,
   ChevronDown,
   Zap,
 } from 'lucide-react';
@@ -136,86 +135,130 @@ const scenes = [
   },
 ];
 
-// ─── Pulsing Data Beam ─────────────────────────────────────────────────
-const DataBeam = ({ width = 100, delay = 0, direction = 'right' }) => (
-  <Box position="absolute" top="0" left="0" right="0" bottom="0" overflow="hidden">
+// ─── Scanning Pulse Beam ───────────────────────────────────────────────
+// A glowing beam of light that travels along a dark track line
+const ScanningBeam = ({ delay = 0 }) => {
+  const lineRef = useRef(null);
+  const [lineWidth, setLineWidth] = useState(200);
+
+  useEffect(() => {
+    if (lineRef.current) {
+      const w = lineRef.current.offsetWidth;
+      if (w > 0) setLineWidth(w);
+    }
+  }, []);
+
+  return (
+    <Box
+      ref={lineRef}
+      position="relative"
+      flex="1"
+      minW="60px"
+      h="20px"
+      alignSelf="center"
+      overflow="hidden"
+    >
+      {/* Dark track line */}
+      <Box
+        position="absolute"
+        top="50%"
+        left="0"
+        right="0"
+        h="1px"
+        bg="whiteAlpha.100"
+        transform="translateY(-50%)"
+      />
+      {/* Glowing beam that travels along the track */}
+      <MotionBox
+        position="absolute"
+        top="50%"
+        left="0"
+        w="60px"
+        h="3px"
+        transform="translateY(-50%)"
+        bgGradient="linear(to-r, transparent, rgba(0,198,224,0.6), #00C6E0, rgba(0,198,224,0.6), transparent)"
+        filter="blur(1.5px)"
+        sx={{
+          boxShadow: '0 0 12px rgba(0,198,224,0.5), 0 0 4px rgba(0,198,224,0.8)',
+        }}
+        animate={{
+          x: [-60, lineWidth + 10],
+        }}
+        transition={{
+          duration: 2,
+          delay,
+          repeat: Infinity,
+          ease: 'linear',
+        }}
+      />
+    </Box>
+  );
+};
+
+// ─── Vertical Scanning Beam (mobile) ──────────────────────────────────
+const VerticalBeam = ({ delay = 0, height = 40 }) => (
+  <Box position="relative" w="20px" h={`${height}px`} overflow="hidden" mx="auto">
+    {/* Dark track */}
+    <Box
+      position="absolute"
+      top="0"
+      bottom="0"
+      left="50%"
+      w="1px"
+      bg="whiteAlpha.100"
+      transform="translateX(-50%)"
+    />
+    {/* Glowing beam */}
     <MotionBox
       position="absolute"
-      top="50%"
-      transform="translateY(-50%)"
-      w="40px"
-      h="2px"
-      bgGradient={
-        direction === 'right'
-          ? 'linear(to-r, transparent, #00C6E0, transparent)'
-          : 'linear(to-l, transparent, #00C6E0, transparent)'
-      }
-      filter="blur(1px) drop-shadow(0 0 6px rgba(0,198,224,0.6))"
+      left="50%"
+      top="0"
+      w="3px"
+      h="30px"
+      transform="translateX(-50%)"
+      bgGradient="linear(to-b, transparent, rgba(0,198,224,0.6), #00C6E0, rgba(0,198,224,0.6), transparent)"
+      filter="blur(1.5px)"
+      sx={{
+        boxShadow: '0 0 12px rgba(0,198,224,0.5), 0 0 4px rgba(0,198,224,0.8)',
+      }}
       animate={{
-        x: direction === 'right' ? [-40, width + 10] : [width + 10, -40],
+        y: [-30, height + 10],
       }}
       transition={{
         duration: 1.5,
         delay,
         repeat: Infinity,
         ease: 'linear',
-        repeatDelay: 0.5,
       }}
     />
-  </Box>
-);
-
-// ─── Connection Line with Beam ─────────────────────────────────────────
-const ConnectionLine = ({ delay = 0, direction = 'right', minW = '60px' }) => (
-  <Box position="relative" flex="1" minW={minW} h="2px" alignSelf="center">
-    {/* Static base line */}
-    <Box
-      position="absolute"
-      top="0"
-      left="0"
-      right="0"
-      h="2px"
-      bg="rgba(0,198,224,0.12)"
-      borderRadius="full"
-    />
-    {/* Animated beam */}
-    <DataBeam width={120} delay={delay} direction={direction} />
-    {/* Arrow at end */}
-    <Box
-      position="absolute"
-      top="50%"
-      transform="translateY(-50%)"
-      {...(direction === 'right' ? { right: '-8px' } : { left: '-8px' })}
-    >
-      <Icon
-        as={ArrowRight}
-        color="rgba(0,198,224,0.4)"
-        boxSize={3}
-        transform={direction === 'left' ? 'rotate(180deg)' : undefined}
-      />
-    </Box>
   </Box>
 );
 
 // ─── Input Card ────────────────────────────────────────────────────────
 const InputCard = ({ icon, name, label, badge, delay = 0 }) => (
   <MotionBox
-    initial={{ opacity: 0, x: -20 }}
+    initial={{ opacity: 0, x: -25 }}
     animate={{ opacity: 1, x: 0 }}
-    exit={{ opacity: 0, x: -20 }}
-    transition={{ duration: 0.35, delay }}
+    exit={{ opacity: 0, x: -15 }}
+    transition={{ duration: 0.4, delay }}
     px={4}
     py={3}
-    bg="rgba(255,255,255,0.08)"
-    borderRadius="lg"
-    border="1px solid rgba(255,255,255,0.12)"
+    bg="rgba(255,255,255,0.06)"
+    backdropFilter="blur(8px)"
+    borderRadius="xl"
+    border="1px solid rgba(255,255,255,0.1)"
     w="full"
+    _hover={{
+      bg: 'rgba(255,255,255,0.08)',
+      borderColor: 'rgba(0,198,224,0.2)',
+    }}
+    transition2="all 0.3s"
   >
     <HStack spacing={3}>
       <Box
-        p={1.5}
-        bg="rgba(0,198,224,0.12)"
-        borderRadius="md"
+        p={2}
+        bg="rgba(0,198,224,0.1)"
+        borderRadius="lg"
         color="#00C6E0"
         flexShrink={0}
       >
@@ -250,23 +293,24 @@ const InputCard = ({ icon, name, label, badge, delay = 0 }) => (
 // ─── Output Card ───────────────────────────────────────────────────────
 const OutputCard = ({ name, label, delay = 0 }) => (
   <MotionBox
-    initial={{ opacity: 0, x: 20 }}
+    initial={{ opacity: 0, x: 25 }}
     animate={{ opacity: 1, x: 0 }}
-    exit={{ opacity: 0, x: 20 }}
-    transition={{ duration: 0.35, delay }}
+    exit={{ opacity: 0, x: 15 }}
+    transition={{ duration: 0.4, delay }}
     px={4}
     py={3}
-    bg="rgba(255,255,255,0.08)"
-    borderRadius="lg"
-    border="1px solid rgba(255,255,255,0.12)"
+    bg="rgba(255,255,255,0.06)"
+    backdropFilter="blur(8px)"
+    borderRadius="xl"
+    border="1px solid rgba(255,255,255,0.1)"
     w="full"
   >
     <HStack justify="space-between">
       <HStack spacing={3}>
         <Box
-          p={1.5}
-          bg="rgba(0,198,224,0.12)"
-          borderRadius="md"
+          p={2}
+          bg="rgba(0,198,224,0.1)"
+          borderRadius="lg"
           color="#00C6E0"
           flexShrink={0}
         >
@@ -284,7 +328,7 @@ const OutputCard = ({ name, label, delay = 0 }) => (
       <MotionBox
         initial={{ opacity: 0, scale: 0 }}
         animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.25, delay: delay + 0.5 }}
+        transition={{ duration: 0.3, delay: delay + 0.6 }}
       >
         <Icon as={CheckCircle2} color="green.400" boxSize={4} />
       </MotionBox>
@@ -299,31 +343,32 @@ const AtomikHub = () => (
     align="center"
     justify="center"
     flexShrink={0}
-    mx={{ base: 0, lg: 2 }}
+    mx={{ base: 0, lg: 4 }}
+    my={{ base: 2, lg: 0 }}
   >
     <Box position="relative">
-      {/* Glow ring */}
+      {/* Outer glow ring */}
       <MotionBox
         position="absolute"
-        inset="-8px"
+        inset="-12px"
         borderRadius="full"
-        border="1px solid rgba(0,198,224,0.2)"
+        border="1px solid rgba(0,198,224,0.15)"
         animate={{
           boxShadow: [
-            '0 0 15px rgba(0,198,224,0.1), inset 0 0 15px rgba(0,198,224,0.05)',
-            '0 0 30px rgba(0,198,224,0.25), inset 0 0 20px rgba(0,198,224,0.1)',
-            '0 0 15px rgba(0,198,224,0.1), inset 0 0 15px rgba(0,198,224,0.05)',
+            '0 0 20px rgba(0,198,224,0.08), inset 0 0 20px rgba(0,198,224,0.04)',
+            '0 0 40px rgba(0,198,224,0.2), inset 0 0 25px rgba(0,198,224,0.08)',
+            '0 0 20px rgba(0,198,224,0.08), inset 0 0 20px rgba(0,198,224,0.04)',
           ],
         }}
         transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
       />
       {/* Hub circle */}
       <Flex
-        w="64px"
-        h="64px"
+        w="72px"
+        h="72px"
         borderRadius="full"
-        bg="rgba(0,198,224,0.1)"
-        border="2px solid rgba(0,198,224,0.35)"
+        bg="rgba(0,198,224,0.08)"
+        border="2px solid rgba(0,198,224,0.3)"
         align="center"
         justify="center"
         position="relative"
@@ -332,20 +377,18 @@ const AtomikHub = () => (
         <Image
           src="/logos/atomik-logo.svg"
           alt="Atomik"
-          w="36px"
-          h="36px"
-          filter="drop-shadow(0 0 8px rgba(0,198,224,0.4))"
-          fallback={
-            <Icon as={Zap} boxSize={6} color="#00C6E0" />
-          }
+          w="40px"
+          h="40px"
+          filter="drop-shadow(0 0 10px rgba(0,198,224,0.5))"
+          fallback={<Icon as={Zap} boxSize={7} color="#00C6E0" />}
         />
       </Flex>
     </Box>
     <Text
-      color="rgba(0,198,224,0.7)"
+      color="rgba(0,198,224,0.6)"
       fontSize="2xs"
       fontWeight="700"
-      letterSpacing="0.1em"
+      letterSpacing="0.12em"
       textTransform="uppercase"
       mt={2}
     >
@@ -354,100 +397,82 @@ const AtomikHub = () => (
   </Flex>
 );
 
-// ─── Desktop Diagram ───────────────────────────────────────────────────
-const DesktopDiagram = ({ scene }) => {
-  const maxOutputs = Math.max(scene.inputs.length, scene.outputs.length);
-
-  return (
-    <Flex align="center" gap={0} w="full">
-      {/* Input cards */}
-      <VStack spacing={2} flex="0 0 180px" align="stretch">
-        <AnimatePresence mode="wait">
-          {scene.inputs.map((input, i) => (
-            <InputCard
-              key={`${scene.key}-in-${i}`}
-              {...input}
-              delay={i * 0.1}
-            />
-          ))}
-        </AnimatePresence>
-      </VStack>
-
-      {/* Lines: inputs → hub */}
-      <VStack spacing={2} flex="1" minW="50px" justify="center">
-        {Array.from({ length: Math.max(scene.inputs.length, 1) }).map((_, i) => (
-          <ConnectionLine key={`in-line-${i}`} delay={0.3 + i * 0.2} direction="right" />
-        ))}
-      </VStack>
-
-      {/* Hub */}
-      <AtomikHub />
-
-      {/* Lines: hub → outputs */}
-      <VStack spacing={2} flex="1" minW="50px" justify="center">
-        {Array.from({ length: Math.max(scene.outputs.length, 1) }).map((_, i) => (
-          <ConnectionLine key={`out-line-${i}`} delay={0.5 + i * 0.15} direction="right" />
-        ))}
-      </VStack>
-
-      {/* Output cards */}
-      <VStack spacing={2} flex="0 0 185px" align="stretch">
-        <AnimatePresence mode="wait">
-          {scene.outputs.map((output, i) => (
-            <OutputCard
-              key={`${scene.key}-out-${i}`}
-              {...output}
-              delay={0.2 + i * 0.1}
-            />
-          ))}
-        </AnimatePresence>
-      </VStack>
-    </Flex>
-  );
-};
-
-// ─── Mobile Diagram ────────────────────────────────────────────────────
-const MobileDiagram = ({ scene }) => (
-  <VStack spacing={3} align="center" w="full">
+// ─── Desktop Diagram (full-width, no container box) ────────────────────
+const DesktopDiagram = ({ scene }) => (
+  <Flex align="center" gap={0} w="full" py={4}>
     {/* Input cards */}
-    <VStack spacing={2} w="full" maxW="280px">
-      <AnimatePresence mode="wait">
-        {scene.inputs.map((input, i) => (
-          <InputCard
-            key={`${scene.key}-in-${i}`}
-            {...input}
-            delay={i * 0.1}
-          />
-        ))}
-      </AnimatePresence>
+    <VStack spacing={3} flex="0 0 200px" align="stretch">
+      {scene.inputs.map((input, i) => (
+        <InputCard
+          key={`${scene.key}-in-${i}`}
+          {...input}
+          delay={i * 0.12}
+        />
+      ))}
     </VStack>
 
-    {/* Vertical connector down */}
-    <VStack spacing={0}>
-      <Box w="2px" h="20px" bg="rgba(0,198,224,0.2)" />
-      <Icon as={ChevronDown} color="rgba(0,198,224,0.4)" boxSize={4} />
+    {/* Beams: inputs → hub (staggered) */}
+    <VStack spacing={3} flex="1" minW="60px" justify="center">
+      {Array.from({ length: Math.max(scene.inputs.length, 1) }).map((_, i) => (
+        <ScanningBeam key={`in-beam-${i}`} delay={i * 0.4} />
+      ))}
     </VStack>
 
     {/* Hub */}
     <AtomikHub />
 
-    {/* Vertical connector down */}
-    <VStack spacing={0}>
-      <Box w="2px" h="20px" bg="rgba(0,198,224,0.2)" />
-      <Icon as={ChevronDown} color="rgba(0,198,224,0.4)" boxSize={4} />
+    {/* Beams: hub → outputs (staggered) */}
+    <VStack spacing={3} flex="1" minW="60px" justify="center">
+      {Array.from({ length: Math.max(scene.outputs.length, 1) }).map((_, i) => (
+        <ScanningBeam key={`out-beam-${i}`} delay={0.3 + i * 0.35} />
+      ))}
     </VStack>
 
     {/* Output cards */}
-    <VStack spacing={2} w="full" maxW="280px">
-      <AnimatePresence mode="wait">
-        {scene.outputs.map((output, i) => (
-          <OutputCard
-            key={`${scene.key}-out-${i}`}
-            {...output}
-            delay={0.1 + i * 0.1}
-          />
-        ))}
-      </AnimatePresence>
+    <VStack spacing={3} flex="0 0 200px" align="stretch">
+      {scene.outputs.map((output, i) => (
+        <OutputCard
+          key={`${scene.key}-out-${i}`}
+          {...output}
+          delay={0.15 + i * 0.1}
+        />
+      ))}
+    </VStack>
+  </Flex>
+);
+
+// ─── Mobile Diagram ────────────────────────────────────────────────────
+const MobileDiagram = ({ scene }) => (
+  <VStack spacing={0} align="center" w="full">
+    {/* Input cards */}
+    <VStack spacing={2} w="full" maxW="300px">
+      {scene.inputs.map((input, i) => (
+        <InputCard
+          key={`${scene.key}-in-${i}`}
+          {...input}
+          delay={i * 0.1}
+        />
+      ))}
+    </VStack>
+
+    {/* Vertical beam down */}
+    <VerticalBeam delay={0.2} height={50} />
+
+    {/* Hub */}
+    <AtomikHub />
+
+    {/* Vertical beam down */}
+    <VerticalBeam delay={0.5} height={50} />
+
+    {/* Output cards */}
+    <VStack spacing={2} w="full" maxW="300px">
+      {scene.outputs.map((output, i) => (
+        <OutputCard
+          key={`${scene.key}-out-${i}`}
+          {...output}
+          delay={0.1 + i * 0.1}
+        />
+      ))}
     </VStack>
   </VStack>
 );
@@ -459,20 +484,28 @@ const SceneTabs = ({ activeIndex, onChange }) => (
       <Button
         key={scene.key}
         size="sm"
-        h="32px"
+        h="34px"
         px={4}
         fontSize="xs"
         fontWeight="600"
         letterSpacing="0.02em"
         borderRadius="full"
         border="1px solid"
-        borderColor={i === activeIndex ? 'rgba(0,198,224,0.35)' : 'whiteAlpha.200'}
+        borderColor={
+          i === activeIndex ? 'rgba(0,198,224,0.35)' : 'whiteAlpha.200'
+        }
         bg={i === activeIndex ? 'rgba(0,198,224,0.12)' : 'transparent'}
         color={i === activeIndex ? '#00C6E0' : 'whiteAlpha.600'}
         onClick={() => onChange(i)}
         _hover={{
-          bg: i === activeIndex ? 'rgba(0,198,224,0.15)' : 'rgba(0,198,224,0.06)',
-          borderColor: i === activeIndex ? 'rgba(0,198,224,0.45)' : 'whiteAlpha.300',
+          bg:
+            i === activeIndex
+              ? 'rgba(0,198,224,0.15)'
+              : 'rgba(0,198,224,0.06)',
+          borderColor:
+            i === activeIndex
+              ? 'rgba(0,198,224,0.45)'
+              : 'whiteAlpha.300',
         }}
         transition="all 0.2s"
         leftIcon={
@@ -491,27 +524,50 @@ const SceneTabs = ({ activeIndex, onChange }) => (
   </HStack>
 );
 
+// ─── Progress Dots ─────────────────────────────────────────────────────
+const ProgressDots = ({ activeIndex, total, sceneKey }) => (
+  <HStack spacing={2} justify="center" mt={6}>
+    {Array.from({ length: total }).map((_, i) => (
+      <Box key={i} position="relative" w="24px" h="3px" borderRadius="full" bg="whiteAlpha.200">
+        {i === activeIndex && (
+          <MotionBox
+            key={sceneKey + '-dot'}
+            position="absolute"
+            top="0"
+            left="0"
+            h="3px"
+            borderRadius="full"
+            bg="#00C6E0"
+            initial={{ width: '0%' }}
+            animate={{ width: '100%' }}
+            transition={{ duration: 6, ease: 'linear' }}
+            sx={{ boxShadow: '0 0 6px rgba(0,198,224,0.5)' }}
+          />
+        )}
+      </Box>
+    ))}
+  </HStack>
+);
+
 // ─── Main Hero Component ───────────────────────────────────────────────
 const Hero = () => {
   const [activeScene, setActiveScene] = useState(0);
-  const [intervalId, setIntervalId] = useState(null);
+  const intervalRef = useRef(null);
 
   const startAutoRotate = useCallback(() => {
-    const id = setInterval(() => {
+    if (intervalRef.current) clearInterval(intervalRef.current);
+    intervalRef.current = setInterval(() => {
       setActiveScene((prev) => (prev + 1) % scenes.length);
     }, 6000);
-    setIntervalId(id);
-    return id;
   }, []);
 
   useEffect(() => {
-    const id = startAutoRotate();
-    return () => clearInterval(id);
+    startAutoRotate();
+    return () => clearInterval(intervalRef.current);
   }, [startAutoRotate]);
 
   const handleTabChange = (index) => {
     setActiveScene(index);
-    if (intervalId) clearInterval(intervalId);
     startAutoRotate();
   };
 
@@ -528,7 +584,6 @@ const Hero = () => {
       overflow="hidden"
       aria-label="Hero section - Atomik Trading Platform"
     >
-      {/* Particle Effect Background */}
       <ParticleBackground />
 
       {/* Background gradient blobs */}
@@ -569,245 +624,234 @@ const Hero = () => {
         pointerEvents="none"
       />
 
-      <Container maxW="7xl" position="relative" px={{ base: 6, md: 8 }} zIndex={1}>
-        <Stack
-          direction={{ base: 'column', lg: 'row' }}
-          spacing={{ base: 10, lg: 12 }}
-          align="center"
-          justify="space-between"
-          py={{ base: 16, md: 20 }}
-          position="relative"
+      <Container maxW="8xl" position="relative" px={{ base: 4, md: 8 }} zIndex={1}>
+        <VStack
+          spacing={{ base: 8, lg: 0 }}
+          align="stretch"
+          py={{ base: 20, md: 16 }}
         >
-          {/* ── Left Side: Text Content ──────────────────────────── */}
-          <VStack
-            spacing={6}
-            align={{ base: 'center', lg: 'flex-start' }}
-            textAlign={{ base: 'center', lg: 'left' }}
-            maxW={{ base: 'full', lg: '45%' }}
-            zIndex={10}
-            position="relative"
-            flex={{ base: 'none', lg: '0 0 45%' }}
+          {/* ── Top Row: Text + Diagram side by side on desktop ── */}
+          <Stack
+            direction={{ base: 'column', lg: 'row' }}
+            spacing={{ base: 8, lg: 16 }}
+            align="center"
+            justify="space-between"
           >
-            {/* Scene Tabs */}
-            <MotionBox
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, ease: 'easeOut' }}
+            {/* Left: Text Content */}
+            <VStack
+              spacing={6}
+              align={{ base: 'center', lg: 'flex-start' }}
+              textAlign={{ base: 'center', lg: 'left' }}
+              maxW={{ base: 'full', lg: '42%' }}
+              flex={{ base: 'none', lg: '0 0 42%' }}
+              zIndex={10}
             >
-              <SceneTabs activeIndex={activeScene} onChange={handleTabChange} />
-            </MotionBox>
-
-            {/* Headline */}
-            <Box minH={{ base: 'auto', lg: '130px' }}>
-              <AnimatePresence mode="wait">
-                <MotionBox
-                  key={scene.key + '-headline'}
-                  initial={{ opacity: 0, y: 15 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  transition={{ duration: 0.35 }}
-                >
-                  <Heading
-                    as="h1"
-                    fontSize={{ base: '3xl', md: '4xl', lg: '4xl', xl: '5xl' }}
-                    fontWeight="700"
-                    fontFamily="'Satoshi', sans-serif"
-                    color="white"
-                    lineHeight="1.15"
-                    letterSpacing="-0.02em"
-                  >
-                    {scene.headline}
-                  </Heading>
-                </MotionBox>
-              </AnimatePresence>
-            </Box>
-
-            {/* Description */}
-            <Box minH={{ base: 'auto', lg: '60px' }}>
-              <AnimatePresence mode="wait">
-                <MotionBox
-                  key={scene.key + '-desc'}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -8 }}
-                  transition={{ duration: 0.3, delay: 0.05 }}
-                >
-                  <Text
-                    fontSize={{ base: 'lg', md: 'xl' }}
-                    color="whiteAlpha.800"
-                    maxW="550px"
-                    fontWeight="400"
-                    lineHeight="1.6"
-                  >
-                    {scene.description}
-                  </Text>
-                </MotionBox>
-              </AnimatePresence>
-            </Box>
-
-            {/* CTA Buttons */}
-            <MotionBox
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 1, delay: 0.4, ease: 'easeOut' }}
-            >
-              <Stack
-                direction={{ base: 'column', sm: 'row' }}
-                spacing={4}
-                w="full"
-                justify={{ base: 'center', lg: 'flex-start' }}
+              {/* Scene Tabs */}
+              <MotionBox
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8, ease: 'easeOut' }}
               >
-                <RouterLink to="/pricing">
+                <SceneTabs
+                  activeIndex={activeScene}
+                  onChange={handleTabChange}
+                />
+              </MotionBox>
+
+              {/* Headline */}
+              <Box minH={{ base: 'auto', lg: '120px' }}>
+                <AnimatePresence mode="wait">
+                  <MotionBox
+                    key={scene.key + '-headline'}
+                    initial={{ opacity: 0, y: 15 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    transition={{ duration: 0.35 }}
+                  >
+                    <Heading
+                      as="h1"
+                      fontSize={{
+                        base: '3xl',
+                        md: '4xl',
+                        lg: '4xl',
+                        xl: '5xl',
+                      }}
+                      fontWeight="700"
+                      fontFamily="'Satoshi', sans-serif"
+                      color="white"
+                      lineHeight="1.15"
+                      letterSpacing="-0.02em"
+                    >
+                      {scene.headline}
+                    </Heading>
+                  </MotionBox>
+                </AnimatePresence>
+              </Box>
+
+              {/* Description */}
+              <Box minH={{ base: 'auto', lg: '56px' }}>
+                <AnimatePresence mode="wait">
+                  <MotionBox
+                    key={scene.key + '-desc'}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -8 }}
+                    transition={{ duration: 0.3, delay: 0.05 }}
+                  >
+                    <Text
+                      fontSize={{ base: 'lg', md: 'xl' }}
+                      color="whiteAlpha.800"
+                      maxW="500px"
+                      fontWeight="400"
+                      lineHeight="1.6"
+                    >
+                      {scene.description}
+                    </Text>
+                  </MotionBox>
+                </AnimatePresence>
+              </Box>
+
+              {/* CTA Buttons */}
+              <MotionBox
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 1, delay: 0.4, ease: 'easeOut' }}
+              >
+                <Stack
+                  direction={{ base: 'column', sm: 'row' }}
+                  spacing={4}
+                  w="full"
+                  justify={{ base: 'center', lg: 'flex-start' }}
+                >
+                  <RouterLink to="/pricing">
+                    <Button
+                      size="lg"
+                      h="56px"
+                      px={8}
+                      fontSize="md"
+                      fontWeight="600"
+                      bgGradient="linear(135deg, #00C6E0 0%, #0099B8 100%)"
+                      color="white"
+                      border="1px solid transparent"
+                      position="relative"
+                      overflow="hidden"
+                      _hover={{
+                        transform: 'translateY(-3px)',
+                        boxShadow:
+                          '0 10px 30px rgba(0,198,224,0.4), 0 0 0 1px rgba(0,198,224,0.3)',
+                        _before: { opacity: 1 },
+                      }}
+                      _before={{
+                        content: '""',
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        bgGradient:
+                          'linear(135deg, #0099B8 0%, #00C6E0 100%)',
+                        opacity: 0,
+                        transition: 'opacity 0.3s ease',
+                      }}
+                      _active={{
+                        _after: { width: '300px', height: '300px' },
+                      }}
+                      _after={{
+                        content: '""',
+                        position: 'absolute',
+                        top: '50%',
+                        left: '50%',
+                        width: '0',
+                        height: '0',
+                        borderRadius: '50%',
+                        transform: 'translate(-50%, -50%)',
+                        background: 'rgba(255,255,255,0.1)',
+                        transition: 'width 0.6s, height 0.6s',
+                      }}
+                    >
+                      <Text position="relative" zIndex={1}>
+                        Try Free for 7 Days
+                      </Text>
+                    </Button>
+                  </RouterLink>
                   <Button
                     size="lg"
                     h="56px"
                     px={8}
                     fontSize="md"
-                    fontWeight="600"
-                    bgGradient="linear(135deg, #00C6E0 0%, #0099B8 100%)"
+                    fontWeight="500"
+                    variant="ghost"
                     color="white"
-                    border="1px solid transparent"
-                    position="relative"
-                    overflow="hidden"
+                    borderWidth={2}
+                    borderColor="whiteAlpha.300"
+                    bg="rgba(255,255,255,0.05)"
+                    backdropFilter="blur(10px)"
                     _hover={{
-                      transform: 'translateY(-3px)',
-                      boxShadow:
-                        '0 10px 30px rgba(0,198,224,0.4), 0 0 0 1px rgba(0,198,224,0.3)',
-                      _before: { opacity: 1 },
+                      bg: 'rgba(0,198,224,0.1)',
+                      borderColor: 'rgba(0,198,224,0.5)',
+                      transform: 'translateY(-2px)',
+                      boxShadow: '0 8px 25px rgba(0,198,224,0.15)',
                     }}
-                    _before={{
-                      content: '""',
-                      position: 'absolute',
-                      top: 0,
-                      left: 0,
-                      right: 0,
-                      bottom: 0,
-                      bgGradient: 'linear(135deg, #0099B8 0%, #00C6E0 100%)',
-                      opacity: 0,
-                      transition: 'opacity 0.3s ease',
-                    }}
-                    _active={{
-                      _after: { width: '300px', height: '300px' },
-                    }}
-                    _after={{
-                      content: '""',
-                      position: 'absolute',
-                      top: '50%',
-                      left: '50%',
-                      width: '0',
-                      height: '0',
-                      borderRadius: '50%',
-                      transform: 'translate(-50%, -50%)',
-                      background: 'rgba(255,255,255,0.1)',
-                      transition: 'width 0.6s, height 0.6s',
-                    }}
+                    as="a"
+                    href="#how-to-use"
                   >
-                    <Text position="relative" zIndex={1}>
-                      Try Free for 7 Days
-                    </Text>
+                    Learn More
                   </Button>
-                </RouterLink>
-                <Button
-                  size="lg"
-                  h="56px"
-                  px={8}
-                  fontSize="md"
-                  fontWeight="500"
-                  variant="ghost"
-                  color="white"
-                  borderWidth={2}
-                  borderColor="whiteAlpha.300"
-                  bg="rgba(255,255,255,0.05)"
-                  backdropFilter="blur(10px)"
-                  _hover={{
-                    bg: 'rgba(0,198,224,0.1)',
-                    borderColor: 'rgba(0,198,224,0.5)',
-                    transform: 'translateY(-2px)',
-                    boxShadow: '0 8px 25px rgba(0,198,224,0.15)',
-                  }}
-                  as="a"
-                  href="#how-to-use"
-                >
-                  Learn More
-                </Button>
-              </Stack>
-            </MotionBox>
+                </Stack>
+              </MotionBox>
 
-            {/* Secondary CTAs */}
-            <MotionBox
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 1, delay: 0.6, ease: 'easeOut' }}
-              w="full"
-            >
-              <HStack
-                spacing={2}
-                justify={{ base: 'center', lg: 'flex-start' }}
-                flexWrap="wrap"
-                color="whiteAlpha.600"
-                fontSize="sm"
+              {/* Secondary CTAs */}
+              <MotionBox
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 1, delay: 0.6, ease: 'easeOut' }}
+                w="full"
               >
-                <Text>Don't have a strategy?</Text>
-                <RouterLink to="/pricing?source=marketplace">
-                  <Text
-                    as="span"
-                    color="#00C6E0"
-                    fontWeight="medium"
-                    cursor="pointer"
-                    _hover={{ textDecoration: 'underline' }}
-                  >
-                    Browse the Marketplace
-                  </Text>
-                </RouterLink>
-                <Text mx={1}>•</Text>
-                <Text>Want to sell strategies?</Text>
-                <RouterLink to="/pricing?source=creator">
-                  <Text
-                    as="span"
-                    color="#00C6E0"
-                    fontWeight="medium"
-                    cursor="pointer"
-                    _hover={{ textDecoration: 'underline' }}
-                  >
-                    Become a Creator
-                  </Text>
-                </RouterLink>
-              </HStack>
-            </MotionBox>
-          </VStack>
+                <HStack
+                  spacing={2}
+                  justify={{ base: 'center', lg: 'flex-start' }}
+                  flexWrap="wrap"
+                  color="whiteAlpha.600"
+                  fontSize="sm"
+                >
+                  <Text>Don't have a strategy?</Text>
+                  <RouterLink to="/pricing?source=marketplace">
+                    <Text
+                      as="span"
+                      color="#00C6E0"
+                      fontWeight="medium"
+                      cursor="pointer"
+                      _hover={{ textDecoration: 'underline' }}
+                    >
+                      Browse the Marketplace
+                    </Text>
+                  </RouterLink>
+                  <Text mx={1}>•</Text>
+                  <Text>Want to sell strategies?</Text>
+                  <RouterLink to="/pricing?source=creator">
+                    <Text
+                      as="span"
+                      color="#00C6E0"
+                      fontWeight="medium"
+                      cursor="pointer"
+                      _hover={{ textDecoration: 'underline' }}
+                    >
+                      Become a Creator
+                    </Text>
+                  </RouterLink>
+                </HStack>
+              </MotionBox>
+            </VStack>
 
-          {/* ── Right Side: Animated Hub Diagram ─────────────────── */}
-          <MotionBox
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 1, delay: 0.2, ease: 'easeOut' }}
-            flex={{ base: 'none', lg: '0 0 52%' }}
-            w="full"
-            position="relative"
-            zIndex={5}
-          >
-            <Box
-              bg="rgba(255,255,255,0.03)"
-              border="1px solid rgba(0,198,224,0.12)"
-              borderRadius="2xl"
-              p={{ base: 5, md: 6, lg: 8 }}
-              position="relative"
-              overflow="hidden"
-              boxShadow="0 10px 40px -10px rgba(0,198,224,0.1)"
+            {/* Right: Animated Hub Diagram — no container box */}
+            <MotionBox
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 1, delay: 0.2, ease: 'easeOut' }}
+              flex={{ base: 'none', lg: '1' }}
+              w="full"
+              zIndex={5}
             >
-              {/* Subtle glow inside the diagram box */}
-              <Box
-                position="absolute"
-                top="50%"
-                left="50%"
-                transform="translate(-50%, -50%)"
-                w="60%"
-                h="60%"
-                bgGradient="radial(circle, rgba(0,198,224,0.04) 0%, transparent 70%)"
-                filter="blur(40px)"
-                pointerEvents="none"
-              />
-
               {/* Desktop diagram */}
               <Box display={{ base: 'none', lg: 'block' }}>
                 <AnimatePresence mode="wait">
@@ -838,27 +882,15 @@ const Hero = () => {
                 </AnimatePresence>
               </Box>
 
-              {/* Progress bar at bottom */}
-              <Box
-                position="absolute"
-                bottom="0"
-                left="0"
-                right="0"
-                h="2px"
-                bg="rgba(0,198,224,0.08)"
-              >
-                <MotionBox
-                  key={scene.key + '-progress'}
-                  h="2px"
-                  bg="rgba(0,198,224,0.4)"
-                  initial={{ width: '0%' }}
-                  animate={{ width: '100%' }}
-                  transition={{ duration: 6, ease: 'linear' }}
-                />
-              </Box>
-            </Box>
-          </MotionBox>
-        </Stack>
+              {/* Progress dots under diagram */}
+              <ProgressDots
+                activeIndex={activeScene}
+                total={scenes.length}
+                sceneKey={scene.key}
+              />
+            </MotionBox>
+          </Stack>
+        </VStack>
       </Container>
     </Box>
   );
