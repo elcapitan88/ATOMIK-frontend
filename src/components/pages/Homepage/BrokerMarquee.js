@@ -13,12 +13,12 @@ const scroll = keyframes`
 
 // ── Broker data ──
 const brokers = [
-  { name: 'Apex', logo: '/logos/apex.svg' },
+  { name: 'Apex', logo: '/logos/apex-logo-color.webp' },
   { name: 'TakeProfit Trader', logo: '/logos/takeprofit.svg' },
   { name: 'Lucid Trading', logo: '/logos/lucid.webp' },
-  { name: 'Tradovate', logo: '/logos/tradovate.svg' },
-  { name: 'NinjaTrader', logo: '/logos/ninjalogo.webp' },
-  { name: 'TopStep', logo: '/logos/topstep.svg', comingSoon: true },
+  { name: 'Tradovate', logo: '/logos/Tradovate-darkbg.png' },
+  { name: 'NinjaTrader', logo: '/logos/tradovate-main-rbg.png' },
+  { name: 'TopStep', logo: '/logos/topstepx-login.png', comingSoon: true },
 ];
 
 // ── Single logo item ──
@@ -33,7 +33,6 @@ const MarqueeLogo = ({ name, logo, comingSoon }) => (
       display="flex"
       flexDirection="column"
       alignItems="center"
-      gap={2}
     >
       {/* Coming Soon badge */}
       {comingSoon && (
@@ -76,20 +75,6 @@ const MarqueeLogo = ({ name, logo, comingSoon }) => (
         userSelect="none"
         draggable="false"
       />
-
-      <Text
-        color="whiteAlpha.300"
-        fontSize={{ base: '10px', md: '11px' }}
-        fontWeight="500"
-        letterSpacing="0.04em"
-        fontFamily="'Satoshi', sans-serif"
-        transition="color 0.3s ease"
-        _groupHover={{
-          color: comingSoon ? 'whiteAlpha.400' : 'whiteAlpha.600',
-        }}
-      >
-        {name}
-      </Text>
     </Box>
   </Box>
 );
