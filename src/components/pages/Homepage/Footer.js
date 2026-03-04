@@ -294,6 +294,23 @@ const Footer = () => {
             />
           </Box>
         </Flex>
+
+        {/* Kinetick Data Feed */}
+        <Box
+          mt={6}
+          display="flex"
+          justifyContent="center"
+        >
+          <Image
+            src="/logos/Kinetick-FreeEOD-300x250.png"
+            alt="Kinetick - Free EOD Data"
+            maxW="200px"
+            objectFit="contain"
+            opacity={0.7}
+            transition="opacity 0.2s"
+            _hover={{ opacity: 1 }}
+          />
+        </Box>
       </Container>
     </Box>
   );
