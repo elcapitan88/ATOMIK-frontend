@@ -9,7 +9,7 @@ import './StrategyActivation.css';
 
 const StrategyActivation = ({ strategy, onActivate, onBack }) => {
   const { accounts } = useAccounts();
-  const { createStrategy } = useStrategies();
+  const { createStrategyAsync } = useStrategies();
   const displayTickers = getDisplayTickers();
   const [webhooks, setWebhooks] = useState([]);
   const [loadingWebhooks, setLoadingWebhooks] = useState(true);
@@ -132,7 +132,7 @@ const StrategyActivation = ({ strategy, onActivate, onBack }) => {
       };
       
       // Create strategy via API
-      await createStrategy(strategyData);
+      await createStrategyAsync(strategyData);
       
       // Call parent callback with activation details
       await onActivate({

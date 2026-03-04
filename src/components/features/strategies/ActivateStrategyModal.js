@@ -61,7 +61,7 @@ const ActivateStrategyModal = ({
 
   // React Query hooks
   const {
-    createStrategy,
+    createStrategyAsync,
     isCreating,
     createStrategyError,
     updateStrategy,
@@ -542,15 +542,8 @@ const ActivateStrategyModal = ({
         // CREATE new strategy
         const strategyData = buildStrategyData();
         console.log('Creating new strategy:', strategyData);
-        await createStrategy(strategyData);
-
-        toast({
-          title: "Strategy Created",
-          description: "Your strategy has been successfully activated",
-          status: "success",
-          duration: 3000,
-          isClosable: true,
-        });
+        await createStrategyAsync(strategyData);
+        // Success toast is handled by the useUnifiedStrategies hook's onSuccess callback
       }
 
       // Close the modal after successful operation

@@ -91,7 +91,7 @@ class UnifiedStrategiesApi {
       }
 
       const response = await this.withRetry(() =>
-        axiosInstance.post(`${this.baseUrl}/activate`, strategyData)
+        axiosInstance.post(this.baseUrl, strategyData)
       );
 
       this.clearCache();

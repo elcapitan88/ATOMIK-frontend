@@ -51,7 +51,7 @@ const ActivateStrategies = ({ accountConfigs, strategyBoundAccountIds }) => {
     error,
     toggleStrategy,
     isToggling,
-    createStrategy,
+    createStrategyAsync,
     deleteStrategy,
     isDeleting
   } = useStrategies();
@@ -158,15 +158,9 @@ const ActivateStrategies = ({ accountConfigs, strategyBoundAccountIds }) => {
   // Handle strategy activation
   const handleActivateStrategy = async (strategyData) => {
     try {
-      await createStrategy(strategyData);
+      await createStrategyAsync(strategyData);
       onActivateClose();
-      toast({
-        title: "Strategy Activated",
-        description: "Strategy has been successfully activated",
-        status: "success",
-        duration: 3000,
-        isClosable: true,
-      });
+      // Success toast is handled by the useUnifiedStrategies hook's onSuccess callback
     } catch (err) {
       toast({
         title: "Error activating strategy",
