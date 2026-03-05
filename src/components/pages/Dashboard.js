@@ -526,15 +526,16 @@ const DashboardContent = () => {
             {/* Payment Status Warning */}
             <PaymentStatusWarning />
 
-            {/* Full-screen chart */}
+            {/* Full-screen chart — fills viewport above action bar + bottom nav + peek sheet */}
             <Box
-                position="relative"
-                h="calc(100vh - 200px)"
+                position="fixed"
+                top={0}
+                left={0}
+                right={0}
+                bottom="216px"
                 bg="whiteAlpha.100"
-                borderRadius="xl"
                 overflow="hidden"
-                mx={-3}
-                mt={-3}
+                zIndex={1}
             >
                 <ErrorBoundary>
                     <Suspense fallback={<LoadingSpinner />}>
