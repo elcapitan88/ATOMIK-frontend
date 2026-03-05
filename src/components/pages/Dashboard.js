@@ -171,7 +171,7 @@ const DashboardContent = () => {
     const { hasMemberChat, hasAriaAssistant } = useFeatureFlags();
 
     // Multi-account trading hooks
-    const { getConnectionState: wsGetConnectionState, sendMessage: wsSendMessage, getAccountData: wsGetAccountData } = useWebSocketContext();
+    const { connect: wsConnect, getConnectionState: wsGetConnectionState, sendMessage: wsSendMessage, getAccountData: wsGetAccountData } = useWebSocketContext();
     const { strategies: activatedStrategies } = useUnifiedStrategies();
     const copyTrading = useCopyTrading();
     const copyTradingData = {
@@ -188,6 +188,60 @@ const DashboardContent = () => {
         chartCurrentPrice,
         multiAccountTrading,
     });
+
+    // ─── WebSocket Auto-Connect (shared by desktop + mobile) ─────────
+    const lastConnectionAttemptRef = useRef({});
+    useEffect(() => {
+        const accounts = dashboardData.accounts;
+        if (!accounts || accounts.length === 0) return;
+        const disabled = localStorage.getItem('disable_auto_connect') === 'true';
+        if (disabled) return;
+        const token = localStorage.getItem('access_token');
+        if (!token) return;
+
+        const connectionAttempts = new Set();
+
+        const autoConnect = async () => {
+            for (const account of accounts) {
+                const key = `${account.broker_id}:${account.account_id}`;
+                if (connectionAttempts.has(key)) continue;
+                if (account.status !== 'active' || !account.broker_id || !account.account_id) continue;
+
+                const state = wsGetConnectionState(account.broker_id, account.account_id);
+                if (
+                    state === 'connected' ||
+                    state === 'ready' ||
+                    state === 'connecting' ||
+                    state === 'validating_user' ||
+                    state === 'checking_subscription' ||
+                    state === 'checking_broker_access' ||
+                    state === 'connecting_to_broker'
+                ) continue;
+
+                const now = Date.now();
+                const last = lastConnectionAttemptRef.current[key] || 0;
+                if (now - last < 60000) continue;
+
+                connectionAttempts.add(key);
+                lastConnectionAttemptRef.current[key] = now;
+
+                try {
+                    if (connectionAttempts.size > 1) await new Promise((r) => setTimeout(r, 3000));
+                    await wsConnect(account.broker_id, account.account_id);
+                } catch (err) {
+                    logger.error(`Auto-connect failed for ${key}:`, err);
+                } finally {
+                    connectionAttempts.delete(key);
+                }
+            }
+        };
+
+        const timeout = setTimeout(autoConnect, 1000);
+        return () => {
+            clearTimeout(timeout);
+            connectionAttempts.clear();
+        };
+    }, [dashboardData.accounts, wsConnect, wsGetConnectionState]);
 
     // Skip confirmation preference (persisted in localStorage)
     const [skipOrderConfirmation, setSkipOrderConfirmation] = useState(
