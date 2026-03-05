@@ -13,6 +13,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown, Minus, Plus, X } from 'lucide-react';
 import axiosInstance from '@/services/axiosConfig';
+import MobileBracketInputs from './MobileBracketInputs';
 
 const MotionBox = motion.create(Box);
 
@@ -20,7 +21,8 @@ const ORDER_TYPES = [
   { value: 'MARKET', label: 'Market' },
   { value: 'LIMIT', label: 'Limit' },
   { value: 'STOP', label: 'Stop' },
-  { value: 'STOP_LIMIT', label: 'Stop Lmt' },
+  { value: 'STOP_LIMIT', label: 'Stp Lmt' },
+  { value: 'BRACKET', label: 'Bracket' },
 ];
 
 const TIF_OPTIONS = [
@@ -140,6 +142,7 @@ const MobileOrderTicket = ({
 
   const symbol = chartSymbol || 'NQ';
   const hasActiveAccounts = activeCount > 0;
+  const isBracket = orderType === 'BRACKET';
   const needsPrice = orderType === 'LIMIT' || orderType === 'STOP_LIMIT';
   const needsStop = orderType === 'STOP' || orderType === 'STOP_LIMIT';
 
@@ -351,120 +354,132 @@ const MobileOrderTicket = ({
                 />
               </Box>
 
-              {/* Time in Force */}
-              <Box>
-                <Text fontSize="xs" color="whiteAlpha.500" mb={1.5} fontWeight="medium">
-                  Time in Force
-                </Text>
-                <SegmentedControl
-                  options={TIF_OPTIONS}
-                  value={timeInForce}
-                  onChange={setTimeInForce}
-                  size="xs"
+              {/* Bracket mode — renders its own form */}
+              {isBracket ? (
+                <MobileBracketInputs
+                  chartSymbol={chartSymbol}
+                  chartCurrentPrice={chartCurrentPrice}
+                  multiAccountTrading={multiAccountTrading}
+                  timeInForce={timeInForce}
                 />
-              </Box>
+              ) : (
+                <>
+                  {/* Time in Force */}
+                  <Box>
+                    <Text fontSize="xs" color="whiteAlpha.500" mb={1.5} fontWeight="medium">
+                      Time in Force
+                    </Text>
+                    <SegmentedControl
+                      options={TIF_OPTIONS}
+                      value={timeInForce}
+                      onChange={setTimeInForce}
+                      size="xs"
+                    />
+                  </Box>
 
-              {/* Quantity */}
-              <Box>
-                <Text fontSize="xs" color="whiteAlpha.500" mb={1.5} fontWeight="medium">
-                  Quantity
-                </Text>
-                <QuantityStepper
-                  value={totalContracts || 1}
-                  onChange={(val) => {
-                    // Update first active account's quantity
-                    const firstActive = multiAccountTrading.activeAccounts[0];
-                    if (firstActive) {
-                      multiAccountTrading.setAccountQuantity(firstActive.account_id, val);
-                    }
-                  }}
-                />
-              </Box>
+                  {/* Quantity */}
+                  <Box>
+                    <Text fontSize="xs" color="whiteAlpha.500" mb={1.5} fontWeight="medium">
+                      Quantity
+                    </Text>
+                    <QuantityStepper
+                      value={totalContracts || 1}
+                      onChange={(val) => {
+                        // Update first active account's quantity
+                        const firstActive = multiAccountTrading.activeAccounts[0];
+                        if (firstActive) {
+                          multiAccountTrading.setAccountQuantity(firstActive.account_id, val);
+                        }
+                      }}
+                    />
+                  </Box>
 
-              {/* Price inputs (conditional) */}
-              {needsPrice && (
-                <Box>
-                  <Text fontSize="xs" color="whiteAlpha.500" mb={1.5} fontWeight="medium">
-                    Limit Price
-                  </Text>
-                  <Input
-                    value={limitPrice}
-                    onChange={(e) => setLimitPrice(e.target.value)}
-                    placeholder={formattedPrice}
-                    type="number"
-                    h="44px"
-                    bg="whiteAlpha.100"
-                    borderColor="whiteAlpha.200"
-                    color="white"
-                    fontSize="md"
-                    textAlign="center"
-                    fontFamily="mono"
-                    borderRadius="lg"
-                    _focus={{ borderColor: 'cyan.400', boxShadow: '0 0 0 1px rgba(0, 198, 224, 0.5)' }}
-                    _placeholder={{ color: 'whiteAlpha.400' }}
-                  />
-                </Box>
+                  {/* Price inputs (conditional) */}
+                  {needsPrice && (
+                    <Box>
+                      <Text fontSize="xs" color="whiteAlpha.500" mb={1.5} fontWeight="medium">
+                        Limit Price
+                      </Text>
+                      <Input
+                        value={limitPrice}
+                        onChange={(e) => setLimitPrice(e.target.value)}
+                        placeholder={formattedPrice}
+                        type="number"
+                        h="44px"
+                        bg="whiteAlpha.100"
+                        borderColor="whiteAlpha.200"
+                        color="white"
+                        fontSize="md"
+                        textAlign="center"
+                        fontFamily="mono"
+                        borderRadius="lg"
+                        _focus={{ borderColor: 'cyan.400', boxShadow: '0 0 0 1px rgba(0, 198, 224, 0.5)' }}
+                        _placeholder={{ color: 'whiteAlpha.400' }}
+                      />
+                    </Box>
+                  )}
+
+                  {needsStop && (
+                    <Box>
+                      <Text fontSize="xs" color="whiteAlpha.500" mb={1.5} fontWeight="medium">
+                        Stop Price
+                      </Text>
+                      <Input
+                        value={stopPrice}
+                        onChange={(e) => setStopPrice(e.target.value)}
+                        placeholder="Stop price"
+                        type="number"
+                        h="44px"
+                        bg="whiteAlpha.100"
+                        borderColor="whiteAlpha.200"
+                        color="white"
+                        fontSize="md"
+                        textAlign="center"
+                        fontFamily="mono"
+                        borderRadius="lg"
+                        _focus={{ borderColor: 'orange.400', boxShadow: '0 0 0 1px rgba(246, 173, 85, 0.5)' }}
+                        _placeholder={{ color: 'whiteAlpha.400' }}
+                      />
+                    </Box>
+                  )}
+
+                  {/* BUY / SELL buttons */}
+                  <HStack spacing={3} pt={1}>
+                    <Button
+                      flex="1"
+                      h="52px"
+                      bg="rgba(38, 166, 154, 0.85)"
+                      color="white"
+                      fontWeight="bold"
+                      fontSize="md"
+                      _hover={{ bg: 'rgba(38, 166, 154, 1)' }}
+                      _active={{ bg: 'rgba(38, 166, 154, 0.6)', transform: 'scale(0.97)' }}
+                      isLoading={isSubmitting}
+                      isDisabled={!hasActiveAccounts}
+                      onClick={() => handleOrder('buy')}
+                      borderRadius="xl"
+                    >
+                      BUY
+                    </Button>
+                    <Button
+                      flex="1"
+                      h="52px"
+                      bg="rgba(239, 83, 80, 0.85)"
+                      color="white"
+                      fontWeight="bold"
+                      fontSize="md"
+                      _hover={{ bg: 'rgba(239, 83, 80, 1)' }}
+                      _active={{ bg: 'rgba(239, 83, 80, 0.6)', transform: 'scale(0.97)' }}
+                      isLoading={isSubmitting}
+                      isDisabled={!hasActiveAccounts}
+                      onClick={() => handleOrder('sell')}
+                      borderRadius="xl"
+                    >
+                      SELL
+                    </Button>
+                  </HStack>
+                </>
               )}
-
-              {needsStop && (
-                <Box>
-                  <Text fontSize="xs" color="whiteAlpha.500" mb={1.5} fontWeight="medium">
-                    Stop Price
-                  </Text>
-                  <Input
-                    value={stopPrice}
-                    onChange={(e) => setStopPrice(e.target.value)}
-                    placeholder="Stop price"
-                    type="number"
-                    h="44px"
-                    bg="whiteAlpha.100"
-                    borderColor="whiteAlpha.200"
-                    color="white"
-                    fontSize="md"
-                    textAlign="center"
-                    fontFamily="mono"
-                    borderRadius="lg"
-                    _focus={{ borderColor: 'orange.400', boxShadow: '0 0 0 1px rgba(246, 173, 85, 0.5)' }}
-                    _placeholder={{ color: 'whiteAlpha.400' }}
-                  />
-                </Box>
-              )}
-
-              {/* BUY / SELL buttons */}
-              <HStack spacing={3} pt={1}>
-                <Button
-                  flex="1"
-                  h="52px"
-                  bg="rgba(38, 166, 154, 0.85)"
-                  color="white"
-                  fontWeight="bold"
-                  fontSize="md"
-                  _hover={{ bg: 'rgba(38, 166, 154, 1)' }}
-                  _active={{ bg: 'rgba(38, 166, 154, 0.6)', transform: 'scale(0.97)' }}
-                  isLoading={isSubmitting}
-                  isDisabled={!hasActiveAccounts}
-                  onClick={() => handleOrder('buy')}
-                  borderRadius="xl"
-                >
-                  BUY
-                </Button>
-                <Button
-                  flex="1"
-                  h="52px"
-                  bg="rgba(239, 83, 80, 0.85)"
-                  color="white"
-                  fontWeight="bold"
-                  fontSize="md"
-                  _hover={{ bg: 'rgba(239, 83, 80, 1)' }}
-                  _active={{ bg: 'rgba(239, 83, 80, 0.6)', transform: 'scale(0.97)' }}
-                  isLoading={isSubmitting}
-                  isDisabled={!hasActiveAccounts}
-                  onClick={() => handleOrder('sell')}
-                  borderRadius="xl"
-                >
-                  SELL
-                </Button>
-              </HStack>
 
               {/* Flatten + Cancel */}
               {(openPositions.length > 0 || workingOrders.length > 0) && (

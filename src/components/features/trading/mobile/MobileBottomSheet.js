@@ -1,7 +1,8 @@
 import React, { useState, useCallback, useRef, useEffect, memo } from 'react';
-import { Box, Flex, HStack, Text, Badge, ButtonGroup, Button } from '@chakra-ui/react';
+import { Box, Flex, HStack, Text, Badge, ButtonGroup, Button, IconButton } from '@chakra-ui/react';
 import { motion, useMotionValue, useTransform, animate } from 'framer-motion';
-import { Activity, FileText, Users, Wand2 } from 'lucide-react';
+import { Activity, FileText, Users, Wand2, XCircle, Share2 } from 'lucide-react';
+import MobileFlattenSheet from './MobileFlattenSheet';
 
 const MotionBox = motion.create(Box);
 
@@ -25,11 +26,15 @@ const MobileBottomSheet = ({
   totalOpenPnL = 0,
   activeTab,
   onTabChange,
+  positions = [],
+  orders = [],
+  onSharePnL,
   children,
 }) => {
   const containerRef = useRef(null);
   const [snapState, setSnapState] = useState('peek');
   const [sheetMaxH, setSheetMaxH] = useState(600);
+  const [isFlattenOpen, setIsFlattenOpen] = useState(false);
   const y = useMotionValue(0);
 
   // Calculate snap positions relative to sheet top.
@@ -115,6 +120,8 @@ const MobileBottomSheet = ({
     [1, 1, 0]
   );
 
+  const hasItemsToFlatten = positionsCount > 0 || ordersCount > 0;
+
   const tabs = [
     { key: 'positions', label: 'Positions', icon: Activity, count: positionsCount },
     { key: 'orders', label: 'Orders', icon: FileText, count: ordersCount },
@@ -126,134 +133,187 @@ const MobileBottomSheet = ({
   const pnlPrefix = totalOpenPnL >= 0 ? '+' : '';
 
   return (
-    <MotionBox
-      ref={containerRef}
-      position="fixed"
-      left={0}
-      right={0}
-      bottom={`${SHEET_BOTTOM}px`}
-      h={`${sheetMaxH}px`}
-      bg="rgba(15, 15, 15, 0.95)"
-      backdropFilter="blur(20px)"
-      borderTopRadius="2xl"
-      zIndex={997}
-      style={{ y }}
-      drag="y"
-      dragConstraints={{
-        top: vals.full,
-        bottom: vals.peek,
-      }}
-      dragElastic={0.1}
-      onDragEnd={handleDragEnd}
-      boxShadow="0 -4px 30px rgba(0, 0, 0, 0.5)"
-      display="flex"
-      flexDirection="column"
-      overflow="hidden"
-    >
-      {/* Drag Handle + Peek Summary */}
-      <Box
-        flexShrink={0}
-        pt={2}
-        pb={2}
-        px={4}
-        cursor="grab"
-        _active={{ cursor: 'grabbing' }}
-        onClick={handleHandleTap}
-      >
-        {/* Visual drag handle */}
-        <Flex justify="center" mb={2}>
-          <Box w="36px" h="4px" borderRadius="full" bg="whiteAlpha.400" />
-        </Flex>
-
-        {/* Peek summary */}
-        <Flex align="center" justify="space-between">
-          <HStack spacing={3}>
-            <Text fontSize="xs" color="whiteAlpha.600">
-              {positionsCount} position{positionsCount !== 1 ? 's' : ''}
-            </Text>
-            <Text fontSize="xs" fontWeight="bold" color={pnlColor}>
-              {pnlPrefix}${Math.abs(totalOpenPnL).toLocaleString(undefined, {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2,
-              })}
-            </Text>
-          </HStack>
-          <Text fontSize="xs" color="whiteAlpha.500">
-            {accountsCount} account{accountsCount !== 1 ? 's' : ''}
-          </Text>
-        </Flex>
-      </Box>
-
-      {/* Tab bar + content */}
+    <>
       <MotionBox
-        flex="1"
+        ref={containerRef}
+        position="fixed"
+        left={0}
+        right={0}
+        bottom={`${SHEET_BOTTOM}px`}
+        h={`${sheetMaxH}px`}
+        bg="rgba(15, 15, 15, 0.95)"
+        backdropFilter="blur(20px)"
+        borderTopRadius="2xl"
+        zIndex={997}
+        style={{ y }}
+        drag="y"
+        dragConstraints={{
+          top: vals.full,
+          bottom: vals.peek,
+        }}
+        dragElastic={0.1}
+        onDragEnd={handleDragEnd}
+        boxShadow="0 -4px 30px rgba(0, 0, 0, 0.5)"
         display="flex"
         flexDirection="column"
         overflow="hidden"
-        style={{ opacity: contentOpacity }}
       >
-        {/* Tab Bar */}
-        <Box px={3} pb={2} flexShrink={0} borderBottom="1px solid" borderColor="whiteAlpha.100">
-          <ButtonGroup size="xs" isAttached variant="ghost" spacing={0} w="100%">
-            {tabs.map((tab) => (
-              <Button
-                key={tab.key}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onTabChange(tab.key);
-                }}
-                flex="1"
-                bg={activeTab === tab.key ? 'whiteAlpha.200' : 'transparent'}
-                color={activeTab === tab.key ? 'white' : 'whiteAlpha.600'}
-                _hover={{ bg: 'whiteAlpha.100', color: 'white' }}
-                _active={{ bg: 'whiteAlpha.200' }}
-                leftIcon={<tab.icon size={13} />}
-                fontWeight={activeTab === tab.key ? 'semibold' : 'normal'}
-                borderRadius="md"
-                px={2}
-                fontSize="xs"
-              >
-                {tab.label}
-                {tab.count !== undefined && tab.count > 0 && (
-                  <Badge
-                    ml={1}
-                    fontSize="8px"
-                    colorScheme="cyan"
-                    variant="solid"
-                    borderRadius="full"
-                    px={1.5}
-                    minW="16px"
-                    textAlign="center"
-                  >
-                    {tab.count}
-                  </Badge>
-                )}
-              </Button>
-            ))}
-          </ButtonGroup>
+        {/* Drag Handle + Peek Summary */}
+        <Box
+          flexShrink={0}
+          pt={2}
+          pb={2}
+          px={4}
+          cursor="grab"
+          _active={{ cursor: 'grabbing' }}
+          onClick={handleHandleTap}
+        >
+          {/* Visual drag handle */}
+          <Flex justify="center" mb={2}>
+            <Box w="36px" h="4px" borderRadius="full" bg="whiteAlpha.400" />
+          </Flex>
+
+          {/* Peek summary */}
+          <Flex align="center" justify="space-between">
+            <HStack spacing={3}>
+              <Text fontSize="xs" color="whiteAlpha.600">
+                {positionsCount} position{positionsCount !== 1 ? 's' : ''}
+              </Text>
+              <Text fontSize="xs" fontWeight="bold" color={pnlColor}>
+                {pnlPrefix}${Math.abs(totalOpenPnL).toLocaleString(undefined, {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}
+              </Text>
+            </HStack>
+
+            <HStack spacing={2}>
+              {/* Flatten/Cancel button — only when positions or orders exist */}
+              {hasItemsToFlatten && (
+                <IconButton
+                  icon={<XCircle size={18} />}
+                  size="xs"
+                  variant="ghost"
+                  color="red.400"
+                  aria-label="Flatten & Cancel"
+                  _hover={{ bg: 'rgba(239, 83, 80, 0.15)', color: 'red.300' }}
+                  _active={{ bg: 'rgba(239, 83, 80, 0.25)' }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsFlattenOpen(true);
+                  }}
+                  borderRadius="md"
+                  minW="32px"
+                  h="32px"
+                />
+              )}
+
+              {/* Share P&L button — visible when sheet is not at peek */}
+              {onSharePnL && (
+                <IconButton
+                  icon={<Share2 size={16} />}
+                  size="xs"
+                  variant="ghost"
+                  color="whiteAlpha.500"
+                  aria-label="Share P&L"
+                  _hover={{ bg: 'whiteAlpha.100', color: 'cyan.400' }}
+                  _active={{ bg: 'whiteAlpha.200' }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onSharePnL();
+                  }}
+                  borderRadius="md"
+                  minW="32px"
+                  h="32px"
+                />
+              )}
+
+              <Text fontSize="xs" color="whiteAlpha.500">
+                {accountsCount} acct{accountsCount !== 1 ? 's' : ''}
+              </Text>
+            </HStack>
+          </Flex>
         </Box>
 
-        {/* Scrollable content */}
-        <Box
+        {/* Tab bar + content */}
+        <MotionBox
           flex="1"
-          overflowY="auto"
-          overflowX="hidden"
-          px={3}
-          py={2}
-          sx={{
-            WebkitOverflowScrolling: 'touch',
-          }}
-          onPointerDownCapture={(e) => {
-            const contentEl = e.currentTarget;
-            if (contentEl.scrollHeight > contentEl.clientHeight) {
-              e.stopPropagation();
-            }
-          }}
+          display="flex"
+          flexDirection="column"
+          overflow="hidden"
+          style={{ opacity: contentOpacity }}
         >
-          {children}
-        </Box>
+          {/* Tab Bar */}
+          <Box px={3} pb={2} flexShrink={0} borderBottom="1px solid" borderColor="whiteAlpha.100">
+            <ButtonGroup size="xs" isAttached variant="ghost" spacing={0} w="100%">
+              {tabs.map((tab) => (
+                <Button
+                  key={tab.key}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onTabChange(tab.key);
+                  }}
+                  flex="1"
+                  bg={activeTab === tab.key ? 'whiteAlpha.200' : 'transparent'}
+                  color={activeTab === tab.key ? 'white' : 'whiteAlpha.600'}
+                  _hover={{ bg: 'whiteAlpha.100', color: 'white' }}
+                  _active={{ bg: 'whiteAlpha.200' }}
+                  leftIcon={<tab.icon size={13} />}
+                  fontWeight={activeTab === tab.key ? 'semibold' : 'normal'}
+                  borderRadius="md"
+                  px={2}
+                  fontSize="xs"
+                >
+                  {tab.label}
+                  {tab.count !== undefined && tab.count > 0 && (
+                    <Badge
+                      ml={1}
+                      fontSize="8px"
+                      colorScheme="cyan"
+                      variant="solid"
+                      borderRadius="full"
+                      px={1.5}
+                      minW="16px"
+                      textAlign="center"
+                    >
+                      {tab.count}
+                    </Badge>
+                  )}
+                </Button>
+              ))}
+            </ButtonGroup>
+          </Box>
+
+          {/* Scrollable content */}
+          <Box
+            flex="1"
+            overflowY="auto"
+            overflowX="hidden"
+            px={3}
+            py={2}
+            sx={{
+              WebkitOverflowScrolling: 'touch',
+            }}
+            onPointerDownCapture={(e) => {
+              const contentEl = e.currentTarget;
+              if (contentEl.scrollHeight > contentEl.clientHeight) {
+                e.stopPropagation();
+              }
+            }}
+          >
+            {children}
+          </Box>
+        </MotionBox>
       </MotionBox>
-    </MotionBox>
+
+      {/* Flatten/Cancel Action Sheet */}
+      <MobileFlattenSheet
+        isOpen={isFlattenOpen}
+        onClose={() => setIsFlattenOpen(false)}
+        positions={positions}
+        orders={orders}
+      />
+    </>
   );
 };
 

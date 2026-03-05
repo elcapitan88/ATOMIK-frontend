@@ -44,6 +44,7 @@ const MarketplacePage = lazy(() => import('./MarketplacePage'));
 const TradingAccountsPanel = lazy(() => import('../features/trading/TradingAccountsPanel'));
 const QuickOrderBar = lazy(() => import('../features/trading/QuickOrderBar'));
 const TradingPanel = lazy(() => import('../features/trading/TradingPanel'));
+const PnLShareModal = lazy(() => import('../features/share-cards/PnLShareModal'));
 
 // Loading Spinner Component
 const LoadingSpinner = () => (
@@ -130,6 +131,7 @@ const DashboardContent = () => {
     const isMobile = useBreakpointValue({ base: true, md: false });
     const [mobileActiveTab, setMobileActiveTab] = useState('positions');
     const [isOrderTicketOpen, setIsOrderTicketOpen] = useState(false);
+    const [isShareModalOpen, setIsShareModalOpen] = useState(false);
 
     // Poll chart's last bar close for live P&L calculation (~1s)
     useEffect(() => {
@@ -584,15 +586,15 @@ const DashboardContent = () => {
 
             {/* Mobile Bottom Sheet — positions, orders, accounts, strategies */}
             <MobileBottomSheet
-                positions={aggregatedPositions}
-                orders={aggregatedOrders}
-                accounts={dashboardData.accounts}
                 positionsCount={mobileOpenPositions.length}
                 ordersCount={mobileWorkingOrders.length}
                 accountsCount={dashboardData.accounts.length}
                 totalOpenPnL={mobileTotalOpenPnL}
                 activeTab={mobileActiveTab}
                 onTabChange={setMobileActiveTab}
+                positions={aggregatedPositions}
+                orders={aggregatedOrders}
+                onSharePnL={() => setIsShareModalOpen(true)}
             >
                 {mobileActiveTab === 'positions' && (
                     mobileOpenPositions.length === 0 ? (
@@ -656,6 +658,16 @@ const DashboardContent = () => {
                     />
                 )}
             </MobileBottomSheet>
+
+            {/* Share P&L Modal */}
+            {isShareModalOpen && (
+                <Suspense fallback={null}>
+                    <PnLShareModal
+                        isOpen={isShareModalOpen}
+                        onClose={() => setIsShareModalOpen(false)}
+                    />
+                </Suspense>
+            )}
         </ErrorBoundary>
     );
 
