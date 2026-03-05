@@ -5,5 +5,6 @@ export { default as MobileAccountsTab } from './MobileAccountsTab';
 export { default as MobileStrategiesTab } from './MobileStrategiesTab';
 export { default as MobileFlattenSheet } from './MobileFlattenSheet';
 export { default as MobileBracketInputs } from './MobileBracketInputs';
+export { default as MobileBracketChartMode } from './MobileBracketChartMode';
 export { default as PositionCard } from './PositionCard';
 export { default as OrderCard } from './OrderCard';

@@ -122,6 +122,7 @@ const MobileOrderTicket = ({
   positions = [],
   orders = [],
   copyTrading,
+  onPlaceOnChart,
 }) => {
   const toast = useToast();
   const {
@@ -361,6 +362,7 @@ const MobileOrderTicket = ({
                   chartCurrentPrice={chartCurrentPrice}
                   multiAccountTrading={multiAccountTrading}
                   timeInForce={timeInForce}
+                  onPlaceOnChart={onPlaceOnChart}
                 />
               ) : (
                 <>

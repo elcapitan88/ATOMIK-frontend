@@ -21,6 +21,7 @@ const ChartTradingOverlay = memo(({
   orderLines = [],
   bracketPlacement,
   totalQuantity,
+  isMobile = false,
 }) => {
   const overlayRef = useRef(null);
   const [isDraggingOrder, setIsDraggingOrder] = useState(false);
@@ -52,6 +53,18 @@ const ChartTradingOverlay = memo(({
   const isAwaitingClick = bracketPlacement?.isActive && !bracketPlacement?.isPlaced;
   const hasBracketLines = bracketPlacement?.isPlaced;
 
+  // Handle placement via coordinates (shared by mouse + touch)
+  const handlePlaceAtY = useCallback((clientY) => {
+    const rect = overlayRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    const y = clientY - rect.top;
+    const price = yToPrice(y);
+    if (price != null && price > 0) {
+      const marketPrice = currentPrice ?? yToPrice(paneHeight / 2);
+      bracketPlacement.placeEntry(price, marketPrice);
+    }
+  }, [yToPrice, currentPrice, paneHeight, bracketPlacement]);
+
   // Don't render until coordinate system is ready
   if (!isReady || !paneHeight) return null;
 
@@ -71,21 +84,21 @@ const ChartTradingOverlay = memo(({
         // Prevent any text selection during drag
         userSelect: 'none',
         WebkitUserSelect: 'none',
+        // Prevent iOS callout on long press during bracket mode
+        WebkitTouchCallout: isAwaitingClick ? 'none' : undefined,
       }}
       onMouseDown={isAwaitingClick ? (e) => {
         if (e.button !== 0) return; // left-click only
         e.preventDefault();
         e.stopPropagation();
-        const rect = overlayRef.current?.getBoundingClientRect();
-        if (!rect) return;
-        const y = e.clientY - rect.top;
-        const price = yToPrice(y);
-        if (price != null && price > 0) {
-          // Use currentPrice, or approximate market price from chart midpoint
-          const marketPrice = currentPrice ?? yToPrice(paneHeight / 2);
-          console.log('[BracketOverlay] Click at y=%d, price=%d, marketPrice=%d', y, price, marketPrice);
-          bracketPlacement.placeEntry(price, marketPrice);
-        }
+        handlePlaceAtY(e.clientY);
+      } : undefined}
+      onTouchEnd={isAwaitingClick ? (e) => {
+        // Use touchend for tap-to-place on mobile (touchstart would conflict with scroll)
+        if (e.changedTouches.length !== 1) return;
+        e.preventDefault();
+        e.stopPropagation();
+        handlePlaceAtY(e.changedTouches[0].clientY);
       } : undefined}
       data-testid="chart-trading-overlay"
     >
@@ -134,6 +147,7 @@ const ChartTradingOverlay = memo(({
           onDragStateChange={handleBracketDragStateChange}
           overlayRef={overlayRef}
           totalQuantity={totalQuantity}
+          isMobile={isMobile}
         />
       )}
     </div>

@@ -1,6 +1,6 @@
 import React, { memo, useCallback, useMemo } from 'react';
 import { Box, Flex, HStack, Text, Badge, Button, useToast } from '@chakra-ui/react';
-import { ChevronUp } from 'lucide-react';
+import { ChevronUp, Crosshair } from 'lucide-react';
 
 const BOTTOM_NAV_HEIGHT = 64;
 
@@ -17,6 +17,7 @@ const MobileActionBar = ({
   positions = [],
   copyTrading,
   onExpandOrderTicket,
+  isBracketChartMode = false,
 }) => {
   const toast = useToast();
   const {
@@ -120,40 +121,61 @@ const MobileActionBar = ({
           </HStack>
         </Box>
 
-        {/* BUY / SELL buttons */}
+        {/* BUY / SELL buttons (or bracket mode indicator) */}
         <HStack spacing={2} flex="1" justify="center">
-          <Button
-            flex="1"
-            h="44px"
-            bg="rgba(38, 166, 154, 0.85)"
-            color="white"
-            fontWeight="bold"
-            fontSize="sm"
-            _hover={{ bg: 'rgba(38, 166, 154, 1)' }}
-            _active={{ bg: 'rgba(38, 166, 154, 0.6)', transform: 'scale(0.97)' }}
-            isLoading={isSubmitting}
-            isDisabled={!hasActiveAccounts}
-            onClick={() => handleQuickOrder('buy')}
-            borderRadius="lg"
-          >
-            BUY
-          </Button>
-          <Button
-            flex="1"
-            h="44px"
-            bg="rgba(239, 83, 80, 0.85)"
-            color="white"
-            fontWeight="bold"
-            fontSize="sm"
-            _hover={{ bg: 'rgba(239, 83, 80, 1)' }}
-            _active={{ bg: 'rgba(239, 83, 80, 0.6)', transform: 'scale(0.97)' }}
-            isLoading={isSubmitting}
-            isDisabled={!hasActiveAccounts}
-            onClick={() => handleQuickOrder('sell')}
-            borderRadius="lg"
-          >
-            SELL
-          </Button>
+          {isBracketChartMode ? (
+            <Flex
+              flex="1"
+              h="44px"
+              align="center"
+              justify="center"
+              bg="rgba(124, 58, 237, 0.2)"
+              border="1px solid"
+              borderColor="purple.600"
+              borderRadius="lg"
+              gap={2}
+            >
+              <Crosshair size={16} color="#a78bfa" />
+              <Text fontSize="sm" fontWeight="bold" color="purple.300">
+                Bracket Mode
+              </Text>
+            </Flex>
+          ) : (
+            <>
+              <Button
+                flex="1"
+                h="44px"
+                bg="rgba(38, 166, 154, 0.85)"
+                color="white"
+                fontWeight="bold"
+                fontSize="sm"
+                _hover={{ bg: 'rgba(38, 166, 154, 1)' }}
+                _active={{ bg: 'rgba(38, 166, 154, 0.6)', transform: 'scale(0.97)' }}
+                isLoading={isSubmitting}
+                isDisabled={!hasActiveAccounts}
+                onClick={() => handleQuickOrder('buy')}
+                borderRadius="lg"
+              >
+                BUY
+              </Button>
+              <Button
+                flex="1"
+                h="44px"
+                bg="rgba(239, 83, 80, 0.85)"
+                color="white"
+                fontWeight="bold"
+                fontSize="sm"
+                _hover={{ bg: 'rgba(239, 83, 80, 1)' }}
+                _active={{ bg: 'rgba(239, 83, 80, 0.6)', transform: 'scale(0.97)' }}
+                isLoading={isSubmitting}
+                isDisabled={!hasActiveAccounts}
+                onClick={() => handleQuickOrder('sell')}
+                borderRadius="lg"
+              >
+                SELL
+              </Button>
+            </>
+          )}
         </HStack>
 
         {/* Expand to order ticket */}

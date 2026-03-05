@@ -17,6 +17,7 @@ const BracketPlacementOverlay = memo(({
   onDragStateChange,
   overlayRef,
   totalQuantity,
+  isMobile = false,
 }) => {
   if (!bracketPlacement || !bracketPlacement.isPlaced) return null;
 
@@ -43,6 +44,7 @@ const BracketPlacementOverlay = memo(({
         onCancel={bracketPlacement.deactivate}
         totalQuantity={totalQuantity}
         overlayRef={overlayRef}
+        isMobile={isMobile}
       />
 
       {/* Take profit line */}
@@ -62,6 +64,7 @@ const BracketPlacementOverlay = memo(({
         onCancel={bracketPlacement.deactivate}
         totalQuantity={totalQuantity}
         overlayRef={overlayRef}
+        isMobile={isMobile}
       />
 
       {/* Stop loss line */}
@@ -81,6 +84,7 @@ const BracketPlacementOverlay = memo(({
         onCancel={bracketPlacement.deactivate}
         totalQuantity={totalQuantity}
         overlayRef={overlayRef}
+        isMobile={isMobile}
       />
     </>
   );

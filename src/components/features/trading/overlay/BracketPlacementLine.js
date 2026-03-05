@@ -55,6 +55,7 @@ const BracketPlacementLine = memo(({
   onCancel,
   totalQuantity,
   overlayRef,
+  isMobile = false,
 }) => {
   const [hovered, setHovered] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
@@ -95,20 +96,37 @@ const BracketPlacementLine = memo(({
     onDragStateChange?.(true);
   }, [yPosition, onDragStateChange]);
 
-  // Document-level mousemove and mouseup while dragging
+  // Touch start handler for mobile
+  const handleTouchStart = useCallback((e) => {
+    if (e.touches.length !== 1) return; // single finger only
+    e.preventDefault();
+    e.stopPropagation();
+
+    const touch = e.touches[0];
+    dragStartRef.current = {
+      clientY: touch.clientY,
+      originalY: yPosition,
+    };
+
+    setIsDragging(true);
+    setDragOffsetY(0);
+    onDragStateChange?.(true);
+  }, [yPosition, onDragStateChange]);
+
+  // Document-level mousemove/mouseup + touchmove/touchend while dragging
   useEffect(() => {
     if (!isDragging) return;
 
-    const handleMouseMove = (e) => {
+    const handleMove = (clientY) => {
       if (!dragStartRef.current) return;
-      const delta = e.clientY - dragStartRef.current.clientY;
+      const delta = clientY - dragStartRef.current.clientY;
       setDragOffsetY(delta);
     };
 
-    const handleMouseUp = (e) => {
+    const handleEnd = (clientY) => {
       if (!dragStartRef.current) return;
 
-      const delta = e.clientY - dragStartRef.current.clientY;
+      const delta = clientY - dragStartRef.current.clientY;
       const finalY = dragStartRef.current.originalY + delta;
 
       setIsDragging(false);
@@ -127,12 +145,29 @@ const BracketPlacementLine = memo(({
       dragStartRef.current = null;
     };
 
+    const handleMouseMove = (e) => handleMove(e.clientY);
+    const handleMouseUp = (e) => handleEnd(e.clientY);
+    const handleTouchMove = (e) => {
+      if (e.touches.length === 1) {
+        e.preventDefault();
+        handleMove(e.touches[0].clientY);
+      }
+    };
+    const handleTouchEnd = (e) => {
+      const touch = e.changedTouches[0];
+      handleEnd(touch.clientY);
+    };
+
     document.addEventListener('mousemove', handleMouseMove);
     document.addEventListener('mouseup', handleMouseUp);
+    document.addEventListener('touchmove', handleTouchMove, { passive: false });
+    document.addEventListener('touchend', handleTouchEnd);
 
     return () => {
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
+      document.removeEventListener('touchmove', handleTouchMove);
+      document.removeEventListener('touchend', handleTouchEnd);
     };
   }, [isDragging, yToPrice, roundToTick, symbol, price, onDrag, onDragStateChange]);
 
@@ -188,17 +223,18 @@ const BracketPlacementLine = memo(({
           willChange: 'transform',
         }}
         onMouseDown={handleMouseDown}
+        onTouchStart={handleTouchStart}
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => !isDragging && setHovered(false)}
       >
-        {/* Hit area — taller invisible zone for easy grabbing */}
+        {/* Hit area — taller invisible zone for easy grabbing (44px on mobile) */}
         <div
           style={{
             position: 'absolute',
             left: 0,
             right: '80px',
-            height: '11px',
-            top: '-5px',
+            height: isMobile ? '44px' : '11px',
+            top: isMobile ? '-22px' : '-5px',
             cursor: 'ns-resize',
           }}
         />

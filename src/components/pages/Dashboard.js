@@ -37,6 +37,7 @@ import webSocketManager from '@/services/websocket-proxy/WebSocketManager';
 
 // Mobile components
 import { MobileBottomSheet, MobileActionBar, MobileOrderTicket, PositionCard, OrderCard, MobileAccountsTab, MobileStrategiesTab } from '../features/trading/mobile';
+import MobileBracketChartMode from '../features/trading/mobile/MobileBracketChartMode';
 
 // Lazy loaded components
 const StrategyGroups = lazy(() => import('../features/strategies/ActivateStrategies'));
@@ -132,6 +133,7 @@ const DashboardContent = () => {
     const [mobileActiveTab, setMobileActiveTab] = useState('positions');
     const [isOrderTicketOpen, setIsOrderTicketOpen] = useState(false);
     const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+    const [isBracketChartMode, setIsBracketChartMode] = useState(false);
 
     // Poll chart's last bar close for live P&L calculation (~1s)
     useEffect(() => {
@@ -559,6 +561,7 @@ const DashboardContent = () => {
                     orderLines={chartTrading.orderLines}
                     bracketPlacement={bracketPlacement}
                     totalQuantity={multiAccountTrading.totalContracts}
+                    isMobile
                 />
             </Box>
 
@@ -570,6 +573,21 @@ const DashboardContent = () => {
                 positions={aggregatedPositions}
                 copyTrading={copyTrading}
                 onExpandOrderTicket={() => setIsOrderTicketOpen(true)}
+                isBracketChartMode={isBracketChartMode}
+            />
+
+            {/* Mobile Bracket Chart Mode — floating confirm/cancel bar */}
+            <MobileBracketChartMode
+                isActive={isBracketChartMode}
+                bracketPlacement={bracketPlacement}
+                onConfirm={() => {
+                    bracketPlacement.submit();
+                    setIsBracketChartMode(false);
+                }}
+                onCancel={() => {
+                    bracketPlacement.deactivate();
+                    setIsBracketChartMode(false);
+                }}
             />
 
             {/* Mobile Order Ticket — expandable order entry */}
@@ -582,6 +600,11 @@ const DashboardContent = () => {
                 positions={aggregatedPositions}
                 orders={aggregatedOrders}
                 copyTrading={copyTrading}
+                onPlaceOnChart={() => {
+                    setIsOrderTicketOpen(false);
+                    bracketPlacement.activate();
+                    setIsBracketChartMode(true);
+                }}
             />
 
             {/* Mobile Bottom Sheet — positions, orders, accounts, strategies */}

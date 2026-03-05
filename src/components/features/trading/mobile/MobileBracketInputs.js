@@ -9,6 +9,7 @@ import {
   Input,
   useToast,
 } from '@chakra-ui/react';
+import { Minus, Plus, Crosshair } from 'lucide-react';
 import axiosInstance from '@/services/axiosConfig';
 import { roundToTick, getTickSize, normalizeSymbol } from '@/hooks/useChartTrading';
 import { getContractTicker } from '@/utils/formatting/tickerUtils';
@@ -26,6 +27,7 @@ const MobileBracketInputs = ({
   chartCurrentPrice,
   multiAccountTrading,
   timeInForce = 'GTC',
+  onPlaceOnChart,
 }) => {
   const toast = useToast();
   const symbol = normalizeSymbol(chartSymbol || 'NQ');
@@ -225,15 +227,71 @@ const MobileBracketInputs = ({
         </HStack>
       </Box>
 
+      {/* Quantity */}
+      <Box>
+        <Text fontSize="xs" color="whiteAlpha.500" mb={1.5} fontWeight="medium">
+          Quantity
+        </Text>
+        <HStack spacing={0} bg="whiteAlpha.100" borderRadius="lg" p={0.5}>
+          <Button
+            h="44px" w="44px" minW="44px" variant="ghost"
+            color="whiteAlpha.700"
+            _hover={{ bg: 'whiteAlpha.200', color: 'white' }}
+            _active={{ bg: 'whiteAlpha.300' }}
+            onClick={() => {
+              const first = activeAccounts[0];
+              if (first) multiAccountTrading.setAccountQuantity(first.account_id, Math.max(1, (first.quantity || 1) - 1));
+            }}
+            borderRadius="md"
+          >
+            <Minus size={18} />
+          </Button>
+          <Text flex="1" textAlign="center" fontSize="lg" fontWeight="bold" color="white" minW="48px" userSelect="none">
+            {totalContracts || 1}
+          </Text>
+          <Button
+            h="44px" w="44px" minW="44px" variant="ghost"
+            color="whiteAlpha.700"
+            _hover={{ bg: 'whiteAlpha.200', color: 'white' }}
+            _active={{ bg: 'whiteAlpha.300' }}
+            onClick={() => {
+              const first = activeAccounts[0];
+              if (first) multiAccountTrading.setAccountQuantity(first.account_id, Math.min(999, (first.quantity || 1) + 1));
+            }}
+            borderRadius="md"
+          >
+            <Plus size={18} />
+          </Button>
+        </HStack>
+      </Box>
+
       {/* Entry Price */}
       <Box>
         <Flex justify="space-between" align="center" mb={1.5}>
           <Text fontSize="xs" color="whiteAlpha.500" fontWeight="medium">
             Entry Price
           </Text>
-          <Text fontSize="10px" color="whiteAlpha.400" fontFamily="mono">
-            Mkt: {formattedPrice}
-          </Text>
+          <HStack spacing={2}>
+            {onPlaceOnChart && (
+              <Button
+                size="xs"
+                variant="ghost"
+                color="purple.300"
+                fontSize="10px"
+                fontWeight="medium"
+                leftIcon={<Crosshair size={12} />}
+                _hover={{ bg: 'purple.900', color: 'purple.200' }}
+                onClick={onPlaceOnChart}
+                h="20px"
+                px={2}
+              >
+                Place on Chart
+              </Button>
+            )}
+            <Text fontSize="10px" color="whiteAlpha.400" fontFamily="mono">
+              Mkt: {formattedPrice}
+            </Text>
+          </HStack>
         </Flex>
         <Input
           value={entryPrice}
