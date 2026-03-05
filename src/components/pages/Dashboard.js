@@ -8,7 +8,8 @@ import {
     useToast,
     Alert,
     AlertIcon,
-    Button
+    Button,
+    useBreakpointValue,
 } from '@chakra-ui/react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -33,6 +34,9 @@ import { useUnifiedStrategies } from '@/hooks/useUnifiedStrategies';
 import useCopyTrading from '@/hooks/useCopyTrading';
 import { useWebSocketContext } from '@/services/websocket-proxy/contexts/WebSocketContext';
 import webSocketManager from '@/services/websocket-proxy/WebSocketManager';
+
+// Mobile components
+import { MobileBottomSheet, MobileActionBar, MobileOrderTicket, PositionCard, OrderCard, MobileAccountsTab, MobileStrategiesTab } from '../features/trading/mobile';
 
 // Lazy loaded components
 const StrategyGroups = lazy(() => import('../features/strategies/ActivateStrategies'));
@@ -122,6 +126,11 @@ const DashboardContent = () => {
     // Trading panel collapse state
     const [isTradingPanelCollapsed, setIsTradingPanelCollapsed] = useState(false);
 
+    // Mobile detection + mobile-specific state
+    const isMobile = useBreakpointValue({ base: true, md: false });
+    const [mobileActiveTab, setMobileActiveTab] = useState('positions');
+    const [isOrderTicketOpen, setIsOrderTicketOpen] = useState(false);
+
     // Poll chart's last bar close for live P&L calculation (~1s)
     useEffect(() => {
         if (!activeChart) return;
@@ -158,7 +167,7 @@ const DashboardContent = () => {
     const { hasMemberChat, hasAriaAssistant } = useFeatureFlags();
 
     // Multi-account trading hooks
-    const { getConnectionState: wsGetConnectionState } = useWebSocketContext();
+    const { getConnectionState: wsGetConnectionState, sendMessage: wsSendMessage, getAccountData: wsGetAccountData } = useWebSocketContext();
     const { strategies: activatedStrategies } = useUnifiedStrategies();
     const copyTrading = useCopyTrading();
     const copyTradingData = {
@@ -447,6 +456,55 @@ const DashboardContent = () => {
         }
     }, [multiAccountTrading, chartSymbol, toast]);
 
+    // Mobile: computed values for bottom sheet
+    const mobileOpenPositions = useMemo(
+        () => aggregatedPositions.filter(
+            (p) => p && !p.isClosed && p.side !== 'FLAT' && (p.quantity > 0 || Math.abs(p.netPos || 0) > 0)
+        ),
+        [aggregatedPositions]
+    );
+    const mobileWorkingOrders = useMemo(
+        () => aggregatedOrders.filter((o) => {
+            if (!o || !o.orderId) return false;
+            return o.ordStatus === 'Working' || o.status === 'Working' || o.ordStatus === 6;
+        }),
+        [aggregatedOrders]
+    );
+    const mobileTotalOpenPnL = useMemo(
+        () => mobileOpenPositions.reduce((sum, p) => sum + (p.unrealizedPnL || 0), 0),
+        [mobileOpenPositions]
+    );
+
+    // Mobile: close position handler (via WebSocket for speed)
+    const handleMobileClosePosition = useCallback(async (pos) => {
+        const accountId = pos._accountId || pos.accountId;
+        const brokerId = pos._brokerId || pos.brokerId;
+        if (!accountId || !brokerId) return;
+        try {
+            const closeSide = pos.side === 'LONG' ? 'SELL' : 'BUY';
+            const qty = pos.quantity || Math.abs(pos.netPos || 0);
+            await wsSendMessage(brokerId, accountId, {
+                type: 'submit_order',
+                data: { symbol: pos.symbol, side: closeSide, quantity: qty, orderType: 'MARKET', accountId },
+            });
+            toast({ title: 'Close order submitted', status: 'success', duration: 2000 });
+        } catch (err) {
+            toast({ title: 'Failed to close', description: err.message, status: 'error', duration: 4000 });
+        }
+    }, [wsSendMessage, toast]);
+
+    // Mobile: cancel order handler
+    const handleMobileCancelOrder = useCallback(async (ord) => {
+        const accountId = ord._accountId || ord.accountId;
+        if (!accountId) return;
+        try {
+            await axiosInstance.delete(`/api/v1/brokers/accounts/${accountId}/orders/${ord.orderId}`);
+            toast({ title: 'Order cancelled', status: 'success', duration: 2000 });
+        } catch (err) {
+            toast({ title: 'Failed to cancel', description: err.response?.data?.detail || err.message, status: 'error', duration: 4000 });
+        }
+    }, [toast]);
+
     // Loading state - wait for both auth and dashboard data
     if (isLoading || authLoading || !user) {
         return <LoadingSpinner />;
@@ -462,10 +520,154 @@ const DashboardContent = () => {
         );
     }
 
+    // Mobile Dashboard renderer
+    const renderMobileDashboard = () => (
+        <ErrorBoundary>
+            {/* Payment Status Warning */}
+            <PaymentStatusWarning />
+
+            {/* Full-screen chart */}
+            <Box
+                position="relative"
+                h="calc(100vh - 200px)"
+                bg="whiteAlpha.100"
+                borderRadius="xl"
+                overflow="hidden"
+                mx={-3}
+                mt={-3}
+            >
+                <ErrorBoundary>
+                    <Suspense fallback={<LoadingSpinner />}>
+                        <TradingViewWidget
+                            onWidgetReady={(w, c) => setActiveChart(c)}
+                            onSymbolChanged={setChartSymbol}
+                            onChartOrder={handleChartOrder}
+                            activeAccount={multiAccountTrading.activeCount > 0 ? { accountId: 'multi' } : null}
+                            currentQuantity={multiAccountTrading.totalContracts}
+                            selectionMode={multiAccountTrading.activeCount > 0 ? 'multi' : 'single'}
+                            groupInfo={multiAccountTrading.activeCount > 0 ? { groupName: `${multiAccountTrading.totalContracts} cts / ${multiAccountTrading.activeCount} acct${multiAccountTrading.activeCount !== 1 ? 's' : ''}` } : null}
+                        />
+                    </Suspense>
+                </ErrorBoundary>
+                {/* Position/order lines on chart */}
+                <ChartTradingOverlay
+                    activeChart={activeChart}
+                    positionLines={chartTrading.positionLines}
+                    orderLines={chartTrading.orderLines}
+                    bracketPlacement={bracketPlacement}
+                    totalQuantity={multiAccountTrading.totalContracts}
+                />
+            </Box>
+
+            {/* Mobile Action Bar — floating BUY/SELL */}
+            <MobileActionBar
+                chartSymbol={chartSymbol}
+                chartCurrentPrice={chartCurrentPrice}
+                multiAccountTrading={multiAccountTrading}
+                positions={aggregatedPositions}
+                copyTrading={copyTrading}
+                onExpandOrderTicket={() => setIsOrderTicketOpen(true)}
+            />
+
+            {/* Mobile Order Ticket — expandable order entry */}
+            <MobileOrderTicket
+                isOpen={isOrderTicketOpen}
+                onClose={() => setIsOrderTicketOpen(false)}
+                chartSymbol={chartSymbol}
+                chartCurrentPrice={chartCurrentPrice}
+                multiAccountTrading={multiAccountTrading}
+                positions={aggregatedPositions}
+                orders={aggregatedOrders}
+                copyTrading={copyTrading}
+            />
+
+            {/* Mobile Bottom Sheet — positions, orders, accounts, strategies */}
+            <MobileBottomSheet
+                positions={aggregatedPositions}
+                orders={aggregatedOrders}
+                accounts={dashboardData.accounts}
+                positionsCount={mobileOpenPositions.length}
+                ordersCount={mobileWorkingOrders.length}
+                accountsCount={dashboardData.accounts.length}
+                totalOpenPnL={mobileTotalOpenPnL}
+                activeTab={mobileActiveTab}
+                onTabChange={setMobileActiveTab}
+            >
+                {mobileActiveTab === 'positions' && (
+                    mobileOpenPositions.length === 0 ? (
+                        <Flex justify="center" align="center" minH="80px">
+                            <Text fontSize="sm" color="whiteAlpha.400">No open positions</Text>
+                        </Flex>
+                    ) : (
+                        <VStack spacing={2} align="stretch">
+                            {mobileOpenPositions.map((pos, i) => (
+                                <PositionCard
+                                    key={`${pos._accountId}-${pos.positionId || i}`}
+                                    position={pos}
+                                    onClose={handleMobileClosePosition}
+                                />
+                            ))}
+                        </VStack>
+                    )
+                )}
+                {mobileActiveTab === 'orders' && (
+                    mobileWorkingOrders.length === 0 ? (
+                        <Flex justify="center" align="center" minH="80px">
+                            <Text fontSize="sm" color="whiteAlpha.400">No working orders</Text>
+                        </Flex>
+                    ) : (
+                        <VStack spacing={2} align="stretch">
+                            {mobileWorkingOrders.map((ord, i) => (
+                                <OrderCard
+                                    key={`${ord._accountId}-${ord.orderId || i}`}
+                                    order={ord}
+                                    onCancel={handleMobileCancelOrder}
+                                />
+                            ))}
+                        </VStack>
+                    )
+                )}
+                {mobileActiveTab === 'accounts' && (
+                    <MobileAccountsTab
+                        accounts={dashboardData.accounts}
+                        multiAccountTrading={multiAccountTrading}
+                        aggregatedPositions={aggregatedPositions}
+                        copyTrading={copyTrading}
+                        getConnectionState={wsGetConnectionState}
+                        getAccountData={wsGetAccountData}
+                        onConnectAccount={() => {}}
+                        onEditName={() => {}}
+                        onDelete={() => {}}
+                        onPowerToggle={() => {}}
+                        onRestart={() => {}}
+                        onCopyMyTrades={() => {}}
+                        onEditCopySettings={() => {}}
+                        onStopCopying={() => {}}
+                        onPauseCopying={() => {}}
+                    />
+                )}
+                {mobileActiveTab === 'strategies' && (
+                    <MobileStrategiesTab
+                        strategies={dashboardData.strategies}
+                        accounts={dashboardData.accounts}
+                        accountConfigs={multiAccountTrading.accountConfigs}
+                        strategyBoundAccountIds={multiAccountTrading.strategyBoundAccountIds}
+                    />
+                )}
+            </MobileBottomSheet>
+        </ErrorBoundary>
+    );
+
     const renderContent = () => {
-        console.log('🔍 Dashboard: Rendering content for selectedItem:', selectedItem);
+        console.log('Dashboard: Rendering content for selectedItem:', selectedItem);
         switch (selectedItem) {
             case 'Dashboard':
+                // Mobile layout — full screen chart + floating action bar + bottom sheet
+                if (isMobile) {
+                    return renderMobileDashboard();
+                }
+
+                // Desktop layout — unchanged
                 return (
                     <ErrorBoundary>
                         <VStack spacing={4} align="stretch" h="full">
@@ -649,15 +851,15 @@ const DashboardContent = () => {
                     flexGrow={1}
                     ml={{ base: 0, md: 16 }}
                     mt={{ base: 0, md: 0 }}
-                    mb={{ base: "70px", md: 0 }} // Add bottom margin for mobile to account for bottom nav
+                    mb={{ base: isMobile ? 0 : "70px", md: 0 }}
                     transition="margin-right 0.3s cubic-bezier(0.4, 0, 0.2, 1)"
                 >
                     <Box
                         className="dashboard-content-scroll"
-                        h={{ base: "auto", md: "100vh" }}
+                        h={{ base: isMobile ? "100vh" : "auto", md: "100vh" }}
                         w="full"
-                        p={{ base: 3, md: 6 }}
-                        overflow="auto"
+                        p={{ base: isMobile ? 0 : 3, md: 6 }}
+                        overflow={isMobile ? "hidden" : "auto"}
                         position="relative"
                     >
                         {/* Background Effects */}
