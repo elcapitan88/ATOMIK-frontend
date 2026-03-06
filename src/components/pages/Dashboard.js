@@ -267,11 +267,6 @@ const DashboardContent = () => {
         localStorage.setItem('atomik_skip_order_confirm', String(next));
     }, [skipOrderConfirmation]);
 
-    // Pull-to-refresh handler for mobile bottom sheet
-    const handleMobileRefresh = useCallback(() => {
-        return loadDashboardData({ showLoading: false });
-    }, [loadDashboardData]);
-
     // Set up API request interception for caching
     useEffect(() => {
         // Store original fetch
@@ -411,6 +406,11 @@ const DashboardContent = () => {
             if (showLoading) setIsLoading(false);
         }
     }, [toast]);
+
+    // Pull-to-refresh handler for mobile bottom sheet
+    const handleMobileRefresh = useCallback(() => {
+        return loadDashboardData({ showLoading: false });
+    }, [loadDashboardData]);
 
     // Initial data loading
     useEffect(() => {
