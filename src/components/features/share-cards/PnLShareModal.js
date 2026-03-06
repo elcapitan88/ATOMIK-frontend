@@ -10,7 +10,6 @@ import {
   HStack,
   Text,
   Button,
-  IconButton,
   Spinner,
   useToast,
   Switch,
@@ -18,6 +17,7 @@ import {
   Box,
   Icon,
   Tooltip,
+  useBreakpointValue,
 } from '@chakra-ui/react';
 import {
   Download,
@@ -48,18 +48,28 @@ const FORMATS = [
   { label: 'Story', value: 'story', icon: Smartphone, desc: 'IG Stories (1080x1920)' },
 ];
 
-// Preview scale factors to fit inside the modal
-const PREVIEW_SCALES = {
-  square: 0.38,
-  landscape: 0.45,
-  story: 0.25,
+const FORMAT_DIMS = {
+  square: { w: 1080, h: 1080 },
+  landscape: { w: 1200, h: 675 },
+  story: { w: 1080, h: 1920 },
 };
 
-// Approximate preview heights so the modal doesn't jump around
-const PREVIEW_HEIGHTS = {
-  square: '420px',
-  landscape: '315px',
-  story: '490px',
+/** Detect if Web Share API supports file sharing */
+const canNativeShare = () => {
+  try {
+    return !!navigator.share && !!navigator.canShare;
+  } catch {
+    return false;
+  }
+};
+
+/** Calculate preview scale dynamically based on container width */
+const calcPreviewScale = (format, containerWidth) => {
+  if (!containerWidth) return 0.35;
+  const dims = FORMAT_DIMS[format];
+  // Leave 32px padding on each side
+  const available = containerWidth - 32;
+  return Math.min(available / dims.w, 0.45);
 };
 
 const PnLShareModal = ({ isOpen, onClose }) => {
@@ -68,13 +78,25 @@ const PnLShareModal = ({ isOpen, onClose }) => {
   const username = user?.username || user?.email?.split('@')[0] || '';
   const cardRef = useRef(null);
   const exportCardRef = useRef(null);
+  const previewContainerRef = useRef(null);
   const { cardData, isLoading, error, fetchCardData } = useShareCard();
 
+  const isMobile = useBreakpointValue({ base: true, md: false });
+
+  // Default to 'story' on mobile, 'square' on desktop
   const [selectedFormat, setSelectedFormat] = useState('square');
   const [selectedPeriod, setSelectedPeriod] = useState(1);
   const [privacyMode, setPrivacyMode] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [showFullScreen, setShowFullScreen] = useState(false);
+  const [previewScale, setPreviewScale] = useState(0.35);
+
+  // Set default format based on device when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      setSelectedFormat(isMobile ? 'story' : 'square');
+    }
+  }, [isOpen, isMobile]);
 
   // Fetch data when modal opens or period changes
   useEffect(() => {
@@ -82,6 +104,29 @@ const PnLShareModal = ({ isOpen, onClose }) => {
       fetchCardData(selectedPeriod);
     }
   }, [isOpen, selectedPeriod, fetchCardData]);
+
+  // Dynamically calculate preview scale from container width
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const updateScale = () => {
+      const el = previewContainerRef.current;
+      if (el) {
+        setPreviewScale(calcPreviewScale(selectedFormat, el.clientWidth));
+      }
+    };
+
+    // Run after a frame so the DOM is measured
+    const raf = requestAnimationFrame(updateScale);
+    window.addEventListener('resize', updateScale);
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener('resize', updateScale);
+    };
+  }, [isOpen, selectedFormat]);
+
+  // Compute preview height from scale + format dimensions
+  const previewHeight = FORMAT_DIMS[selectedFormat].h * previewScale + 32;
 
   // Capture the hidden full-size card (not the scaled preview)
   const captureCard = useCallback(async () => {
@@ -176,30 +221,107 @@ const PnLShareModal = ({ isOpen, onClose }) => {
     }
   }, [captureCard, toast, handleDownload]);
 
+  // Native share (mobile) — uses Web Share API with file
+  const handleNativeShare = useCallback(async () => {
+    setIsExporting(true);
+    try {
+      const canvas = await captureCard();
+      if (!canvas) return;
+
+      const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
+      const file = new File([blob], `atomik-pnl-${selectedFormat}.png`, { type: 'image/png' });
+
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({
+          files: [file],
+          title: 'My Atomik P&L',
+          text: 'Check out my trading performance on Atomik Trading!',
+        });
+        toast({ title: 'Shared!', status: 'success', duration: 2000 });
+      } else {
+        // Fallback to download if file sharing not supported
+        handleDownload();
+      }
+    } catch (err) {
+      // User cancelled share — not an error
+      if (err.name !== 'AbortError') {
+        toast({
+          title: 'Share failed',
+          description: err.message,
+          status: 'error',
+          duration: 4000,
+          isClosable: true,
+        });
+      }
+    } finally {
+      setIsExporting(false);
+    }
+  }, [captureCard, selectedFormat, toast, handleDownload]);
+
+  // Mobile layout — bottom-sheet style
+  const modalProps = isMobile
+    ? {
+        motionPreset: 'slideInBottom',
+        size: 'full',
+      }
+    : {
+        size: '2xl',
+      };
+
+  const contentProps = isMobile
+    ? {
+        borderRadius: '2xl 2xl 0 0',
+        borderBottomRadius: 0,
+        position: 'fixed',
+        bottom: 0,
+        mb: 0,
+        maxH: '92vh',
+        maxW: '100vw',
+      }
+    : {
+        borderRadius: 'xl',
+        maxW: '680px',
+      };
+
   return (
-    <Modal isOpen={isOpen} onClose={onClose} size="2xl" scrollBehavior="inside">
+    <Modal isOpen={isOpen} onClose={onClose} scrollBehavior="inside" {...modalProps}>
       <ModalOverlay bg="blackAlpha.400" backdropFilter="blur(10px)" />
       <ModalContent
         bg="rgba(0, 0, 0, 0.75)"
         backdropFilter="blur(10px)"
         boxShadow="0 8px 32px 0 rgba(0, 0, 0, 0.5)"
         border="1px solid rgba(255, 255, 255, 0.1)"
-        borderRadius="xl"
         color="white"
-        maxW="680px"
+        {...contentProps}
       >
-        <ModalHeader borderBottom="1px solid rgba(255, 255, 255, 0.1)" pb={4}>
+        {/* Drag indicator for mobile */}
+        {isMobile && (
+          <Flex justify="center" pt={2} pb={0}>
+            <Box w="36px" h="4px" borderRadius="full" bg="whiteAlpha.400" />
+          </Flex>
+        )}
+
+        <ModalHeader
+          borderBottom="1px solid rgba(255, 255, 255, 0.1)"
+          pb={isMobile ? 3 : 4}
+          pt={isMobile ? 2 : 4}
+          px={isMobile ? 4 : 6}
+        >
           <HStack spacing={3}>
             <Icon as={Share2} boxSize="20px" color="#00C6E0" />
-            <Text fontSize="lg" fontWeight={600}>
+            <Text fontSize={isMobile ? 'md' : 'lg'} fontWeight={600}>
               Share Your P&L
             </Text>
           </HStack>
         </ModalHeader>
         <ModalCloseButton color="white" _hover={{ bg: 'whiteAlpha.200' }} />
 
-        <ModalBody py={6}>
-          <VStack spacing={5}>
+        <ModalBody
+          py={isMobile ? 4 : 6}
+          px={isMobile ? 3 : 6}
+          pb={isMobile ? `calc(16px + env(safe-area-inset-bottom, 0px))` : 6}
+        >
+          <VStack spacing={isMobile ? 4 : 5}>
             {/* Period Selector */}
             <HStack spacing={2} w="full" justify="center">
               {PERIODS.map((p) => (
@@ -214,6 +336,8 @@ const PnLShareModal = ({ isOpen, onClose }) => {
                     bg: selectedPeriod === p.value ? '#00b0c8' : 'whiteAlpha.100',
                   }}
                   onClick={() => setSelectedPeriod(p.value)}
+                  flex={isMobile ? 1 : undefined}
+                  h={isMobile ? '40px' : undefined}
                 >
                   {p.label}
                 </Button>
@@ -222,9 +346,10 @@ const PnLShareModal = ({ isOpen, onClose }) => {
 
             {/* Format Selector */}
             <HStack spacing={2} w="full" justify="center">
-              {FORMATS.map((f) => (
-                <Tooltip key={f.value} label={f.desc} placement="top" hasArrow>
+              {FORMATS.map((f) => {
+                const btn = (
                   <Button
+                    key={f.value}
                     size="sm"
                     variant={selectedFormat === f.value ? 'solid' : 'outline'}
                     bg={selectedFormat === f.value ? '#00C6E0' : 'transparent'}
@@ -235,11 +360,21 @@ const PnLShareModal = ({ isOpen, onClose }) => {
                     }}
                     leftIcon={<f.icon size={14} />}
                     onClick={() => setSelectedFormat(f.value)}
+                    flex={isMobile ? 1 : undefined}
+                    h={isMobile ? '40px' : undefined}
                   >
                     {f.label}
                   </Button>
-                </Tooltip>
-              ))}
+                );
+                // Skip Tooltip on mobile (tooltips don't work well with touch)
+                return isMobile ? (
+                  <React.Fragment key={f.value}>{btn}</React.Fragment>
+                ) : (
+                  <Tooltip key={f.value} label={f.desc} placement="top" hasArrow>
+                    {btn}
+                  </Tooltip>
+                );
+              })}
             </HStack>
 
             {/* Privacy Toggle */}
@@ -264,6 +399,7 @@ const PnLShareModal = ({ isOpen, onClose }) => {
 
             {/* Card Preview */}
             <Box
+              ref={previewContainerRef}
               w="full"
               overflow="hidden"
               bg="rgba(0,0,0,0.3)"
@@ -273,8 +409,9 @@ const PnLShareModal = ({ isOpen, onClose }) => {
               justifyContent="center"
               alignItems="flex-start"
               p={4}
-              minH="300px"
-              h={PREVIEW_HEIGHTS[selectedFormat]}
+              minH={isMobile ? '200px' : '300px'}
+              h={`${previewHeight}px`}
+              maxH={isMobile ? '50vh' : undefined}
             >
               {isLoading ? (
                 <Flex h="full" w="full" align="center" justify="center">
@@ -293,7 +430,7 @@ const PnLShareModal = ({ isOpen, onClose }) => {
                 </Flex>
               ) : cardData ? (
                 <Box
-                  transform={`scale(${PREVIEW_SCALES[selectedFormat]})`}
+                  transform={`scale(${previewScale})`}
                   transformOrigin="top center"
                 >
                   <PnLShareCard
@@ -314,47 +451,105 @@ const PnLShareModal = ({ isOpen, onClose }) => {
             </Box>
 
             {/* Action Buttons */}
-            <HStack spacing={3} w="full" justify="center" pt={1}>
-              <Tooltip label="Immersive fullscreen with live particles" placement="top" hasArrow>
+            {isMobile ? (
+              <VStack spacing={2} w="full" pt={1}>
+                {/* Primary: Native Share on mobile (if supported) */}
+                {canNativeShare() && (
+                  <Button
+                    leftIcon={<Share2 size={16} />}
+                    bg="#00C6E0"
+                    color="black"
+                    _hover={{ bg: '#00b0c8' }}
+                    _active={{ bg: '#0099aa' }}
+                    onClick={handleNativeShare}
+                    isLoading={isExporting}
+                    isDisabled={!cardData || isLoading}
+                    size="lg"
+                    w="full"
+                    borderRadius="xl"
+                    h="48px"
+                  >
+                    Share
+                  </Button>
+                )}
+                <HStack spacing={2} w="full">
+                  <Button
+                    leftIcon={<Download size={16} />}
+                    bg={canNativeShare() ? 'transparent' : '#00C6E0'}
+                    color={canNativeShare() ? 'white' : 'black'}
+                    variant={canNativeShare() ? 'outline' : 'solid'}
+                    borderColor="whiteAlpha.300"
+                    _hover={{ bg: canNativeShare() ? 'whiteAlpha.100' : '#00b0c8' }}
+                    onClick={handleDownload}
+                    isLoading={isExporting}
+                    isDisabled={!cardData || isLoading}
+                    size="md"
+                    flex={1}
+                    borderRadius="xl"
+                    h="44px"
+                  >
+                    Save
+                  </Button>
+                  <Button
+                    leftIcon={<Maximize2 size={16} />}
+                    variant="outline"
+                    borderColor="cyan.700"
+                    color="#00C6E0"
+                    _hover={{ bg: 'rgba(0, 198, 224, 0.1)', borderColor: '#00C6E0' }}
+                    onClick={() => setShowFullScreen(true)}
+                    isDisabled={!cardData || isLoading}
+                    size="md"
+                    flex={1}
+                    borderRadius="xl"
+                    h="44px"
+                  >
+                    View
+                  </Button>
+                </HStack>
+              </VStack>
+            ) : (
+              <HStack spacing={3} w="full" justify="center" pt={1}>
+                <Tooltip label="Immersive fullscreen with live particles" placement="top" hasArrow>
+                  <Button
+                    leftIcon={<Maximize2 size={16} />}
+                    variant="outline"
+                    borderColor="cyan.700"
+                    color="#00C6E0"
+                    _hover={{ bg: 'rgba(0, 198, 224, 0.1)', borderColor: '#00C6E0' }}
+                    onClick={() => setShowFullScreen(true)}
+                    isDisabled={!cardData || isLoading}
+                    size="md"
+                  >
+                    View
+                  </Button>
+                </Tooltip>
                 <Button
-                  leftIcon={<Maximize2 size={16} />}
-                  variant="outline"
-                  borderColor="cyan.700"
-                  color="#00C6E0"
-                  _hover={{ bg: 'rgba(0, 198, 224, 0.1)', borderColor: '#00C6E0' }}
-                  onClick={() => setShowFullScreen(true)}
+                  leftIcon={<Download size={16} />}
+                  bg="#00C6E0"
+                  color="black"
+                  _hover={{ bg: '#00b0c8' }}
+                  onClick={handleDownload}
+                  isLoading={isExporting}
                   isDisabled={!cardData || isLoading}
                   size="md"
                 >
-                  View
+                  Download
                 </Button>
-              </Tooltip>
-              <Button
-                leftIcon={<Download size={16} />}
-                bg="#00C6E0"
-                color="black"
-                _hover={{ bg: '#00b0c8' }}
-                onClick={handleDownload}
-                isLoading={isExporting}
-                isDisabled={!cardData || isLoading}
-                size="md"
-              >
-                Download
-              </Button>
-              <Button
-                leftIcon={<Copy size={16} />}
-                variant="outline"
-                borderColor="whiteAlpha.300"
-                color="white"
-                _hover={{ bg: 'whiteAlpha.100' }}
-                onClick={handleCopy}
-                isLoading={isExporting}
-                isDisabled={!cardData || isLoading}
-                size="md"
-              >
-                Copy
-              </Button>
-            </HStack>
+                <Button
+                  leftIcon={<Copy size={16} />}
+                  variant="outline"
+                  borderColor="whiteAlpha.300"
+                  color="white"
+                  _hover={{ bg: 'whiteAlpha.100' }}
+                  onClick={handleCopy}
+                  isLoading={isExporting}
+                  isDisabled={!cardData || isLoading}
+                  size="md"
+                >
+                  Copy
+                </Button>
+              </HStack>
+            )}
           </VStack>
         </ModalBody>
       </ModalContent>

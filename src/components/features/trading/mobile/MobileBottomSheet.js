@@ -267,23 +267,23 @@ const MobileBottomSheet = ({
                 />
               )}
 
-              {/* Share P&L button — visible when sheet is not at peek */}
+              {/* Share P&L button — always visible in peek bar */}
               {onSharePnL && (
                 <IconButton
-                  icon={<Share2 size={16} />}
-                  size="xs"
+                  icon={<Share2 size={18} />}
+                  size="sm"
                   variant="ghost"
-                  color="whiteAlpha.500"
+                  color="cyan.400"
                   aria-label="Share P&L"
-                  _hover={{ bg: 'whiteAlpha.100', color: 'cyan.400' }}
-                  _active={{ bg: 'whiteAlpha.200' }}
+                  _hover={{ bg: 'rgba(0, 198, 224, 0.15)', color: 'cyan.300' }}
+                  _active={{ bg: 'rgba(0, 198, 224, 0.25)' }}
                   onClick={(e) => {
                     e.stopPropagation();
                     onSharePnL();
                   }}
                   borderRadius="md"
-                  minW="32px"
-                  h="32px"
+                  minW="36px"
+                  h="36px"
                 />
               )}
 

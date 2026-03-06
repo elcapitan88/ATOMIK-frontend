@@ -7,7 +7,7 @@ import {
   Tooltip,
   useToast,
 } from '@chakra-ui/react';
-import { X, Download, Copy } from 'lucide-react';
+import { X, Download, Copy, Share2 } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import ParticleBackground from '../../pages/Homepage/ParticleBackground';
 import PnLShareCard from './PnLShareCard';
@@ -18,14 +18,18 @@ const FORMAT_DIMS = {
   story: { w: 1080, h: 1920 },
 };
 
+const SWIPE_DISMISS_THRESHOLD = 120;
+
 /**
  * PnLFullScreenView — immersive fullscreen overlay with live particle background.
  *
  * Renders the PnL card with a transparent background so the animated
  * particle constellation shows through, matching the homepage/auth vibe.
  *
- * For image export, a hidden copy of the card with the static PNG background
- * is captured instead (html2canvas cannot capture animated canvas).
+ * Mobile enhancements:
+ * - Swipe down to dismiss
+ * - Safe area inset padding for notched devices
+ * - Native share button via Web Share API
  */
 const PnLFullScreenView = ({ isOpen, onClose, cardData, format = 'square', privacyMode = false, username = '' }) => {
   const toast = useToast();
@@ -33,14 +37,19 @@ const PnLFullScreenView = ({ isOpen, onClose, cardData, format = 'square', priva
   const [scale, setScale] = useState(0.5);
   const [isExporting, setIsExporting] = useState(false);
 
+  // Swipe-to-dismiss state
+  const [dragY, setDragY] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const touchStartRef = useRef(null);
+
   // Calculate optimal scale to fit card in viewport
   useEffect(() => {
     if (!isOpen) return;
 
     const calcScale = () => {
       const dims = FORMAT_DIMS[format];
-      const vw = window.innerWidth * 0.85;
-      const vh = window.innerHeight * 0.75;
+      const vw = window.innerWidth * 0.9;
+      const vh = window.innerHeight * 0.7;
       const sx = vw / dims.w;
       const sy = vh / dims.h;
       setScale(Math.min(sx, sy, 1));
@@ -70,6 +79,30 @@ const PnLFullScreenView = ({ isOpen, onClose, cardData, format = 'square', priva
     window.addEventListener('keydown', handleKey);
     return () => window.removeEventListener('keydown', handleKey);
   }, [isOpen, onClose]);
+
+  // Swipe-to-dismiss handlers
+  const handleTouchStart = useCallback((e) => {
+    touchStartRef.current = e.touches[0].clientY;
+    setIsDragging(true);
+  }, []);
+
+  const handleTouchMove = useCallback((e) => {
+    if (touchStartRef.current === null) return;
+    const dy = e.touches[0].clientY - touchStartRef.current;
+    // Only allow downward dragging
+    if (dy > 0) {
+      setDragY(dy);
+    }
+  }, []);
+
+  const handleTouchEnd = useCallback(() => {
+    if (dragY > SWIPE_DISMISS_THRESHOLD) {
+      onClose();
+    }
+    setDragY(0);
+    setIsDragging(false);
+    touchStartRef.current = null;
+  }, [dragY, onClose]);
 
   // Capture the hidden export card (with static background) for download
   const captureCard = useCallback(async () => {
@@ -131,7 +164,39 @@ const PnLFullScreenView = ({ isOpen, onClose, cardData, format = 'square', priva
     }
   }, [captureCard, toast, handleDownload]);
 
+  const handleNativeShare = useCallback(async () => {
+    setIsExporting(true);
+    try {
+      const canvas = await captureCard();
+      if (!canvas) return;
+      const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
+      const file = new File([blob], `atomik-pnl-${format}.png`, { type: 'image/png' });
+
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({
+          files: [file],
+          title: 'My Atomik P&L',
+          text: 'Check out my trading performance on Atomik Trading!',
+        });
+      } else {
+        handleDownload();
+      }
+    } catch (err) {
+      if (err.name !== 'AbortError') {
+        toast({ title: 'Share failed', description: err.message, status: 'error', duration: 4000 });
+      }
+    } finally {
+      setIsExporting(false);
+    }
+  }, [captureCard, format, toast, handleDownload]);
+
+  const hasNativeShare = typeof navigator !== 'undefined' && !!navigator.share && !!navigator.canShare;
+
   if (!isOpen || !cardData) return null;
+
+  // Swipe visual feedback: translate + fade
+  const swipeOpacity = isDragging ? Math.max(1 - dragY / 300, 0.3) : 1;
+  const swipeTranslate = isDragging ? dragY : 0;
 
   return (
     <Box
@@ -143,6 +208,9 @@ const PnLFullScreenView = ({ isOpen, onClose, cardData, format = 'square', priva
       alignItems="center"
       justifyContent="center"
       flexDirection="column"
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
     >
       {/* Live particle background */}
       <ParticleBackground />
@@ -155,12 +223,12 @@ const PnLFullScreenView = ({ isOpen, onClose, cardData, format = 'square', priva
         pointerEvents="none"
       />
 
-      {/* Close button */}
+      {/* Close button — respects safe area */}
       <Tooltip label="Close (Esc)" placement="left" hasArrow>
         <IconButton
           icon={<X size={20} />}
           position="absolute"
-          top={6}
+          top={`calc(24px + env(safe-area-inset-top, 0px))`}
           right={6}
           zIndex={2}
           variant="ghost"
@@ -173,13 +241,28 @@ const PnLFullScreenView = ({ isOpen, onClose, cardData, format = 'square', priva
         />
       </Tooltip>
 
+      {/* Swipe hint indicator */}
+      <Box
+        position="absolute"
+        top={`calc(12px + env(safe-area-inset-top, 0px))`}
+        left="50%"
+        transform="translateX(-50%)"
+        w="36px"
+        h="4px"
+        borderRadius="full"
+        bg="whiteAlpha.300"
+        zIndex={2}
+        display={{ base: 'block', md: 'none' }}
+      />
+
       {/* Card — transparent background, particles show through */}
       <Box
         position="relative"
         zIndex={1}
-        transform={`scale(${scale})`}
+        transform={`scale(${scale}) translateY(${swipeTranslate}px)`}
         transformOrigin="center center"
-        transition="transform 0.3s ease"
+        transition={isDragging ? 'none' : 'transform 0.3s ease, opacity 0.3s ease'}
+        opacity={swipeOpacity}
       >
         <PnLShareCard
           data={cardData}
@@ -190,10 +273,10 @@ const PnLFullScreenView = ({ isOpen, onClose, cardData, format = 'square', priva
         />
       </Box>
 
-      {/* Action buttons at bottom */}
+      {/* Action buttons at bottom — respects safe area */}
       <HStack
         position="absolute"
-        bottom={8}
+        bottom={`calc(32px + env(safe-area-inset-bottom, 0px))`}
         zIndex={2}
         spacing={3}
         bg="rgba(0, 0, 0, 0.4)"
@@ -203,35 +286,55 @@ const PnLFullScreenView = ({ isOpen, onClose, cardData, format = 'square', priva
         py={3}
         border="1px solid rgba(255, 255, 255, 0.1)"
       >
+        {hasNativeShare && (
+          <Tooltip label="Share to apps" placement="top" hasArrow>
+            <Button
+              leftIcon={<Share2 size={16} />}
+              bg="#00C6E0"
+              color="black"
+              _hover={{ bg: '#00b0c8' }}
+              onClick={handleNativeShare}
+              isLoading={isExporting}
+              size="sm"
+              borderRadius="full"
+            >
+              Share
+            </Button>
+          </Tooltip>
+        )}
         <Tooltip label="Download PNG" placement="top" hasArrow>
           <Button
             leftIcon={<Download size={16} />}
-            bg="#00C6E0"
-            color="black"
-            _hover={{ bg: '#00b0c8' }}
+            bg={hasNativeShare ? 'transparent' : '#00C6E0'}
+            color={hasNativeShare ? 'white' : 'black'}
+            variant={hasNativeShare ? 'outline' : 'solid'}
+            borderColor="whiteAlpha.300"
+            _hover={{ bg: hasNativeShare ? 'whiteAlpha.100' : '#00b0c8' }}
             onClick={handleDownload}
             isLoading={isExporting}
             size="sm"
             borderRadius="full"
           >
-            Download
+            {hasNativeShare ? 'Save' : 'Download'}
           </Button>
         </Tooltip>
-        <Tooltip label="Copy to clipboard" placement="top" hasArrow>
-          <Button
-            leftIcon={<Copy size={16} />}
-            variant="outline"
-            borderColor="whiteAlpha.300"
-            color="white"
-            _hover={{ bg: 'whiteAlpha.100' }}
-            onClick={handleCopy}
-            isLoading={isExporting}
-            size="sm"
-            borderRadius="full"
-          >
-            Copy
-          </Button>
-        </Tooltip>
+        {!hasNativeShare && (
+          <Tooltip label="Copy to clipboard" placement="top" hasArrow>
+            <Button
+              leftIcon={<Copy size={16} />}
+              variant="outline"
+              borderColor="whiteAlpha.300"
+              color="white"
+              _hover={{ bg: 'whiteAlpha.100' }}
+              onClick={handleCopy}
+              isLoading={isExporting}
+              size="sm"
+              borderRadius="full"
+            >
+              Copy
+            </Button>
+          </Tooltip>
+        )}
       </HStack>
 
       {/* Hidden export card — uses static PNG background for html2canvas capture */}
