@@ -1,5 +1,5 @@
 import React, { memo, useMemo } from 'react';
-import { Box, VStack, Flex, Text, Button, Spinner } from '@chakra-ui/react';
+import { Box, VStack, Flex, Text, Button, Skeleton, HStack } from '@chakra-ui/react';
 import { Plus } from 'lucide-react';
 import TradingAccountCard from '../TradingAccountCard';
 
@@ -66,9 +66,21 @@ const MobileAccountsTab = ({
 
   if (isLoading) {
     return (
-      <Flex justify="center" py={8}>
-        <Spinner size="md" color="cyan.400" />
-      </Flex>
+      <VStack spacing={2} align="stretch">
+        {[1, 2, 3].map((i) => (
+          <Box key={i} bg="whiteAlpha.100" borderRadius="lg" borderWidth="1px" borderColor="whiteAlpha.100" p={3}>
+            <HStack spacing={3} mb={2}>
+              <Skeleton w="10px" h="10px" borderRadius="full" startColor="#333" endColor="#555" />
+              <Skeleton h="14px" w="120px" startColor="#333" endColor="#555" borderRadius="md" />
+              <Skeleton h="14px" w="50px" startColor="#333" endColor="#555" borderRadius="md" ml="auto" />
+            </HStack>
+            <HStack spacing={3}>
+              <Skeleton h="12px" w="80px" startColor="#333" endColor="#555" borderRadius="md" />
+              <Skeleton h="12px" w="60px" startColor="#333" endColor="#555" borderRadius="md" ml="auto" />
+            </HStack>
+          </Box>
+        ))}
+      </VStack>
     );
   }
 

@@ -1,5 +1,5 @@
 import React, { memo, useCallback, useMemo } from 'react';
-import { Box, Flex, HStack, Text, Badge, Button, useToast } from '@chakra-ui/react';
+import { Box, Flex, HStack, Text, Badge, Button, Skeleton, useToast } from '@chakra-ui/react';
 import { ChevronUp, Crosshair } from 'lucide-react';
 
 const BOTTOM_NAV_HEIGHT = 64;
@@ -89,7 +89,7 @@ const MobileActionBar = ({
       position="fixed"
       left={0}
       right={0}
-      bottom={`${BOTTOM_NAV_HEIGHT}px`}
+      bottom={`calc(${BOTTOM_NAV_HEIGHT}px + env(safe-area-inset-bottom, 0px))`}
       zIndex={1000}
       px={3}
       pb={2}
@@ -115,9 +115,13 @@ const MobileActionBar = ({
             >
               {symbol}
             </Badge>
-            <Text fontSize="xs" color="whiteAlpha.700" fontFamily="mono">
-              {formattedPrice}
-            </Text>
+            {chartCurrentPrice ? (
+              <Text fontSize="xs" color="whiteAlpha.700" fontFamily="mono">
+                {formattedPrice}
+              </Text>
+            ) : (
+              <Skeleton h="14px" w="65px" startColor="#333" endColor="#555" borderRadius="md" />
+            )}
           </HStack>
         </Box>
 

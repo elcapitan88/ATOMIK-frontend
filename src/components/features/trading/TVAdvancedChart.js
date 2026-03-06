@@ -21,6 +21,7 @@ const TVAdvancedChart = ({
     currentQuantity = 1,
     selectionMode = 'single',
     groupInfo = null,
+    isMobile = false,
 }) => {
     const containerRef = useRef(null);
     const widgetRef = useRef(null);
@@ -79,12 +80,21 @@ const TVAdvancedChart = ({
                     'header_compare',
                     'display_market_status',
                     'header_saveload',
+                    ...(isMobile ? [
+                        'left_toolbar',
+                        'header_widget',
+                        'timeframes_toolbar',
+                        'volume_force_overlay',
+                    ] : []),
                 ],
                 enabled_features: [
                     'study_templates',
                     'create_volume_indicator_by_default',
                     'save_chart_properties_to_local_storage',
                     'side_toolbar_in_fullscreen_mode',
+                    ...(isMobile ? [
+                        'mobile_touch_crosshair',
+                    ] : []),
                 ],
                 fullscreen: fullscreen,
                 autosize: autosize,

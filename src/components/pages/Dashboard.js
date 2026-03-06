@@ -10,6 +10,8 @@ import {
     AlertIcon,
     Button,
     useBreakpointValue,
+    Skeleton,
+    HStack,
 } from '@chakra-ui/react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -26,6 +28,7 @@ import ARIAAssistant from '@/components/ARIA/ARIAAssistant';
 import useChartTrading from '@/hooks/useChartTrading';
 import OrderConfirmationModal from '../features/trading/OrderConfirmationModal';
 import ChartTradingOverlay from '../features/trading/ChartTradingOverlay';
+import { AnimatePresence, motion } from 'framer-motion';
 import logger from '@/utils/logger';
 import useMultiAccountTrading from '@/hooks/useMultiAccountTrading';
 import useAggregatedPositions from '@/hooks/useAggregatedPositions';
@@ -134,6 +137,17 @@ const DashboardContent = () => {
     const [isOrderTicketOpen, setIsOrderTicketOpen] = useState(false);
     const [isShareModalOpen, setIsShareModalOpen] = useState(false);
     const [isBracketChartMode, setIsBracketChartMode] = useState(false);
+
+    // Landscape detection for mobile
+    const [isLandscape, setIsLandscape] = useState(false);
+    useEffect(() => {
+        if (!isMobile) return;
+        const mql = window.matchMedia('(orientation: landscape)');
+        setIsLandscape(mql.matches);
+        const handler = (e) => setIsLandscape(e.matches);
+        mql.addEventListener('change', handler);
+        return () => mql.removeEventListener('change', handler);
+    }, [isMobile]);
 
     // Poll chart's last bar close for live P&L calculation (~1s)
     useEffect(() => {
@@ -253,6 +267,11 @@ const DashboardContent = () => {
         localStorage.setItem('atomik_skip_order_confirm', String(next));
     }, [skipOrderConfirmation]);
 
+    // Pull-to-refresh handler for mobile bottom sheet
+    const handleMobileRefresh = useCallback(() => {
+        return loadDashboardData({ showLoading: false });
+    }, [loadDashboardData]);
+
     // Set up API request interception for caching
     useEffect(() => {
         // Store original fetch
@@ -355,50 +374,50 @@ const DashboardContent = () => {
         }
     }, [isAuthenticated, refreshAuthState]);
 
-    // Initial data loading
-    useEffect(() => {
-        const loadInitialData = async () => {
-            try {
+    // Shared data loader — used by initial load and pull-to-refresh
+    const loadDashboardData = useCallback(async ({ showLoading = true } = {}) => {
+        try {
+            if (showLoading) {
                 setIsLoading(true);
                 setError(null);
-
-                // Use our regular API calls - the intercepted fetch will handle caching
-                const [accountsResponse, strategiesResponse] = await Promise.all([
-                    axiosInstance.get('/api/v1/brokers/accounts'),
-                    axiosInstance.get('/api/v1/marketplace/strategies/available')
-                ]);
-
-                // Store data both in component state and in our cache
-                dataCache.current.accounts = accountsResponse.data;
-                // Extract strategies from unified response format
-                const strategiesData = strategiesResponse.data?.strategies || strategiesResponse.data || [];
-                dataCache.current.strategies = strategiesData;
-
-                setDashboardData({
-                    accounts: accountsResponse.data,
-                    strategies: strategiesData,
-                    activeAccountId: accountsResponse.data[0]?.account_id || null
-                });
-
-            } catch (err) {
-                logger.error('Error loading dashboard data:', err);
-                setError(err);
-                toast({
-                    title: "Error loading dashboard",
-                    description: err.message,
-                    status: "error",
-                    duration: 5000,
-                    isClosable: true,
-                });
-            } finally {
-                setIsLoading(false);
             }
-        };
 
-        if (isAuthenticated) {
-            loadInitialData();
+            const [accountsResponse, strategiesResponse] = await Promise.all([
+                axiosInstance.get('/api/v1/brokers/accounts'),
+                axiosInstance.get('/api/v1/marketplace/strategies/available')
+            ]);
+
+            dataCache.current.accounts = accountsResponse.data;
+            const strategiesData = strategiesResponse.data?.strategies || strategiesResponse.data || [];
+            dataCache.current.strategies = strategiesData;
+
+            setDashboardData({
+                accounts: accountsResponse.data,
+                strategies: strategiesData,
+                activeAccountId: accountsResponse.data[0]?.account_id || null
+            });
+
+        } catch (err) {
+            logger.error('Error loading dashboard data:', err);
+            if (showLoading) setError(err);
+            toast({
+                title: "Error loading dashboard",
+                description: err.message,
+                status: "error",
+                duration: 5000,
+                isClosable: true,
+            });
+        } finally {
+            if (showLoading) setIsLoading(false);
         }
-    }, [isAuthenticated, toast]);
+    }, [toast]);
+
+    // Initial data loading
+    useEffect(() => {
+        if (isAuthenticated) {
+            loadDashboardData();
+        }
+    }, [isAuthenticated, loadDashboardData]);
 
     // Auth check
     useEffect(() => {
@@ -551,6 +570,25 @@ const DashboardContent = () => {
         }
     }, [wsSendMessage, toast]);
 
+    // Mobile: partial close position handler (long-press quick action)
+    const handleMobilePartialClose = useCallback(async (pos, fraction) => {
+        const accountId = pos._accountId || pos.accountId;
+        const brokerId = pos._brokerId || pos.brokerId;
+        if (!accountId || !brokerId) return;
+        try {
+            const closeSide = pos.side === 'LONG' ? 'SELL' : 'BUY';
+            const totalQty = pos.quantity || Math.abs(pos.netPos || 0);
+            const closeQty = Math.max(1, Math.floor(totalQty * fraction));
+            await wsSendMessage(brokerId, accountId, {
+                type: 'submit_order',
+                data: { symbol: pos.symbol, side: closeSide, quantity: closeQty, orderType: 'MARKET', accountId },
+            });
+            toast({ title: `Closing ${closeQty} of ${totalQty}`, status: 'success', duration: 2000 });
+        } catch (err) {
+            toast({ title: 'Failed to close', description: err.message, status: 'error', duration: 4000 });
+        }
+    }, [wsSendMessage, toast]);
+
     // Mobile: cancel order handler
     const handleMobileCancelOrder = useCallback(async (ord) => {
         const accountId = ord._accountId || ord.accountId;
@@ -587,10 +625,10 @@ const DashboardContent = () => {
             {/* Full-screen chart — fills viewport above action bar + bottom nav + peek sheet */}
             <Box
                 position="fixed"
-                top={0}
+                top="env(safe-area-inset-top, 0px)"
                 left={0}
                 right={0}
-                bottom="216px"
+                bottom={isLandscape ? `calc(48px + env(safe-area-inset-bottom, 0px))` : `calc(216px + env(safe-area-inset-bottom, 0px))`}
                 bg="whiteAlpha.100"
                 overflow="hidden"
                 zIndex={1}
@@ -605,6 +643,7 @@ const DashboardContent = () => {
                             currentQuantity={multiAccountTrading.totalContracts}
                             selectionMode={multiAccountTrading.activeCount > 0 ? 'multi' : 'single'}
                             groupInfo={multiAccountTrading.activeCount > 0 ? { groupName: `${multiAccountTrading.totalContracts} cts / ${multiAccountTrading.activeCount} acct${multiAccountTrading.activeCount !== 1 ? 's' : ''}` } : null}
+                            isMobile
                         />
                     </Suspense>
                 </ErrorBoundary>
@@ -661,8 +700,8 @@ const DashboardContent = () => {
                 }}
             />
 
-            {/* Mobile Bottom Sheet — positions, orders, accounts, strategies */}
-            <MobileBottomSheet
+            {/* Mobile Bottom Sheet — hidden in landscape (too little vertical space) */}
+            {!isLandscape && <MobileBottomSheet
                 positionsCount={mobileOpenPositions.length}
                 ordersCount={mobileWorkingOrders.length}
                 accountsCount={dashboardData.accounts.length}
@@ -672,30 +711,88 @@ const DashboardContent = () => {
                 positions={aggregatedPositions}
                 orders={aggregatedOrders}
                 onSharePnL={() => setIsShareModalOpen(true)}
+                onRefresh={handleMobileRefresh}
             >
-                {mobileActiveTab === 'positions' && (
-                    mobileOpenPositions.length === 0 ? (
+                <AnimatePresence mode="wait">
+                  {mobileActiveTab === 'positions' && (
+                    <motion.div
+                      key="positions"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.15 }}
+                    >
+                      {isLoading ? (
+                        <VStack spacing={2} align="stretch">
+                          {[1, 2].map((i) => (
+                            <Box key={i} bg="whiteAlpha.100" borderRadius="lg" borderWidth="1px" borderColor="whiteAlpha.100" p={3}>
+                              <Flex justify="space-between" mb={2}>
+                                <HStack spacing={2}>
+                                  <Skeleton h="14px" w="40px" startColor="#333" endColor="#555" borderRadius="md" />
+                                  <Skeleton h="14px" w="45px" startColor="#333" endColor="#555" borderRadius="md" />
+                                </HStack>
+                                <Skeleton h="12px" w="60px" startColor="#333" endColor="#555" borderRadius="md" />
+                              </Flex>
+                              <Flex justify="space-between">
+                                <HStack spacing={3}>
+                                  <Skeleton h="12px" w="50px" startColor="#333" endColor="#555" borderRadius="md" />
+                                  <Skeleton h="12px" w="70px" startColor="#333" endColor="#555" borderRadius="md" />
+                                </HStack>
+                                <Skeleton h="12px" w="55px" startColor="#333" endColor="#555" borderRadius="md" />
+                              </Flex>
+                            </Box>
+                          ))}
+                        </VStack>
+                      ) : mobileOpenPositions.length === 0 ? (
                         <Flex justify="center" align="center" minH="80px">
                             <Text fontSize="sm" color="whiteAlpha.400">No open positions</Text>
                         </Flex>
-                    ) : (
+                      ) : (
                         <VStack spacing={2} align="stretch">
                             {mobileOpenPositions.map((pos, i) => (
                                 <PositionCard
                                     key={`${pos._accountId}-${pos.positionId || i}`}
                                     position={pos}
                                     onClose={handleMobileClosePosition}
+                                    onPartialClose={handleMobilePartialClose}
                                 />
                             ))}
                         </VStack>
-                    )
-                )}
-                {mobileActiveTab === 'orders' && (
-                    mobileWorkingOrders.length === 0 ? (
+                      )}
+                    </motion.div>
+                  )}
+                  {mobileActiveTab === 'orders' && (
+                    <motion.div
+                      key="orders"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.15 }}
+                    >
+                      {isLoading ? (
+                        <VStack spacing={2} align="stretch">
+                          <Box bg="whiteAlpha.100" borderRadius="lg" borderWidth="1px" borderColor="whiteAlpha.100" p={3}>
+                            <Flex justify="space-between" mb={2}>
+                              <HStack spacing={2}>
+                                <Skeleton h="14px" w="40px" startColor="#333" endColor="#555" borderRadius="md" />
+                                <Skeleton h="14px" w="35px" startColor="#333" endColor="#555" borderRadius="md" />
+                                <Skeleton h="14px" w="40px" startColor="#333" endColor="#555" borderRadius="md" />
+                              </HStack>
+                              <Skeleton h="12px" w="60px" startColor="#333" endColor="#555" borderRadius="md" />
+                            </Flex>
+                            <Flex justify="space-between">
+                              <HStack spacing={3}>
+                                <Skeleton h="12px" w="50px" startColor="#333" endColor="#555" borderRadius="md" />
+                                <Skeleton h="12px" w="70px" startColor="#333" endColor="#555" borderRadius="md" />
+                              </HStack>
+                            </Flex>
+                          </Box>
+                        </VStack>
+                      ) : mobileWorkingOrders.length === 0 ? (
                         <Flex justify="center" align="center" minH="80px">
                             <Text fontSize="sm" color="whiteAlpha.400">No working orders</Text>
                         </Flex>
-                    ) : (
+                      ) : (
                         <VStack spacing={2} align="stretch">
                             {mobileWorkingOrders.map((ord, i) => (
                                 <OrderCard
@@ -705,10 +802,18 @@ const DashboardContent = () => {
                                 />
                             ))}
                         </VStack>
-                    )
-                )}
-                {mobileActiveTab === 'accounts' && (
-                    <MobileAccountsTab
+                      )}
+                    </motion.div>
+                  )}
+                  {mobileActiveTab === 'accounts' && (
+                    <motion.div
+                      key="accounts"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.15 }}
+                    >
+                      <MobileAccountsTab
                         accounts={dashboardData.accounts}
                         multiAccountTrading={multiAccountTrading}
                         aggregatedPositions={aggregatedPositions}
@@ -724,17 +829,27 @@ const DashboardContent = () => {
                         onEditCopySettings={() => {}}
                         onStopCopying={() => {}}
                         onPauseCopying={() => {}}
-                    />
-                )}
-                {mobileActiveTab === 'strategies' && (
-                    <MobileStrategiesTab
+                      />
+                    </motion.div>
+                  )}
+                  {mobileActiveTab === 'strategies' && (
+                    <motion.div
+                      key="strategies"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.15 }}
+                    >
+                      <MobileStrategiesTab
                         strategies={dashboardData.strategies}
                         accounts={dashboardData.accounts}
                         accountConfigs={multiAccountTrading.accountConfigs}
                         strategyBoundAccountIds={multiAccountTrading.strategyBoundAccountIds}
-                    />
-                )}
-            </MobileBottomSheet>
+                      />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+            </MobileBottomSheet>}
 
             {/* Share P&L Modal */}
             {isShareModalOpen && (

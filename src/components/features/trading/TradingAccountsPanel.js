@@ -5,7 +5,7 @@ import {
   HStack,
   Text,
   Flex,
-  Spinner,
+  Skeleton,
   Button,
   useToast,
   useDisclosure,
@@ -417,9 +417,21 @@ const TradingAccountsPanel = ({ multiAccountTrading, aggregatedPositions = [], s
       {/* Account Cards */}
       <Box flex="1" overflowY="auto" px={2} py={2}>
         {isLoading ? (
-          <Flex justify="center" py={6}>
-            <Spinner size="md" color="cyan.400" />
-          </Flex>
+          <VStack spacing={2}>
+            {[1, 2, 3].map((i) => (
+              <Box key={i} bg="whiteAlpha.100" borderRadius="lg" borderWidth="1px" borderColor="whiteAlpha.100" p={3} w="100%">
+                <HStack spacing={3} mb={2}>
+                  <Skeleton w="10px" h="10px" borderRadius="full" startColor="#333" endColor="#555" />
+                  <Skeleton h="14px" w="120px" startColor="#333" endColor="#555" borderRadius="md" />
+                  <Skeleton h="14px" w="50px" startColor="#333" endColor="#555" borderRadius="md" ml="auto" />
+                </HStack>
+                <HStack spacing={3}>
+                  <Skeleton h="12px" w="80px" startColor="#333" endColor="#555" borderRadius="md" />
+                  <Skeleton h="12px" w="60px" startColor="#333" endColor="#555" borderRadius="md" ml="auto" />
+                </HStack>
+              </Box>
+            ))}
+          </VStack>
         ) : accounts.length === 0 ? (
           <VStack spacing={3} py={8}>
             <Text fontSize="sm" color="whiteAlpha.500" textAlign="center">

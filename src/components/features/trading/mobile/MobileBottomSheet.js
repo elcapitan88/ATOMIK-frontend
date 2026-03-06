@@ -29,13 +29,38 @@ const MobileBottomSheet = ({
   positions = [],
   orders = [],
   onSharePnL,
+  onRefresh,
   children,
 }) => {
   const containerRef = useRef(null);
+  const scrollRef = useRef(null);
   const [snapState, setSnapState] = useState('peek');
   const [sheetMaxH, setSheetMaxH] = useState(600);
   const [isFlattenOpen, setIsFlattenOpen] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [pullDistance, setPullDistance] = useState(0);
+  const [hasUnseen, setHasUnseen] = useState(false);
+  const pullStartY = useRef(null);
+  const lastSeenCounts = useRef({ positions: positionsCount, orders: ordersCount });
   const y = useMotionValue(0);
+
+  // Track unseen changes: mark as unseen when counts change while at peek
+  useEffect(() => {
+    const prev = lastSeenCounts.current;
+    if (positionsCount !== prev.positions || ordersCount !== prev.orders) {
+      if (snapState === 'peek') {
+        setHasUnseen(true);
+      }
+      lastSeenCounts.current = { positions: positionsCount, orders: ordersCount };
+    }
+  }, [positionsCount, ordersCount, snapState]);
+
+  // Clear unseen when user opens the sheet (leaves peek)
+  useEffect(() => {
+    if (snapState !== 'peek' && hasUnseen) {
+      setHasUnseen(false);
+    }
+  }, [snapState, hasUnseen]);
 
   // Calculate snap positions relative to sheet top.
   // y=0 means sheet is fully expanded (top of sheet at its highest).
@@ -120,6 +145,33 @@ const MobileBottomSheet = ({
     [1, 1, 0]
   );
 
+  // Pull-to-refresh handlers
+  const handleContentTouchStart = useCallback((e) => {
+    if (!scrollRef.current || scrollRef.current.scrollTop > 0) return;
+    pullStartY.current = e.touches[0].clientY;
+  }, []);
+
+  const handleContentTouchMove = useCallback((e) => {
+    if (pullStartY.current === null || !scrollRef.current || scrollRef.current.scrollTop > 0) return;
+    const dy = e.touches[0].clientY - pullStartY.current;
+    if (dy > 0) {
+      setPullDistance(Math.min(dy * 0.4, 60));
+    }
+  }, []);
+
+  const handleContentTouchEnd = useCallback(async () => {
+    if (pullDistance > 40 && onRefresh && !isRefreshing) {
+      setIsRefreshing(true);
+      try {
+        await onRefresh();
+      } finally {
+        setIsRefreshing(false);
+      }
+    }
+    setPullDistance(0);
+    pullStartY.current = null;
+  }, [pullDistance, onRefresh, isRefreshing]);
+
   const hasItemsToFlatten = positionsCount > 0 || ordersCount > 0;
 
   const tabs = [
@@ -139,7 +191,7 @@ const MobileBottomSheet = ({
         position="fixed"
         left={0}
         right={0}
-        bottom={`${SHEET_BOTTOM}px`}
+        bottom={`calc(${SHEET_BOTTOM}px + env(safe-area-inset-bottom, 0px))`}
         h={`${sheetMaxH}px`}
         bg="rgba(15, 15, 15, 0.95)"
         backdropFilter="blur(20px)"
@@ -176,9 +228,14 @@ const MobileBottomSheet = ({
           {/* Peek summary */}
           <Flex align="center" justify="space-between">
             <HStack spacing={3}>
-              <Text fontSize="xs" color="whiteAlpha.600">
-                {positionsCount} position{positionsCount !== 1 ? 's' : ''}
-              </Text>
+              <HStack spacing={1.5}>
+                {hasUnseen && (
+                  <Box w="6px" h="6px" borderRadius="full" bg="red.400" flexShrink={0} />
+                )}
+                <Text fontSize="xs" color="whiteAlpha.600">
+                  {positionsCount} position{positionsCount !== 1 ? 's' : ''}
+                </Text>
+              </HStack>
               <Text fontSize="xs" fontWeight="bold" color={pnlColor}>
                 {pnlPrefix}${Math.abs(totalOpenPnL).toLocaleString(undefined, {
                   minimumFractionDigits: 2,
@@ -284,8 +341,9 @@ const MobileBottomSheet = ({
             </ButtonGroup>
           </Box>
 
-          {/* Scrollable content */}
+          {/* Scrollable content with pull-to-refresh */}
           <Box
+            ref={scrollRef}
             flex="1"
             overflowY="auto"
             overflowX="hidden"
@@ -300,7 +358,24 @@ const MobileBottomSheet = ({
                 e.stopPropagation();
               }
             }}
+            onTouchStart={handleContentTouchStart}
+            onTouchMove={handleContentTouchMove}
+            onTouchEnd={handleContentTouchEnd}
           >
+            {/* Pull-to-refresh indicator */}
+            {(pullDistance > 0 || isRefreshing) && (
+              <Flex
+                justify="center"
+                align="center"
+                h={`${isRefreshing ? 32 : pullDistance * 0.5}px`}
+                mb={1}
+                transition={pullDistance === 0 ? 'height 0.2s ease' : 'none'}
+              >
+                <Text fontSize="10px" color="whiteAlpha.500">
+                  {isRefreshing ? 'Refreshing...' : pullDistance > 40 ? 'Release to refresh' : 'Pull to refresh'}
+                </Text>
+              </Flex>
+            )}
             {children}
           </Box>
         </MotionBox>
