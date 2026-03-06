@@ -17,6 +17,7 @@ import {
 } from '@chakra-ui/react';
 import { ChevronDown } from 'lucide-react';
 import axiosInstance from '@/services/axiosConfig';
+import AutomatedFlattenModal from './AutomatedFlattenModal';
 
 /**
  * QuickOrderBar — thin horizontal bar between chart and bottom panel.
@@ -35,6 +36,8 @@ const QuickOrderBar = ({ chartSymbol, multiAccountTrading, positions = [], order
   const [isFlattening, setIsFlattening] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
   const [flattenMode, setFlattenMode] = useState('flattenAndCancel'); // 'flattenAndCancel' | 'flattenOnly' | 'cancelOnly'
+  const [autoModalOpen, setAutoModalOpen] = useState(false);
+  const [autoModalData, setAutoModalData] = useState(null);
 
   const {
     activeAccounts,
@@ -50,6 +53,8 @@ const QuickOrderBar = ({ chartSymbol, multiAccountTrading, positions = [], order
     setTimeInForce,
     placeMultiAccountOrder,
     isSubmitting,
+    strategyBoundAccountIds,
+    getAccountStrategies,
   } = multiAccountTrading;
 
   const hasActiveAccounts = activeCount > 0;
@@ -116,6 +121,32 @@ const QuickOrderBar = ({ chartSymbol, multiAccountTrading, positions = [], order
     [orders, isCopyFollower]
   );
 
+  // Helper: check if account is strategy-bound (automated)
+  const isStrategyBound = useCallback(
+    (accountId) => strategyBoundAccountIds?.has(String(accountId)),
+    [strategyBoundAccountIds]
+  );
+
+  // Split positions into manual vs automated
+  const manualPositions = useMemo(
+    () => openPositions.filter((p) => !isStrategyBound(p._accountId || p.accountId)),
+    [openPositions, isStrategyBound]
+  );
+  const automatedPositions = useMemo(
+    () => openPositions.filter((p) => isStrategyBound(p._accountId || p.accountId)),
+    [openPositions, isStrategyBound]
+  );
+
+  // Split orders into manual vs automated
+  const manualOrders = useMemo(
+    () => workingOrders.filter((o) => !isStrategyBound(o._accountId || o.accountId)),
+    [workingOrders, isStrategyBound]
+  );
+  const automatedOrders = useMemo(
+    () => workingOrders.filter((o) => isStrategyBound(o._accountId || o.accountId)),
+    [workingOrders, isStrategyBound]
+  );
+
   // Cancel all working orders for given accounts (helper)
   const cancelOrdersForAccounts = useCallback(async (accountOrders) => {
     const results = await Promise.all(
@@ -133,7 +164,51 @@ const QuickOrderBar = ({ chartSymbol, multiAccountTrading, positions = [], order
     return results;
   }, []);
 
-  // Flatten — close all open positions across all accounts via REST API
+  // Helper: flatten manual positions only
+  const flattenManualPositions = useCallback(async () => {
+    return Promise.all(
+      manualPositions.map(async (pos) => {
+        const accountId = pos._accountId || pos.accountId;
+        if (!accountId) return { success: false, error: 'Missing account info' };
+        const closeSide = pos.side === 'LONG' ? 'SELL' : 'BUY';
+        const qty = pos.quantity || Math.abs(pos.netPos || 0);
+        try {
+          await axiosInstance.post(
+            `/api/v1/brokers/accounts/${accountId}/discretionary/orders`,
+            { symbol: pos.symbol, side: closeSide, type: 'MARKET', quantity: qty, time_in_force: 'IOC', force_close: true }
+          );
+          return { success: true };
+        } catch (err) {
+          return { success: false, error: err.response?.data?.detail || err.message };
+        }
+      })
+    );
+  }, [manualPositions]);
+
+  // Helper: show automated modal or just toast if no automated positions
+  const showResultsOrModal = useCallback((flatOk, flatFail, cancelOk, cancelFail, mode) => {
+    if (automatedPositions.length > 0) {
+      // Open modal — defer toast until user decides
+      setAutoModalData({
+        manualResults: { flatOk, flatFail, cancelOk, cancelFail },
+        flattenMode: mode,
+      });
+      setAutoModalOpen(true);
+    } else {
+      // No automated positions — show toast immediately
+      const parts = [];
+      if (flatOk > 0) parts.push(`${flatOk} position${flatOk !== 1 ? 's' : ''} closed`);
+      if (cancelOk > 0) parts.push(`${cancelOk} order${cancelOk !== 1 ? 's' : ''} cancelled`);
+      const failTotal = flatFail + cancelFail;
+      if (failTotal === 0) {
+        toast({ title: parts.join(', ') || 'Done', status: 'success', duration: 3000 });
+      } else {
+        toast({ title: `${parts.join(', ')}. ${failTotal} failed.`, status: 'warning', duration: 4000, isClosable: true });
+      }
+    }
+  }, [automatedPositions, toast]);
+
+  // Flatten — close manual positions, then prompt for automated
   const handleFlatten = useCallback(async () => {
     if (openPositions.length === 0) {
       toast({ title: 'No open positions', status: 'info', duration: 2000 });
@@ -142,49 +217,18 @@ const QuickOrderBar = ({ chartSymbol, multiAccountTrading, positions = [], order
 
     setIsFlattening(true);
     try {
-      const results = await Promise.all(
-        openPositions.map(async (pos) => {
-          const accountId = pos._accountId || pos.accountId;
-          if (!accountId) return { success: false, error: 'Missing account info' };
-
-          const closeSide = pos.side === 'LONG' ? 'SELL' : 'BUY';
-          const qty = pos.quantity || Math.abs(pos.netPos || 0);
-
-          try {
-            const res = await axiosInstance.post(
-              `/api/v1/brokers/accounts/${accountId}/discretionary/orders`,
-              {
-                symbol: pos.symbol,
-                side: closeSide,
-                type: 'MARKET',
-                quantity: qty,
-                time_in_force: 'IOC',
-                force_close: true,
-              }
-            );
-            return { success: true, data: res.data };
-          } catch (err) {
-            return { success: false, error: err.response?.data?.detail || err.message };
-          }
-        })
-      );
-
-      const successes = results.filter((r) => r.success).length;
-      const failures = results.filter((r) => !r.success).length;
-
-      if (failures === 0) {
-        toast({ title: `Flattened ${successes} position${successes !== 1 ? 's' : ''}`, status: 'success', duration: 3000 });
-      } else {
-        toast({ title: `${successes} closed, ${failures} failed`, status: 'warning', duration: 4000, isClosable: true });
-      }
+      const results = manualPositions.length > 0 ? await flattenManualPositions() : [];
+      const flatOk = results.filter((r) => r.success).length;
+      const flatFail = results.filter((r) => !r.success).length;
+      showResultsOrModal(flatOk, flatFail, 0, 0, 'flattenOnly');
     } catch (err) {
       toast({ title: 'Flatten failed', description: err.message, status: 'error', duration: 4000 });
     } finally {
       setIsFlattening(false);
     }
-  }, [openPositions, toast]);
+  }, [openPositions, manualPositions, flattenManualPositions, showResultsOrModal, toast]);
 
-  // Flatten + Cancel — close all positions AND cancel all working orders
+  // Flatten + Cancel — close manual positions + cancel manual orders, then prompt for automated
   const handleFlattenAndCancel = useCallback(async () => {
     if (openPositions.length === 0 && workingOrders.length === 0) {
       toast({ title: 'Nothing to flatten or cancel', status: 'info', duration: 2000 });
@@ -193,32 +237,9 @@ const QuickOrderBar = ({ chartSymbol, multiAccountTrading, positions = [], order
 
     setIsFlattening(true);
     try {
-      // Run flatten and cancel in parallel
       const [flattenResults, cancelResults] = await Promise.all([
-        // Flatten positions
-        openPositions.length > 0
-          ? Promise.all(
-              openPositions.map(async (pos) => {
-                const accountId = pos._accountId || pos.accountId;
-                if (!accountId) return { success: false, error: 'Missing account info' };
-                const closeSide = pos.side === 'LONG' ? 'SELL' : 'BUY';
-                const qty = pos.quantity || Math.abs(pos.netPos || 0);
-                try {
-                  await axiosInstance.post(
-                    `/api/v1/brokers/accounts/${accountId}/discretionary/orders`,
-                    { symbol: pos.symbol, side: closeSide, type: 'MARKET', quantity: qty, time_in_force: 'IOC', force_close: true }
-                  );
-                  return { success: true };
-                } catch (err) {
-                  return { success: false, error: err.response?.data?.detail || err.message };
-                }
-              })
-            )
-          : [],
-        // Cancel working orders
-        workingOrders.length > 0
-          ? cancelOrdersForAccounts(workingOrders)
-          : [],
+        manualPositions.length > 0 ? flattenManualPositions() : [],
+        manualOrders.length > 0 ? cancelOrdersForAccounts(manualOrders) : [],
       ]);
 
       const flatOk = flattenResults.filter((r) => r.success).length;
@@ -226,24 +247,15 @@ const QuickOrderBar = ({ chartSymbol, multiAccountTrading, positions = [], order
       const cancelOk = cancelResults.filter((r) => r.success).length;
       const cancelFail = cancelResults.filter((r) => !r.success).length;
 
-      const parts = [];
-      if (flatOk > 0) parts.push(`${flatOk} position${flatOk !== 1 ? 's' : ''} closed`);
-      if (cancelOk > 0) parts.push(`${cancelOk} order${cancelOk !== 1 ? 's' : ''} cancelled`);
-      const failTotal = flatFail + cancelFail;
-
-      if (failTotal === 0) {
-        toast({ title: parts.join(', ') || 'Done', status: 'success', duration: 3000 });
-      } else {
-        toast({ title: `${parts.join(', ')}. ${failTotal} failed.`, status: 'warning', duration: 4000, isClosable: true });
-      }
+      showResultsOrModal(flatOk, flatFail, cancelOk, cancelFail, 'flattenAndCancel');
     } catch (err) {
       toast({ title: 'Flatten + Cancel failed', description: err.message, status: 'error', duration: 4000 });
     } finally {
       setIsFlattening(false);
     }
-  }, [openPositions, workingOrders, cancelOrdersForAccounts, toast]);
+  }, [openPositions, workingOrders, manualPositions, manualOrders, flattenManualPositions, cancelOrdersForAccounts, showResultsOrModal, toast]);
 
-  // Cancel all working orders
+  // Cancel all manual working orders, then prompt for automated
   const handleCancelAll = useCallback(async () => {
     if (workingOrders.length === 0) {
       toast({ title: 'No working orders', status: 'info', duration: 2000 });
@@ -252,22 +264,16 @@ const QuickOrderBar = ({ chartSymbol, multiAccountTrading, positions = [], order
 
     setIsCancelling(true);
     try {
-      const results = await cancelOrdersForAccounts(workingOrders);
-
-      const successes = results.filter((r) => r.success).length;
-      const failures = results.filter((r) => !r.success).length;
-
-      if (failures === 0) {
-        toast({ title: `Cancelled ${successes} order${successes !== 1 ? 's' : ''}`, status: 'success', duration: 3000 });
-      } else {
-        toast({ title: `${successes} cancelled, ${failures} failed`, status: 'warning', duration: 4000, isClosable: true });
-      }
+      const results = manualOrders.length > 0 ? await cancelOrdersForAccounts(manualOrders) : [];
+      const cancelOk = results.filter((r) => r.success).length;
+      const cancelFail = results.filter((r) => !r.success).length;
+      showResultsOrModal(0, 0, cancelOk, cancelFail, 'cancelOnly');
     } catch (err) {
       toast({ title: 'Cancel failed', description: err.message, status: 'error', duration: 4000 });
     } finally {
       setIsCancelling(false);
     }
-  }, [workingOrders, cancelOrdersForAccounts, toast]);
+  }, [workingOrders, manualOrders, cancelOrdersForAccounts, showResultsOrModal, toast]);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -608,6 +614,17 @@ const QuickOrderBar = ({ chartSymbol, multiAccountTrading, positions = [], order
           </Menu>
         </HStack>
       </Flex>
+
+      {/* Automated positions modal — appears after manual flatten if automated positions remain */}
+      <AutomatedFlattenModal
+        isOpen={autoModalOpen}
+        onClose={() => { setAutoModalOpen(false); setAutoModalData(null); }}
+        automatedPositions={automatedPositions}
+        automatedOrders={automatedOrders}
+        getAccountStrategies={getAccountStrategies}
+        manualResults={autoModalData?.manualResults}
+        flattenMode={autoModalData?.flattenMode}
+      />
     </Box>
   );
 };

@@ -712,6 +712,8 @@ const DashboardContent = () => {
                 orders={aggregatedOrders}
                 onSharePnL={() => setIsShareModalOpen(true)}
                 onRefresh={handleMobileRefresh}
+                strategyBoundAccountIds={multiAccountTrading.strategyBoundAccountIds}
+                getAccountStrategies={multiAccountTrading.getAccountStrategies}
             >
                 <AnimatePresence mode="wait">
                   {mobileActiveTab === 'positions' && (

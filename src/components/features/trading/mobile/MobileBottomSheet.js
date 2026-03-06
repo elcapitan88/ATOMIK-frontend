@@ -30,6 +30,8 @@ const MobileBottomSheet = ({
   orders = [],
   onSharePnL,
   onRefresh,
+  strategyBoundAccountIds,
+  getAccountStrategies,
   children,
 }) => {
   const containerRef = useRef(null);
@@ -387,6 +389,8 @@ const MobileBottomSheet = ({
         onClose={() => setIsFlattenOpen(false)}
         positions={positions}
         orders={orders}
+        strategyBoundAccountIds={strategyBoundAccountIds}
+        getAccountStrategies={getAccountStrategies}
       />
     </>
   );
