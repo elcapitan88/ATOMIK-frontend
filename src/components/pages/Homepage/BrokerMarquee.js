@@ -13,21 +13,27 @@ const scroll = keyframes`
 
 // ── Broker data ──
 const brokers = [
-  { name: 'Apex', logo: '/logos/apex-logo-color.webp' },
-  { name: 'TakeProfit Trader', logo: '/logos/takeprofit.svg' },
-  { name: 'Lucid Trading', logo: '/logos/lucid.webp' },
-  { name: 'Tradovate', logo: '/logos/Tradovate-darkbg.png' },
-  { name: 'NinjaTrader', logo: '/logos/tradovate-main-rbg.png' },
-  { name: 'TopStep', logo: '/logos/topstepx-login.png', comingSoon: true },
+  { name: 'Apex', logo: '/logos/apex-logo-color.webp', url: 'https://www.apextraderfunding.com' },
+  { name: 'TakeProfit Trader', logo: '/logos/takeprofit.svg', url: 'https://www.takeprofittrader.com' },
+  { name: 'Lucid Trading', logo: '/logos/lucid.webp', url: 'https://www.lucidtrading.com' },
+  { name: 'Tradovate', logo: '/logos/Tradovate-darkbg.png', url: 'https://www.tradovate.com' },
+  { name: 'NinjaTrader', logo: '/logos/tradovate-main-rbg.png', url: 'https://www.ninjatrader.com' },
+  { name: 'TopStep', logo: '/logos/topstepx-login.png', url: 'https://www.topstep.com', comingSoon: true },
 ];
 
 // ── Single logo item ──
-const MarqueeLogo = ({ name, logo, comingSoon }) => (
+const MarqueeLogo = ({ name, logo, url, comingSoon }) => (
   <Box
     flex="0 0 auto"
     px={{ base: 6, md: 10 }}
     position="relative"
     role="group"
+    as="a"
+    href={url}
+    target="_blank"
+    rel="noopener noreferrer"
+    cursor="pointer"
+    _hover={{ textDecoration: 'none' }}
   >
     <Box
       display="flex"
