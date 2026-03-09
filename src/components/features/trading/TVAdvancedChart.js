@@ -17,6 +17,8 @@ const TVAdvancedChart = ({
     onWidgetReady,
     onSymbolChanged,
     onChartOrder,
+    onAutoBracketOrder,
+    autoBracketConfigRef,
     activeAccount,
     currentQuantity = 1,
     selectionMode = 'single',
@@ -35,6 +37,8 @@ const TVAdvancedChart = ({
     const selectionModeRef = useRef(selectionMode);
     const groupInfoRef = useRef(groupInfo);
     const onChartOrderRef = useRef(onChartOrder);
+    const onAutoBracketOrderRef = useRef(onAutoBracketOrder);
+    const autoBracketConfigRefRef = useRef(autoBracketConfigRef);
     const onWidgetReadyRef = useRef(onWidgetReady);
     const onSymbolChangedRef = useRef(onSymbolChanged);
 
@@ -43,6 +47,8 @@ const TVAdvancedChart = ({
     useEffect(() => { selectionModeRef.current = selectionMode; }, [selectionMode]);
     useEffect(() => { groupInfoRef.current = groupInfo; }, [groupInfo]);
     useEffect(() => { onChartOrderRef.current = onChartOrder; }, [onChartOrder]);
+    useEffect(() => { onAutoBracketOrderRef.current = onAutoBracketOrder; }, [onAutoBracketOrder]);
+    useEffect(() => { autoBracketConfigRefRef.current = autoBracketConfigRef; }, [autoBracketConfigRef]);
     useEffect(() => { onWidgetReadyRef.current = onWidgetReady; }, [onWidgetReady]);
     useEffect(() => { onSymbolChangedRef.current = onSymbolChanged; }, [onSymbolChanged]);
 
@@ -169,17 +175,33 @@ const TVAdvancedChart = ({
                             // Always show menu — order handler will validate account selection
                             const noAcctSuffix = hasAccount ? '' : ' (select account first)';
 
-                            return [
+                            const items = [
                                 { position: 'top', text: '-Trading-', click: () => {} },
                                 { position: 'top', text: `Buy Limit @ ${p} ${label}${noAcctSuffix}`, click: () => placeOrder('buy', 'LIMIT') },
                                 { position: 'top', text: `Sell Limit @ ${p} ${label}${noAcctSuffix}`, click: () => placeOrder('sell', 'LIMIT') },
                                 { position: 'top', text: '-', click: () => {} },
                                 { position: 'top', text: `Buy Stop @ ${p} ${label}${noAcctSuffix}`, click: () => placeOrder('buy', 'STOP') },
                                 { position: 'top', text: `Sell Stop @ ${p} ${label}${noAcctSuffix}`, click: () => placeOrder('sell', 'STOP') },
+                            ];
+
+                            // Auto-Bracket stop items — only show when enabled
+                            const abCfg = autoBracketConfigRefRef.current?.current;
+                            if (abCfg?.enabled) {
+                                const abLabel = `TP:+${abCfg.tpOffset} / SL:-${abCfg.slOffset} ${abCfg.unit === 'dollars' ? '$' : 'tk'}`;
+                                items.push(
+                                    { position: 'top', text: '-', click: () => {} },
+                                    { position: 'top', text: `Buy Stop + Brackets @ ${p} (${abLabel})${noAcctSuffix}`, click: () => onAutoBracketOrderRef.current?.(price, 'buy') },
+                                    { position: 'top', text: `Sell Stop + Brackets @ ${p} (${abLabel})${noAcctSuffix}`, click: () => onAutoBracketOrderRef.current?.(price, 'sell') },
+                                );
+                            }
+
+                            items.push(
                                 { position: 'top', text: '-', click: () => {} },
                                 { position: 'top', text: `Buy Market ${label}${noAcctSuffix}`, click: () => placeOrder('buy', 'MARKET') },
                                 { position: 'top', text: `Sell Market ${label}${noAcctSuffix}`, click: () => placeOrder('sell', 'MARKET') },
-                            ];
+                            );
+
+                            return items;
                         });
                     } catch (e) {
                         console.warn('Could not set up context menu:', e);

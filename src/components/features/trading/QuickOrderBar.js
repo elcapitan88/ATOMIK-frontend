@@ -14,8 +14,15 @@ import {
   NumberInputField,
   Tooltip,
   useToast,
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
+  PopoverBody,
+  PopoverArrow,
+  VStack,
+  ButtonGroup,
 } from '@chakra-ui/react';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, Settings } from 'lucide-react';
 import axiosInstance from '@/services/axiosConfig';
 import AutomatedFlattenModal from './AutomatedFlattenModal';
 
@@ -31,7 +38,7 @@ import AutomatedFlattenModal from './AutomatedFlattenModal';
  *   positions          - aggregated positions from useAggregatedPositions
  *   orders             - aggregated orders from useAggregatedPositions
  */
-const QuickOrderBar = ({ chartSymbol, multiAccountTrading, positions = [], orders = [], bracketPlacement, getCopyInfo }) => {
+const QuickOrderBar = ({ chartSymbol, multiAccountTrading, positions = [], orders = [], bracketPlacement, getCopyInfo, autoBracket }) => {
   const toast = useToast();
   const [isFlattening, setIsFlattening] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
@@ -484,6 +491,128 @@ const QuickOrderBar = ({ chartSymbol, multiAccountTrading, positions = [], order
               Bracket
             </Button>
           </Tooltip>
+
+          {/* Auto-Bracket toggle + settings */}
+          {autoBracket && (
+            <HStack spacing={0}>
+              <Tooltip label={autoBracket.enabled ? `Auto-Bracket ON (TP: ${autoBracket.tpOffset} / SL: ${autoBracket.slOffset} ${autoBracket.unit})` : "Auto-Bracket: attach TP/SL to right-click stop orders"} fontSize="xs" hasArrow>
+                <Button
+                  size="xs"
+                  px={2.5}
+                  bg={autoBracket.enabled ? 'rgba(251, 146, 60, 0.8)' : 'transparent'}
+                  color={autoBracket.enabled ? 'white' : 'whiteAlpha.600'}
+                  borderWidth="1px"
+                  borderColor={autoBracket.enabled ? 'orange.400' : 'whiteAlpha.200'}
+                  borderRightRadius={0}
+                  fontWeight="medium"
+                  fontSize="xs"
+                  _hover={{ bg: autoBracket.enabled ? 'rgba(251, 146, 60, 1)' : 'whiteAlpha.200', color: 'white' }}
+                  _active={{ bg: 'rgba(251, 146, 60, 0.6)' }}
+                  onClick={autoBracket.toggle}
+                >
+                  AB
+                </Button>
+              </Tooltip>
+              <Popover placement="bottom" closeOnBlur>
+                <PopoverTrigger>
+                  <Button
+                    size="xs"
+                    px={1}
+                    minW="auto"
+                    bg={autoBracket.enabled ? 'rgba(251, 146, 60, 0.6)' : 'transparent'}
+                    color={autoBracket.enabled ? 'white' : 'whiteAlpha.600'}
+                    borderWidth="1px"
+                    borderColor={autoBracket.enabled ? 'orange.400' : 'whiteAlpha.200'}
+                    borderLeftRadius={0}
+                    borderLeft="none"
+                    _hover={{ bg: 'whiteAlpha.200', color: 'white' }}
+                    _active={{ bg: 'whiteAlpha.300' }}
+                  >
+                    <Settings size={10} />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent
+                  bg="rgba(0, 0, 0, 0.9)"
+                  backdropFilter="blur(20px)"
+                  borderColor="rgba(255, 255, 255, 0.1)"
+                  w="200px"
+                  _focus={{ boxShadow: 'none' }}
+                >
+                  <PopoverArrow bg="rgba(0, 0, 0, 0.9)" />
+                  <PopoverBody p={3}>
+                    <VStack spacing={2} align="stretch">
+                      <Text fontSize="xs" fontWeight="bold" color="orange.300">Auto-Bracket Offsets</Text>
+
+                      <HStack justify="space-between">
+                        <Text fontSize="xs" color="whiteAlpha.700">TP</Text>
+                        <NumberInput
+                          size="xs"
+                          value={autoBracket.tpOffset}
+                          onChange={(val) => autoBracket.setTpOffset(val)}
+                          min={1}
+                          max={999}
+                          w="70px"
+                        >
+                          <NumberInputField
+                            bg="whiteAlpha.100"
+                            borderColor="whiteAlpha.200"
+                            color="green.300"
+                            textAlign="center"
+                            px={1}
+                            fontSize="xs"
+                            _focus={{ borderColor: 'green.400' }}
+                          />
+                        </NumberInput>
+                      </HStack>
+
+                      <HStack justify="space-between">
+                        <Text fontSize="xs" color="whiteAlpha.700">SL</Text>
+                        <NumberInput
+                          size="xs"
+                          value={autoBracket.slOffset}
+                          onChange={(val) => autoBracket.setSlOffset(val)}
+                          min={1}
+                          max={999}
+                          w="70px"
+                        >
+                          <NumberInputField
+                            bg="whiteAlpha.100"
+                            borderColor="whiteAlpha.200"
+                            color="red.300"
+                            textAlign="center"
+                            px={1}
+                            fontSize="xs"
+                            _focus={{ borderColor: 'red.400' }}
+                          />
+                        </NumberInput>
+                      </HStack>
+
+                      <ButtonGroup size="xs" isAttached w="100%">
+                        <Button
+                          flex="1"
+                          bg={autoBracket.unit === 'ticks' ? 'orange.600' : 'whiteAlpha.100'}
+                          color="white"
+                          _hover={{ bg: autoBracket.unit === 'ticks' ? 'orange.500' : 'whiteAlpha.200' }}
+                          onClick={() => autoBracket.setUnit('ticks')}
+                        >
+                          Ticks
+                        </Button>
+                        <Button
+                          flex="1"
+                          bg={autoBracket.unit === 'dollars' ? 'orange.600' : 'whiteAlpha.100'}
+                          color="white"
+                          _hover={{ bg: autoBracket.unit === 'dollars' ? 'orange.500' : 'whiteAlpha.200' }}
+                          onClick={() => autoBracket.setUnit('dollars')}
+                        >
+                          Dollars
+                        </Button>
+                      </ButtonGroup>
+                    </VStack>
+                  </PopoverBody>
+                </PopoverContent>
+              </Popover>
+            </HStack>
+          )}
 
           <Tooltip label="Keyboard: B" fontSize="xs" hasArrow>
             <Button

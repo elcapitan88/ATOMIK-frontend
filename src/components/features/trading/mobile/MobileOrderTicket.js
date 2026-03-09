@@ -123,6 +123,7 @@ const MobileOrderTicket = ({
   orders = [],
   copyTrading,
   onPlaceOnChart,
+  autoBracket,
 }) => {
   const toast = useToast();
   const {
@@ -481,6 +482,85 @@ const MobileOrderTicket = ({
                     </Button>
                   </HStack>
                 </>
+              )}
+
+              {/* Auto-Bracket Settings */}
+              {autoBracket && (
+                <Box
+                  bg={autoBracket.enabled ? 'rgba(251, 146, 60, 0.1)' : 'whiteAlpha.50'}
+                  borderWidth="1px"
+                  borderColor={autoBracket.enabled ? 'rgba(251, 146, 60, 0.3)' : 'whiteAlpha.100'}
+                  borderRadius="lg"
+                  p={3}
+                >
+                  <Flex align="center" justify="space-between" mb={autoBracket.enabled ? 2.5 : 0}>
+                    <VStack spacing={0} align="start">
+                      <Text fontSize="xs" fontWeight="bold" color={autoBracket.enabled ? 'orange.300' : 'whiteAlpha.600'}>
+                        Auto-Bracket
+                      </Text>
+                      <Text fontSize="10px" color="whiteAlpha.500">
+                        Attach TP/SL to stop orders (long-press chart)
+                      </Text>
+                    </VStack>
+                    <Button
+                      size="xs"
+                      px={3}
+                      bg={autoBracket.enabled ? 'orange.500' : 'whiteAlpha.200'}
+                      color="white"
+                      fontWeight="bold"
+                      _hover={{ bg: autoBracket.enabled ? 'orange.400' : 'whiteAlpha.300' }}
+                      _active={{ bg: autoBracket.enabled ? 'orange.600' : 'whiteAlpha.400' }}
+                      onClick={autoBracket.toggle}
+                      borderRadius="md"
+                    >
+                      {autoBracket.enabled ? 'ON' : 'OFF'}
+                    </Button>
+                  </Flex>
+
+                  {autoBracket.enabled && (
+                    <VStack spacing={2}>
+                      <HStack w="100%" spacing={3}>
+                        <HStack flex="1" justify="space-between" bg="whiteAlpha.100" borderRadius="md" px={3} h="40px">
+                          <Text fontSize="xs" color="green.300" fontWeight="medium">TP</Text>
+                          <Input
+                            value={autoBracket.tpOffset}
+                            onChange={(e) => autoBracket.setTpOffset(e.target.value)}
+                            type="number"
+                            variant="unstyled"
+                            color="green.300"
+                            fontSize="sm"
+                            fontWeight="bold"
+                            textAlign="right"
+                            w="60px"
+                          />
+                        </HStack>
+                        <HStack flex="1" justify="space-between" bg="whiteAlpha.100" borderRadius="md" px={3} h="40px">
+                          <Text fontSize="xs" color="red.300" fontWeight="medium">SL</Text>
+                          <Input
+                            value={autoBracket.slOffset}
+                            onChange={(e) => autoBracket.setSlOffset(e.target.value)}
+                            type="number"
+                            variant="unstyled"
+                            color="red.300"
+                            fontSize="sm"
+                            fontWeight="bold"
+                            textAlign="right"
+                            w="60px"
+                          />
+                        </HStack>
+                      </HStack>
+                      <SegmentedControl
+                        options={[
+                          { value: 'ticks', label: 'Ticks' },
+                          { value: 'dollars', label: 'Dollars' },
+                        ]}
+                        value={autoBracket.unit}
+                        onChange={autoBracket.setUnit}
+                        size="xs"
+                      />
+                    </VStack>
+                  )}
+                </Box>
               )}
 
               {/* Flatten + Cancel */}

@@ -1,4 +1,4 @@
-import React, { memo, useState, useCallback, useRef } from 'react';
+import React, { memo, useState, useCallback, useRef, useEffect } from 'react';
 import useChartCoordinates from '@/hooks/useChartCoordinates';
 import PositionLine from './overlay/PositionLine';
 import OrderLine from './overlay/OrderLine';
@@ -22,6 +22,8 @@ const ChartTradingOverlay = memo(({
   bracketPlacement,
   totalQuantity,
   isMobile = false,
+  autoBracket,
+  onLongPress,
 }) => {
   const overlayRef = useRef(null);
   const [isDraggingOrder, setIsDraggingOrder] = useState(false);
@@ -52,6 +54,50 @@ const ChartTradingOverlay = memo(({
 
   const isAwaitingClick = bracketPlacement?.isActive && !bracketPlacement?.isPlaced;
   const hasBracketLines = bracketPlacement?.isPlaced;
+
+  // Long-press handling for mobile (500ms hold → action sheet)
+  const longPressTimerRef = useRef(null);
+  const longPressTouchRef = useRef(null);
+
+  const handleTouchStartLongPress = useCallback((e) => {
+    if (!isMobile || isAwaitingClick) return;
+    if (e.touches.length !== 1) return;
+    const touch = e.touches[0];
+    longPressTouchRef.current = { x: touch.clientX, y: touch.clientY };
+
+    longPressTimerRef.current = setTimeout(() => {
+      const rect = overlayRef.current?.getBoundingClientRect();
+      if (!rect || !longPressTouchRef.current) return;
+      const y = longPressTouchRef.current.y - rect.top;
+      const price = yToPrice(y);
+      if (price != null && price > 0) {
+        onLongPress?.(price);
+      }
+      longPressTouchRef.current = null;
+    }, 500);
+  }, [isMobile, isAwaitingClick, yToPrice, onLongPress]);
+
+  const handleTouchMoveLongPress = useCallback((e) => {
+    if (!longPressTouchRef.current) return;
+    const touch = e.touches[0];
+    const dx = Math.abs(touch.clientX - longPressTouchRef.current.x);
+    const dy = Math.abs(touch.clientY - longPressTouchRef.current.y);
+    // Cancel if finger moved more than 10px (user is scrolling/dragging)
+    if (dx > 10 || dy > 10) {
+      clearTimeout(longPressTimerRef.current);
+      longPressTouchRef.current = null;
+    }
+  }, []);
+
+  const handleTouchEndLongPress = useCallback(() => {
+    clearTimeout(longPressTimerRef.current);
+    longPressTouchRef.current = null;
+  }, []);
+
+  // Cleanup timer on unmount
+  useEffect(() => {
+    return () => clearTimeout(longPressTimerRef.current);
+  }, []);
 
   // Handle placement via coordinates (shared by mouse + touch)
   const handlePlaceAtY = useCallback((clientY) => {
@@ -148,6 +194,26 @@ const ChartTradingOverlay = memo(({
           overlayRef={overlayRef}
           totalQuantity={totalQuantity}
           isMobile={isMobile}
+        />
+      )}
+
+      {/* Mobile long-press capture layer — transparent, only captures touch events */}
+      {isMobile && onLongPress && !isAwaitingClick && (
+        <div
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            pointerEvents: 'auto',
+            touchAction: 'manipulation',
+            zIndex: 0,
+          }}
+          onTouchStart={handleTouchStartLongPress}
+          onTouchMove={handleTouchMoveLongPress}
+          onTouchEnd={handleTouchEndLongPress}
+          onTouchCancel={handleTouchEndLongPress}
         />
       )}
     </div>

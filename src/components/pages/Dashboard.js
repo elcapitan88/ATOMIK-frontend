@@ -33,6 +33,7 @@ import logger from '@/utils/logger';
 import useMultiAccountTrading from '@/hooks/useMultiAccountTrading';
 import useAggregatedPositions from '@/hooks/useAggregatedPositions';
 import useBracketPlacement from '@/hooks/useBracketPlacement';
+import useAutoBracket from '@/hooks/useAutoBracket';
 import { useUnifiedStrategies } from '@/hooks/useUnifiedStrategies';
 import useCopyTrading from '@/hooks/useCopyTrading';
 import { useWebSocketContext } from '@/services/websocket-proxy/contexts/WebSocketContext';
@@ -41,6 +42,7 @@ import webSocketManager from '@/services/websocket-proxy/WebSocketManager';
 // Mobile components
 import { MobileBottomSheet, MobileActionBar, MobileOrderTicket, PositionCard, OrderCard, MobileAccountsTab, MobileStrategiesTab } from '../features/trading/mobile';
 import MobileBracketChartMode from '../features/trading/mobile/MobileBracketChartMode';
+import MobileChartActionSheet from '../features/trading/mobile/MobileChartActionSheet';
 
 // Lazy loaded components
 const StrategyGroups = lazy(() => import('../features/strategies/ActivateStrategies'));
@@ -137,6 +139,7 @@ const DashboardContent = () => {
     const [isOrderTicketOpen, setIsOrderTicketOpen] = useState(false);
     const [isShareModalOpen, setIsShareModalOpen] = useState(false);
     const [isBracketChartMode, setIsBracketChartMode] = useState(false);
+    const [longPressActionSheet, setLongPressActionSheet] = useState({ isOpen: false, price: null });
 
     // Landscape detection for mobile
     const [isLandscape, setIsLandscape] = useState(false);
@@ -200,6 +203,12 @@ const DashboardContent = () => {
     const bracketPlacement = useBracketPlacement({
         chartSymbol,
         chartCurrentPrice,
+        multiAccountTrading,
+    });
+
+    // Auto-bracket hook (stop + brackets from right-click)
+    const autoBracket = useAutoBracket({
+        chartSymbol,
         multiAccountTrading,
     });
 
@@ -498,6 +507,16 @@ const DashboardContent = () => {
         chartCurrentPrice,
     });
 
+    // Handle auto-bracket order from right-click context menu
+    const handleAutoBracketOrder = useCallback(async (price, side) => {
+        await autoBracket.submitStopBracket(price, side);
+    }, [autoBracket]);
+
+    // Handle long-press on mobile chart — open action sheet
+    const handleMobileLongPress = useCallback((price) => {
+        setLongPressActionSheet({ isOpen: true, price });
+    }, []);
+
     // Handle chart right-click order placement
     // Dispatches to all active manual accounts via multi-account trading
     const handleChartOrder = useCallback(async (order) => {
@@ -639,6 +658,8 @@ const DashboardContent = () => {
                             onWidgetReady={(w, c) => setActiveChart(c)}
                             onSymbolChanged={setChartSymbol}
                             onChartOrder={handleChartOrder}
+                            onAutoBracketOrder={handleAutoBracketOrder}
+                            autoBracketConfigRef={autoBracket.configRef}
                             activeAccount={multiAccountTrading.activeCount > 0 ? { accountId: 'multi' } : null}
                             currentQuantity={multiAccountTrading.totalContracts}
                             selectionMode={multiAccountTrading.activeCount > 0 ? 'multi' : 'single'}
@@ -655,6 +676,8 @@ const DashboardContent = () => {
                     bracketPlacement={bracketPlacement}
                     totalQuantity={multiAccountTrading.totalContracts}
                     isMobile
+                    autoBracket={autoBracket}
+                    onLongPress={handleMobileLongPress}
                 />
             </Box>
 
@@ -667,6 +690,7 @@ const DashboardContent = () => {
                 copyTrading={copyTrading}
                 onExpandOrderTicket={() => setIsOrderTicketOpen(true)}
                 isBracketChartMode={isBracketChartMode}
+                autoBracket={autoBracket}
             />
 
             {/* Mobile Bracket Chart Mode — floating confirm/cancel bar */}
@@ -681,6 +705,25 @@ const DashboardContent = () => {
                     bracketPlacement.deactivate();
                     setIsBracketChartMode(false);
                 }}
+            />
+
+            {/* Mobile Chart Action Sheet — long-press order placement */}
+            <MobileChartActionSheet
+                isOpen={longPressActionSheet.isOpen}
+                onClose={() => setLongPressActionSheet({ isOpen: false, price: null })}
+                price={longPressActionSheet.price}
+                formattedPrice={longPressActionSheet.price?.toFixed(2) || '—'}
+                onPlaceOrder={(side, type) => {
+                    handleChartOrder({
+                        side,
+                        type,
+                        price: longPressActionSheet.price,
+                        quantity: multiAccountTrading.totalContracts,
+                    });
+                }}
+                onAutoBracketOrder={handleAutoBracketOrder}
+                autoBracket={autoBracket}
+                hasActiveAccounts={multiAccountTrading.activeCount > 0}
             />
 
             {/* Mobile Order Ticket — expandable order entry */}
@@ -698,6 +741,7 @@ const DashboardContent = () => {
                     bracketPlacement.activate();
                     setIsBracketChartMode(true);
                 }}
+                autoBracket={autoBracket}
             />
 
             {/* Mobile Bottom Sheet — hidden in landscape (too little vertical space) */}
@@ -916,6 +960,8 @@ const DashboardContent = () => {
                                                     onWidgetReady={(w, c) => setActiveChart(c)}
                                                     onSymbolChanged={setChartSymbol}
                                                     onChartOrder={handleChartOrder}
+                                                    onAutoBracketOrder={handleAutoBracketOrder}
+                                                    autoBracketConfigRef={autoBracket.configRef}
                                                     activeAccount={multiAccountTrading.activeCount > 0 ? { accountId: 'multi' } : null}
                                                     currentQuantity={multiAccountTrading.totalContracts}
                                                     selectionMode={multiAccountTrading.activeCount > 0 ? 'multi' : 'single'}
@@ -944,6 +990,7 @@ const DashboardContent = () => {
                                                     orders={aggregatedOrders}
                                                     bracketPlacement={bracketPlacement}
                                                     getCopyInfo={copyTrading.getCopyInfo}
+                                                    autoBracket={autoBracket}
                                                 />
                                             </Suspense>
                                         </ErrorBoundary>

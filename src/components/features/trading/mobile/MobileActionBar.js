@@ -18,6 +18,7 @@ const MobileActionBar = ({
   copyTrading,
   onExpandOrderTicket,
   isBracketChartMode = false,
+  autoBracket,
 }) => {
   const toast = useToast();
   const {
@@ -201,13 +202,28 @@ const MobileActionBar = ({
 
       {/* Row 2: Summary info */}
       <Flex align="center" justify="space-between" mt={1} px={1}>
-        <Text fontSize="10px" color="whiteAlpha.500">
-          {!hasActiveAccounts
-            ? 'No accounts active'
-            : copyInfo
-            ? `${totalContracts} ct${totalContracts !== 1 ? 's' : ''} on ${copyInfo.leaderName} → ${copyInfo.followerCount} follower${copyInfo.followerCount !== 1 ? 's' : ''}`
-            : `${totalContracts} ct${totalContracts !== 1 ? 's' : ''} / ${activeCount} acct${activeCount !== 1 ? 's' : ''}`}
-        </Text>
+        <HStack spacing={1.5}>
+          <Text fontSize="10px" color="whiteAlpha.500">
+            {!hasActiveAccounts
+              ? 'No accounts active'
+              : copyInfo
+              ? `${totalContracts} ct${totalContracts !== 1 ? 's' : ''} on ${copyInfo.leaderName} → ${copyInfo.followerCount} follower${copyInfo.followerCount !== 1 ? 's' : ''}`
+              : `${totalContracts} ct${totalContracts !== 1 ? 's' : ''} / ${activeCount} acct${activeCount !== 1 ? 's' : ''}`}
+          </Text>
+          {autoBracket?.enabled && (
+            <Badge
+              bg="rgba(251, 146, 60, 0.3)"
+              color="orange.300"
+              fontSize="8px"
+              px={1.5}
+              py={0}
+              borderRadius="full"
+              fontWeight="bold"
+            >
+              AB
+            </Badge>
+          )}
+        </HStack>
         <Text fontSize="10px" fontWeight="bold" color={pnlColor}>
           {pnlPrefix}${Math.abs(totalOpenPnL).toLocaleString(undefined, {
             minimumFractionDigits: 2,
