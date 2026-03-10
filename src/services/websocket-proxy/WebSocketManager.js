@@ -5,6 +5,7 @@ import { EventEmitter } from 'events';
 import logger from '@/utils/logger';
 import { POSITION_MESSAGE_TYPES, isPositionUpdateEvent } from './constants/positionEvents';
 import { envConfig } from '../../config/environment';
+import authService from '../../services/auth/authService';
 
 /**
  * Connection states enum
@@ -198,17 +199,45 @@ class WebSocketManager extends EventEmitter {
       state: ConnectionState.CONNECTING 
     });
     
-    // Get authentication token from localStorage
-    const token = localStorage.getItem('access_token');
+    // Get authentication token, refreshing if expired
+    let token = localStorage.getItem('access_token');
     if (!token) {
       this.connectionState.set(connectionId, ConnectionState.ERROR);
-      this.emit('connectionState', { 
-        brokerId, 
-        accountId, 
+      this.emit('connectionState', {
+        brokerId,
+        accountId,
         state: ConnectionState.ERROR,
         error: 'No authentication token found'
       });
       throw new Error('Authentication token is required');
+    }
+
+    // Check if JWT is expired and refresh if needed
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      const expiresAt = payload.exp * 1000;
+      const bufferMs = 60 * 1000; // refresh if less than 60s remaining
+      if (Date.now() >= expiresAt - bufferMs) {
+        logger.info(`JWT expired or expiring soon, refreshing before WebSocket connect`);
+        const refreshed = await authService.refreshToken();
+        if (refreshed) {
+          token = localStorage.getItem('access_token');
+        } else {
+          // Refresh failed — user session is dead, don't spam the server
+          this.connectionState.set(connectionId, ConnectionState.ERROR);
+          this.emit('connectionState', {
+            brokerId,
+            accountId,
+            state: ConnectionState.ERROR,
+            error: 'Session expired. Please log in again.'
+          });
+          throw new Error('Session expired. Please log in again.');
+        }
+      }
+    } catch (e) {
+      if (e.message === 'Session expired. Please log in again.') throw e;
+      // If JWT decode fails, let the server handle it
+      logger.warn('Could not decode JWT for expiry check, proceeding anyway');
     }
     
     try {
