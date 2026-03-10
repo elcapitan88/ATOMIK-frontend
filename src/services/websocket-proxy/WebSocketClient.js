@@ -308,8 +308,11 @@ class WebSocketClient extends EventEmitter {
             reject(new Error(`Connection closed: ${event.reason || 'Unknown reason'}`));
           }
           
-          // Attempt reconnection if not manual close
-          if (!this.manualClose && this.reconnectAttempts < this.options.maxReconnectAttempts) {
+          // Attempt reconnection if not manual close and not an auth failure
+          const AUTH_FAILURE_CODES = [4001, 4003]; // unauthorized, subscription required
+          if (!this.manualClose &&
+              !AUTH_FAILURE_CODES.includes(event.code) &&
+              this.reconnectAttempts < this.options.maxReconnectAttempts) {
             this.scheduleReconnect();
           }
         };
