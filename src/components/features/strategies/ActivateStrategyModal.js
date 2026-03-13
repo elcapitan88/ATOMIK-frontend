@@ -456,8 +456,10 @@ const ActivateStrategyModal = ({
       baseData.leader_account_id = formData.multipleAccount.leaderAccountId;
       baseData.leader_quantity = Number(formData.multipleAccount.leaderQuantity);
       baseData.group_name = formData.multipleAccount.groupName;
-      baseData.follower_account_ids = formData.multipleAccount.followerAccounts.map(f => f.accountId);
-      baseData.follower_quantities = formData.multipleAccount.followerAccounts.map(f => Number(f.quantity));
+      baseData.follower_accounts = formData.multipleAccount.followerAccounts.map(f => ({
+        account_id: f.accountId,
+        quantity: Number(f.quantity)
+      }));
     }
 
     // Add market schedule if enabled
